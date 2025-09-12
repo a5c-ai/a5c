@@ -22,3 +22,10 @@ Author comprehensive project specifications for the Events SDK/CLI.
 
 ## Next Steps
 - Gather feedback; refine sections; mark PR ready and request validation
+
+## Update (2025-09-12 23:50Z)
+- Expanded specs per @tmuskal request:
+  - Added commit log/diff enrichment details and PR conflict status
+  - Defined mentions extraction schema, config, and limits
+  - Introduced composed events rule model with example `conflict_in_pr_with_low_priority_label`
+  - Extended BDD outlines and examples
