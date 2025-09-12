@@ -181,6 +181,8 @@ Evaluation:
   - `.github/workflows/deploy.yml` (Deployment targeting `a5c/main`)
 - Seed constraints: see `seed.md` (do not write specs blindly; produce deliberate design; use a5c/main as primary branch).
 
+- Technical Specifications index: `docs/producer/phases/technical-specs/README.md`
+
 ## 12) Examples
 - GitHub Actions example (normalize current run):
   ```yaml
