@@ -53,3 +53,7 @@ next-env.d.ts
 **/pnpm-debug.log*
 **/pnpm-error.log*
 **/pnpm-lock.yaml
+
+# local generated helper files (should not be committed)
+.check_env
+.pr_comment.md
