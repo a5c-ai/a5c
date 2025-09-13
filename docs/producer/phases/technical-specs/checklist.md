@@ -4,7 +4,10 @@ This checklist tracks readiness to exit the Technical Specifications phase. When
 
 See also:
 - Specs overview: docs/specs/tech-specs.md
+- Specs index: docs/specs/README.md
 - Phase index: docs/producer/phases/technical-specs/README.md
+- Tech stack: docs/producer/phases/technical-specs/tech-stack.md
+- System architecture: docs/producer/phases/technical-specs/system-architecture.md
 - CLI reference: docs/cli/reference.md
 - NE schema: docs/specs/ne.schema.json
 
@@ -40,4 +43,3 @@ See also:
 ## Notes
 - Enrichment bounds can be tuned via flags: `--flag commit_limit=50 --flag file_limit=200 --flag include_patch=true`.
 - Token precedence and redaction are documented: see docs/cli/reference.md and src/utils/redact.ts.
-
