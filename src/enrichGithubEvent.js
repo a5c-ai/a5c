@@ -71,6 +71,7 @@ export async function enrichGithubEvent(event, opts) {
     token,
     commitLimit = 50,
     fileLimit = 200,
+    includePatch = false,
   } = opts || {};
   const octokit = opts?.octokit || createOctokit(token);
 
@@ -94,9 +95,11 @@ export async function enrichGithubEvent(event, opts) {
     ]);
 
     const prData = prRes.data;
-    const files = filesRes.slice(0, fileLimit).map((f) => pick(f, [
-      "filename","status","additions","deletions","changes","patch","sha","blob_url","raw_url"
-    ]));
+    const files = filesRes.slice(0, fileLimit).map((f) => {
+      const keys = ["filename","status","additions","deletions","changes","sha","blob_url","raw_url"]; 
+      if (includePatch && f.patch) keys.push("patch");
+      return pick(f, keys);
+    });
 
     // Mergeability + conflicts
     const prCheck = await withRetry(() => octokit.pulls.get({ ...base }));
@@ -145,9 +148,11 @@ export async function enrichGithubEvent(event, opts) {
     if (before && after) {
       try {
         const comp = await withRetry(() => octokit.repos.compareCommits({ owner, repo, base: before, head: after }));
-        const files = (comp.data.files || []).slice(0, fileLimit).map((f) => pick(f, [
-          "filename","status","additions","deletions","changes","patch","sha","blob_url","raw_url"
-        ]));
+        const files = (comp.data.files || []).slice(0, fileLimit).map((f) => {
+          const keys = ["filename","status","additions","deletions","changes","sha","blob_url","raw_url"]; 
+          if (includePatch && f.patch) keys.push("patch");
+          return pick(f, keys);
+        });
         const commits = (comp.data.commits || []).slice(0, commitLimit).map((c) => pick(c, ["sha","commit","author","committer","parents"]));
         const ownersMap = resolveOwnersForFiles(codeOwnerRules, files.map((f) => f.filename));
         enriched._enrichment.push = {

@@ -42,8 +42,12 @@ jq '.type, .repo.full_name, .provenance.workflow?.name' out.json
 `events enrich`
 - Purpose: Add metadata and correlations to a normalized event.
 - Common flags:
-  - `--in <file>`: normalized event JSON
+  - `--in <file>`: normalized event JSON or raw provider payload
   - `--out <file>`: write enriched result
+  - `--rules <file>`: rules file (reserved)
+  - `--flag include_patch=<true|false>`: include diff patches in files (default: false)
+  - `--flag commit_limit=<n>`: max commits to include (default: 50)
+  - `--flag file_limit=<n>`: max files to include (default: 50)
 
 Exit codes: `0` success, non‑zero on errors (invalid input, etc.).
 
@@ -83,9 +87,11 @@ events normalize --in samples/pull_request.synchronize.json \
 jq '.type, .labels' out.json
 ```
 
-Enrichment (stub):
+Enrichment (GitHub PR/push):
 ```bash
-events enrich --in out.json --out enriched.json
+events enrich --in samples/pull_request.synchronize.json \
+  --flag include_patch=false --flag commit_limit=50 --flag file_limit=50 \
+  --out enriched.json
 jq '.enriched' enriched.json
 ```
 
@@ -126,4 +132,3 @@ This repository initially used a generic a5c platform README. That content now l
 - Specs: `docs/specs/README.md`
 - Issues: https://github.com/a5c-ai/events/issues
 - Agent registry: https://github.com/a5c-ai/registry
-
