@@ -84,7 +84,7 @@ program
 
 program.parseAsync(process.argv);
 
-function collectKeyValue(value: string, previous: any) {
+function collectKeyValue(value: string | string[], previous: any) {
   const target = Array.isArray(previous) ? ({} as Record<string, string>) : previous || {};
   for (const item of (Array.isArray(value) ? value : [value])) {
     const [k, v] = String(item).split('=');
