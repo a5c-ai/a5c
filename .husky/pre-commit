@@ -1,6 +1,4 @@
 #!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
-
 echo "Running pre-commit checks..."
 if command -v npm >/dev/null 2>&1 && [ -f package.json ]; then
   npm run -s lint || true
