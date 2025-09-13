@@ -65,7 +65,7 @@ events enrich --in FILE [--out FILE] [--rules FILE] [--flag KEY=VAL...] [--use-g
 
 Examples:
 ```bash
-export GITHUB_TOKEN=...  # required for GitHub API lookups
+export A5C_AGENT_GITHUB_TOKEN=...  # preferred if available; otherwise set GITHUB_TOKEN
 
 events enrich --in samples/pull_request.synchronize.json \
   --use-github \
@@ -81,6 +81,7 @@ events enrich --in samples/pull_request.synchronize.json \
 - `0`: success (commands exit with non-zero when errors occur)
 
 ## Notes
+- Token precedence: runtime uses `A5C_AGENT_GITHUB_TOKEN` first, then `GITHUB_TOKEN` (see `src/config.ts`).
 - Redaction: CLI redacts known secret patterns and sensitive keys in output by default (see `src/utils/redact.ts`).
 - Large payloads: JSON is read/written from files/stdin/stdout; providers may add streaming in future.
 
