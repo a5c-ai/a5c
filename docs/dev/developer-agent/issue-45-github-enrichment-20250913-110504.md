@@ -9,3 +9,6 @@
 ## Notes
 - Graceful handling for missing perms
 - Configurable limits for commits/files
+\n## Results
+- Implemented enrichment module + tests
+- Opened PR: https://github.com/a5c-ai/events/pull/65
