@@ -162,7 +162,7 @@ export async function enrichGithubEvent(event, opts) {
         const rlh = bpData?.required_linear_history;
         if (rlh && typeof rlh === "object" && "enabled" in rlh) flags.linear_history = !!rlh.enabled;
         const rsc = bpData?.required_status_checks;
-        if (rsc && typeof rsc === "object") flags.has_required_status_checks = true;
+        if (rsc && typeof rsc === "object") flags.required_status_checks = true;
       } catch {}
       enriched._enrichment.branch_protection = { protected: true, data: bpData, ...(Object.keys(flags).length ? { flags } : {}) };
     } catch (e) {

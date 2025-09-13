@@ -36,7 +36,18 @@ test('PR enrichment adds pr fields and owners', async () => {
   const prCommits = [{ sha: 'abc', commit: { message: 'x' } }];
   const compare = {};
   const codeowners = "src/** @team-a\nREADME.md @docs";
-  const mock = makeMockOctokit({ pr, prFiles, prCommits, compare, codeowners, branchProtection: { enabled: true } });
+  const mock = makeMockOctokit({
+    pr,
+    prFiles,
+    prCommits,
+    compare,
+    codeowners,
+    branchProtection: {
+      required_pull_request_reviews: { dismiss_stale_reviews: true, required_approving_review_count: 2 },
+      required_linear_history: { enabled: true },
+      required_status_checks: { strict: true, contexts: [] }
+    }
+  });
 
   const event = { repository: { full_name: 'a5c-ai/events' }, pull_request: { number: 1 } };
   const out = await enrichGithubEvent(event, { token: 't', octokit: mock, fileLimit: 50, commitLimit: 50 });
@@ -51,6 +62,12 @@ test('PR enrichment adds pr fields and owners', async () => {
   // has_conflicts derived from mergeable_state
   assert.equal(out._enrichment.pr.mergeable_state, 'dirty');
   assert.equal(out._enrichment.pr.has_conflicts, true);
+  // branch protection flags normalized
+  assert.equal(out._enrichment.branch_protection.protected, true);
+  assert.equal(out._enrichment.branch_protection.flags.dismiss_stale_reviews, true);
+  assert.equal(out._enrichment.branch_protection.flags.required_approvals, 2);
+  assert.equal(out._enrichment.branch_protection.flags.linear_history, true);
+  assert.equal(out._enrichment.branch_protection.flags.required_status_checks, true);
 });
 
 test('Push enrichment adds commits and files', async () => {
