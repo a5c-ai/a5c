@@ -32,7 +32,15 @@ jobs:
           registry-url: 'https://npm.pkg.github.com'
       - name: Install
         run: |
-          if [ -f package-lock.json ]; then npm ci; else npm i; fi
+          if [ -f package-lock.json ]; then 
+            echo "Attempting clean install via npm ci..."
+            if ! npm ci; then
+              echo "npm ci failed (likely lockfile mismatch). Falling back to npm install to update lockfile..."
+              npm install
+            fi
+          else 
+            npm install
+          fi
       - name: Build
         run: npm run -s build
       - name: Release (a5c/main prerelease)
