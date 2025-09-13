@@ -14,7 +14,7 @@ export interface Mention {
   normalized_target: string;
   kind: MentionKind;
   source: MentionSource;
-  location?: string; // path:line or ref
+  location?: { file?: string; line?: number; commit_sha?: string; comment_id?: number } | string; // object (preferred) or legacy string
   context: string; // excerpt around the mention
   confidence: number; // 0..1
 }
