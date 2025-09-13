@@ -10,7 +10,6 @@
 * merge: resolve conflicts for TS/Vitest scaffold and project config ([51c703e](https://github.com/a5c-ai/events/commit/51c703e))
 * merge: resolve package.json and regenerate package-lock.json ([01ae64a](https://github.com/a5c-ai/events/commit/01ae64a))
 * merge: unify install/build/test scripts to npm flow ([34cfbb7](https://github.com/a5c-ai/events/commit/34cfbb7))
-
 ## 1.0.0-a5c-main.1 (2025-09-13)
 
 * ✅ Validate & merge: specs+tech+CLI scaffold ([5744a6a](https://github.com/a5c-ai/events/commit/5744a6a))

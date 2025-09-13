@@ -2,7 +2,6 @@ import { NormalizedEvent } from './types.js'
 import { readJSONFile } from './config.js'
 
 type AnyObj = Record<string, any>
-
 export async function handleNormalize(opts: {
   in?: string
   source?: string
@@ -48,6 +47,7 @@ export async function handleNormalize(opts: {
   return { code: 0, output }
 }
 
+function normalizeSource(src?: string): 'action' | 'webhook' | 'cli' {
 function normalizeSource(src?: string): 'action' | 'webhook' | 'cli' {
   switch ((src || 'cli').toLowerCase()) {
     case 'action':
