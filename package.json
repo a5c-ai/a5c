@@ -1,21 +1,9 @@
 {
   "name": "@a5c/events",
   "version": "0.1.0",
-  "description": "Events SDK and CLI for normalizing and enriching repo/CI events for agentic workflows",
-  "type": "module",
   "private": true,
-  "bin": {
-    "events": "dist/cli.js"
-  },
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
-    }
-  },
-  "engines": {
-    "node": ">=20"
-  },
+  "type": "module",
+  "description": "SDK/CLI to parse and enrich GitHub events for agentic workflows",
   "scripts": {
     "prepare": "npm run build",
     "build": "tsc -p tsconfig.json",
@@ -47,8 +35,8 @@
     "vitest": "^2.0.5"
   },
   "dependencies": {
-    "commander": "^12.1.0",
-    "dotenv": "^16.4.5",
-    "yaml": "^2.5.0"
-  }
+    "@octokit/rest": "^21.0.0",
+    "minimatch": "^9.0.5"
+  },
+  "devDependencies": {}
 }

@@ -32,7 +32,7 @@ npx @a5c/events normalize --source actions --select repo.full_name,type,provenan
 
 - Pull Request event normalization:
 ```bash
-events normalize --in samples/pull_request.opened.json --provider github | jq '.type, .ref.head'
+events normalize --in samples/pull_request.synchronize.json --provider github | jq '.type, .ref.head'
 ```
 
 - Push event normalization:
@@ -41,9 +41,8 @@ events normalize --in samples/push.json --provider github | jq '.ref.name, .ref.
 ```
 
 ## Tests and Fixtures
-- Place sample payloads under `samples/github/` (e.g., `workflow_run.completed.json`, `pull_request.opened.json`, `push.json`, `issue_comment.created.json`).
+- Place sample payloads under `samples/` (e.g., `workflow_run.completed.json`, `pull_request.synchronize.json`, `push.json`, `issue_comment.created.json`).
 - Unit tests should:
   - Map fields per this doc
   - Validate output against `docs/specs/ne.schema.json`
   - Cover at least 3 event types
-
