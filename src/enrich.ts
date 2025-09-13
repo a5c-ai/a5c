@@ -71,8 +71,12 @@ export async function handleEnrich(opts: {
           }
 let githubEnrichment: any = {}
 const useGithub = toBool(opts.flags?.use_github)
-if (useGithub) {
-  if (!token) {
+const hasOctokit = !!opts.octokit
+// Enrichment gating:
+// - If --use-github is provided, we enrich via API (requires token). If token missing, mark partial and skip network.
+// - If a mock/provided octokit is passed, allow offline enrichment even without --use-github (tests rely on this behavior).
+if (useGithub || hasOctokit) {
+  if (useGithub && !token && !hasOctokit) {
     // Flag requested but no token available: mark as partial and do NOT call network
     githubEnrichment = { provider: 'github', partial: true, errors: [{ message: 'GITHUB_TOKEN missing; skipped API enrichment' }] }
   } else {
@@ -99,6 +103,12 @@ if (useGithub) {
           githubEnrichment.push.files = githubEnrichment.push.files.map((f: any) => (
             Object.prototype.hasOwnProperty.call(f, 'patch') ? f : { ...f, patch: '' }
           ))
+        }
+      }
+      // If we ran without --use-github (offline via mock octokit), do not force partial flag.
+      if (!useGithub && hasOctokit) {
+        if (githubEnrichment && typeof githubEnrichment === 'object') {
+          delete (githubEnrichment as any).partial
         }
       }
     } catch (e: any) {
@@ -255,7 +265,7 @@ if (useGithub) {
     ...(neShell as any),
     enriched: {
       ...(neShell.enriched || {}),
-      ...(useGithub ? { github: githubEnrichment } : {}),
+      ...((useGithub || hasOctokit) ? { github: githubEnrichment } : {}),
       metadata: { ...(neShell.enriched?.metadata || {}), rules: opts.rules },
       derived: { ...(neShell.enriched?.derived || {}), flags: opts.flags || {} },
       ...(mentions.length ? { mentions } : {})

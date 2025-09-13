@@ -43,7 +43,7 @@ describe('handleEnrich', () => {
     expect(gh).toBeUndefined();
   });
 
-  it('marks partial when --use-github is set but token missing (no network call)', async () => {
+  // (Removed stray/duplicate test header that caused a syntax error)
   it('omits patch fields by default (include_patch=false)', async () => {
     const { output } = await handleEnrich({ in: 'samples/pull_request.synchronize.json', flags: { use_github: 'true' } });
     const gh: any = (output.enriched as any)?.github || {};
