@@ -39,7 +39,7 @@ test('PR enrichment adds pr fields and owners', async () => {
   const mock = makeMockOctokit({ pr, prFiles, prCommits, compare, codeowners, branchProtection: { enabled: true } });
 
   const event = { repository: { full_name: 'a5c-ai/events' }, pull_request: { number: 1 } };
-  const out = await enrichGithubEvent(event, { token: 't', octokit: mock });
+  const out = await enrichGithubEvent(event, { token: 't', octokit: mock, fileLimit: 50, commitLimit: 50 });
   assert.equal(out._enrichment.pr.number, 1);
   assert.equal(out._enrichment.pr.files.length, 2);
   assert.deepEqual(out._enrichment.pr.owners['src/a.js'], ['@team-a']);
@@ -57,7 +57,7 @@ test('Push enrichment adds commits and files', async () => {
   const compare = { total_commits: 1, commits: [{ sha: 'abc', commit: { message: 'm' } }], files: [{ filename: 'src/b.js', additions: 1, deletions: 0, changes: 1 }] };
   const mock = makeMockOctokit({ compare, codeowners: "src/** @team-a" });
   const event = { repository: { full_name: 'a5c-ai/events' }, before: '111', after: '222', ref: 'refs/heads/main' };
-  const out = await enrichGithubEvent(event, { token: 't', octokit: mock });
+  const out = await enrichGithubEvent(event, { token: 't', octokit: mock, fileLimit: 50, commitLimit: 50 });
   assert.equal(out._enrichment.push.total_commits, 1);
   assert.equal(out._enrichment.push.files.length, 1);
   assert.deepEqual(out._enrichment.push.owners['src/b.js'], ['@team-a']);

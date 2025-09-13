@@ -7,8 +7,8 @@ import prettier from 'eslint-config-prettier'
 
 /** @type {import('eslint').Linter.FlatConfig[]} */
 export default [
-  // Global ignores
-  { ignores: ['dist/**', 'node_modules/**'] },
+  // Global ignores (merge of base + PR)
+  { ignores: ['dist/**', 'node_modules/**', 'tests/fixtures/**', 'samples/**'] },
 
   // JS files: enable Node/browser globals
   {
