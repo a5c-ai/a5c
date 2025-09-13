@@ -73,6 +73,7 @@ Token precedence for GitHub API calls (when enrichment reaches out to GitHub):
   - `--select <paths>`: comma-separated dot paths to include in output
   - `--filter <expr>`: filter expression `path[=value]`; if not matching, exits with code 2 and no output
   - `--label <key=value...>`: attach labels
+  - `--flag include_patch=true|false`: include diff patches in file entries (default: false)
 
 Exit codes: `0` success, non‑zero on errors (invalid input, etc.).
 
@@ -176,6 +177,7 @@ Environment variables:
 
 CLI behavior:
 - Defaults are safe for local runs (no network calls in MVP commands).
+- Patch diffs can be large and may contain secrets; by default patches are omitted (`include_patch=false`). Opt in with `--flag include_patch=true` when needed.
 - For CI, prefer explicit `--in` and write `--out` artifacts for downstream steps.
 
 ## Samples

@@ -82,4 +82,41 @@ describe('handleEnrich', () => {
     const keys = composed.map((c: any) => c.key)
     expect(keys).toContain('pr_conflicted_state')
   })
+  it('defaults include_patch to false (patch omitted) and includes when true', async () => {
+    // Minimal mock octokit to exercise PR enrichment with file patches
+    const pr = { number: 1, state: 'open', merged: false, draft: false, base: { ref: 'main' }, head: { ref: 'feat' }, changed_files: 1, additions: 1, deletions: 0 };
+    const prFiles = [
+      { filename: 'src/a.js', status: 'modified', additions: 1, deletions: 0, changes: 1, patch: '---a\n+++b\n@@ ...' }
+    ];
+    const prCommits = [{ sha: 'abc', commit: { message: 'x' } }];
+    const compare = {};
+    const codeowners = '';
+    const octokit = {
+      pulls: {
+        async get() { return { data: pr }; },
+        async listFiles() { return { data: prFiles, headers: {}, status: 200 }; },
+        async listCommits() { return { data: prCommits, headers: {}, status: 200 }; }
+      },
+      paginate: async (fn: any, params: any) => {
+        if (fn === (octokit as any).pulls.listFiles) return prFiles;
+        if (fn === (octokit as any).pulls.listCommits) return prCommits;
+        return [];
+      },
+      repos: {
+        async getContent() { return { data: { content: Buffer.from(codeowners).toString('base64') } }; },
+        async compareCommits() { return { data: compare } as any; },
+        async getBranchProtection() { throw Object.assign(new Error('forbidden'), { status: 403 }); }
+      }
+    } as any;
+
+    const baseArgs = { in: 'samples/pull_request.synchronize.json', labels: [], rules: undefined } as const;
+
+    const defRes = await handleEnrich({ ...baseArgs, flags: {}, octokit });
+    const defFiles = (defRes.output.enriched as any).github.pr.files;
+    expect(defFiles[0].patch).toBeUndefined();
+
+    const onRes = await handleEnrich({ ...baseArgs, flags: { include_patch: 'true' } as any, octokit });
+    const onFiles = (onRes.output.enriched as any).github.pr.files;
+    expect(typeof onFiles[0].patch).toBe('string');
+  });
 });
