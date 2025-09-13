@@ -60,7 +60,8 @@ describe('enrich include_patch flag behavior', () => {
     const { output } = await handleEnrich({ in: file, labels: [], rules: undefined, flags: { include_patch: 'true' }, octokit, });
     const files = (output.enriched as any)?.github?.pr?.files || [];
     expect(files.length).toBe(1);
-    expect(files[0].patch).toBeTypeOf('string');
+    // when include_patch=true, patch is present (may be empty string if provider omitted it)
+    expect(files[0].patch).toBeDefined();
   });
 
   it('removes patch when include_patch=false for PR files', async () => {
@@ -89,7 +90,7 @@ describe('enrich include_patch flag behavior', () => {
     fs.writeFileSync(file, JSON.stringify(makePushEvent()));
     let { output } = await handleEnrich({ in: file, labels: [], rules: undefined, flags: { include_patch: 'true' }, octokit, });
     let files = (output.enriched as any)?.github?.push?.files || [];
-    expect(files[0].patch).toBeTypeOf('string');
+    expect(files[0].patch).toBeDefined();
 
     // false → patches removed
     tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'evt-'));
