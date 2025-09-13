@@ -49,6 +49,7 @@ program
   .option('--in <file>', 'input JSON file path')
   .option('--out <file>', 'output JSON file path')
   .addOption(new Option('--source <name>', 'source name (actions|webhook|cli)').default('cli'))
+  .option('--validate', 'validate output against NE schema and fail on errors', false)
   .option('--select <paths>', 'comma-separated dot paths to include in output')
   .option('--filter <expr>', 'filter expression path[=value] to gate output')
   .option('--label <key=value...>', 'labels to attach', collectKeyValue, [])
@@ -61,6 +62,15 @@ program
       source: cmdOpts.source,
       labels,
     })
+    if (cmdOpts.validate) {
+      const { validateNE, formatAjvErrors } = await import('./validate.js')
+      const ok = await validateNE(output)
+      if (!ok.valid) {
+        const msg = formatAjvErrors(ok.errors)
+        process.stderr.write(`Validation failed for normalized output\n${msg}\n`)
+        process.exit(1)
+      }
+    }
     // filter/select
     const { selectFields, parseFilter, passesFilter } = await import('./utils/selectFilter.js')
     const filterSpec = parseFilter(cmdOpts.filter)
@@ -88,6 +98,7 @@ program
   .option('--rules <file>', 'rules file path (yaml/json)')
   .option('--flag <key=value...>', 'enrichment flags', collectKeyValue, {})
   .option('--use-github', 'enable GitHub API enrichment (requires GITHUB_TOKEN)')
+  .option('--validate', 'validate output against NE schema and fail on errors', false)
   .option('--select <paths>', 'comma-separated dot paths to include in output')
   .option('--filter <expr>', 'filter expression path[=value] to gate output')
   .option('--label <key=value...>', 'labels to attach', collectKeyValue, [])
@@ -101,6 +112,15 @@ program
       rules: cmdOpts.rules,
       flags,
     })
+    if (cmdOpts.validate) {
+      const { validateNE, formatAjvErrors } = await import('./validate.js')
+      const ok = await validateNE(output)
+      if (!ok.valid) {
+        const msg = formatAjvErrors(ok.errors)
+        process.stderr.write(`Validation failed for enriched output\n${msg}\n`)
+        process.exit(1)
+      }
+    }
     const { selectFields, parseFilter, passesFilter } = await import('./utils/selectFilter.js')
     const filterSpec = parseFilter(cmdOpts.filter)
     if (!passesFilter(output as any, filterSpec)) {
