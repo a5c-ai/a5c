@@ -1,14 +1,16 @@
-// Flat config for ESLint v9+
-import tseslint from '@typescript-eslint/eslint-plugin'
-import tsparser from '@typescript-eslint/parser'
-import eslint from '@eslint/js'
+// Flat config for ESLint v9
+// Covers TypeScript in src/ and test files; integrates Prettier via eslint-config-prettier
+import js from '@eslint/js'
+import tseslint from 'typescript-eslint'
 import globals from 'globals'
+import prettier from 'eslint-config-prettier'
 
+/** @type {import('eslint').Linter.FlatConfig[]} */
 export default [
-  // Ignore build artifacts
-  { ignores: ['dist/**', 'tests/fixtures/**', 'samples/**'] },
-  eslint.configs.recommended,
-  // Base JS (Node) files
+  // Global ignores (merge of base + PR)
+  { ignores: ['dist/**', 'node_modules/**', 'tests/fixtures/**', 'samples/**'] },
+
+  // JS files: enable Node/browser globals
   {
     files: ['**/*.js'],
     languageOptions: {
@@ -16,49 +18,55 @@ export default [
       sourceType: 'module',
       globals: {
         ...globals.node,
+        ...globals.browser,
       },
     },
   },
-  {
-    files: ['**/*.ts'],
-    languageOptions: {
-      parser: tsparser,
-      ecmaVersion: 'latest',
-      sourceType: 'module',
-      globals: {
-        ...globals.node,
+  // Base JS recommended rules
+  js.configs.recommended,
+
+  // TypeScript support for project files
+  ...tseslint.config(
+    // Type-aware for src
+    {
+      files: ['src/**/*.ts'],
+      languageOptions: {
+        parser: tseslint.parser,
+        parserOptions: {
+          project: ['./tsconfig.json'],
+          tsconfigRootDir: import.meta.dirname,
+          sourceType: 'module',
+          ecmaVersion: 'latest',
+        },
+        globals: { ...globals.node },
+      },
+      plugins: { '@typescript-eslint': tseslint.plugin },
+      extends: [ ...tseslint.configs.recommended ],
+      rules: {
+        '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+        '@typescript-eslint/no-explicit-any': 'off',
+        '@typescript-eslint/explicit-function-return-type': 'off',
+        '@typescript-eslint/ban-ts-comment': 'off',
+        'no-useless-escape': 'off',
       },
     },
-    plugins: {
-      '@typescript-eslint': tseslint,
-    },
-    rules: {
-      'no-unused-vars': 'off',
-      'no-undef': 'off',
-      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
-      'no-empty': ['error', { allowEmptyCatch: true }],
-      'no-useless-escape': 'off',
-    },
-  },
-  // Relax rules for declaration files
-  {
-    files: ['**/*.d.ts'],
-    rules: {
-      'no-unused-vars': 'off',
-      'no-undef': 'off',
-    },
-  },
-  // Test environment tweaks
-  {
-    files: ['tests/**/*.*', 'test/**/*.*'],
-    languageOptions: {
-      globals: {
-        ...globals.node,
-        require: 'readonly',
+    // Non-type-aware for tests (avoid requiring project references)
+    {
+      files: ['test/**/*.ts', 'tests/**/*.ts'],
+      languageOptions: {
+        parser: tseslint.parser,
+        parserOptions: { ecmaVersion: 'latest', sourceType: 'module' },
+        globals: { ...globals.node },
+      },
+      plugins: { '@typescript-eslint': tseslint.plugin },
+      extends: [ ...tseslint.configs.recommended ],
+      rules: {
+        '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
       },
     },
-    rules: {
-      'no-unused-vars': 'off',
-    },
-  },
+    { ignores: ['dist/**'] }
+  ),
+
+  // Prettier compatibility (disables conflicting stylistic rules)
+  prettier,
 ]

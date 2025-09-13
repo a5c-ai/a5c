@@ -21,29 +21,36 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          registry-url: 'https://npm.pkg.github.com'
-          scope: '@a5c-ai'
+          # Avoid setting global registry to GPR; use project .npmrc scoping instead
 
       - name: Configure npm auth (env)
         env:
           NODE_AUTH_TOKEN: ${{ secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
-          echo "registry=https://registry.npmjs.org" >> ~/.npmrc
-          echo "//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}" >> ~/.npmrc
-          echo "@a5c-ai:registry=https://npm.pkg.github.com/" >> ~/.npmrc
+          set -euo pipefail
+          # Create a project-level npmrc and point npm to use it for all subsequent steps
+          echo "registry=https://registry.npmjs.org" > .npmrc
+          echo "//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}" >> .npmrc
+          echo "@a5c-ai:registry=https://npm.pkg.github.com/" >> .npmrc
+          echo "always-auth=true" >> .npmrc
+          export NPM_CONFIG_USERCONFIG="$PWD/.npmrc"
+          echo "NPM_CONFIG_USERCONFIG=$NPM_CONFIG_USERCONFIG" >> "$GITHUB_ENV"
           npm whoami || true
 
       - name: Run npx package help
         env:
           NODE_AUTH_TOKEN: ${{ secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+          NPM_CONFIG_USERCONFIG: ${{ env.NPM_CONFIG_USERCONFIG }}
         run: |
-          npx -y @a5c-ai/events --help
+          # Use project .npmrc so only @a5c-ai scope hits GPR; others resolve from npmjs
+          npx -y @a5c-ai/events@latest --help
 
       - name: Run npx package version
         env:
           NODE_AUTH_TOKEN: ${{ secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+          NPM_CONFIG_USERCONFIG: ${{ env.NPM_CONFIG_USERCONFIG }}
         run: |
           node -v
           npm -v
-          npx -y @a5c-ai/events --version || true
+          npx -y @a5c-ai/events@latest --version || true
