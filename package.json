@@ -1,6 +1,6 @@
 {
   "name": "@a5c-ai/events",
-  "version": "1.1.0-a5c-main.5",
+  "version": "1.0.0-a5c-main.4",
   "description": "Events SDK and CLI for normalizing and enriching repo/CI events for agentic workflows",
   "type": "module",
   "private": false,
@@ -17,10 +17,9 @@
     "node": ">=20"
   },
   "scripts": {
-    "pretest": "npm run build",
     "prepare": "npm run build",
     "clean": "rimraf dist .turbo .vitest coverage",
-    "build": "tsc -p tsconfig.build.json && node scripts/build-post.js",
+    "build": "tsc -p tsconfig.build.json",
     "build:clean": "rimraf dist && npm run build",
     "lint": "eslint \"src/**/*.ts\" \"test/**/*.ts\" \"tests/**/*.ts\"",
     "format": "prettier -w .",
@@ -65,7 +64,6 @@
     "@semantic-release/github": "^10.3.5",
     "@semantic-release/npm": "^12.0.1",
     "@types/node": "^22.7.4",
-    "@types/yaml": "1.9.6",
     "@typescript-eslint/eslint-plugin": "8.43.0",
     "@typescript-eslint/parser": "8.43.0",
     "@vitest/coverage-v8": "^2.1.1",
@@ -82,8 +80,7 @@
     "tsx": "^4.19.1",
     "typescript": "5.9.2",
     "typescript-eslint": "8.43.0",
-    "vitest": "^2.1.1",
-    "yaml": "2.8.1"
+    "vitest": "^2.1.1"
   },
   "dependencies": {
     "@octokit/rest": "^21.0.0",
