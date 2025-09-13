@@ -3,6 +3,7 @@ import { Command, Option } from 'commander'
 import { loadConfig, writeJSONFile } from './config.js'
 import { handleNormalize } from './normalize.js'
 import { handleEnrich } from './enrich.js'
+import { redactObject } from './utils/redact.js'
 
 const program = new Command()
   .name('events')
@@ -24,8 +25,9 @@ program
       source: cmdOpts.source,
       labels
     })
-    if (cmdOpts.out) writeJSONFile(cmdOpts.out, output)
-    else process.stdout.write(JSON.stringify(output, null, 2) + '\n')
+    const safe = redactObject(output)
+    if (cmdOpts.out) writeJSONFile(cmdOpts.out, safe)
+    else process.stdout.write(JSON.stringify(safe, null, 2) + '\n')
     process.exit(code)
   })
 
@@ -46,8 +48,9 @@ program
       rules: cmdOpts.rules,
       flags
     })
-    if (cmdOpts.out) writeJSONFile(cmdOpts.out, output)
-    else process.stdout.write(JSON.stringify(output, null, 2) + '\n')
+    const safe = redactObject(output)
+    if (cmdOpts.out) writeJSONFile(cmdOpts.out, safe)
+    else process.stdout.write(JSON.stringify(safe, null, 2) + '\n')
     process.exit(code)
   })
 
@@ -61,4 +64,3 @@ function collectKeyValue(value: string, previous: any) {
   }
   return target
 }
-
