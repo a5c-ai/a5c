@@ -13,7 +13,8 @@ The NE schema provides a consistent shape across providers for downstream agents
 - `repo`: `{ id, full_name, default_branch, visibility }`
 - `actor`: `{ id, login, type }`
 - `timestamps`: `{ observed, provider, received }`
-- `provenance`: `{ workflow: { name, run_id, attempt }, run: { id }, labels: [] }`
+- `provenance`: `{ workflow: { name, run_id, attempt }, run: { id } }`
+- `labels`: `string[]` used for routing and filtering (e.g., `env=staging`)
 - `payload`: selected/raw fields needed downstream (curated)
 - `enriched`: provider-specific derived data (e.g., `github.pr`, `commits`, `diff`, `mentions`)
 - `composed`: optional derived events emitted by rules

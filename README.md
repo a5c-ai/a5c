@@ -78,8 +78,8 @@ Core fields returned by `normalize`:
 - `actor`: event actor
 - `payload`: raw provider payload (verbatim)
 - `enriched`: `{ metadata, derived, correlations }`
-- `labels`: string array for routing
-- `provenance`: `{ source: action|webhook|cli, workflow? }`
+- `labels`: string array for routing (e.g., `env=staging`)
+- `provenance`: `{ source: action|webhook|cli, workflow? }` (no labels here)
 
 See the detailed specs for full schema and roadmap.
 
@@ -93,7 +93,7 @@ GitHub Actions (normalize current run):
       --source actions \
       --in "$GITHUB_EVENT_PATH" \
       --out event.json
-    jq '.type, .repo.full_name, .provenance' event.json
+jq '.type, .repo.full_name, .labels' event.json
 ```
 
 Local payload file:
