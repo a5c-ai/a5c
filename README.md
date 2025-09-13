@@ -187,13 +187,15 @@ See `docs/specs/README.md` for examples and behavior-driven test outlines. Add y
 - Build: `npm run build`
 - Dev CLI: `npm run dev` (runs `src/cli.ts` via tsx)
 - Lint/format: `npm run lint` / `npm run format`
-- Minimal Node types + yargs; TypeScript configured in `tsconfig.json`
+- Minimal Node types + commander; TypeScript configured in `tsconfig.json`
 
 Project structure:
-- `src/cli.ts` – CLI entrypoint (mentions, normalize, enrich)
+- `src/cli.ts` – CLI entrypoint (commander) registering `mentions`, `normalize`, `enrich`
 - `src/normalize.ts` / `src/enrich.ts` – command handlers
 - `src/providers/*` – provider adapters (GitHub mapping under `providers/github`)
 - `src/utils/redact.ts` – redaction utilities
+
+Why the scope? The npm package is published under the `@a5c-ai` org scope for clarity and consistency across the a5c ecosystem. Use `npx @a5c-ai/events` to run the CLI without a global install.
 
 ## Background: a5c Platform Template
 
