@@ -77,10 +77,10 @@ function evalCond(obj: any, c: RuleCondition): boolean {
 function getByPath(obj: any, p: string): any {
   if (!p) return undefined
   // Support prefixes like '$.' or plain path; split by '.' and support basic [*] for arrays flattened
-  let pathStr = p.replace(/^\$\.?/, '')
+  const pathStr = p.replace(/^\$\.?/, '')
   const parts = pathStr.split('.')
   let cur: any = obj
-  for (let part of parts) {
+  for (const part of parts) {
     if (cur == null) return undefined
     const m = part.match(/^(\w[\w_-]*)(\[(\*|\d+)\])?$/)
     if (!m) {
