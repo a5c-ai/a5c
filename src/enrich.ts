@@ -50,6 +50,7 @@ export async function handleEnrich(opts: {
       }
     }
   } catch (e: any) {
+    // Intentionally swallow enrichment failures to keep CLI resilient; mark as partial
     githubEnrichment = { provider: 'github', partial: true, errors: [{ message: String(e?.message || e) }] }
   }
 
@@ -65,7 +66,9 @@ export async function handleEnrich(opts: {
     }
     const commentBody = (baseEvent as any)?.comment?.body
     if (commentBody) mentions.push(...extractMentions(String(commentBody), 'issue_comment'))
-  } catch {}
+  } catch {
+    // ignore mention extraction errors from text fields
+  }
 
   // Mentions from code comments in changed files (PR/push)
   try {
@@ -110,7 +113,9 @@ export async function handleEnrich(opts: {
       const codeMentions = await scanCodeCommentsForMentions({ owner, repo, ref, files, octokit, options: { fileSizeCapBytes: 200 * 1024, languageFilters: ['js','ts','md'] } })
       if (codeMentions.length) mentions.push(...codeMentions)
     }
-  } catch {}
+  } catch {
+    // ignore code comment scanning failures; treated as best-effort enrichment
+  }
 
   const output: NormalizedEvent = {
     ...(neShell as any),
