@@ -69,6 +69,31 @@ Configuration:
 - CLI flags: `--in file.json` (webhook sample), `--out out.json`, `--select fields`, `--filter expr`, `--label key=value`.
 - Provider adapters: `providers/github`, stub interfaces for others. Auto-detect when running in Actions.
 
+### 5.1) Environment Variables and Precedence
+- GitHub token precedence: the runtime checks `A5C_AGENT_GITHUB_TOKEN` first, then falls back to `GITHUB_TOKEN`.
+  - Source of truth: `src/config.ts` uses `process.env.A5C_AGENT_GITHUB_TOKEN || process.env.GITHUB_TOKEN`.
+  - Recommendation: in GitHub Actions, prefer `secrets.A5C_AGENT_GITHUB_TOKEN` (scoped, auditable). Otherwise use `secrets.GITHUB_TOKEN`.
+- Debugging: `DEBUG=true` enables verbose logs (redaction still applied).
+- Minimal usage examples:
+  ```bash
+  # Prefer the scoped agent token (takes precedence)
+  export A5C_AGENT_GITHUB_TOKEN=ghs_xxx
+
+  # Or rely on the Actions token if agent token is not set
+  export GITHUB_TOKEN=ghs_yyy
+  ```
+- Note: Avoid setting both unless you intend the agent token to override the default token.
+
+### 5.2) Redaction and Safety
+- Redaction is applied to logs and structured outputs to prevent leaking secrets.
+  - Key-based masking: object properties whose names include sensitive substrings (e.g., `token`, `secret`, `password`, `authorization`) are masked with `REDACTED`.
+  - Pattern masking: common secret formats are detected and masked (GitHub PATs `gh[pouse]_...`, JWTs, `Bearer ...`, AWS keys, Stripe, Slack, URL basic auth, etc.).
+  - Implementation details in `src/utils/redact.ts`; `DEFAULT_MASK` is `REDACTED`.
+- Helper APIs: `redactString(str)`, `redactObject(obj)`, `redactEnv(process.env)`, and `buildRedactor(...)` for customization.
+- Best practices:
+  - Pass tokens via secrets (e.g., GitHub Actions `secrets.*`), not plain env echoed in scripts.
+  - When debugging, log `redactEnv()` output rather than raw `process.env`.
+
 ## 6) Extensibility Model
 - Plugins: Node-based plugins with lifecycle hooks: `preNormalize`, `postNormalize`, `enrich`, `classify`, `route`.
 - Hooks: event pipeline stages; synchronous and async.
