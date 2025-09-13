@@ -1,15 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Ensure dependencies
-"$(dirname "$0")/install.sh"
+ROOT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 
-# Build according to project stack
-if [ -f package.json ]; then
-  echo "[build] Running npm build..."
-  npm run build
+bash "$ROOT_DIR/scripts/install.sh"
+
+if [ -f "$ROOT_DIR/package.json" ] && command -v npm >/dev/null 2>&1; then
+  echo "[build] Running npm run build"
+  (cd "$ROOT_DIR" && npm run -s build)
 else
-  echo "[build] No package.json found. Nothing to build."
+  echo "[build] No Node build configured; skipping"
 fi
-
-echo "[build] Done."

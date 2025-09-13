@@ -1,3 +1,16 @@
+## 1.0.0-a5c-main.3 (2025-09-13)
+
+* fix(build): repair package.json EJSONPARSE and resolve merge artifacts\n\n- Remove stray bracket in  ([9b2ea80](https://github.com/a5c-ai/events/commit/9b2ea80))
+* ✨ Backend: NE normalize + enrich (fixes #75, #76) (#80) ([6b9e40b](https://github.com/a5c-ai/events/commit/6b9e40b)), closes [#75](https://github.com/a5c-ai/events/issues/75) [#76](https://github.com/a5c-ai/events/issues/76) [#80](https://github.com/a5c-ai/events/issues/80) [#75](https://github.com/a5c-ai/events/issues/75) [#76](https://github.com/a5c-ai/events/issues/76) [#75](https://github.com/a5c-ai/events/issues/75) [#76](https://github.com/a5c-ai/events/issues/76) [#75](https://github.com/a5c-ai/events/issues/75) [#76](https://github.com/a5c-ai/events/issues/76)
+* ✨ Wire enrich() to GitHub enrichment + mentions ([aaedefc](https://github.com/a5c-ai/events/commit/aaedefc)), closes [#76](https://github.com/a5c-ai/events/issues/76)
+* 🧩 Backend: Align normalize() with NE schema (fixes #75) (#83) ([66ba498](https://github.com/a5c-ai/events/commit/66ba498)), closes [#75](https://github.com/a5c-ai/events/issues/75) [#83](https://github.com/a5c-ai/events/issues/83)
+* 🚀 CI: Test install via npx from GitHub Packages (fixes #81) (#82) ([c4087e5](https://github.com/a5c-ai/events/commit/c4087e5)), closes [#81](https://github.com/a5c-ai/events/issues/81) [#82](https://github.com/a5c-ai/events/issues/82)
+* 🚦 tests: CLI normalize/enrich smoke + schema compile (issue #77) (#84) ([2f8b78e](https://github.com/a5c-ai/events/commit/2f8b78e)), closes [#77](https://github.com/a5c-ai/events/issues/77) [#84](https://github.com/a5c-ai/events/issues/84)
+* Update a5c.yml ([10360ce](https://github.com/a5c-ai/events/commit/10360ce))
+* rebase: resolve conflicts; prefer enriched CLI, types, normalize; keep workflow filters and CI scrip ([ce13ba9](https://github.com/a5c-ai/events/commit/ce13ba9))
+* docs: 🧭 producer scan report (issue #74) – phase, gaps, proposed issues (#79) ([d1a2615](https://github.com/a5c-ai/events/commit/d1a2615)), closes [#74](https://github.com/a5c-ai/events/issues/74) [#79](https://github.com/a5c-ai/events/issues/79)
+* docs(producer): generic scan log for issue #88 ([160d3df](https://github.com/a5c-ai/events/commit/160d3df)), closes [#88](https://github.com/a5c-ai/events/issues/88) [#89](https://github.com/a5c-ai/events/issues/89) [#90](https://github.com/a5c-ai/events/issues/90) [#91](https://github.com/a5c-ai/events/issues/91) [#92](https://github.com/a5c-ai/events/issues/92)
+
 ## 1.0.0-a5c-main.2 (2025-09-13)
 
 * 🚑 ci: fix Release install failure; modernize a5c skip flag (#71) ([e621488](https://github.com/a5c-ai/events/commit/e621488)), closes [#71](https://github.com/a5c-ai/events/issues/71)
@@ -10,7 +23,6 @@
 * merge: resolve conflicts for TS/Vitest scaffold and project config ([51c703e](https://github.com/a5c-ai/events/commit/51c703e))
 * merge: resolve package.json and regenerate package-lock.json ([01ae64a](https://github.com/a5c-ai/events/commit/01ae64a))
 * merge: unify install/build/test scripts to npm flow ([34cfbb7](https://github.com/a5c-ai/events/commit/34cfbb7))
-
 ## 1.0.0-a5c-main.1 (2025-09-13)
 
 * ✅ Validate & merge: specs+tech+CLI scaffold ([5744a6a](https://github.com/a5c-ai/events/commit/5744a6a))

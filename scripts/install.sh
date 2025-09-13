@@ -8,12 +8,10 @@ if [ -f package.json ]; then
     corepack enable || true
   fi
   if [ -f package-lock.json ]; then
-    npm ci
+    npm ci || npm install
   else
     npm install
   fi
-else
-  echo "[install] No package.json found. Skipping npm install."
 fi
 
 if [ -f requirements.txt ]; then
