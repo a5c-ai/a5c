@@ -57,7 +57,7 @@ events enrich --in FILE [--out FILE] [--rules FILE] [--flag KEY=VAL...] [--use-g
 - `--out FILE`: write result JSON (stdout if omitted)
 - `--rules FILE`: YAML/JSON rules file (optional)
 - `--flag KEY=VAL...`: enrichment flags (repeatable); notable flags:
-  - `include_patch`: include diff patches in files [default: `true`]
+  - `include_patch`: include diff patches in files [default: `false`]
   - `commit_limit`: max commits to include [default: `50`]
   - `file_limit`: max files to include [default: `200`]
 - `--use-github`: enable GitHub API enrichment (requires `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`)
