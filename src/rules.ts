@@ -1,5 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import YAML from 'yaml'
 
 export type RuleCondition =
   | { path: string; equals?: any; in?: any[]; contains?: any }
@@ -24,69 +25,17 @@ export function loadRules(file?: string): RuleSpec[] {
   const p = path.resolve(process.cwd(), file)
   if (!fs.existsSync(p)) return []
   const raw = fs.readFileSync(p, 'utf8')
-  const isJSON = /\.json$/i.test(p)
-  if (isJSON) {
-    const parsed = JSON.parse(raw)
-    return Array.isArray(parsed) ? parsed : [parsed]
-  }
-  // Minimal YAML loader for simple lists and key: value (no anchors, etc.).
-  // For MVP we support JSON superset via try/catch, else a naive YAML using `---` and `-` list parsing.
+  // Try JSON first
   try {
-    // Attempt JSON first in case YAML is actually JSON
     const parsed = JSON.parse(raw)
     return Array.isArray(parsed) ? parsed : [parsed]
   } catch {}
-  // Very small YAML subset: either an array of items beginning with '- ' or a single map of simple scalars/arrays
-  const lines = raw.split(/\r?\n/)
-  const items: any[] = []
-  let current: any = null
-  for (let line of lines) {
-    const t = line.trim()
-    if (!t || t.startsWith('#')) continue
-    if (t.startsWith('- ')) {
-      if (current) items.push(current)
-      current = {}
-      line = t.slice(2)
-      if (line.includes(':')) {
-        const [k, v] = splitKeyVal(line)
-        if (k) current[k] = parseScalar(v)
-      }
-    } else if (current) {
-      if (/^\w[\w_-]*:\s*/.test(t)) {
-        const [k, v] = splitKeyVal(t)
-        if (k) current[k] = parseScalar(v)
-      }
-    }
-  }
-  if (current) items.push(current)
-  return items as RuleSpec[]
+  // YAML fallback
+  const y = YAML.parse(raw)
+  return Array.isArray(y) ? (y as RuleSpec[]) : [y as RuleSpec]
 }
 
-function splitKeyVal(s: string): [string, string] {
-  const idx = s.indexOf(':')
-  if (idx === -1) return [s.trim(), '']
-  return [s.slice(0, idx).trim(), s.slice(idx + 1).trim()]
-}
-
-function parseScalar(v: string): any {
-  if (!v) return null
-  // strip quotes
-  if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) v = v.slice(1, -1)
-  // booleans
-  const low = v.toLowerCase()
-  if (low === 'true') return true
-  if (low === 'false') return false
-  // number
-  const n = Number(v)
-  if (String(n) === v || String(n) === low) return n
-  // arrays like [a,b]
-  if (v.startsWith('[') && v.endsWith(']')) {
-    const inner = v.slice(1, -1).trim()
-    if (!inner) return []
-    return inner.split(',').map((s) => parseScalar(s.trim()))
-  }
-  return v
-}
+// removed naive YAML helpers; using 'yaml' package for reliability
 
 export function evaluateRules(obj: any, rules: RuleSpec[]): RuleMatch[] {
   const matches: RuleMatch[] = []
@@ -110,7 +59,15 @@ function evalCond(obj: any, c: RuleCondition): boolean {
   if ('in' in c) return Array.isArray((c as any).in) && (c as any).in.includes(val)
   if ('contains' in c) {
     const needle = (c as any).contains
-    if (Array.isArray(val)) return val.includes(needle)
+    if (Array.isArray(val)) {
+      // allow arrays of primitives or objects (check common 'name' prop)
+      return val.some((it) => {
+        if (it == null) return false
+        if (typeof it === 'string' || typeof it === 'number' || typeof it === 'boolean') return String(it) === String(needle)
+        if (typeof it === 'object' && 'name' in it) return String((it as any).name) === String(needle)
+        return false
+      })
+    }
     if (typeof val === 'string') return val.includes(String(needle))
     return false
   }
@@ -152,4 +109,3 @@ function getByPath(obj: any, p: string): any {
 function deepEquals(a: any, b: any): boolean {
   return JSON.stringify(a) === JSON.stringify(b)
 }
-
