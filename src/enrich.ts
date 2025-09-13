@@ -1,6 +1,7 @@
 import type { NormalizedEvent, Mention } from './types.js'
 import { readJSONFile, loadConfig } from './config.js'
 import { extractMentions } from './extractor.js'
+import { evaluateRules, loadRules } from './rules.js'
 
 export async function handleEnrich(opts: {
   in?: string
@@ -75,6 +76,25 @@ export async function handleEnrich(opts: {
       derived: { ...(neShell.enriched?.derived || {}), flags: opts.flags || {} },
       ...(mentions.length ? { mentions } : {})
     }
+  }
+  // Evaluate composed event rules (if provided)
+  try {
+    const rules = loadRules(opts.rules)
+    if (rules.length) {
+      // Build evaluation object: combine NE + enriched.github for convenience
+      const evalObj: any = {
+        ...output,
+        enriched: output.enriched,
+        labels: output.labels || [],
+      }
+      const composed = evaluateRules(evalObj, rules).map((m) => ({ key: m.key, targets: m.targets || [], data: m.data, labels: m.labels || [] }))
+      if (composed.length) (output as any).composed = composed
+    }
+  } catch (e) {
+    // do not fail enrichment on rules errors; record under enriched.metadata
+    const meta: any = (output.enriched as any).metadata || {}
+    meta.rules_error = String((e as any)?.message || e)
+    ;(output.enriched as any).metadata = meta
   }
   return { code: 0, output }
 }
