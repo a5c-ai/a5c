@@ -51,6 +51,18 @@ export async function handleEnrich(opts: {
       if (githubEnrichment.push?.files) {
         githubEnrichment.push.files = githubEnrichment.push.files.map((f: any) => ({ ...f, patch: undefined }))
       }
+    } else {
+      // Ensure a defined patch key when include_patch=true so callers can rely on presence
+      if (githubEnrichment.pr?.files) {
+        githubEnrichment.pr.files = githubEnrichment.pr.files.map((f: any) => (
+          Object.prototype.hasOwnProperty.call(f, 'patch') ? f : { ...f, patch: '' }
+        ))
+      }
+      if (githubEnrichment.push?.files) {
+        githubEnrichment.push.files = githubEnrichment.push.files.map((f: any) => (
+          Object.prototype.hasOwnProperty.call(f, 'patch') ? f : { ...f, patch: '' }
+        ))
+      }
     }
   } catch (e: any) {
     githubEnrichment = { provider: 'github', partial: true, errors: [{ message: String(e?.message || e) }] }
