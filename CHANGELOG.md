@@ -1,3 +1,16 @@
+## 1.0.0-a5c-main.2 (2025-09-13)
+
+* 🚑 ci: fix Release install failure; modernize a5c skip flag (#71) ([e621488](https://github.com/a5c-ai/events/commit/e621488)), closes [#71](https://github.com/a5c-ai/events/issues/71)
+* Merge pull request #63 from a5c-ai/feat/testing-ci-vitest-issue49 ([fb5034a](https://github.com/a5c-ai/events/commit/fb5034a)), closes [#63](https://github.com/a5c-ai/events/issues/63) [#49](https://github.com/a5c-ai/events/issues/49)
+* Update a5c.yml (#72) ([3924ba2](https://github.com/a5c-ai/events/commit/3924ba2)), closes [#72](https://github.com/a5c-ai/events/issues/72)
+* docs(dev): start log for testing/ci setup for #49 ([e488ca6](https://github.com/a5c-ai/events/commit/e488ca6)), closes [#49](https://github.com/a5c-ai/events/issues/49)
+* docs(validation): note low-priority follow-up to improve tests coverage for config + CLI\n\nBy: vali ([874b90e](https://github.com/a5c-ai/events/commit/874b90e))
+* docs(validation): PR #63 notes – CI/tests scaffold review\n\nBy: validator-agent(https://app.a5c.ai/ ([385bbe6](https://github.com/a5c-ai/events/commit/385bbe6))
+* fix: add missing deps (commander, dotenv) and strict type for CLI; ensure build passes\n\nBy: valida ([d2d969f](https://github.com/a5c-ai/events/commit/d2d969f))
+* merge: resolve conflicts for TS/Vitest scaffold and project config ([51c703e](https://github.com/a5c-ai/events/commit/51c703e))
+* merge: resolve package.json and regenerate package-lock.json ([01ae64a](https://github.com/a5c-ai/events/commit/01ae64a))
+* merge: unify install/build/test scripts to npm flow ([34cfbb7](https://github.com/a5c-ai/events/commit/34cfbb7))
+
 ## 1.0.0-a5c-main.1 (2025-09-13)
 
 * ✅ Validate & merge: specs+tech+CLI scaffold ([5744a6a](https://github.com/a5c-ai/events/commit/5744a6a))
