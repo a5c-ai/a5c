@@ -5,7 +5,7 @@ Operational and product metrics to validate the MVP. Targets reflect `docs/specs
 ## Performance
 - Normalization latency (p50/p95)
   - Target: <200ms p50 simple payloads; <2s p95 large `workflow_run`.
-  - Measure: `/usr/bin/time -f "%E %M" npx @a5c/events normalize --in payload.json > /dev/null`.
+  - Measure: `/usr/bin/time -f "%E %M" npx @a5c-ai/events normalize --in payload.json > /dev/null`.
 - Enrichment latency (p50/p95)
   - Target: <1.5s p95 for typical PR with <=50 changed files.
   - Measure: `events enrich --in pr.json` with sampling.
@@ -41,11 +41,11 @@ Operational and product metrics to validate the MVP. Targets reflect `docs/specs
 ## Example Commands
 ```bash
 # Normalize a sample
-npx @a5c/events normalize --in samples/workflow_run.completed.json --out out.json
+npx @a5c-ai/events normalize --in samples/workflow_run.completed.json --out out.json
 jq '.type, .repo.full_name, .provenance.workflow.name' out.json
 
 # Enrich and select key fields
-npx @a5c/events enrich --in samples/pull_request.synchronize.json \
+npx @a5c-ai/events enrich --in samples/pull_request.synchronize.json \
   --select type,repo.full_name,enriched.github.pr.mergeable_state > out.json
 jq '.enriched.github.pr.has_conflicts' out.json
 ```
