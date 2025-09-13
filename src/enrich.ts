@@ -64,7 +64,9 @@ export async function handleEnrich(opts: {
     }
     const commentBody = (baseEvent as any)?.comment?.body
     if (commentBody) mentions.push(...extractMentions(String(commentBody), 'issue_comment'))
-  } catch {}
+  } catch (_e) {
+    /* intentional: mention extraction is best-effort */
+  }
 
   const output: NormalizedEvent = {
     ...(neShell as any),

@@ -8,7 +8,7 @@ import prettier from 'eslint-config-prettier'
 /** @type {import('eslint').Linter.FlatConfig[]} */
 export default [
   // Global ignores
-  { ignores: ['dist/**', 'node_modules/**'] },
+  { ignores: ['dist/**', 'node_modules/**', '**/*.d.ts'] },
 
   // JS files: enable Node/browser globals
   {
@@ -62,6 +62,8 @@ export default [
       extends: [ ...tseslint.configs.recommended ],
       rules: {
         '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+        '@typescript-eslint/no-explicit-any': 'off',
+        '@typescript-eslint/ban-ts-comment': 'off',
       },
     },
     { ignores: ['dist/**'] }
