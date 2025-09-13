@@ -49,6 +49,7 @@ Examples:
 export GITHUB_TOKEN=...  # required for GitHub API lookups
 
 events enrich --in samples/pull_request.synchronize.json \
+  --use-github \
   --select type,repo.full_name,enriched.github.pr.mergeable_state
 ```
 
