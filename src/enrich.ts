@@ -86,7 +86,7 @@ export async function handleEnrich(opts: {
     const commentBody = (baseEvent as any)?.comment?.body
     if (commentBody) mentions.push(...extractMentions(String(commentBody), 'issue_comment'))
   } catch {
-    // ignore mention extraction errors from optional fields
+    // ignore mention extraction errors from optional/text fields
     void 0
   }
 
@@ -183,7 +183,9 @@ export async function handleEnrich(opts: {
       const codeMentions = await scanCodeCommentsForMentions({ owner, repo, ref, files, octokit, options: { fileSizeCapBytes: 200 * 1024, languageFilters: ['js','ts','md'] } })
       if (codeMentions.length) mentions.push(...codeMentions)
     }
-  } catch {}
+  } catch {
+    // ignore code comment scanning failures; treated as best-effort enrichment
+  }
 
   const output: NormalizedEvent = {
     ...(neShell as any),
