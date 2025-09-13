@@ -1,18 +1,32 @@
 #!/usr/bin/env node
 import { Command, Option } from 'commander'
 import fs from 'node:fs'
+import util from 'node:util'
 import { extractMentions } from './extractor.js'
 import type { ExtractorOptions, MentionSource } from './types.js'
 import { loadConfig, writeJSONFile } from './config.js'
 import { normalizeCommand } from './commands/normalize.js'
 import { enrichCommand } from './commands/enrich.js'
 import { redactObject } from './utils/redact.js'
+import { getVersionSync } from './version.js'
 
 const program = new Command()
 program
   .name('events')
   .description('Events CLI - mentions, normalize and enrich')
-  .version('0.1.0')
+  .version(getVersionSync())
+  .option('--verbose', 'increase log verbosity (stderr)')
+
+function logv(...args: any[]) {
+  const rootOpts = (program as any).opts?.() ?? {}
+  if (!rootOpts.verbose) return
+  try {
+    const msg = args.length === 1 && typeof args[0] === 'string' ? args[0] : util.format.apply(null as any, args as any)
+    process.stderr.write(String(msg) + '\n')
+  } catch {
+    // ignore
+  }
+}
 
 program
   .command('mentions')
@@ -29,6 +43,7 @@ program
     } else {
       text = fs.readFileSync(0, 'utf8') // stdin
     }
+    logv('[mentions] source=%s file=%s', src, opts.file || '<stdin>')
     const options: ExtractorOptions = {
       window: opts.window,
       knownAgents: opts.knownAgent || opts.knownAgents || [],
@@ -49,6 +64,7 @@ program
   .action(async (cmdOpts: any) => {
     const cfg = loadConfig()
     void cfg // currently unused but reserved for future needs
+    logv('[normalize] in=%s labels=%d', cmdOpts.in || '<stdin>', (cmdOpts.label || []).length || 0)
     const labels = Object.entries(cmdOpts.label || {}).map(([k, v]) => `${k}=${v}`)
     const { code, output } = await normalizeCommand({
       in: cmdOpts.in,
@@ -83,6 +99,7 @@ program
   .action(async (cmdOpts: any) => {
     const flags = { ...(cmdOpts.flag || {}) }
     if (cmdOpts.useGithub || cmdOpts['use-github']) flags.use_github = 'true'
+    logv('[enrich] in=%s rules=%s useGithub=%s labels=%d', cmdOpts.in || '<stdin>', cmdOpts.rules || '-', String(flags.use_github === 'true'), (cmdOpts.label || []).length || 0)
     const labels = Object.entries(cmdOpts.label || {}).map(([k, v]) => `${k}=${v}`)
     const { code, output } = await enrichCommand({
       in: cmdOpts.in,
