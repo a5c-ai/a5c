@@ -82,9 +82,8 @@ function inferRef(p?: AnyObj): AnyObj | undefined {
     const pr = p.pull_request;
     return {
       name: pr.head?.ref,
-      // NE schema allows: branch | tag | unknown | null
-      // For pull_request, the ref points to a branch
-      type: 'branch',
+      // For pull_request, use explicit PR ref type per NE schema update
+      type: 'pr',
       head: pr.head?.ref,
       base: pr.base?.ref,
     };
