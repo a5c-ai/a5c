@@ -82,6 +82,7 @@ function inferRef(p?: AnyObj): AnyObj | undefined {
     const pr = p.pull_request;
     return {
       name: pr.head?.ref,
+      // For pull_request, use explicit PR ref type per NE schema update
       type: 'pr',
       head: pr.head?.ref,
       base: pr.base?.ref,
@@ -111,7 +112,7 @@ function buildProvenance(p?: AnyObj, source?: string): AnyObj | undefined {
   const prov: AnyObj = { source: source || 'cli' };
   if (p?.workflow_run) {
     const wr = p.workflow_run;
-    // Schema only allows name and run_id here
+    // Limit workflow provenance to NE schema allowed fields { name, run_id }
     prov.workflow = { name: wr.name, run_id: wr.id };
   }
   return prov;
