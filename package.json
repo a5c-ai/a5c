@@ -1,6 +1,6 @@
 {
   "name": "@a5c-ai/events",
-  "version": "0.1.0",
+  "version": "1.0.0-a5c-main.1",
   "description": "Events SDK and CLI for normalizing and enriching repo/CI events for agentic workflows",
   "type": "module",
   "private": false,
@@ -45,7 +45,14 @@
   "bugs": {
     "url": "https://github.com/a5c-ai/events/issues"
   },
-  "keywords": ["events", "cli", "sdk", "github", "normalization", "enrich"],
+  "keywords": [
+    "events",
+    "cli",
+    "sdk",
+    "github",
+    "normalization",
+    "enrich"
+  ],
   "author": "a5c.ai",
   "license": "Apache-2.0",
   "devDependencies": {
