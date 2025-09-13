@@ -54,3 +54,34 @@ jobs:
           node -v
           npm -v
           npx -y @a5c-ai/events@latest --version || true
+
+      - name: Smoke – normalize sample payload
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+          NPM_CONFIG_USERCONFIG: ${{ env.NPM_CONFIG_USERCONFIG }}
+        run: |
+          npx -y @a5c-ai/events@latest normalize \
+            --in samples/workflow_run.completed.json \
+            --out out.normalize.json
+          # basic shape checks
+          jq -e '.type == "workflow_run"' out.normalize.json >/dev/null
+          jq -e '.repo and .provenance and .payload' out.normalize.json >/dev/null
+
+      - name: Smoke – enrich sample payload
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+          NPM_CONFIG_USERCONFIG: ${{ env.NPM_CONFIG_USERCONFIG }}
+        run: |
+          npx -y @a5c-ai/events@latest enrich \
+            --in samples/pull_request.synchronize.json \
+            --out out.enrich.json
+          # enriched structure exists
+          jq -e '.enriched and .payload and (.labels // []) != null' out.enrich.json >/dev/null
+
+      - name: Upload npx smoke artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: packages-npx-test-artifacts
+          path: |
+            out.normalize.json
+            out.enrich.json
