@@ -2,7 +2,7 @@ import type { NormalizedEvent, Mention } from './types.js'
 import { readJSONFile, loadConfig } from './config.js'
 import { extractMentions } from './extractor.js'
 import { scanMentionsInCodeComments } from './utils/commentScanner.js'
-import { evaluateRules, loadRules } from './rules.js'
+import { evaluateRules, evaluateRulesDetailed, loadRules } from './rules.js'
 import { scanCodeCommentsForMentions } from './codeComments.js'
 
 export async function handleEnrich(opts: {
@@ -187,7 +187,7 @@ export async function handleEnrich(opts: {
     enriched: {
       ...(neShell.enriched || {}),
       github: githubEnrichment,
-      metadata: { ...(neShell.enriched?.metadata || {}), rules: opts.rules || null },
+      metadata: { ...(neShell.enriched?.metadata || {}), rules: opts.rules },
       derived: { ...(neShell.enriched?.derived || {}), flags: opts.flags || {} },
       ...(mentions.length ? { mentions } : {})
     }
@@ -196,20 +196,16 @@ export async function handleEnrich(opts: {
   try {
     const rules = loadRules(opts.rules)
     if (rules.length) {
-      // Build evaluation object: combine NE + enriched.github for convenience
-      const evalObj: any = {
-        ...output,
-        enriched: output.enriched,
-        labels: output.labels || [],
-      }
-      const composed = evaluateRules(evalObj, rules).map((m) => ({ key: m.key, targets: m.targets || [], data: m.data, labels: m.labels || [] }))
-      if (composed.length) (output as any).composed = composed
+      const evalObj: any = { ...output, enriched: output.enriched, labels: output.labels || [] }
+      const res = evaluateRulesDetailed(evalObj, rules)
+      if (res?.composed?.length) (output as any).composed = res.composed
+      const meta: any = (output.enriched as any).metadata || {}
+      ;(output.enriched as any).metadata = { ...meta, rules_status: res.status }
     }
   } catch (e) {
     // do not fail enrichment on rules errors; record under enriched.metadata
     const meta: any = (output.enriched as any).metadata || {}
-    meta.rules_error = String((e as any)?.message || e)
-    ;(output.enriched as any).metadata = meta
+    ;(output.enriched as any).metadata = { ...meta, rules_status: { ok: false, warnings: [String((e as any)?.message || e)] } }
   }
   return { code: 0, output }
 }
