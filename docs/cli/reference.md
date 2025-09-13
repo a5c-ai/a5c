@@ -36,11 +36,11 @@ events normalize [--in FILE] [--out FILE] [--source NAME] [--select PATHS] [--fi
 ```
 
 - `--in FILE`: path to a JSON webhook payload
-- `--source actions`: when `--in` is not provided, reads the payload from the
-  `GITHUB_EVENT_PATH` file exposed by GitHub Actions. Emits a clear error when
-  the environment variable is missing.
 - `--out FILE`: write result JSON (stdout if omitted)
-- `--source NAME`: provenance (`actions|webhook|cli`) [default: `cli`]
+- `--source NAME`: provenance (`actions|webhook|cli`) [default: `cli`]. When `NAME=actions` and
+  `--in` is omitted, the CLI reads the payload from the `GITHUB_EVENT_PATH` file provided by
+  GitHub Actions. If the environment variable is missing, it prints a clear error to stderr and
+  exits with code `2`.
 - `--select PATHS`: comma-separated dot paths to include in output (post-processing)
 - `--filter EXPR`: filter expression `path[=value]`; if it fails, exits with code `2` and no output
 - `--label KEY=VAL...`: attach labels (repeatable)
