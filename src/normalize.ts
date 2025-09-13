@@ -32,6 +32,19 @@ export async function handleNormalize(opts: {
     labels: opts.labels || [],
     provenance: { source: provenanceSource }
   }
+
+  // Add workflow provenance details when available (NE optional but requested)
+  if (type === 'workflow_run' && payload?.workflow_run) {
+    const wr = payload.workflow_run as AnyObj
+    const wfName = String(wr.name || '')
+    const runId = wr.id ?? wr.run_id ?? undefined
+    if (wfName || runId) {
+      ;(output.provenance as AnyObj).workflow = {
+        ...(wfName ? { name: wfName } : {}),
+        ...(runId != null ? { run_id: runId } : {})
+      }
+    }
+  }
   return { code: 0, output }
 }
 

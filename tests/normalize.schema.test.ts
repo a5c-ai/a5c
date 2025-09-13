@@ -17,6 +17,9 @@ describe('normalize → NE schema shape (smoke)', () => {
     expect(output.actor?.login).toBeTruthy()
     expect(Array.isArray(output.labels)).toBe(true)
     expect(output.provenance?.source).toBe('cli')
+    // Optional workflow provenance when workflow_run is present
+    expect(output.provenance?.workflow?.name).toBe('Build')
+    expect(String(output.provenance?.workflow?.run_id || '')).toBeTruthy()
   })
 
   it('pull_request sample sets ref base/head and labels preserved', async () => {
@@ -40,4 +43,3 @@ describe('normalize → NE schema shape (smoke)', () => {
     expect(output.actor?.login).toBeTruthy()
   })
 })
-
