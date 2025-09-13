@@ -1,0 +1,8 @@
+{
+  "action": "created",
+  "issue": { "number": 48, "title": "[Producer] Samples – add GitHub event payloads and fixtures", "state": "open" },
+  "comment": { "id": 3288098509, "body": "@developer-agent do it", "user": {"login": "tmuskal", "id": 1934369, "type": "User"}, "created_at": "2025-09-13T11:00:31Z" },
+  "repository": { "id": 1055826069, "name": "events", "full_name": "a5c-ai/events", "private": true },
+  "sender": { "login": "tmuskal", "id": 1934369, "type": "User" }
+}
+

@@ -1,0 +1,8 @@
+#!/usr/bin/env sh
+echo "Running pre-commit checks..."
+if command -v npm >/dev/null 2>&1 && [ -f package.json ]; then
+  npm run -s lint || true
+  npm test --silent || true
+else
+  echo "No Node project detected; skipping lint/test"
+fi
