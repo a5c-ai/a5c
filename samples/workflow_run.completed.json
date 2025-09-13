@@ -1,0 +1,38 @@
+{
+  "action": "completed",
+  "workflow_run": {
+    "id": 1234567890,
+    "name": "Build",
+    "run_number": 42,
+    "run_attempt": 1,
+    "event": "push",
+    "status": "completed",
+    "conclusion": "success",
+    "head_branch": "a5c/main",
+    "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "pull_requests": [],
+    "created_at": "2025-09-13T10:40:00Z",
+    "updated_at": "2025-09-13T10:44:59Z",
+    "html_url": "https://github.com/a5c-ai/events/actions/runs/1234567890",
+    "url": "https://api.github.com/repos/a5c-ai/events/actions/runs/1234567890",
+    "repository": {
+      "id": 1055826069,
+      "name": "events",
+      "full_name": "a5c-ai/events",
+      "private": true
+    }
+  },
+  "repository": {
+    "id": 1055826069,
+    "name": "events",
+    "full_name": "a5c-ai/events",
+    "private": true,
+    "default_branch": "a5c/main"
+  },
+  "sender": {
+    "id": 221166651,
+    "login": "a5c-ai[bot]",
+    "type": "Bot"
+  }
+}
+
