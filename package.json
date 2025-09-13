@@ -1,39 +1,54 @@
 {
   "name": "@a5c/events",
   "version": "0.1.0",
+  "description": "Events SDK and CLI for normalizing and enriching repo/CI events for agentic workflows",
+  "type": "module",
   "private": true,
-  "description": "Events SDK and CLI to normalize and enrich repository and CI/CD events for agentic workflows.",
   "bin": {
     "events": "dist/cli.js"
   },
-  "type": "module",
-  "scripts": {
-    "preinstall": "node -e \"process.exit(0)\"",
-    "prepare": "husky install || true",
-    "dev:setup": "bash ./scripts/dev-setup.sh",
-    "build": "tsc -p tsconfig.json && node ./scripts/build-post.js || true",
-    "test": "node -e \"console.log('no tests yet')\"",
-    "lint": "eslint . --ext .ts --max-warnings=0 || true",
-    "format": "prettier -w .",
-    "start": "node dist/cli.js",
-    "dev": "tsx src/cli.ts",
-    "check": "npm run build && npm test"
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
+  },
+  "scripts": {
+    "prepare": "npm run build",
+    "build": "tsc -p tsconfig.json",
+    "build:clean": "rimraf dist && npm run build",
+    "lint": "eslint . --ext .ts",
+    "format": "prettier -w .",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run --passWithNoTests",
+    "dev": "tsx watch src/cli.ts -- --help",
+    "cli": "node dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": ["events", "cli", "sdk", "github", "normalization", "enrich"],
+  "author": "a5c.ai",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@types/node": "^22.7.4",
+    "eslint": "^9.10.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-import": "^2.29.1",
+    "prettier": "^3.3.3",
+    "rimraf": "^5.0.5",
+    "tsx": "^4.19.1",
+    "typescript": "5.9.2",
+    "vitest": "^2.0.5"
   },
   "dependencies": {
-    "yargs": "^17.7.2"
-  },
-  "devDependencies": {
-    "@types/node": "^20.14.10",
-    "@types/yargs": "^17.0.33",
-    "eslint": "^9.11.1",
-    "eslint-config-prettier": "^9.1.0",
-    "husky": "^9.1.6",
-    "prettier": "^3.3.3",
-    "tsx": "^4.19.1",
-    "typescript": "^5.6.2"
+    "commander": "^12.1.0",
+    "dotenv": "^16.4.5",
+    "yaml": "^2.5.0"
   }
 }
-
