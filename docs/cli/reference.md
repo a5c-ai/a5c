@@ -80,6 +80,7 @@ events enrich --in samples/pull_request.synchronize.json \
 ## Global / Built-in Flags
 - `--help`: show command help
 - `--version`: print version
+- `--verbose`: increase log verbosity (writes diagnostics to stderr)
 
 ## Exit Codes
 - `0`: success (commands exit with non-zero when errors occur)
