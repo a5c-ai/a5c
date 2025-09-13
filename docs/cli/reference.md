@@ -32,7 +32,7 @@ Normalize a raw event payload into the NE schema.
 
 Usage:
 ```bash
-events normalize [--in FILE | --source actions] [--out FILE] [--source NAME] [--select PATHS] [--filter EXPR] [--label KEY=VAL...]
+events normalize [--in FILE] [--out FILE] [--source NAME] [--select PATHS] [--filter EXPR] [--label KEY=VAL...]
 ```
 
 - `--in FILE`: path to a JSON webhook payload
