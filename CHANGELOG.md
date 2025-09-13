@@ -1,3 +1,12 @@
+## 1.0.0-a5c-main.5 (2025-09-13)
+
+* 🚑 build: NE schema compatibility for GitHub normalization (#102) ([13f5b2a](https://github.com/a5c-ai/events/commit/13f5b2a)), closes [#102](https://github.com/a5c-ai/events/issues/102)
+* 🚑 CI: fix npx auth/registry for GPR (Packages Npx Test) (#100) ([89cb3f9](https://github.com/a5c-ai/events/commit/89cb3f9)), closes [#100](https://github.com/a5c-ai/events/issues/100)
+* Merge pull request #103 from a5c-ai/fix/ci-npx-gpr-npx-scope ([3eb00d3](https://github.com/a5c-ai/events/commit/3eb00d3)), closes [#103](https://github.com/a5c-ai/events/issues/103)
+* Merge pull request #105 from a5c-ai/fix/cli-tests-build-issue-104 ([71e205c](https://github.com/a5c-ai/events/commit/71e205c)), closes [#105](https://github.com/a5c-ai/events/issues/105) [#104](https://github.com/a5c-ai/events/issues/104)
+* fix(tests): ensure CLI dist build exists before tests by adding pretest script\n\n- Add  to run ([aa89f7c](https://github.com/a5c-ai/events/commit/aa89f7c))
+* ci(packages): npx GPR fix — rely on project .npmrc scope; avoid global GPR registry; pass NPM_CONFIG ([cc6183c](https://github.com/a5c-ai/events/commit/cc6183c))
+
 ## 1.0.0-a5c-main.4 (2025-09-13)
 
 * 🧹 Docs: README quickstart examples (schema validation + mentions) ([36e0bfd](https://github.com/a5c-ai/events/commit/36e0bfd)), closes [#92](https://github.com/a5c-ai/events/issues/92)
