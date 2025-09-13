@@ -5,7 +5,17 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     coverage: {
-      reporter: ['text', 'lcov'],
+      reporter: ['text', 'lcov', 'json-summary'],
+      provider: 'v8',
+      all: true,
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: ['**/*.d.ts', 'dist/**', 'node_modules/**', 'coverage/**'],
+      thresholds: {
+        lines: 60,
+        branches: 55,
+        functions: 60,
+        statements: 60,
+      },
     },
     // TS-first tests; legacy JS stubs are intentionally not included
     include: [
@@ -15,4 +25,3 @@ export default defineConfig({
     exclude: ['dist/**', 'node_modules/**']
   }
 })
-

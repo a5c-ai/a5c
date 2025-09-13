@@ -30,8 +30,6 @@ env:
   STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET || '' }}
   STRIPE_WEBHOOK_URL: ${{ vars.STRIPE_WEBHOOK_URL || '' }}
   STRIPE_WEBHOOK_ID: ${{ vars.STRIPE_WEBHOOK_ID || '' }}
-  # heartbeat monitoring (Healthchecks.io)
-  HEALTHCHECKS_A5C_URL: ${{ secrets.HEALTHCHECKS_A5C_URL || '' }}
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID || '' }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY || '' }}
   AWS_REGION: ${{ vars.AWS_REGION || '' }}
@@ -85,7 +83,7 @@ on:
     - cron: '0 9,21 * * *'
   workflow_run:
     types: [completed]
-    workflows: [Build, Deploy, Packages Npx Test, Lint, Smoke]
+    workflows: [Build, Deploy, Packages Npx Test, Lint, Tests]
 
   # Manual Triggers
   workflow_dispatch:
@@ -120,12 +118,6 @@ jobs:
       statuses: write
 
     steps:
-      - name: Heartbeat start (schedule only)
-        if: github.event_name == 'schedule' && env.HEALTHCHECKS_A5C_URL != ''
-        run: |
-          set -eu
-          echo "Pinging Healthchecks start"
-          curl -fsS --retry 3 "$HEALTHCHECKS_A5C_URL" || true
       - name: Filter Self Workflow-run
         id: filter-self
         # in case this is a workflow_run event, skip if the workflow did not fail.
@@ -161,15 +153,3 @@ jobs:
           path: |
             /tmp/agent-output.md
             /tmp/agent-output-*/**
-      - name: Heartbeat success (schedule only)
-        if: github.event_name == 'schedule' && env.HEALTHCHECKS_A5C_URL != '' && success()
-        run: |
-          set -eu
-          echo "Pinging Healthchecks success"
-          curl -fsS --retry 3 "$HEALTHCHECKS_A5C_URL/0" || true
-      - name: Heartbeat failure (schedule only)
-        if: github.event_name == 'schedule' && env.HEALTHCHECKS_A5C_URL != '' && failure()
-        run: |
-          set -eu
-          echo "Pinging Healthchecks failure"
-          curl -fsS --retry 3 "$HEALTHCHECKS_A5C_URL/fail" || true

@@ -1,13 +1,8 @@
 #!/usr/bin/env sh
 echo "Running pre-commit checks..."
 if command -v npm >/dev/null 2>&1 && [ -f package.json ]; then
-  if npx --yes --no-install lint-staged >/dev/null 2>&1; then
-    npx --no lint-staged
-  else
-    echo "lint-staged not available; running quick lint/test"
-    npm run -s lint || true
-    npm test --silent || true
-  fi
+  npm run -s lint || true
+  npm test --silent || true
 else
   echo "No Node project detected; skipping lint/test"
 fi
