@@ -40,7 +40,7 @@ export async function handleEnrich(opts: {
   try {
     const mod: any = await import('./enrichGithubEvent.js')
     const fn = (mod.enrichGithubEvent || mod.default) as (e: any, o?: any) => Promise<any>
-    const enriched = await fn(baseEvent, { token, commitLimit, fileLimit, octokit: opts.octokit, includePatch })
+    const enriched = await fn(baseEvent, { token, commitLimit, fileLimit, octokit: opts.octokit, includePatch: includePatch })
     githubEnrichment = enriched?._enrichment || {}
     if (!includePatch) {
       if (githubEnrichment.pr?.files) {
