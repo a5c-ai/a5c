@@ -66,7 +66,10 @@ export async function handleEnrich(opts: {
     }
     const commentBody = (baseEvent as any)?.comment?.body
     if (commentBody) mentions.push(...extractMentions(String(commentBody), 'issue_comment'))
-  } catch {}
+  } catch {
+    // ignore mention extraction errors from optional fields
+    void 0
+  }
 
   // Mentions from changed files (code comments)
   try {
@@ -113,7 +116,10 @@ export async function handleEnrich(opts: {
         mentions.push(...found)
       }
     }
-  } catch {}
+  } catch {
+    // ignore scanning errors; do not block enrichment
+    void 0
+  }
 
   const output: NormalizedEvent = {
     ...(neShell as any),

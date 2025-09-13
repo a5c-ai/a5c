@@ -29,7 +29,9 @@ export function loadRules(file?: string): RuleSpec[] {
   try {
     const parsed = JSON.parse(raw)
     return Array.isArray(parsed) ? parsed : [parsed]
-  } catch {}
+  } catch {
+    // fall through to YAML parsing
+  }
   // YAML fallback
   const y = YAML.parse(raw)
   return Array.isArray(y) ? (y as RuleSpec[]) : [y as RuleSpec]
@@ -77,10 +79,10 @@ function evalCond(obj: any, c: RuleCondition): boolean {
 function getByPath(obj: any, p: string): any {
   if (!p) return undefined
   // Support prefixes like '$.' or plain path; split by '.' and support basic [*] for arrays flattened
-  let pathStr = p.replace(/^\$\.?/, '')
+  const pathStr = p.replace(/^\$\.?/, '')
   const parts = pathStr.split('.')
   let cur: any = obj
-  for (let part of parts) {
+  for (const part of parts) {
     if (cur == null) return undefined
     const m = part.match(/^(\w[\w_-]*)(\[(\*|\d+)\])?$/)
     if (!m) {
