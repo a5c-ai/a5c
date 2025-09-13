@@ -18,12 +18,14 @@
   },
   "scripts": {
     "prepare": "npm run build",
-    "build": "tsc -p tsconfig.json",
+    "clean": "rimraf dist .turbo .vitest coverage",
+    "build": "tsc -p tsconfig.build.json",
     "build:clean": "rimraf dist && npm run build",
     "lint": "eslint . --ext .ts",
     "format": "prettier -w .",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run",
+    "test:ci": "vitest run --coverage --reporter=dot",
     "dev": "tsx watch src/cli.ts -- --help",
     "cli": "node dist/cli.js",
     "release": "semantic-release"
