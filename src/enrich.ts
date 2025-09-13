@@ -69,12 +69,43 @@ export async function handleEnrich(opts: {
               Object.prototype.hasOwnProperty.call(f, 'patch') ? f : { ...f, patch: '' }
             ))
           }
+let githubEnrichment: any = {}
+const useGithub = toBool(opts.flags?.use_github)
+if (useGithub) {
+  if (!token) {
+    // Flag requested but no token available: mark as partial and do NOT call network
+    githubEnrichment = { provider: 'github', partial: true, errors: [{ message: 'GITHUB_TOKEN missing; skipped API enrichment' }] }
+  } else {
+    try {
+      const mod: any = await import('./enrichGithubEvent.js')
+      const fn = (mod.enrichGithubEvent || mod.default) as (e: any, o?: any) => Promise<any>
+      const enriched = await fn(baseEvent, { token, commitLimit, fileLimit, octokit: opts.octokit, includePatch })
+      githubEnrichment = enriched?._enrichment || {}
+      if (!includePatch) {
+        if (githubEnrichment.pr?.files) {
+          githubEnrichment.pr.files = githubEnrichment.pr.files.map((f: any) => ({ ...f, patch: undefined }))
         }
-      } catch (e: any) {
-        githubEnrichment = { provider: 'github', partial: true, errors: [{ message: String(e?.message || e) }] }
+        if (githubEnrichment.push?.files) {
+          githubEnrichment.push.files = githubEnrichment.push.files.map((f: any) => ({ ...f, patch: undefined }))
+        }
+      } else {
+        // Ensure a defined patch key when include_patch=true so callers can rely on presence
+        if (githubEnrichment.pr?.files) {
+          githubEnrichment.pr.files = githubEnrichment.pr.files.map((f: any) => (
+            Object.prototype.hasOwnProperty.call(f, 'patch') ? f : { ...f, patch: '' }
+          ))
+        }
+        if (githubEnrichment.push?.files) {
+          githubEnrichment.push.files = githubEnrichment.push.files.map((f: any) => (
+            Object.prototype.hasOwnProperty.call(f, 'patch') ? f : { ...f, patch: '' }
+          ))
+        }
       }
+    } catch (e: any) {
+      githubEnrichment = { provider: 'github', partial: true, errors: [{ message: String(e?.message || e) }] }
     }
   }
+}
 
   // Mentions from common text locations
   const mentions: Mention[] = []
@@ -162,6 +193,8 @@ export async function handleEnrich(opts: {
     }
 
     const octokit = useGithub && token ? (opts.octokit || (await import('./enrichGithubEvent.js')).createOctokit?.(token)) : undefined
+    const mod: any = await import('./enrichGithubEvent.js')
+    const octokit = opts.octokit || (useGithub ? mod.createOctokit?.(token) : undefined)
 
     if ((!filesList || !Array.isArray(filesList)) && octokit && owner && repo) {
       // Derive changed files using GitHub API if possible

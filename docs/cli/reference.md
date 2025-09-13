@@ -83,9 +83,7 @@ events enrich --in samples/push.json --out out.json
 jq '.enriched.mentions' out.json
 ```
 
-## Global Flags
-- `--verbose`: increase log verbosity (redaction applied)
-- `--version`: print version
+## Global / Built-in Flags
 - `--help`: show command help
 - `--version`: print version
 
