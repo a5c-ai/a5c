@@ -1,0 +1,49 @@
+name: Packages Npx Test
+
+on:
+  push:
+    branches: [a5c/main]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  test-npx:
+    name: Install and run via npx
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@a5c-ai'
+
+      - name: Configure npm auth (env)
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          echo "registry=https://registry.npmjs.org" >> ~/.npmrc
+          echo "//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}" >> ~/.npmrc
+          echo "@a5c-ai:registry=https://npm.pkg.github.com/" >> ~/.npmrc
+          npm whoami || true
+
+      - name: Run npx package help
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          npx -y @a5c-ai/events --help
+
+      - name: Run npx package version
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          node -v
+          npm -v
+          npx -y @a5c-ai/events --version || true

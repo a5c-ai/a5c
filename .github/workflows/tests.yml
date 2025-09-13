@@ -1,0 +1,27 @@
+name: Tests
+
+on:
+  pull_request:
+    branches: [ a5c/main ]
+  push:
+    branches: [ a5c/main ]
+
+jobs:
+  unit:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      - name: Install
+        run: |
+          ./scripts/install.sh
+      - name: Build
+        run: |
+          ./scripts/build.sh
+      - name: Test
+        run: |
+          ./scripts/test.sh
