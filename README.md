@@ -89,6 +89,35 @@ events enrich --in out.json --out enriched.json
 jq '.enriched' enriched.json
 ```
 
+### Validate against schema
+
+Use the NE JSON Schema at `docs/specs/ne.schema.json` to validate CLI output (example uses ajv-cli):
+
+```bash
+# Normalize a sample workflow_run payload
+events normalize --in samples/workflow_run.completed.json --out out.json
+
+# Validate result against the schema
+npx ajv validate -s docs/specs/ne.schema.json -d out.json --spec=draft2020
+```
+
+### Extract mentions
+
+Extract `@agent`/`@user` mentions from text or a file. From a file:
+
+```bash
+events mentions --source pr_body --file docs/specs/README.md | jq '.[].normalized_target'
+```
+
+Or via stdin:
+
+```bash
+echo "Please route to @developer-agent and @validator-agent" | \
+  events mentions --source issue_comment | jq -r '.[].normalized_target'
+# => developer-agent
+# => validator-agent
+```
+
 ## Configuration
 
 Environment variables:
@@ -126,4 +155,3 @@ This repository initially used a generic a5c platform README. That content now l
 - Specs: `docs/specs/README.md`
 - Issues: https://github.com/a5c-ai/events/issues
 - Agent registry: https://github.com/a5c-ai/registry
-

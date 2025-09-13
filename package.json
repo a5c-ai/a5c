@@ -1,6 +1,6 @@
 {
   "name": "@a5c-ai/events",
-  "version": "1.0.0-a5c-main.1",
+  "version": "1.0.0-a5c-main.3",
   "description": "Events SDK and CLI for normalizing and enriching repo/CI events for agentic workflows",
   "type": "module",
   "private": false,
@@ -18,12 +18,14 @@
   },
   "scripts": {
     "prepare": "npm run build",
-    "build": "tsc -p tsconfig.json",
+    "clean": "rimraf dist .turbo .vitest coverage",
+    "build": "tsc -p tsconfig.build.json",
     "build:clean": "rimraf dist && npm run build",
-    "lint": "eslint . --ext .ts",
+    "lint": "eslint \"src/**/*.ts\" \"test/**/*.ts\" \"tests/**/*.ts\"",
     "format": "prettier -w .",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run",
+    "test:ci": "vitest run --coverage --reporter=dot",
     "dev": "tsx watch src/cli.ts -- --help",
     "cli": "node dist/cli.js",
     "release": "semantic-release"
@@ -56,26 +58,34 @@
   "author": "a5c.ai",
   "license": "Apache-2.0",
   "devDependencies": {
+    "@eslint/js": "9.35.0",
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/git": "^10.0.1",
     "@semantic-release/github": "^10.3.5",
     "@semantic-release/npm": "^12.0.1",
     "@types/node": "^22.7.4",
+    "@typescript-eslint/eslint-plugin": "8.43.0",
+    "@typescript-eslint/parser": "8.43.0",
+    "@vitest/coverage-v8": "^2.1.1",
+    "ajv": "^8.17.1",
+    "ajv-formats": "3.0.1",
     "conventional-changelog-conventionalcommits": "^7.0.2",
     "eslint": "^9.10.0",
-    "eslint-config-prettier": "^9.1.0",
+    "eslint-config-prettier": "9.1.2",
     "eslint-plugin-import": "^2.29.1",
+    "globals": "16.4.0",
     "prettier": "^3.3.3",
     "rimraf": "^5.0.5",
     "semantic-release": "^24.2.0",
     "tsx": "^4.19.1",
     "typescript": "5.9.2",
-    "vitest": "^2.0.5"
+    "typescript-eslint": "8.43.0",
+    "vitest": "^2.1.1"
   },
   "dependencies": {
     "@octokit/rest": "^21.0.0",
-    "minimatch": "^9.0.5",
     "commander": "^12.1.0",
-    "dotenv": "^16.4.5"
+    "dotenv": "^16.4.5",
+    "minimatch": "^9.0.5"
   }
 }

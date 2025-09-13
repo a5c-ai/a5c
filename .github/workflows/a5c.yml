@@ -83,7 +83,7 @@ on:
     - cron: '0 9,21 * * *'
   workflow_run:
     types: [completed]
-    workflows: [Build, Deploy]
+    workflows: [Build, Deploy, Packages Npx Test, Lint]
 
   # Manual Triggers
   workflow_dispatch:
