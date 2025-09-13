@@ -8,7 +8,7 @@ import prettier from 'eslint-config-prettier'
 /** @type {import('eslint').Linter.FlatConfig[]} */
 export default [
   // Global ignores (merge of base + PR)
-  { ignores: ['dist/**', 'node_modules/**', 'tests/fixtures/**', 'samples/**'] },
+  { ignores: ['dist/**', 'node_modules/**', 'tests/fixtures/**', 'samples/**', 'src/**/*.d.ts'] },
 
   // JS files: enable Node/browser globals
   {
@@ -48,6 +48,7 @@ export default [
         '@typescript-eslint/explicit-function-return-type': 'off',
         '@typescript-eslint/ban-ts-comment': 'off',
         'no-useless-escape': 'off',
+        'no-empty': ['error', { allowEmptyCatch: true }],
       },
     },
     // Non-type-aware for tests (avoid requiring project references)
@@ -62,6 +63,10 @@ export default [
       extends: [ ...tseslint.configs.recommended ],
       rules: {
         '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+        '@typescript-eslint/no-explicit-any': 'off',
+        '@typescript-eslint/no-require-imports': 'off',
+        '@typescript-eslint/ban-ts-comment': 'off',
+        'no-empty': ['error', { allowEmptyCatch: true }],
       },
     },
     { ignores: ['dist/**'] }
