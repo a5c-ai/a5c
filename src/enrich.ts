@@ -13,7 +13,8 @@ export async function handleEnrich(opts: {
   octokit?: any
 }): Promise<{ code: number; output: NormalizedEvent }>{
   const input = readJSONFile<any>(opts.in) || {}
-  const includePatch = toBool(opts.flags?.include_patch ?? true)
+  // Default to false to avoid large payloads and potential secret leakage
+  const includePatch = toBool(opts.flags?.include_patch ?? false)
   const commitLimit = toInt(opts.flags?.commit_limit, 50)
   const fileLimit = toInt(opts.flags?.file_limit, 200)
 
