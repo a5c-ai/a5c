@@ -35,5 +35,5 @@ See overview: [Specs Overview](../../../specs/README.md)
 - Release CI on `a5c/main` push; tagged releases mirror to `main`
 
 ## Distribution
-- `npx @a5c/events` bin for CLI
-- Exported SDK APIs under `@a5c/events`
+- `npx @a5c-ai/events` bin for CLI
+- Exported SDK APIs under `@a5c-ai/events`
