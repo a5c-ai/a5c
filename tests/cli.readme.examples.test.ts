@@ -13,6 +13,8 @@ describe('README examples', () => {
     const out = JSON.parse(fs.readFileSync('out.json', 'utf8'))
     expect(out).toBeTypeOf('object')
     expect(out).toHaveProperty('payload')
+    // cleanup demo artifact to avoid polluting workspace
+    fs.unlinkSync('out.json')
   })
 
   it('extracts mentions from stdin', () => {
@@ -26,4 +28,3 @@ describe('README examples', () => {
     expect(targets).toContain('validator-agent')
   })
 })
-
