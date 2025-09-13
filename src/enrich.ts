@@ -3,6 +3,7 @@ import { readJSONFile, loadConfig } from './config.js'
 import { extractMentions } from './extractor.js'
 import { scanMentionsInCodeComments } from './utils/commentScanner.js'
 import { evaluateRules, loadRules } from './rules.js'
+import { scanCodeCommentsForMentions } from './codeComments.js'
 
 export async function handleEnrich(opts: {
   in?: string
@@ -41,7 +42,7 @@ export async function handleEnrich(opts: {
   try {
     const mod: any = await import('./enrichGithubEvent.js')
     const fn = (mod.enrichGithubEvent || mod.default) as (e: any, o?: any) => Promise<any>
-    const enriched = await fn(baseEvent, { token, commitLimit, fileLimit, octokit: opts.octokit })
+    const enriched = await fn(baseEvent, { token, commitLimit, fileLimit, octokit: opts.octokit, includePatch: includePatch })
     githubEnrichment = enriched?._enrichment || {}
     if (!includePatch) {
       if (githubEnrichment.pr?.files) {
@@ -80,7 +81,7 @@ export async function handleEnrich(opts: {
     const commentBody = (baseEvent as any)?.comment?.body
     if (commentBody) mentions.push(...extractMentions(String(commentBody), 'issue_comment'))
   } catch {
-    // ignore mention extraction errors from optional fields
+    // ignore mention extraction errors from optional/text fields
     void 0
   }
 
@@ -132,6 +133,53 @@ export async function handleEnrich(opts: {
   } catch {
     // ignore scanning errors; do not block enrichment
     void 0
+  }
+
+  // Mentions from code comments in changed files (PR/push)
+  try {
+    const gh = (githubEnrichment || {}) as any
+    let owner: string | undefined = gh.owner
+    let repo: string | undefined = gh.repo
+    let filesList: any[] | undefined = gh?.pr?.files || gh?.push?.files
+    let ref: string | undefined = (baseEvent as any)?.pull_request?.head?.sha || (baseEvent as any)?.pull_request?.head?.ref || (baseEvent as any)?.after || (baseEvent as any)?.head_commit?.id
+
+    // Fallback to payload if enrichment missing
+    if (!owner || !repo) {
+      const full = (baseEvent as any)?.repository?.full_name
+      if (typeof full === 'string' && full.includes('/')) {
+        const parts = full.split('/')
+        owner = parts[0]
+        repo = parts[1]
+      }
+    }
+
+    const mod: any = await import('./enrichGithubEvent.js')
+    const octokit = opts.octokit || mod.createOctokit?.(token)
+
+    if ((!filesList || !Array.isArray(filesList)) && octokit && owner && repo) {
+      // Derive changed files using GitHub API if possible
+      if ((baseEvent as any)?.pull_request?.number) {
+        try {
+          const number = (baseEvent as any).pull_request.number
+          const list = await octokit.paginate(octokit.pulls.listFiles, { owner, repo, pull_number: number, per_page: 100 })
+          filesList = Array.isArray(list) ? list : []
+        } catch {}
+      } else if ((baseEvent as any)?.before && (baseEvent as any)?.after) {
+        try {
+          const comp = await octokit.repos.compareCommits({ owner, repo, base: (baseEvent as any).before, head: (baseEvent as any).after })
+          filesList = (comp?.data?.files as any[]) || []
+          ref = (baseEvent as any).after
+        } catch {}
+      }
+    }
+
+    if (owner && repo && Array.isArray(filesList) && filesList.length && ref && octokit) {
+      const files = filesList.map((f: any) => ({ filename: f.filename }))
+      const codeMentions = await scanCodeCommentsForMentions({ owner, repo, ref, files, octokit, options: { fileSizeCapBytes: 200 * 1024, languageFilters: ['js','ts','md'] } })
+      if (codeMentions.length) mentions.push(...codeMentions)
+    }
+  } catch {
+    // ignore code comment scanning failures; treated as best-effort enrichment
   }
 
   const output: NormalizedEvent = {

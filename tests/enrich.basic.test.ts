@@ -54,6 +54,19 @@ describe('handleEnrich', () => {
       expect(hasPatchProp).toBe(true);
     }
   });
+    
+  it('adds code_comment mentions when enrichment contains files', async () => {
+    const files = [{ filename: 'README.md', status: 'modified' }];
+    const mockOctokit = {
+      repos: { async getContent() { return { data: { content: Buffer.from('hello @developer-agent', 'utf8').toString('base64'), encoding: 'base64', size: 20 } }; } },
+      pulls: { async listFiles() { return { data: files }; } },
+      paginate: async (_fn: any, _opts: any) => files,
+    } as any;
+
+    const res = await handleEnrich({ in: 'samples/pull_request.synchronize.json', labels: [], rules: undefined, flags: {}, octokit: mockOctokit });
+    const mentions = (res.output.enriched as any).mentions || [];
+    expect(mentions.some((m: any) => m.source === 'code_comment')).toBe(true);
+  });
 
   it('merges GitHub enrichment when flag enabled but missing token marks partial', async () => {
     const res = await handleEnrich({ in: 'samples/pull_request.synchronize.json', labels: [], rules: undefined, flags: { use_github: 'true' } });
