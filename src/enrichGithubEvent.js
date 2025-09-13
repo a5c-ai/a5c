@@ -110,19 +110,35 @@ export async function enrichGithubEvent(event, opts) {
     const changedFiles = files.map((f) => f.filename);
     const ownersMap = resolveOwnersForFiles(codeOwnerRules, changedFiles);
 
+    const mergeableState = prCheck.data.mergeable_state;
+    const hasConflicts = mergeableState === "dirty" || mergeableState === "blocked";
+
+    // Labels and review requests
+    const prLabels = Array.isArray(prData.labels) ? prData.labels.map((l) => l?.name).filter(Boolean) : [];
+    const requestedReviewers = Array.isArray(prData.requested_reviewers)
+      ? prData.requested_reviewers.map((u) => u?.login).filter(Boolean)
+      : [];
+    const requestedTeams = Array.isArray(prData.requested_teams)
+      ? prData.requested_teams.map((t) => t?.slug || t?.name).filter(Boolean)
+      : [];
+
     enriched._enrichment.pr = {
       number: prData.number,
       state: prData.state,
       merged: prData.merged,
       mergeable: prCheck.data.mergeable,
       rebaseable: prCheck.data.rebaseable,
-      mergeable_state: prCheck.data.mergeable_state,
+      mergeable_state: mergeableState,
+      has_conflicts: hasConflicts,
       draft: prData.draft,
       head: prData.head?.ref,
       base: prData.base?.ref,
       changed_files: prData.changed_files,
       additions: prData.additions,
       deletions: prData.deletions,
+      labels: prLabels,
+      requested_reviewers: requestedReviewers,
+      requested_teams: requestedTeams,
       commits: commitsSlice,
       files,
       owners: ownersMap
@@ -132,7 +148,20 @@ export async function enrichGithubEvent(event, opts) {
     try {
       const bp = await withRetry(() => octokit.repos.getBranchProtection({ owner, repo, branch: prData.base.ref }));
       const bpData = bp?.data ?? bp;
-      enriched._enrichment.branch_protection = { protected: true, data: bpData };
+      // Project key flags when available
+      const flags = {};
+      try {
+        const rpr = bpData?.required_pull_request_reviews;
+        if (rpr && typeof rpr === "object") {
+          if (rpr.dismiss_stale_reviews != null) flags.dismiss_stale_reviews = !!rpr.dismiss_stale_reviews;
+          if (rpr.required_approving_review_count != null) flags.required_approvals = Number(rpr.required_approving_review_count);
+        }
+        const rlh = bpData?.required_linear_history;
+        if (rlh && typeof rlh === "object" && "enabled" in rlh) flags.linear_history = !!rlh.enabled;
+        const rsc = bpData?.required_status_checks;
+        if (rsc && typeof rsc === "object") flags.has_required_status_checks = true;
+      } catch {}
+      enriched._enrichment.branch_protection = { protected: true, data: bpData, ...(Object.keys(flags).length ? { flags } : {}) };
     } catch (e) {
       enriched._enrichment.branch_protection = { protected: false, partial: true };
       enriched._enrichment.errors.push({ scope: "branch_protection", status: e.status || 0 });
