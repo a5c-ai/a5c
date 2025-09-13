@@ -5,6 +5,7 @@ import { extractMentions } from './extractor.js'
 import type { ExtractorOptions, MentionSource } from './types.js'
 import { loadConfig, writeJSONFile } from './config.js'
 import { handleNormalize } from './normalize.js'
+import { resolveNormalizeInput } from './cli-helpers.js'
 import { handleEnrich } from './enrich.js'
 import { redactObject } from './utils/redact.js'
 
@@ -50,8 +51,16 @@ program
     const cfg = loadConfig()
     void cfg // currently unused but reserved for future needs
     const labels = Object.entries(cmdOpts.label || {}).map(([k, v]) => `${k}=${v}`)
+    // Resolve input path when running in GitHub Actions and --in is not provided
+    let inputPath: string | undefined
+    try {
+      inputPath = resolveNormalizeInput(cmdOpts.in, cmdOpts.source, process.env)
+    } catch (err: any) {
+      process.stderr.write(`[events] ${err?.message || 'Input resolution error'}\n`)
+      process.exit(2)
+    }
     const { code, output } = await handleNormalize({
-      in: cmdOpts.in,
+      in: inputPath,
       source: cmdOpts.source,
       labels,
     })

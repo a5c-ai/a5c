@@ -32,10 +32,13 @@ Normalize a raw event payload into the NE schema.
 
 Usage:
 ```bash
-events normalize [--in FILE] [--out FILE] [--source NAME] [--label KEY=VAL...]
+events normalize [--in FILE | --source actions] [--out FILE] [--source NAME] [--label KEY=VAL...]
 ```
 
 - `--in FILE`: path to a JSON webhook payload
+- `--source actions`: when `--in` is not provided, reads the payload from the
+  `GITHUB_EVENT_PATH` file exposed by GitHub Actions. Emits a clear error when
+  the environment variable is missing.
 - `--out FILE`: write result JSON (stdout if omitted)
 - `--source NAME`: provenance (`actions|webhook|cli`) [default: `cli`]
 - `--label KEY=VAL...`: attach labels (repeatable)
