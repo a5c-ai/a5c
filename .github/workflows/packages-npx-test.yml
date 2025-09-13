@@ -21,8 +21,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          registry-url: 'https://npm.pkg.github.com'
-          scope: '@a5c-ai'
+          # Avoid setting global registry to GPR; use project .npmrc scoping instead
 
       - name: Configure npm auth (env)
         env:
@@ -42,14 +41,16 @@ jobs:
       - name: Run npx package help
         env:
           NODE_AUTH_TOKEN: ${{ secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+          NPM_CONFIG_USERCONFIG: ${{ env.NPM_CONFIG_USERCONFIG }}
         run: |
-          # Explicitly set GPR registry for npx and fully qualify the package
-          npx --registry=https://npm.pkg.github.com -y @a5c-ai/events@latest --help
+          # Use project .npmrc so only @a5c-ai scope hits GPR; others resolve from npmjs
+          npx -y @a5c-ai/events@latest --help
 
       - name: Run npx package version
         env:
           NODE_AUTH_TOKEN: ${{ secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+          NPM_CONFIG_USERCONFIG: ${{ env.NPM_CONFIG_USERCONFIG }}
         run: |
           node -v
           npm -v
-          npx --registry=https://npm.pkg.github.com -y @a5c-ai/events@latest --version || true
+          npx -y @a5c-ai/events@latest --version || true
