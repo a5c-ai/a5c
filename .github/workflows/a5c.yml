@@ -124,7 +124,7 @@ jobs:
         if: github.event_name == 'schedule' && env.HEALTHCHECKS_A5C_URL != ''
         run: |
           set -eu
-          echo "Pinging Healthchecks start: $HEALTHCHECKS_A5C_URL"
+          echo "Pinging Healthchecks start"
           curl -fsS --retry 3 "$HEALTHCHECKS_A5C_URL" || true
       - name: Filter Self Workflow-run
         id: filter-self
@@ -165,11 +165,11 @@ jobs:
         if: github.event_name == 'schedule' && env.HEALTHCHECKS_A5C_URL != '' && success()
         run: |
           set -eu
-          echo "Pinging Healthchecks success: $HEALTHCHECKS_A5C_URL/0"
+          echo "Pinging Healthchecks success"
           curl -fsS --retry 3 "$HEALTHCHECKS_A5C_URL/0" || true
       - name: Heartbeat failure (schedule only)
         if: github.event_name == 'schedule' && env.HEALTHCHECKS_A5C_URL != '' && failure()
         run: |
           set -eu
-          echo "Pinging Healthchecks failure: $HEALTHCHECKS_A5C_URL/fail"
+          echo "Pinging Healthchecks failure"
           curl -fsS --retry 3 "$HEALTHCHECKS_A5C_URL/fail" || true
