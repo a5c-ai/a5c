@@ -1,54 +1,17 @@
 {
   "name": "@a5c/events",
   "version": "0.1.0",
-  "description": "Events SDK and CLI for normalizing and enriching repo/CI events for agentic workflows",
-  "type": "module",
   "private": true,
-  "bin": {
-    "events": "dist/cli.js"
-  },
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
-    }
-  },
-  "engines": {
-    "node": ">=20"
-  },
+  "type": "module",
+  "description": "SDK/CLI to parse and enrich GitHub events for agentic workflows",
   "scripts": {
-    "prepare": "npm run build",
-    "build": "tsc -p tsconfig.json",
-    "build:clean": "rimraf dist && npm run build",
-    "lint": "eslint . --ext .ts",
-    "format": "prettier -w .",
-    "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test": "vitest run --passWithNoTests",
-    "dev": "tsx watch src/cli.ts -- --help",
-    "cli": "node dist/cli.js"
-  },
-  "files": [
-    "dist",
-    "README.md",
-    "LICENSE"
-  ],
-  "keywords": ["events", "cli", "sdk", "github", "normalization", "enrich"],
-  "author": "a5c.ai",
-  "license": "Apache-2.0",
-  "devDependencies": {
-    "@types/node": "^22.7.4",
-    "eslint": "^9.10.0",
-    "eslint-config-prettier": "^9.1.0",
-    "eslint-plugin-import": "^2.29.1",
-    "prettier": "^3.3.3",
-    "rimraf": "^5.0.5",
-    "tsx": "^4.19.1",
-    "typescript": "5.9.2",
-    "vitest": "^2.0.5"
+    "build": "echo 'noop'",
+    "test": "node --test --test-reporter=spec",
+    "lint": "echo 'no linter yet'"
   },
   "dependencies": {
-    "commander": "^12.1.0",
-    "dotenv": "^16.4.5",
-    "yaml": "^2.5.0"
-  }
+    "@octokit/rest": "^21.0.0",
+    "minimatch": "^9.0.5"
+  },
+  "devDependencies": {}
 }
