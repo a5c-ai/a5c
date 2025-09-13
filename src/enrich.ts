@@ -13,7 +13,8 @@ export async function handleEnrich(opts: {
   octokit?: any
 }): Promise<{ code: number; output: NormalizedEvent }>{
   const input = readJSONFile<any>(opts.in) || {}
-  const includePatch = toBool(opts.flags?.include_patch ?? true)
+  // Default to false to avoid large payloads and potential secret leakage
+  const includePatch = toBool(opts.flags?.include_patch ?? false)
   const commitLimit = toInt(opts.flags?.commit_limit, 50)
   const fileLimit = toInt(opts.flags?.file_limit, 200)
 
@@ -49,6 +50,18 @@ export async function handleEnrich(opts: {
       }
       if (githubEnrichment.push?.files) {
         githubEnrichment.push.files = githubEnrichment.push.files.map((f: any) => ({ ...f, patch: undefined }))
+      }
+    } else {
+      // Ensure a defined patch key when include_patch=true so callers can rely on presence
+      if (githubEnrichment.pr?.files) {
+        githubEnrichment.pr.files = githubEnrichment.pr.files.map((f: any) => (
+          Object.prototype.hasOwnProperty.call(f, 'patch') ? f : { ...f, patch: '' }
+        ))
+      }
+      if (githubEnrichment.push?.files) {
+        githubEnrichment.push.files = githubEnrichment.push.files.map((f: any) => (
+          Object.prototype.hasOwnProperty.call(f, 'patch') ? f : { ...f, patch: '' }
+        ))
       }
     }
   } catch (e: any) {
