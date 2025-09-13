@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
+import os from 'node:os';
 import { handleNormalize } from '../src/normalize.js';
 
 const fx = (name: string) => JSON.parse(fs.readFileSync(path.join('tests/fixtures/github', name), 'utf8'));
@@ -8,11 +9,8 @@ const fx = (name: string) => JSON.parse(fs.readFileSync(path.join('tests/fixture
 describe('GitHub normalization', () => {
   it('workflow_run -> NE fields', async () => {
     const input = fx('workflow_run.completed.json');
-    const { output } = await handleNormalize({ in: undefined, source: 'cli', labels: ['env=test'] });
-    // handleNormalize reads from file if given; here we directly call provider
-    // so simulate by writing temp
-    const tmp = path.join('.tmp', 'wr.json');
-    fs.mkdirSync('.tmp', { recursive: true });
+    const tmpdir = fs.mkdtempSync(path.join(os.tmpdir(), 'events-test-'));
+    const tmp = path.join(tmpdir, 'wr.json');
     fs.writeFileSync(tmp, JSON.stringify(input));
     const res = await handleNormalize({ in: tmp, source: 'cli', labels: ['env=test'] });
     const ev = res.output;
@@ -25,7 +23,7 @@ describe('GitHub normalization', () => {
 
   it('pull_request -> NE fields', async () => {
     const input = fx('pull_request.synchronize.json');
-    const tmp = path.join('.tmp', 'pr.json');
+    const tmp = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'events-test-')), 'pr.json');
     fs.writeFileSync(tmp, JSON.stringify(input));
     const { output: ev } = await handleNormalize({ in: tmp, source: 'webhook', labels: [] });
     expect(ev.type).toBe('pull_request');
@@ -38,7 +36,7 @@ describe('GitHub normalization', () => {
 
   it('push -> NE fields', async () => {
     const input = fx('push.json');
-    const tmp = path.join('.tmp', 'push.json');
+    const tmp = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'events-test-')), 'push.json');
     fs.writeFileSync(tmp, JSON.stringify(input));
     const { output: ev } = await handleNormalize({ in: tmp, source: 'webhook', labels: ['x=y'] });
     expect(ev.type).toBe('push');
@@ -49,7 +47,7 @@ describe('GitHub normalization', () => {
 
   it('issue_comment -> NE fields', async () => {
     const input = fx('issue_comment.created.json');
-    const tmp = path.join('.tmp', 'ic.json');
+    const tmp = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'events-test-')), 'ic.json');
     fs.writeFileSync(tmp, JSON.stringify(input));
     const { output: ev } = await handleNormalize({ in: tmp, source: 'webhook' });
     expect(ev.type).toBe('issue_comment');
@@ -58,4 +56,3 @@ describe('GitHub normalization', () => {
     expect(typeof ev.id).toBe('string');
   });
 });
-
