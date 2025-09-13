@@ -48,6 +48,7 @@ jq '.type, .repo.full_name, .provenance.workflow?.name' out.json
   - `--flag include_patch=<true|false>`: include diff patches in files (default: false)
   - `--flag commit_limit=<n>`: max commits to include (default: 50)
   - `--flag file_limit=<n>`: max files to include (default: 50)
+  - `--use-github`: enable GitHub API enrichment (requires `GITHUB_TOKEN`)
 
 Exit codes: `0` success, non‑zero on errors (invalid input, etc.).
 
