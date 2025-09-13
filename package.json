@@ -1,9 +1,9 @@
 {
-  "name": "@a5c/events",
+  "name": "@a5c-ai/events",
   "version": "0.1.0",
   "description": "Events SDK and CLI for normalizing and enriching repo/CI events for agentic workflows",
   "type": "module",
-  "private": true,
+  "private": false,
   "bin": {
     "events": "dist/cli.js"
   },
@@ -23,32 +23,51 @@
     "lint": "eslint . --ext .ts",
     "format": "prettier -w .",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test": "vitest run --passWithNoTests",
+    "test": "vitest run",
     "dev": "tsx watch src/cli.ts -- --help",
-    "cli": "node dist/cli.js"
+    "cli": "node dist/cli.js",
+    "release": "semantic-release"
   },
   "files": [
     "dist",
     "README.md",
     "LICENSE"
   ],
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/a5c-ai/events.git"
+  },
+  "homepage": "https://github.com/a5c-ai/events",
+  "bugs": {
+    "url": "https://github.com/a5c-ai/events/issues"
+  },
   "keywords": ["events", "cli", "sdk", "github", "normalization", "enrich"],
   "author": "a5c.ai",
   "license": "Apache-2.0",
   "devDependencies": {
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/github": "^10.3.5",
+    "@semantic-release/npm": "^12.0.1",
     "@types/node": "^22.7.4",
+    "conventional-changelog-conventionalcommits": "^7.0.2",
     "eslint": "^9.10.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-import": "^2.29.1",
     "prettier": "^3.3.3",
     "rimraf": "^5.0.5",
+    "semantic-release": "^24.2.0",
     "tsx": "^4.19.1",
     "typescript": "5.9.2",
     "vitest": "^2.0.5"
   },
   "dependencies": {
-    "commander": "^12.1.0",
-    "dotenv": "^16.4.5",
-    "yaml": "^2.5.0"
-  }
+    "@octokit/rest": "^21.0.0",
+    "minimatch": "^9.0.5"
+  },
+  "devDependencies": {}
 }
