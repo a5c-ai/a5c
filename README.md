@@ -23,12 +23,22 @@ npm install -g @a5c-ai/events
 
 Try it:
 ```bash
-# Normalize a payload file
-npx @a5c-ai/events normalize --in samples/workflow_run.completed.json --out out.json
+# 1) Normalize a sample payload into a Normalized Event (NE)
+events normalize --in samples/push.json --out ne.json
+
+# 2) Enrich it and disable large patches in output
+events enrich --in ne.json --out out.json --flag include_patch=false
+
+# Or run via npx instead of a local/global install
+# npx @a5c-ai/events normalize --in samples/workflow_run.completed.json --out out.json
 
 # Inspect selected fields
-jq '.type, .repo.full_name, .provenance.workflow?.name' out.json
+jq '.type, .repo.full_name, .enriched.derived.flags.include_patch' out.json
 ```
+
+Token precedence for GitHub API calls (when enrichment reaches out to GitHub):
+- `A5C_AGENT_GITHUB_TOKEN` takes precedence over `GITHUB_TOKEN`.
+  Set `A5C_AGENT_GITHUB_TOKEN` in CI to override.
 
 ## CLI Reference
 
@@ -59,7 +69,7 @@ jq '.type, .repo.full_name, .provenance.workflow?.name' out.json
   - `--flag include_patch=<true|false>`: include diff patches in files (default: false)
   - `--flag commit_limit=<n>`: max commits to include (default: 50)
   - `--flag file_limit=<n>`: max files to include (default: 200)
-  - `--use-github`: enable GitHub API enrichment (requires `GITHUB_TOKEN`)
+  - `--use-github`: enable GitHub API enrichment (requires `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`)
   - `--select <paths>`: comma-separated dot paths to include in output
   - `--filter <expr>`: filter expression `path[=value]`; if not matching, exits with code 2 and no output
   - `--label <key=value...>`: attach labels
@@ -192,5 +202,7 @@ This repository initially used a generic a5c platform README. That content now l
 ## Links
 
 - Specs: `docs/specs/README.md`
+- CLI reference: `docs/cli/reference.md`
+- More examples: `docs/specs/README.md#12-examples`
 - Issues: https://github.com/a5c-ai/events/issues
 - Agent registry: https://github.com/a5c-ai/registry
