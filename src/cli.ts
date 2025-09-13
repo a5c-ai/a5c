@@ -33,8 +33,14 @@ program
       window: opts.window,
       knownAgents: opts.knownAgent || opts.knownAgents || [],
     }
-    const mentions = extractMentions(text, src, options)
-    process.stdout.write(JSON.stringify(mentions, null, 2) + '\n')
+    try {
+      const mentions = extractMentions(text, src, options)
+      process.stdout.write(JSON.stringify(mentions, null, 2) + '\n')
+      process.exit(0)
+    } catch (e: any) {
+      process.stderr.write(String(e?.message || e) + '\n')
+      process.exit(1)
+    }
   })
 
 program
@@ -64,8 +70,13 @@ program
     }
     const selected = cmdOpts.select ? selectFields(output as any, String(cmdOpts.select).split(',').map((s) => s.trim()).filter(Boolean)) : output
     const safe = redactObject(selected)
-    if (cmdOpts.out) writeJSONFile(cmdOpts.out, safe)
-    else process.stdout.write(JSON.stringify(safe, null, 2) + '\n')
+    try {
+      if (cmdOpts.out) writeJSONFile(cmdOpts.out, safe)
+      else process.stdout.write(JSON.stringify(safe, null, 2) + '\n')
+    } catch (e: any) {
+      process.stderr.write(String(e?.message || e) + '\n')
+      return process.exit(1)
+    }
     process.exit(code)
   })
 
@@ -97,8 +108,13 @@ program
     }
     const selected = cmdOpts.select ? selectFields(output as any, String(cmdOpts.select).split(',').map((s) => s.trim()).filter(Boolean)) : output
     const safe = redactObject(selected)
-    if (cmdOpts.out) writeJSONFile(cmdOpts.out, safe)
-    else process.stdout.write(JSON.stringify(safe, null, 2) + '\n')
+    try {
+      if (cmdOpts.out) writeJSONFile(cmdOpts.out, safe)
+      else process.stdout.write(JSON.stringify(safe, null, 2) + '\n')
+    } catch (e: any) {
+      process.stderr.write(String(e?.message || e) + '\n')
+      return process.exit(1)
+    }
     process.exit(code)
   })
 
