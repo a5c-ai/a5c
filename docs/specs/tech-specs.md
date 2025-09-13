@@ -3,13 +3,13 @@
 ## Stack
 - Language: TypeScript (Node >= 18)
 - Packaging: npm (private, GH Packages ready)
-- CLI: `yargs`-based, binary name: `events`
+- CLI: commander-based, binary name: `events`
 - Module type: ESM
 
 ## Architecture
-- `src/cli.ts`: yargs bootstrap and command router
-- `src/commands/normalize.ts`: parse raw event JSON into normalized shape
-- `src/commands/enrich.ts`: add enrichment stubs (metadata/derived/correlations)
+- `src/cli.ts`: commander bootstrap and command router
+- `src/normalize.ts`: parse raw event JSON into normalized shape
+- `src/enrich.ts`: add enrichment stubs (metadata/derived/correlations)
 - Future: `src/providers/github/*` for GitHub-specific normalization/enrichment
 - Output: stdout or `--out` file as JSON
 
@@ -30,4 +30,3 @@
 - Implement GitHub adapters
 - Mentions extraction per docs/specs/README.md
 - Redaction utilities
-

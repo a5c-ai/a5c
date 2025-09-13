@@ -44,7 +44,7 @@ events normalize [--in FILE] [--out FILE] [--source NAME] [--select PATHS] [--fi
 
 Examples:
 ```bash
-events normalize --in samples/workflow_run.completed.json | jq '.type, .repo.full_name'
+npx @a5c-ai/events normalize --in samples/workflow_run.completed.json | jq '.type, .repo.full_name'
 ```
 
 ### `events enrich`
@@ -71,7 +71,7 @@ Examples:
 ```bash
 export A5C_AGENT_GITHUB_TOKEN=...  # preferred if available; otherwise set GITHUB_TOKEN
 
-events enrich --in samples/pull_request.synchronize.json \
+npx @a5c-ai/events enrich --in samples/pull_request.synchronize.json \
   --use-github \
   --flag include_patch=false \
   | jq '.enriched.github.pr.mergeable_state'
