@@ -45,7 +45,12 @@
         "name": { "type": "string" },
         "full_name": { "type": "string" },
         "private": { "type": "boolean" },
-        "visibility": { "type": "string", "enum": ["public", "private", "internal"], "nullable": true }
+        "visibility": {
+          "anyOf": [
+            { "type": "string", "enum": ["public", "private", "internal"] },
+            { "type": "null" }
+          ]
+        }
       }
     },
     "ref": {
@@ -54,7 +59,12 @@
       "additionalProperties": false,
       "properties": {
         "name": { "type": "string" },
-        "type": { "type": "string", "enum": ["branch", "tag", "unknown"], "nullable": true },
+        "type": {
+          "anyOf": [
+            { "type": "string", "enum": ["branch", "tag", "unknown"] },
+            { "type": "null" }
+          ]
+        },
         "sha": { "type": "string" },
         "base": { "type": "string" },
         "head": { "type": "string" }
@@ -70,7 +80,13 @@
         "type": { "type": "string" }
       }
     },
-    "payload": { "description": "Provider-native payload (raw)", "type": ["object", "array"] },
+    "payload": {
+      "description": "Provider-native payload (raw)",
+      "anyOf": [
+        { "type": "object" },
+        { "type": "array" }
+      ]
+    },
     "enriched": {
       "type": "object",
       "additionalProperties": true,
@@ -93,7 +109,12 @@
           "additionalProperties": false,
           "properties": {
             "name": { "type": "string" },
-            "run_id": { "type": ["integer", "string"] }
+            "run_id": {
+              "anyOf": [
+                { "type": "integer" },
+                { "type": "string" }
+              ]
+            }
           }
         }
       }
