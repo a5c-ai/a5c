@@ -1,9 +1,9 @@
 import type { NormalizedEvent, Mention } from './types.js'
 import { readJSONFile, loadConfig } from './config.js'
 import { extractMentions } from './extractor.js'
+import { scanPatchForCodeCommentMentions, isBinaryPatch, scanCodeCommentsForMentions } from './codeComments.js'
 import { scanMentionsInCodeComments } from './utils/commentScanner.js'
-import { evaluateRules, evaluateRulesDetailed, loadRules } from './rules.js'
-import { scanCodeCommentsForMentions } from './codeComments.js'
+import { evaluateRulesDetailed, loadRules } from './rules.js'
 
 export async function handleEnrich(opts: {
   in?: string
@@ -181,6 +181,35 @@ export async function handleEnrich(opts: {
   } catch {
     // ignore code comment scanning failures; treated as best-effort enrichment
   }
+
+  // Optional: scan changed files for code comment mentions
+  try {
+    const flags = opts.flags || {}
+    const scanChanged = toBool((flags as any)['mentions.scan.changed_files'] ?? true)
+    if (scanChanged) {
+      const maxBytes = toInt((flags as any)['mentions.max_file_bytes'], 200 * 1024)
+      const langAllowRaw = (flags as any)['mentions.languages']
+      const langAllow = Array.isArray(langAllowRaw)
+        ? langAllowRaw
+        : typeof langAllowRaw === 'string' && langAllowRaw.length
+        ? String(langAllowRaw).split(',').map((s) => s.trim()).filter(Boolean)
+        : undefined
+
+      const files: any[] = (
+        (githubEnrichment?.pr?.files as any[]) || (githubEnrichment?.push?.files as any[]) || []
+      )
+      for (const f of files) {
+        const filename = f?.filename
+        const patch = f?.patch as string | undefined
+        if (!filename || isBinaryPatch(patch)) continue
+        const size = (patch || '').length
+        if (size > maxBytes) continue
+        if (langAllow && !langAllow.some((ext) => filename.toLowerCase().endsWith(`.${ext}`))) continue
+        const found = scanPatchForCodeCommentMentions(filename, patch!, { window: 30 })
+        if (found.length) mentions.push(...found)
+      }
+    }
+  } catch {}
 
   const output: NormalizedEvent = {
     ...(neShell as any),
