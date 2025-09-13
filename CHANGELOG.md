@@ -1,3 +1,22 @@
+## 1.0.0-a5c-main.4 (2025-09-13)
+
+* 🧹 Docs: README quickstart examples (schema validation + mentions) ([36e0bfd](https://github.com/a5c-ai/events/commit/36e0bfd)), closes [#92](https://github.com/a5c-ai/events/issues/92)
+* 🚀 ESLint v9 Flat Config Migration (fixes #78) (#86) ([7c2cac8](https://github.com/a5c-ai/events/commit/7c2cac8)), closes [#78](https://github.com/a5c-ai/events/issues/78) [#86](https://github.com/a5c-ai/events/issues/86) [#78](https://github.com/a5c-ai/events/issues/78)
+* 🚑 Fix CI: package.json parse + merge artifacts (#87) ([74ac3e2](https://github.com/a5c-ai/events/commit/74ac3e2)), closes [#87](https://github.com/a5c-ai/events/issues/87) [#4](https://github.com/a5c-ai/events/issues/4)
+* 🚧 NE normalization + enrichment integration (issues #89/#90) (#94) ([01f947b](https://github.com/a5c-ai/events/commit/01f947b)), closes [#89](https://github.com/a5c-ai/events/issues/89) [#90](https://github.com/a5c-ai/events/issues/90) [#94](https://github.com/a5c-ai/events/issues/94) [#89](https://github.com/a5c-ai/events/issues/89) [#90](https://github.com/a5c-ai/events/issues/90) [#94](https://github.com/a5c-ai/events/issues/94)
+* Merge branch 'a5c/main' into feat/github-normalize-issue89 ([c3872f6](https://github.com/a5c-ai/events/commit/c3872f6))
+* Merge branch 'main' into a5c/main ([5eeafe7](https://github.com/a5c-ai/events/commit/5eeafe7))
+* Merge pull request #95 from a5c-ai/feat/github-normalize-issue89 ([97ea892](https://github.com/a5c-ai/events/commit/97ea892)), closes [#95](https://github.com/a5c-ai/events/issues/95) [#89](https://github.com/a5c-ai/events/issues/89)
+* Update a5c.yml ([27efeb0](https://github.com/a5c-ai/events/commit/27efeb0))
+* Update a5c.yml ([1acbe7b](https://github.com/a5c-ai/events/commit/1acbe7b))
+* docs(dev): start work log for Issue #89 (GitHub normalization) ([5cba29d](https://github.com/a5c-ai/events/commit/5cba29d)), closes [#89](https://github.com/a5c-ai/events/issues/89)
+* docs(validation): PR #95 follow-ups (schema test + mapping docs) ([a2dfe85](https://github.com/a5c-ai/events/commit/a2dfe85)), closes [#95](https://github.com/a5c-ai/events/issues/95)
+* test: use os.tmpdir for temp files; remove .tmp artifacts ([ba65158](https://github.com/a5c-ai/events/commit/ba65158))
+* feat: provider-aware GitHub normalization (NE schema) with tests (fixes #89) ([76486d3](https://github.com/a5c-ai/events/commit/76486d3)), closes [#89](https://github.com/a5c-ai/events/issues/89)
+* chore: sync lockfile after install ([8d16843](https://github.com/a5c-ai/events/commit/8d16843))
+* chore(conflicts): resolve merge conflicts by preserving PR branch content; keep a5c/main versions fo ([38edfc3](https://github.com/a5c-ai/events/commit/38edfc3))
+* Release: a5c/main → main (#73) ([481ab9c](https://github.com/a5c-ai/events/commit/481ab9c)), closes [#73](https://github.com/a5c-ai/events/issues/73) [#4](https://github.com/a5c-ai/events/issues/4)
+
 ## 1.0.0-a5c-main.3 (2025-09-13)
 
 * fix(build): repair package.json EJSONPARSE and resolve merge artifacts\n\n- Remove stray bracket in  ([9b2ea80](https://github.com/a5c-ai/events/commit/9b2ea80))
