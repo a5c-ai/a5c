@@ -48,7 +48,6 @@ export async function handleNormalize(opts: {
 }
 
 function normalizeSource(src?: string): 'action' | 'webhook' | 'cli' {
-function normalizeSource(src?: string): 'action' | 'webhook' | 'cli' {
   switch ((src || 'cli').toLowerCase()) {
     case 'action':
     case 'actions':

@@ -11,7 +11,6 @@ export async function handleEnrich(opts: {
   flags?: Record<string, string | boolean>
 }): Promise<{ code: number; output: NormalizedEvent }>{
   const input = (readJSONFile<NormalizedEvent | AnyObj>(opts.in) || {}) as any
-  const input = (readJSONFile<NormalizedEvent | AnyObj>(opts.in) || {}) as any
   // Accept either already-normalized NE or raw payload; if raw, wrap minimal
   const isNE = typeof input?.provider === 'string' && typeof input?.type === 'string'
   const ne: NormalizedEvent = isNE
