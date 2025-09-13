@@ -5,5 +5,5 @@
     "declaration": false
   },
   "include": ["src", "test", "tests", "vitest.config.ts"],
-  "exclude": ["dist", "node_modules", "src/enrichGithubEvent.js"]
+  "exclude": ["dist", "node_modules"]
 }
