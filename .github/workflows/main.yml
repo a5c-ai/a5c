@@ -112,13 +112,6 @@ jobs:
           node-version: 22
           cache: 'npm'
           check-latest: true
-      - name: Setup Python
-        continue-on-error: true
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.12
-          cache: 'pip'
-          check-latest: true
       - run: ./scripts/build.sh
   test:
     runs-on: runner8core
@@ -131,12 +124,5 @@ jobs:
         with:
           node-version: 22
           cache: 'npm'
-          check-latest: true
-      - name: Setup Python
-        continue-on-error: true
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.12
-          cache: 'pip'
           check-latest: true
       - run: ./scripts/test.sh
