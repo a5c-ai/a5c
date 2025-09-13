@@ -1,10 +1,13 @@
 # Technical Specs Phase – Checklist
 
-This checklist tracks readiness to exit the Technical Specifications phase and proceed into scaffolding/development. When all required items are complete, update `docs/producer/phases/current-phase.txt` to the next phase.
+This checklist tracks readiness to exit the Technical Specifications phase and proceed into scaffolding/development. When all items are complete, update `docs/producer/phases/current-phase.txt` to the next phase.
 
 See also:
 - Specs overview: docs/specs/tech-specs.md
+- Specs index: docs/specs/README.md
 - Phase index: docs/producer/phases/technical-specs/README.md
+- Tech stack: docs/producer/phases/technical-specs/tech-stack.md
+- System architecture: docs/producer/phases/technical-specs/system-architecture.md
 - CLI reference: docs/cli/reference.md
 - NE schema: docs/specs/ne.schema.json
 
@@ -27,7 +30,7 @@ See also:
 - [x] Testing strategy drafted (`testing/strategy.md`)
 - [x] Deployment notes drafted (`deployment/publishing.md`)
 
-## Implementation Readiness
+## Readiness Items
 
 - [x] Tech stack decisions locked (Node 20+, TypeScript, ESM, commander CLI, Vitest, ESLint, Prettier)
   - Source: docs/producer/phases/technical-specs/tech-stack.md, package.json
