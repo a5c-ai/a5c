@@ -7,7 +7,7 @@ import prettier from 'eslint-config-prettier'
 
 /** @type {import('eslint').Linter.FlatConfig[]} */
 export default [
-  // Global ignores (merge of base + PR)
+  // Global ignores (include fixtures and samples to speed up lint)
   { ignores: ['dist/**', 'node_modules/**', 'tests/fixtures/**', 'samples/**', 'src/**/*.d.ts'] },
 
   // JS files: enable Node/browser globals
@@ -22,8 +22,15 @@ export default [
       },
     },
   },
-  // Base JS recommended rules
-  js.configs.recommended,
+  // Base JS recommended rules with minor tweaks
+  {
+    ...js.configs.recommended,
+    rules: {
+      ...(js.configs.recommended.rules || {}),
+      // Allow intentionally empty catch blocks for defensive parsing paths
+      'no-empty': ['error', { allowEmptyCatch: true }],
+    },
+  },
 
   // TypeScript support for project files
   ...tseslint.config(
@@ -64,8 +71,8 @@ export default [
       rules: {
         '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
         '@typescript-eslint/no-explicit-any': 'off',
-        '@typescript-eslint/no-require-imports': 'off',
         '@typescript-eslint/ban-ts-comment': 'off',
+        '@typescript-eslint/no-require-imports': 'off',
         'no-empty': ['error', { allowEmptyCatch: true }],
       },
     },
