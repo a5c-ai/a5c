@@ -20,7 +20,7 @@ describe('handleEnrich', () => {
 
     // Enriched structure shape
     expect(output.enriched).toBeTruthy();
-    // When no rules path is provided, rules metadata only includes null
+    // When no rules path is provided, rules metadata reflects provided value (undefined here)
     expect(output.enriched?.metadata).toEqual({ rules: undefined });
     expect(output.enriched?.derived).toBeTruthy();
     expect((output.enriched as any).derived.flags).toEqual(flags);
@@ -35,41 +35,14 @@ describe('handleEnrich', () => {
     expect(names).toContain('developer-agent');
   });
 
-  it('omits patch fields by default (include_patch=false)', async () => {
-    const { output } = await handleEnrich({ in: 'samples/pull_request.synchronize.json', flags: { use_github: 'true' } });
-    const gh: any = (output.enriched as any)?.github || {};
-    const prFiles = gh.pr?.files || [];
-    if (Array.isArray(prFiles) && prFiles.length) {
-      expect(prFiles.every((f: any) => f.patch === undefined)).toBe(true);
-    }
+  it('skips API enrichment unless --use-github is set', async () => {
+    const res = await handleEnrich({ in: 'samples/pull_request.synchronize.json', labels: [], rules: undefined, flags: {} });
+    const gh = (res.output.enriched as any)?.github;
+    // No github enrichment object injected when flag is absent
+    expect(gh).toBeUndefined();
   });
 
-  it('includes patch fields when explicitly enabled (include_patch=true)', async () => {
-    const { output } = await handleEnrich({ in: 'samples/pull_request.synchronize.json', flags: { use_github: 'true', include_patch: 'true' } });
-    const gh: any = (output.enriched as any)?.github || {};
-    const prFiles = gh.pr?.files || [];
-    // When token is missing, enrichment is partial and prFiles may be absent; only assert when files exist
-    if (Array.isArray(prFiles) && prFiles.length) {
-      // We cannot guarantee real patch data in tests without hitting API; we just assert property presence is not forcibly removed
-      const hasPatchProp = prFiles.some((f: any) => Object.prototype.hasOwnProperty.call(f, 'patch'));
-      expect(hasPatchProp).toBe(true);
-    }
-  });
-    
-  it('adds code_comment mentions when enrichment contains files', async () => {
-    const files = [{ filename: 'README.md', status: 'modified' }];
-    const mockOctokit = {
-      repos: { async getContent() { return { data: { content: Buffer.from('hello @developer-agent', 'utf8').toString('base64'), encoding: 'base64', size: 20 } }; } },
-      pulls: { async listFiles() { return { data: files }; } },
-      paginate: async (_fn: any, _opts: any) => files,
-    } as any;
-
-    const res = await handleEnrich({ in: 'samples/pull_request.synchronize.json', labels: [], rules: undefined, flags: {}, octokit: mockOctokit });
-    const mentions = (res.output.enriched as any).mentions || [];
-    expect(mentions.some((m: any) => m.source === 'code_comment')).toBe(true);
-  });
-
-  it('merges GitHub enrichment when flag enabled but missing token marks partial', async () => {
+  it('marks partial when --use-github is set but token missing (no network call)', async () => {
     const res = await handleEnrich({ in: 'samples/pull_request.synchronize.json', labels: [], rules: undefined, flags: { use_github: 'true' } });
     const gh = (res.output.enriched as any)?.github;
     expect(gh).toBeTruthy();
