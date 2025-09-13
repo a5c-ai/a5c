@@ -23,7 +23,7 @@
     "lint": "eslint . --ext .ts",
     "format": "prettier -w .",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test": "vitest run --passWithNoTests",
+    "test": "vitest run",
     "dev": "tsx watch src/cli.ts -- --help",
     "cli": "node dist/cli.js"
   },

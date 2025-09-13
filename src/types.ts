@@ -1,30 +1,44 @@
-export type NormalizedEvent = {
-  id: string
-  provider: string
-  type: string
-  occurred_at: string
-  repo?: Record<string, unknown>
-  ref?: Record<string, unknown>
-  actor?: Record<string, unknown>
-  payload?: unknown
+export type MentionKind = 'agent' | 'user' | 'team' | 'unknown';
+
+export type MentionSource =
+  | 'commit_message'
+  | 'pr_body'
+  | 'pr_title'
+  | 'issue_body'
+  | 'issue_title'
+  | 'issue_comment'
+  | 'code_comment';
+
+export interface Mention {
+  target: string;
+  normalized_target: string;
+  kind: MentionKind;
+  source: MentionSource;
+  location?: string; // path:line or ref
+  context: string; // excerpt around the mention
+  confidence: number; // 0..1
+}
+
+export interface ExtractorOptions {
+  enabledSources?: Partial<Record<MentionSource, boolean>>;
+  fileSizeCapBytes?: number;
+  languageFilters?: string[]; // e.g., ['js','ts','py']
+  window?: number; // context window around mention
+  knownAgents?: string[]; // list of known agent names to boost confidence
+}
+
+// Minimal normalized event type used by existing CLI utilities in this repo
+export interface NormalizedEvent {
+  id: string;
+  provider: string; // e.g., 'github'
+  type: string; // event type
+  occurred_at: string; // ISO timestamp
+  payload?: unknown;
+  labels?: string[];
+  provenance?: { source?: string; [k: string]: unknown };
   enriched?: {
-    metadata?: Record<string, unknown>
-    derived?: Record<string, unknown>
-    correlations?: Record<string, unknown>
-  }
-  labels?: string[]
-  provenance?: Record<string, unknown>
-  composed?: Array<Record<string, unknown>>
+    metadata?: Record<string, unknown> | null;
+    derived?: Record<string, unknown> | null;
+    [k: string]: unknown;
+  };
 }
-
-export type CLIOptions = {
-  in?: string
-  out?: string
-  select?: string
-  filter?: string
-  label?: string[]
-  source?: string
-  rules?: string
-  flag?: string[]
-}
-
