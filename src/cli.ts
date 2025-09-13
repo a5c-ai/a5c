@@ -43,6 +43,8 @@ program
   .option('--in <file>', 'input JSON file path')
   .option('--out <file>', 'output JSON file path')
   .addOption(new Option('--source <name>', 'source name (actions|webhook|cli)').default('cli'))
+  .option('--select <paths>', 'comma-separated dot paths to include in output')
+  .option('--filter <expr>', 'filter expression path[=value] to gate output')
   .option('--label <key=value...>', 'labels to attach', collectKeyValue, [])
   .action(async (cmdOpts: any) => {
     const cfg = loadConfig()
@@ -53,7 +55,15 @@ program
       source: cmdOpts.source,
       labels,
     })
-    const safe = redactObject(output)
+    // filter/select
+    const { selectFields, parseFilter, passesFilter } = await import('./utils/selectFilter.js')
+    const filterSpec = parseFilter(cmdOpts.filter)
+    if (!passesFilter(output as any, filterSpec)) {
+      // filtered out: no output, exit code 2
+      process.exit(2)
+    }
+    const selected = cmdOpts.select ? selectFields(output as any, String(cmdOpts.select).split(',').map((s) => s.trim()).filter(Boolean)) : output
+    const safe = redactObject(selected)
     if (cmdOpts.out) writeJSONFile(cmdOpts.out, safe)
     else process.stdout.write(JSON.stringify(safe, null, 2) + '\n')
     process.exit(code)
@@ -67,6 +77,8 @@ program
   .option('--rules <file>', 'rules file path (yaml/json)')
   .option('--flag <key=value...>', 'enrichment flags', collectKeyValue, {})
   .option('--use-github', 'enable GitHub API enrichment (requires GITHUB_TOKEN)')
+  .option('--select <paths>', 'comma-separated dot paths to include in output')
+  .option('--filter <expr>', 'filter expression path[=value] to gate output')
   .option('--label <key=value...>', 'labels to attach', collectKeyValue, [])
   .action(async (cmdOpts: any) => {
     const flags = { ...(cmdOpts.flag || {}) }
@@ -78,7 +90,13 @@ program
       rules: cmdOpts.rules,
       flags,
     })
-    const safe = redactObject(output)
+    const { selectFields, parseFilter, passesFilter } = await import('./utils/selectFilter.js')
+    const filterSpec = parseFilter(cmdOpts.filter)
+    if (!passesFilter(output as any, filterSpec)) {
+      process.exit(2)
+    }
+    const selected = cmdOpts.select ? selectFields(output as any, String(cmdOpts.select).split(',').map((s) => s.trim()).filter(Boolean)) : output
+    const safe = redactObject(selected)
     if (cmdOpts.out) writeJSONFile(cmdOpts.out, safe)
     else process.stdout.write(JSON.stringify(safe, null, 2) + '\n')
     process.exit(code)
