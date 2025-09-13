@@ -66,9 +66,11 @@ program
   .option('--out <file>', 'output JSON file path')
   .option('--rules <file>', 'rules file path (yaml/json)')
   .option('--flag <key=value...>', 'enrichment flags', collectKeyValue, {})
+  .option('--use-github', 'enable GitHub API enrichment (requires GITHUB_TOKEN)')
   .option('--label <key=value...>', 'labels to attach', collectKeyValue, [])
   .action(async (cmdOpts: any) => {
-    const flags = cmdOpts.flag || {};
+    const flags = { ...(cmdOpts.flag || {}) };
+    if (cmdOpts.useGithub || cmdOpts['use-github']) flags.use_github = 'true';
     const labels = Object.entries(cmdOpts.label || {}).map(([k, v]) => `${k}=${v}`);
     const { code, output } = await handleEnrich({
       in: cmdOpts.in,
