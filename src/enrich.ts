@@ -1,6 +1,9 @@
 import type { NormalizedEvent, Mention } from './types.js'
 import { readJSONFile, loadConfig } from './config.js'
 import { extractMentions } from './extractor.js'
+import { scanMentionsInCodeComments } from './utils/commentScanner.js'
+import { evaluateRules, evaluateRulesDetailed, loadRules } from './rules.js'
+import { scanCodeCommentsForMentions } from './codeComments.js'
 
 export async function handleEnrich(opts: {
   in?: string
@@ -10,7 +13,8 @@ export async function handleEnrich(opts: {
   octokit?: any
 }): Promise<{ code: number; output: NormalizedEvent }>{
   const input = readJSONFile<any>(opts.in) || {}
-  const includePatch = toBool(opts.flags?.include_patch ?? true)
+  // Default to false to avoid large payloads and potential secret leakage
+  const includePatch = toBool(opts.flags?.include_patch ?? false)
   const commitLimit = toInt(opts.flags?.commit_limit, 50)
   const fileLimit = toInt(opts.flags?.file_limit, 200)
 
@@ -38,7 +42,7 @@ export async function handleEnrich(opts: {
   try {
     const mod: any = await import('./enrichGithubEvent.js')
     const fn = (mod.enrichGithubEvent || mod.default) as (e: any, o?: any) => Promise<any>
-    const enriched = await fn(baseEvent, { token, commitLimit, fileLimit, octokit: opts.octokit })
+    const enriched = await fn(baseEvent, { token, commitLimit, fileLimit, octokit: opts.octokit, includePatch: includePatch })
     githubEnrichment = enriched?._enrichment || {}
     if (!includePatch) {
       if (githubEnrichment.pr?.files) {
@@ -46,6 +50,18 @@ export async function handleEnrich(opts: {
       }
       if (githubEnrichment.push?.files) {
         githubEnrichment.push.files = githubEnrichment.push.files.map((f: any) => ({ ...f, patch: undefined }))
+      }
+    } else {
+      // Ensure a defined patch key when include_patch=true so callers can rely on presence
+      if (githubEnrichment.pr?.files) {
+        githubEnrichment.pr.files = githubEnrichment.pr.files.map((f: any) => (
+          Object.prototype.hasOwnProperty.call(f, 'patch') ? f : { ...f, patch: '' }
+        ))
+      }
+      if (githubEnrichment.push?.files) {
+        githubEnrichment.push.files = githubEnrichment.push.files.map((f: any) => (
+          Object.prototype.hasOwnProperty.call(f, 'patch') ? f : { ...f, patch: '' }
+        ))
       }
     }
   } catch (e: any) {
@@ -64,17 +80,132 @@ export async function handleEnrich(opts: {
     }
     const commentBody = (baseEvent as any)?.comment?.body
     if (commentBody) mentions.push(...extractMentions(String(commentBody), 'issue_comment'))
-  } catch {}
+  } catch {
+    // ignore mention extraction errors from optional/text fields
+    void 0
+  }
+
+  // Mentions from changed files (code comments)
+  try {
+    const scanChangedFiles = toBool((opts.flags as any)?.['mentions.scan.changed_files'] ?? true)
+    const maxFileBytes = toInt((opts.flags as any)?.['mentions.max_file_bytes'], 200 * 1024)
+    const langFilterRaw = (opts.flags as any)?.['mentions.languages']
+    const languageFilters = typeof langFilterRaw === 'string' && langFilterRaw.length
+      ? String(langFilterRaw).split(',').map((s) => s.trim()).filter(Boolean)
+      : undefined
+
+    if (scanChangedFiles) {
+      const files: { filename: string; patch?: string; raw_url?: string; blob_url?: string }[] = []
+      const gh = githubEnrichment || {}
+      const prFiles = gh?.pr?.files || []
+      const pushFiles = gh?.push?.files || []
+      for (const f of prFiles) files.push({ filename: f.filename, patch: f.patch, raw_url: f.raw_url, blob_url: f.blob_url })
+      for (const f of pushFiles) files.push({ filename: f.filename, patch: f.patch, raw_url: f.raw_url, blob_url: f.blob_url })
+
+      // If patch available, synthesize per-line content context; otherwise attempt to fetch raw if token provided
+      for (const f of files) {
+        // Prefer patch text if present, as it is already constrained in size
+        const patch = typeof f.patch === 'string' ? f.patch : ''
+        if (!patch) continue
+        // Build a lightweight pseudo-file content from patch lines starting with '+' or ' ' to approximate context
+        const lines = patch.split(/\r?\n/)
+        const approxFile: string[] = []
+        for (const l of lines) {
+          if (l.startsWith('+++') || l.startsWith('---') || l.startsWith('@@')) { approxFile.push('') ; continue }
+          if (l.startsWith('+') || l.startsWith(' ') || l.startsWith('-')) {
+            // include all lines to keep positions consistent; deletions still matter for mentions in comments
+            approxFile.push(l.slice(1))
+          } else {
+            approxFile.push(l)
+          }
+        }
+        const content = approxFile.join('\n')
+        const found = scanMentionsInCodeComments({
+          content,
+          filename: f.filename,
+          maxBytes: maxFileBytes,
+          languageFilters,
+          source: 'code_comment',
+        })
+        mentions.push(...found)
+      }
+    }
+  } catch {
+    // ignore scanning errors; do not block enrichment
+    void 0
+  }
+
+  // Mentions from code comments in changed files (PR/push)
+  try {
+    const gh = (githubEnrichment || {}) as any
+    let owner: string | undefined = gh.owner
+    let repo: string | undefined = gh.repo
+    let filesList: any[] | undefined = gh?.pr?.files || gh?.push?.files
+    let ref: string | undefined = (baseEvent as any)?.pull_request?.head?.sha || (baseEvent as any)?.pull_request?.head?.ref || (baseEvent as any)?.after || (baseEvent as any)?.head_commit?.id
+
+    // Fallback to payload if enrichment missing
+    if (!owner || !repo) {
+      const full = (baseEvent as any)?.repository?.full_name
+      if (typeof full === 'string' && full.includes('/')) {
+        const parts = full.split('/')
+        owner = parts[0]
+        repo = parts[1]
+      }
+    }
+
+    const mod: any = await import('./enrichGithubEvent.js')
+    const octokit = opts.octokit || mod.createOctokit?.(token)
+
+    if ((!filesList || !Array.isArray(filesList)) && octokit && owner && repo) {
+      // Derive changed files using GitHub API if possible
+      if ((baseEvent as any)?.pull_request?.number) {
+        try {
+          const number = (baseEvent as any).pull_request.number
+          const list = await octokit.paginate(octokit.pulls.listFiles, { owner, repo, pull_number: number, per_page: 100 })
+          filesList = Array.isArray(list) ? list : []
+        } catch {}
+      } else if ((baseEvent as any)?.before && (baseEvent as any)?.after) {
+        try {
+          const comp = await octokit.repos.compareCommits({ owner, repo, base: (baseEvent as any).before, head: (baseEvent as any).after })
+          filesList = (comp?.data?.files as any[]) || []
+          ref = (baseEvent as any).after
+        } catch {}
+      }
+    }
+
+    if (owner && repo && Array.isArray(filesList) && filesList.length && ref && octokit) {
+      const files = filesList.map((f: any) => ({ filename: f.filename }))
+      const codeMentions = await scanCodeCommentsForMentions({ owner, repo, ref, files, octokit, options: { fileSizeCapBytes: 200 * 1024, languageFilters: ['js','ts','md'] } })
+      if (codeMentions.length) mentions.push(...codeMentions)
+    }
+  } catch {
+    // ignore code comment scanning failures; treated as best-effort enrichment
+  }
 
   const output: NormalizedEvent = {
     ...(neShell as any),
     enriched: {
       ...(neShell.enriched || {}),
       github: githubEnrichment,
-      metadata: { ...(neShell.enriched?.metadata || {}), rules: opts.rules || null },
+      metadata: { ...(neShell.enriched?.metadata || {}), rules: opts.rules },
       derived: { ...(neShell.enriched?.derived || {}), flags: opts.flags || {} },
       ...(mentions.length ? { mentions } : {})
     }
+  }
+  // Evaluate composed event rules (if provided)
+  try {
+    const rules = loadRules(opts.rules)
+    if (rules.length) {
+      const evalObj: any = { ...output, enriched: output.enriched, labels: output.labels || [] }
+      const res = evaluateRulesDetailed(evalObj, rules)
+      if (res?.composed?.length) (output as any).composed = res.composed
+      const meta: any = (output.enriched as any).metadata || {}
+      ;(output.enriched as any).metadata = { ...meta, rules_status: res.status }
+    }
+  } catch (e) {
+    // do not fail enrichment on rules errors; record under enriched.metadata
+    const meta: any = (output.enriched as any).metadata || {}
+    ;(output.enriched as any).metadata = { ...meta, rules_status: { ok: false, warnings: [String((e as any)?.message || e)] } }
   }
   return { code: 0, output }
 }

@@ -7,7 +7,12 @@ export default defineConfig({
     coverage: {
       reporter: ['text', 'lcov'],
     },
-    include: ['test/**/*.{test,spec}.ts', 'tests/**/*.{test,spec}.ts'],
-    exclude: ['**/*.js', 'dist/**', 'node_modules/**']
+    // TS-first tests; legacy JS stubs are intentionally not included
+    include: [
+      'tests/**/*.{test,spec}.ts',
+      'test/**/*.{test,spec}.ts',
+    ],
+    exclude: ['dist/**', 'node_modules/**']
   }
 })
+

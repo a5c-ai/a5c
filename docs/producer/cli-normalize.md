@@ -8,7 +8,7 @@ This page shows how to read GitHub payloads and print Normalized Event (NE) JSON
 
 ```bash
 # Normalize (assumes `events` CLI available)
-events normalize --provider github --in samples/workflow_run.completed.json > out.json
+events normalize --in samples/workflow_run.completed.json > out.json
 
 # Validate using ajv-cli (example)
 npx ajv validate -s docs/specs/ne.schema.json -d out.json
@@ -17,7 +17,8 @@ npx ajv validate -s docs/specs/ne.schema.json -d out.json
 - Normalize the current GitHub Actions run (inside Actions):
 
 ```bash
-npx @a5c/events normalize --source actions --select repo.full_name,type,provenance.workflow.name > event.json
+npx @a5c-ai/events normalize --source actions > event.json
+jq '.repo.full_name, .type, .provenance.workflow?.name' event.json
 ```
 
 ## Input Sources
@@ -32,12 +33,12 @@ npx @a5c/events normalize --source actions --select repo.full_name,type,provenan
 
 - Pull Request event normalization:
 ```bash
-events normalize --in samples/pull_request.synchronize.json --provider github | jq '.type, .ref.head'
+events normalize --in samples/pull_request.synchronize.json | jq '.type, .ref.head'
 ```
 
 - Push event normalization:
 ```bash
-events normalize --in samples/push.json --provider github | jq '.ref.name, .ref.type, .ref.sha'
+events normalize --in samples/push.json | jq '.ref.name, .ref.type, .ref.sha'
 ```
 
 ## Tests and Fixtures
