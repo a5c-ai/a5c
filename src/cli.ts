@@ -66,7 +66,7 @@ program
   .option('--out <file>', 'output JSON file path')
   .option('--rules <file>', 'rules file path (yaml/json)')
   .option('--flag <key=value...>', 'enrichment flags', collectKeyValue, {})
-  .option('--use-github', 'enable GitHub API enrichment (requires GITHUB_TOKEN)')
+  .option('--use-github', 'enable GitHub API enrichment (requires A5C_AGENT_GITHUB_TOKEN or GITHUB_TOKEN)')
   .option('--label <key=value...>', 'labels to attach', collectKeyValue, [])
   .action(async (cmdOpts: any) => {
     const flags = { ...(cmdOpts.flag || {}) }

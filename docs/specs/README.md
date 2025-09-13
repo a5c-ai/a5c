@@ -138,7 +138,7 @@ Evaluation:
 - PII: minimal collection; configurable redaction; allowlist of emitted fields.
 - Audit: include `provenance` with run ids, actor, and hash of raw payload; optional signed artifacts.
 - Permissions: least-privilege tokens; document scopes required for GitHub (`repo:read`, `actions:read`).
- - Diffs: patch bodies can contain secrets; `include_patch` defaults to false; redact known patterns; respect size caps.
+ - Diffs: patch bodies can contain secrets; `include_patch` defaults to true; redact known patterns; respect size caps.
  - Mentions: do not process binary files; skip files exceeding `mentions.max_file_bytes`.
 
 ## 8) Performance Targets and Constraints
