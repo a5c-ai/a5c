@@ -28,7 +28,7 @@ function makeMockOctokit({ pr, prFiles, prCommits, compare, codeowners, branchPr
 }
 
 test('PR enrichment adds pr fields and owners', async () => {
-  const pr = { number: 1, state: 'open', merged: false, draft: false, base: { ref: 'main' }, head: { ref: 'feat' }, changed_files: 2, additions: 10, deletions: 2 };
+  const pr = { number: 1, state: 'open', merged: false, draft: false, base: { ref: 'main' }, head: { ref: 'feat' }, changed_files: 2, additions: 10, deletions: 2, labels: [{ name: 'documentation' }, { name: 'testing' }], requested_reviewers: [{ login: 'alice' }], requested_teams: [{ slug: 'backend' }] };
   const prFiles = [
     { filename: 'src/a.js', status: 'modified', additions: 5, deletions: 1, changes: 6 },
     { filename: 'README.md', status: 'added', additions: 5, deletions: 1, changes: 6 }
@@ -44,6 +44,13 @@ test('PR enrichment adds pr fields and owners', async () => {
   assert.equal(out._enrichment.pr.files.length, 2);
   assert.deepEqual(out._enrichment.pr.owners['src/a.js'], ['@team-a']);
   assert.deepEqual(out._enrichment.pr.owners['README.md'], ['@docs']);
+  // labels and reviewers
+  assert.deepEqual(out._enrichment.pr.labels, ['documentation','testing']);
+  assert.deepEqual(out._enrichment.pr.requested_reviewers, ['alice']);
+  assert.deepEqual(out._enrichment.pr.requested_teams, ['backend']);
+  // has_conflicts derived from mergeable_state
+  assert.equal(out._enrichment.pr.mergeable_state, 'dirty');
+  assert.equal(out._enrichment.pr.has_conflicts, true);
 });
 
 test('Push enrichment adds commits and files', async () => {
