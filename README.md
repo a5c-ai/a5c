@@ -23,12 +23,19 @@ npm install -g @a5c/events
 
 Try it:
 ```bash
-# Normalize a payload file
-npx @a5c/events normalize --in samples/workflow_run.completed.json --out out.json
+# 1) Normalize a sample payload into a Normalized Event (NE)
+events normalize --in samples/push.json --out ne.json
+
+# 2) Enrich it and disable large patches in output
+events enrich --in ne.json --out out.json --flag include_patch=false
 
 # Inspect selected fields
-jq '.type, .repo.full_name, .provenance.workflow?.name' out.json
+jq '.type, .repo.full_name, .enriched.derived.flags.include_patch' out.json
 ```
+
+Token precedence for GitHub API calls (when enrichment reaches out to GitHub):
+- `A5C_AGENT_GITHUB_TOKEN` takes precedence over `GITHUB_TOKEN`.
+  Set `A5C_AGENT_GITHUB_TOKEN` in CI to override.
 
 ## CLI Reference
 
@@ -44,6 +51,7 @@ jq '.type, .repo.full_name, .provenance.workflow?.name' out.json
 - Common flags:
   - `--in <file>`: normalized event JSON
   - `--out <file>`: write enriched result
+  - `--flag include_patch=false`: omit patch hunks from file lists in output
 
 Exit codes: `0` success, non‑zero on errors (invalid input, etc.).
 
@@ -124,6 +132,7 @@ This repository initially used a generic a5c platform README. That content now l
 ## Links
 
 - Specs: `docs/specs/README.md`
+- CLI reference: `docs/cli/reference.md`
+- More examples: `docs/specs/README.md#12-examples`
 - Issues: https://github.com/a5c-ai/events/issues
 - Agent registry: https://github.com/a5c-ai/registry
-
