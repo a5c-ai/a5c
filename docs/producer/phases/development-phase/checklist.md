@@ -3,13 +3,13 @@
 This checklist governs implementation for the MVP defined in the Specs and Technical Specs.
 
 ## Setup
-- [ ] Repository build is green (CI for )
+- [ ] Repository build is green (CI on PRs and `a5c/main`)
 - [ ] Lint and typecheck pass locally and in CI
 - [ ] Test framework configured (vitest) with coverage
 
 ## Implementation
-- [ ] CLI  implements NE schema (see docs/specs/ne.schema.json)
-- [ ] CLI  implements enrichment taxonomy (metadata, derived, correlations)
+- [ ] CLI `events` implements NE schema (see docs/specs/ne.schema.json)
+- [ ] CLI `events` implements enrichment taxonomy (metadata, derived, correlations)
 - [ ] GitHub provider supports core event types (workflow_run, pull_request, push, issue, issue_comment, check_run)
 - [ ] Mentions extraction across sources with schema
 - [ ] Redaction of secrets and large payload caps
@@ -21,7 +21,7 @@ This checklist governs implementation for the MVP defined in the Specs and Techn
 - [ ] Performance targets validated (see docs/specs/README.md#8-performance-targets-and-constraints)
 
 ## Release
-- [ ] Build artifacts () generated and CLI binary works ()
+- [ ] Build artifacts (dist/*) generated and CLI binary works (`npm run cli -- --help`)
 - [ ] Semantic-release configured and dry-run passes
 - [ ] README updated with usage and examples
 
