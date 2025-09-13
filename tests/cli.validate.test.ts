@@ -12,10 +12,8 @@ describe('CLI --validate (core)', () => {
   it('invalid payload fails', async () => {
     // Remove a required field
     const { output } = await handleNormalize({ in: 'samples/push.json', source: 'cli', labels: ['env=test'] })
-    // @ts-expect-error force invalid
     delete (output as any).id
     const res = await validateNE(output)
     expect(res.valid).toBe(false)
   })
 })
-

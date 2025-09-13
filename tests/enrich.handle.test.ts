@@ -20,8 +20,8 @@ describe('handleEnrich integrates enrichGithubEvent', () => {
     const tmp = require('node:os').tmpdir() + '/event-pr.json'
     require('node:fs').writeFileSync(tmp, JSON.stringify(baseEvent))
     const { output } = await handleEnrich({ in: tmp, flags: { include_patch: false }, octokit: mock })
-    expect(output.enriched?.github?.pr?.number).toBe(1)
-    expect(output.enriched?.github?.pr?.files?.[0]?.patch).toBeUndefined()
+    const pr = (output.enriched as any)?.github?.pr as any
+    expect(pr?.number).toBe(1)
+    expect(pr?.files?.[0]?.patch).toBeUndefined()
   })
 })
-
