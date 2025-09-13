@@ -32,22 +32,17 @@ Normalize a raw event payload into the NE schema.
 
 Usage:
 ```bash
-events normalize [--in FILE] [--out FILE] [--source NAME] [--select PATHS] [--filter EXPR] [--label KEY=VAL...]
+events normalize [--in FILE] [--out FILE] [--source NAME] [--label KEY=VAL...]
 ```
 
 - `--in FILE`: path to a JSON webhook payload
-- `--source actions`: when `--in` is not provided, reads the payload from the
-  `GITHUB_EVENT_PATH` file exposed by GitHub Actions. Emits a clear error when
-  the environment variable is missing.
 - `--out FILE`: write result JSON (stdout if omitted)
 - `--source NAME`: provenance (`actions|webhook|cli`) [default: `cli`]
-- `--select PATHS`: comma-separated dot paths to include in output (post-processing)
-- `--filter EXPR`: filter expression `path[=value]`; if it fails, exits with code `2` and no output
 - `--label KEY=VAL...`: attach labels (repeatable)
 
 Examples:
 ```bash
-npx @a5c-ai/events normalize --in samples/workflow_run.completed.json | jq '.type, .repo.full_name'
+events normalize --in samples/workflow_run.completed.json | jq '.type, .repo.full_name'
 ```
 
 ### `events enrich`
@@ -55,7 +50,7 @@ Enrich a previously normalized event with repository and provider metadata.
 
 Usage:
 ```bash
-events enrich --in FILE [--out FILE] [--rules FILE] [--flag KEY=VAL...] [--use-github] [--select PATHS] [--filter EXPR] [--label KEY=VAL...]
+events enrich --in FILE [--out FILE] [--rules FILE] [--flag KEY=VAL...] [--use-github] [--label KEY=VAL...]
 ```
 
 - `--in FILE`: normalized event input (from `normalize`) or raw provider payload
@@ -66,15 +61,13 @@ events enrich --in FILE [--out FILE] [--rules FILE] [--flag KEY=VAL...] [--use-g
   - `commit_limit`: max commits to include [default: `50`]
   - `file_limit`: max files to include [default: `200`]
 - `--use-github`: enable GitHub API enrichment (requires `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`)
-- `--select PATHS`: comma-separated dot paths to include in output (post-processing)
-- `--filter EXPR`: filter expression `path[=value]`; if it fails, exits with code `2` and no output
 - `--label KEY=VAL...`: attach labels
 
 Examples:
 ```bash
 export A5C_AGENT_GITHUB_TOKEN=...  # preferred if available; otherwise set GITHUB_TOKEN
 
-npx @a5c-ai/events enrich --in samples/pull_request.synchronize.json \
+events enrich --in samples/pull_request.synchronize.json \
   --use-github \
   --flag include_patch=false \
   | jq '.enriched.github.pr.mergeable_state'
@@ -83,7 +76,6 @@ npx @a5c-ai/events enrich --in samples/pull_request.synchronize.json \
 ## Global / Built-in Flags
 - `--help`: show command help
 - `--version`: print version
-- `--verbose`: increase log verbosity (writes diagnostics to stderr)
 
 ## Exit Codes
 - `0`: success (commands exit with non-zero when errors occur)

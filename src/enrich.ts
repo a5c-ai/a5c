@@ -7,7 +7,7 @@ import { scanCodeCommentsForMentions } from './codeComments.js'
 
 export async function handleEnrich(opts: {
   in?: string
-  labels?: readonly string[]
+  labels?: string[]
   rules?: string
   flags?: Record<string, string | boolean | number>
   octokit?: any
@@ -34,8 +34,7 @@ export async function handleEnrich(opts: {
           baseEvent?.head_commit?.timestamp || baseEvent?.workflow_run?.updated_at || baseEvent?.pull_request?.updated_at || Date.now()
         ).toISOString(),
         payload: baseEvent,
-        // copy to mutable array to satisfy NormalizedEvent.labels type
-        labels: opts.labels ? [...opts.labels] : [],
+        labels: opts.labels || [],
         provenance: { source: 'cli' }
       }
 

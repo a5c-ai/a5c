@@ -1,6 +1,6 @@
 {
   "name": "@a5c-ai/events",
-  "version": "1.1.0-a5c-main.3",
+  "version": "1.1.0-a5c-main.2",
   "description": "Events SDK and CLI for normalizing and enriching repo/CI events for agentic workflows",
   "type": "module",
   "private": false,
@@ -17,10 +17,11 @@
     "node": ">=20"
   },
   "scripts": {
-    "prepare": "husky",
+    "prepare": "npm run build",
     "clean": "rimraf dist .turbo .vitest coverage",
     "build": "tsc -p tsconfig.build.json",
     "build:clean": "rimraf dist && npm run build",
+    "pretest": "npm run build",
     "lint": "eslint \"src/**/*.ts\" \"test/**/*.ts\" \"tests/**/*.ts\"",
     "format": "prettier -w .",
     "typecheck": "tsc --noEmit -p tsconfig.json",
@@ -28,9 +29,7 @@
     "test:ci": "vitest run --coverage --reporter=dot",
     "dev": "tsx watch src/cli.ts -- --help",
     "cli": "node dist/cli.js",
-    "release": "semantic-release",
-    "prepack": "npm run build",
-    "format:check": "prettier -c ."
+    "release": "semantic-release"
   },
   "files": [
     "dist",
@@ -60,8 +59,6 @@
   "author": "a5c.ai",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@commitlint/cli": "^19.5.0",
-    "@commitlint/config-conventional": "^19.5.0",
     "@eslint/js": "9.35.0",
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/git": "^10.0.1",
@@ -78,37 +75,19 @@
     "eslint-config-prettier": "9.1.2",
     "eslint-plugin-import": "^2.29.1",
     "globals": "16.4.0",
-    "husky": "^9.1.6",
-    "lint-staged": "^15.2.10",
     "prettier": "^3.3.3",
     "rimraf": "^5.0.5",
     "semantic-release": "^24.2.0",
     "tsx": "^4.19.1",
     "typescript": "5.9.2",
     "typescript-eslint": "8.43.0",
-    "vitest": "^2.1.1"
+    "vitest": "^2.1.1",
+    "yaml": "2.8.1"
   },
   "dependencies": {
     "@octokit/rest": "^21.0.0",
     "commander": "^12.1.0",
     "dotenv": "^16.4.5",
     "minimatch": "^9.0.5"
-  },
-  "lint-staged": {
-    "src/**/*.ts": [
-      "eslint --fix --max-warnings=0",
-      "prettier -w"
-    ],
-    "test/**/*.ts": [
-      "eslint --fix --max-warnings=0",
-      "prettier -w"
-    ],
-    "tests/**/*.ts": [
-      "eslint --fix --max-warnings=0",
-      "prettier -w"
-    ],
-    "*.{js,ts,md,json,yml,yaml,css,scss,html}": [
-      "prettier -w"
-    ]
   }
 }
