@@ -188,7 +188,8 @@ Evaluation:
   ```yaml
   - name: Normalize workflow_run
     run: |
-      npx @a5c/events normalize --source actions --select repo.full_name,type,provenance.workflow.name > event.json
+      npx @a5c-ai/events normalize --source actions > event.json
+      jq '.repo.full_name, .type, .provenance.workflow?.name' event.json
   ```
 - Webhook payload example (CLI):
   ```bash
@@ -198,9 +199,9 @@ Evaluation:
 
 - Enrich PR and emit composed events:
   ```bash
+  export GITHUB_TOKEN=... # or A5C_AGENT_GITHUB_TOKEN
   events enrich --in samples/pull_request.synchronize.json \
-    --select type,repo.full_name,enriched.github.pr.mergeable_state \
-    --rules rules/conflicts.yml > out.json
+    --rules rules/conflicts.yml --use-github > out.json
   jq '.enriched.github.pr.has_conflicts, (.composed // [])[].key' out.json
   ```
 
