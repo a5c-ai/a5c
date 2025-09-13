@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Install project dependencies according to detected stack
 if [ -f package.json ]; then
   echo "[install] Node dependencies"
   if command -v corepack >/dev/null 2>&1; then
@@ -11,6 +12,8 @@ if [ -f package.json ]; then
   else
     npm install
   fi
+else
+  echo "[install] No package.json found. Skipping npm install."
 fi
 
 if [ -f requirements.txt ]; then
@@ -18,3 +21,4 @@ if [ -f requirements.txt ]; then
   python3 -m pip install -r requirements.txt
 fi
 
+echo "[install] Done."
