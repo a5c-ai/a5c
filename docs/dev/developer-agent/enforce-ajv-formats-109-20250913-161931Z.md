@@ -7,3 +7,8 @@ Plan:
 - Ensure ajv-formats or equivalent is used in schema compile tests.
 - Verify CI tests workflow covers failures.
 
+
+Updates:
+- Added tests and CI change.
+- Opened PR #113.
+- Local tests: 32/32 passing with coverage.
