@@ -33,6 +33,25 @@ export interface NormalizedEvent {
   provider: string; // e.g., 'github'
   type: string; // event type
   occurred_at: string; // ISO timestamp
+  repo?: {
+    id: number;
+    name: string;
+    full_name: string;
+    private?: boolean;
+    visibility?: 'public' | 'private' | 'internal' | null;
+  };
+  ref?: {
+    name?: string;
+    type?: 'branch' | 'tag' | 'unknown' | null;
+    sha?: string;
+    base?: string;
+    head?: string;
+  };
+  actor?: {
+    id: number;
+    login: string;
+    type: string;
+  };
   payload?: unknown;
   labels?: string[];
   provenance?: { source?: string; [k: string]: unknown };
