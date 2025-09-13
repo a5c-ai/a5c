@@ -33,6 +33,10 @@ events normalize --in samples/workflow_run.completed.json --select type,repo.ful
 ### `events enrich`
 Enrich a previously normalized event with repository and provider metadata.
 
+Behavior:
+- No network calls are performed by default.
+- Pass `--use-github` to enable GitHub API enrichment. A `GITHUB_TOKEN` (or `A5C_AGENT_GITHUB_TOKEN`) must be present; otherwise enrichment is skipped and marked as partial.
+
 Usage:
 ```bash
 events enrich --in FILE [--out FILE] [--rules FILE] \
@@ -51,6 +55,12 @@ export GITHUB_TOKEN=...  # required for GitHub API lookups
 events enrich --in samples/pull_request.synchronize.json \
   --use-github \
   --select type,repo.full_name,enriched.github.pr.mergeable_state
+```
+
+Without network calls (mentions only):
+```bash
+events enrich --in samples/push.json --out out.json
+jq '.enriched.mentions' out.json
 ```
 
 ## Global Flags

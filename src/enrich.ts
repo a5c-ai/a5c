@@ -35,21 +35,29 @@ export async function handleEnrich(opts: {
       }
 
   let githubEnrichment: any = {}
-  try {
-    const mod: any = await import('./enrichGithubEvent.js')
-    const fn = (mod.enrichGithubEvent || mod.default) as (e: any, o?: any) => Promise<any>
-    const enriched = await fn(baseEvent, { token, commitLimit, fileLimit, octokit: opts.octokit })
-    githubEnrichment = enriched?._enrichment || {}
-    if (!includePatch) {
-      if (githubEnrichment.pr?.files) {
-        githubEnrichment.pr.files = githubEnrichment.pr.files.map((f: any) => ({ ...f, patch: undefined }))
-      }
-      if (githubEnrichment.push?.files) {
-        githubEnrichment.push.files = githubEnrichment.push.files.map((f: any) => ({ ...f, patch: undefined }))
+  const useGithub = toBool(opts.flags?.use_github)
+  if (useGithub) {
+    if (!token) {
+      // Flag requested but no token available: mark as partial and do NOT call network
+      githubEnrichment = { provider: 'github', partial: true, errors: [{ message: 'GITHUB_TOKEN missing; skipped API enrichment' }] }
+    } else {
+      try {
+        const mod: any = await import('./enrichGithubEvent.js')
+        const fn = (mod.enrichGithubEvent || mod.default) as (e: any, o?: any) => Promise<any>
+        const enriched = await fn(baseEvent, { token, commitLimit, fileLimit, octokit: opts.octokit })
+        githubEnrichment = enriched?._enrichment || {}
+        if (!includePatch) {
+          if (githubEnrichment.pr?.files) {
+            githubEnrichment.pr.files = githubEnrichment.pr.files.map((f: any) => ({ ...f, patch: undefined }))
+          }
+          if (githubEnrichment.push?.files) {
+            githubEnrichment.push.files = githubEnrichment.push.files.map((f: any) => ({ ...f, patch: undefined }))
+          }
+        }
+      } catch (e: any) {
+        githubEnrichment = { provider: 'github', partial: true, errors: [{ message: String(e?.message || e) }] }
       }
     }
-  } catch (e: any) {
-    githubEnrichment = { provider: 'github', partial: true, errors: [{ message: String(e?.message || e) }] }
   }
 
   // Mentions from common text locations
@@ -70,7 +78,7 @@ export async function handleEnrich(opts: {
     ...(neShell as any),
     enriched: {
       ...(neShell.enriched || {}),
-      github: githubEnrichment,
+      ...(useGithub ? { github: githubEnrichment } : {}),
       metadata: { ...(neShell.enriched?.metadata || {}), rules: opts.rules || null },
       derived: { ...(neShell.enriched?.derived || {}), flags: opts.flags || {} },
       ...(mentions.length ? { mentions } : {})

@@ -34,7 +34,14 @@ describe('handleEnrich', () => {
     expect(names).toContain('developer-agent');
   });
 
-  it('merges GitHub enrichment when flag enabled but missing token marks partial', async () => {
+  it('skips API enrichment unless --use-github is set', async () => {
+    const res = await handleEnrich({ in: 'samples/pull_request.synchronize.json', labels: [], rules: undefined, flags: {} });
+    const gh = (res.output.enriched as any)?.github;
+    // No github enrichment object injected when flag is absent
+    expect(gh).toBeUndefined();
+  });
+
+  it('marks partial when --use-github is set but token missing (no network call)', async () => {
     const res = await handleEnrich({ in: 'samples/pull_request.synchronize.json', labels: [], rules: undefined, flags: { use_github: 'true' } });
     const gh = (res.output.enriched as any)?.github;
     expect(gh).toBeTruthy();
