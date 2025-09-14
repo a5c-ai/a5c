@@ -1,14 +1,14 @@
 ---
 title: Quick Start
-description: Run the Events SDK/CLI locally and in CI to normalize and enrich GitHub events.
+description: Run the Events SDK/CLI locally and in CI to extract mentions, normalize and enrich GitHub events.
 ---
 
 # Quick Start
 
-Use the Events SDK/CLI to turn raw GitHub payloads into a Normalized Event (NE) and add useful enrichment for downstream automations.
+Use the Events SDK/CLI to extract mentions from text, turn raw GitHub payloads into a Normalized Event (NE), and add useful enrichment for downstream automations.
 
 ## Prerequisites
-- Node.js 18+ and npm
+- Node.js 20+ and npm
 - GitHub token (for enrichment that queries repo metadata): set `GITHUB_TOKEN`
 - Repo cloned with this project or install the package once published
 
@@ -24,16 +24,27 @@ npm install || true
 When published as a package:
 
 ```bash
-npm install -g @a5c/events
+npm install -g @a5c-ai/events
+```
+
+## Extract mentions from text
+
+```bash
+echo "Please review @developer-agent" | events mentions --source issue_comment
 ```
 
 ## Normalize a webhook payload
 
 ```bash
-events normalize --in samples/workflow_run.completed.json --out out.json \
-  --select type,repo.full_name,provenance.workflow.name
+events normalize --in samples/workflow_run.completed.json --out out.json
 
-jq '.type, .repo.full_name, .provenance.workflow.name' out.json
+jq '.type, .repo.full_name, .provenance.workflow?.name' out.json
+
+# Filter and select
+events normalize --in samples/workflow_run.completed.json \
+  --filter 'type=workflow_run' \
+  --select 'type,repo.full_name'
+jq '.type, .repo.full_name' out.json
 ```
 
 Expected output (example):
@@ -49,8 +60,8 @@ Expected output (example):
 ```bash
 export GITHUB_TOKEN=ghp_xxx # or use Actions token in CI
 
-events enrich --in samples/pull_request.synchronize.json --out out.json \
-  --select type,repo.full_name,enriched.github.pr.mergeable_state
+# No network by default; add --use-github to opt in to API lookups
+events enrich --in samples/pull_request.synchronize.json --out out.json --use-github --flag include_patch=false
 
 jq '.enriched.github.pr.has_conflicts, .enriched.github.pr.mergeable_state' out.json
 ```
@@ -67,12 +78,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: npm i -g @a5c/events
+      - run: npm i -g @a5c-ai/events
       - name: Normalize
         run: |
-          events normalize --source actions \
-            --select type,repo.full_name,provenance.workflow.name > event.json
-          jq '.type, .repo.full_name' event.json
+          events normalize --source actions > event.json
+          jq '.type, .repo.full_name, .provenance.workflow?.name' event.json
 ```
 
 ## Next steps

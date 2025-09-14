@@ -25,3 +25,47 @@ jobs:
       - name: Test
         run: |
           ./scripts/test.sh
+      - name: CLI smoke: normalize | validate sample
+        run: |
+          # build CLI if not already built by pretest
+          npm run build --silent
+          # normalize a sample and validate against the schema using built-in validator
+          node dist/cli.js normalize \
+            --in samples/workflow_run.completed.json \
+            --out /tmp/out.validate.json
+          node dist/cli.js validate \
+            --in /tmp/out.validate.json \
+            --schema docs/specs/ne.schema.json \
+            --quiet
+      - name: Upload coverage artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-lcov
+          path: |
+            coverage/lcov.info
+      - name: Coverage summary
+        if: always()
+        run: |
+          if [ -f coverage/coverage-summary.json ]; then
+            node -e '
+              const fs = require("fs");
+              const sum = JSON.parse(fs.readFileSync("coverage/coverage-summary.json","utf8"));
+              const t = sum.total || {};
+              const row = (k) => `| ${k} | ${((t[k]?.pct ?? 0)).toFixed(2)}% | ${t[k]?.covered ?? 0}/${t[k]?.total ?? 0} |`;
+              const out = [
+                "## Coverage Summary",
+                "",
+                "| Metric | Percent | Covered/Total |",
+                "|---|---:|---:|",
+                row("lines"),
+                row("statements"),
+                row("functions"),
+                row("branches"),
+                "",
+              ].join("\n");
+              fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, out);
+            ';
+          else
+            echo "coverage/coverage-summary.json not found; ensure vitest json-summary reporter is enabled" >> "$GITHUB_STEP_SUMMARY";
+          fi

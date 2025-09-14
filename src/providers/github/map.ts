@@ -1,4 +1,5 @@
 import type { NormalizedEvent } from '../../types.js';
+import type { Provider, NormalizeOptions, EnrichOptions } from '../types.js';
 
 type GHRepo = { id: number; name: string; full_name: string; private?: boolean; visibility?: string | null; owner?: { login: string } };
 type GHUser = { id: number; login: string; type: string };
@@ -11,7 +12,8 @@ export function detectTypeAndId(payload: any): DetectResult {
   if (payload.pull_request) {
     const pr = payload.pull_request;
     const occurred_at = pr.updated_at || pr.created_at || payload.repository?.pushed_at || new Date().toISOString();
-    const id = String(pr.id || `${payload.repository?.full_name || 'repo'}/pr/${pr.number}`);
+    // Prefer number for stable, compact identity as used by tests/consumers
+    const id = String((pr as any).number ?? pr.id ?? `${payload.repository?.full_name || 'repo'}/pr/${pr.number}`);
     return { type: 'pull_request', occurred_at, id };
   }
   // workflow_run
@@ -51,8 +53,7 @@ function mapRef(payload: any) {
   if (payload.pull_request) {
     return {
       name: payload.pull_request.head?.ref,
-      type: 'branch',
-      sha: payload.pull_request.head?.sha,
+      type: 'pr',
       base: payload.pull_request.base?.ref,
       head: payload.pull_request.head?.ref,
     };
@@ -113,4 +114,14 @@ export function mapToNE(payload: any, opts: { source?: string; labels?: string[]
     }
   }
   return ne as NormalizedEvent;
+}
+
+// Optional: expose a Provider-compatible adapter without changing existing exports
+export const GitHubProvider: Provider = {
+  normalize: (payload: any, opts?: NormalizeOptions) => mapToNE(payload, { source: opts?.source, labels: opts?.labels }),
+  enrich: async (event: any, opts?: EnrichOptions) => {
+    const mod: any = await import('../../enrichGithubEvent.js')
+    const fn = (mod.enrichGithubEvent || mod.default) as (e: any, o?: any) => Promise<any>
+    return fn(event, opts)
+  }
 }

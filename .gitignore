@@ -57,3 +57,6 @@ next-env.d.ts
 # local generated helper files (should not be committed)
 .check_env
 .pr_comment.md
+
+# CLI outputs
+/out.json

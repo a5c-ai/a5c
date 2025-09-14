@@ -5,9 +5,23 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     coverage: {
-      reporter: ['text', 'lcov'],
+      reporter: ['text', 'lcov', 'json-summary'],
+      provider: 'v8',
+      all: true,
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: ['**/*.d.ts', 'dist/**', 'node_modules/**', 'coverage/**'],
+      thresholds: {
+        lines: 60,
+        branches: 55,
+        functions: 60,
+        statements: 60,
+      },
     },
-    include: ['test/**/*.{test,spec}.ts', 'tests/**/*.{test,spec}.ts'],
-    exclude: ['**/*.js', 'dist/**', 'node_modules/**']
+    // TS-first tests; legacy JS stubs are intentionally not included
+    include: [
+      'tests/**/*.{test,spec}.ts',
+      'test/**/*.{test,spec}.ts',
+    ],
+    exclude: ['dist/**', 'node_modules/**']
   }
 })

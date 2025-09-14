@@ -29,4 +29,27 @@ describe('redaction', () => {
     const got = redactEnv(input)
     expect(got).toEqual({ STRIPE_SECRET_KEY: 'REDACTED', NORMAL: 'x' })
   })
+
+  it('masks Slack/AWS/Basic Auth patterns in strings', () => {
+    const input = 'xoxb-1234567890-abcdefghijkl https://user:secret@example.com AKIA1234567890ABCD'
+    const got = redactString(input)
+    expect(got).not.toMatch(/xox[abprs]-/)
+    expect(got).not.toMatch(/https?:\/\/[A-Za-z0-9._%-]+:[^@\s]+@/)
+    expect(got).not.toMatch(/AKIA[0-9A-Z]{16}/)
+  })
+
+  it('masks representative fixture payload values', () => {
+    const json = JSON.parse(
+      require('node:fs').readFileSync('tests/fixtures/redaction/sample-with-secrets.json', 'utf8')
+    )
+    const got = redactObject(json)
+    const s = JSON.stringify(got)
+    expect(s).toContain('REDACTED')
+    // ensure no known tokens leak
+    expect(s).not.toMatch(/gh[pouse]_[A-Za-z0-9]{10,}/)
+    expect(s).not.toMatch(/Bearer\s+[A-Za-z0-9._-]{10,}/i)
+    expect(s).not.toMatch(/https?:\/\/[A-Za-z0-9._%-]+:[^@\s]+@/)
+    expect(s).not.toMatch(/xox[abprs]-/)
+    expect(s).not.toMatch(/AKIA[0-9A-Z]{16}/)
+  })
 })
