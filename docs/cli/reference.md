@@ -61,7 +61,7 @@ Enrich a normalized event (or raw GitHub payload) with repository and provider m
 
 Behavior:
 - No network calls are performed by default.
-- Pass `--use-github` to enable GitHub API enrichment. A `GITHUB_TOKEN` (or `A5C_AGENT_GITHUB_TOKEN`) must be present; otherwise enrichment is skipped and marked as partial.
+- Pass `--use-github` to enable GitHub API enrichment. A `GITHUB_TOKEN` (or `A5C_AGENT_GITHUB_TOKEN`) must be present; otherwise the CLI returns exit code `3` and `enriched.github` will indicate a missing token reason.
 
 Usage:
 ```bash
@@ -77,10 +77,10 @@ events enrich --in FILE [--out FILE] [--rules FILE] \
   - `include_patch=true|false` (default: `false`) – include diff patches; when `false`, patches are removed. Defaulting to false avoids leaking secrets via diffs and keeps outputs small; enable only when required.
   - `commit_limit=<n>` (default: `50`) – limit commits fetched for PR/push
   - `file_limit=<n>` (default: `200`) – limit files per compare list
-- `--use-github`: enable GitHub API enrichment; equivalent to `--flag use_github=true` (requires `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`). Without this flag, the CLI performs no network calls and sets `enriched.github = { provider: 'github', skipped: true, reason: 'flag:not_set' }`.
-- `--label KEY=VAL...`: labels to attach
-- `--select PATHS`: comma-separated dot paths to include in output
-- `--filter EXPR`: filter expression `path[=value]`; if it doesn't pass, exits with code `2`
+- `--use-github`: enable GitHub API enrichment; equivalent to `--flag use_github=true` (requires `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`). Without this flag, the CLI performs no network calls and sets `enriched.github = { provider: 'github', skipped: true, reason: 'github_enrich_disabled' }`.
+  - `--label KEY=VAL...`: labels to attach
+  - `--select PATHS`: comma-separated dot paths to include in output
+  - `--filter EXPR`: filter expression `path[=value]`; if it doesn't pass, exits with code `2`
 
 Examples:
 ```bash
@@ -100,7 +100,25 @@ Note:
 - `.composed` may be absent or `null` when no rules match. Guard with `(.composed // [])` as above.
 - The `reason` field may be omitted depending on rule configuration. See specs §6.1 for composed events structure: `docs/specs/README.md#61-rule-engine-and-composed-events`.
 - Token precedence: runtime prefers `A5C_AGENT_GITHUB_TOKEN` over `GITHUB_TOKEN` when both are set (see `src/config.ts`).
-  - Redaction: CLI redacts sensitive keys and common secret patterns in output by default (see `src/utils/redact.ts`).
+- Redaction: CLI redacts sensitive keys and common secret patterns in output by default (see `src/utils/redact.ts`).
+
+### Auth tokens: precedence, behavior, and examples
+
+- Precedence: `A5C_AGENT_GITHUB_TOKEN` > `GITHUB_TOKEN`.
+- Missing token behavior with `--use-github`: CLI exits `3` and enrichment is marked partial with `enriched.github.reason = "token:missing"`.
+
+Examples:
+```bash
+# Token precedence illustrated
+export GITHUB_TOKEN=ghp_low_scope
+export A5C_AGENT_GITHUB_TOKEN=ghs_broader_scope
+events enrich --in samples/pull_request.synchronize.json --use-github | jq '.enriched.github.provider'
+
+# Missing token path
+unset GITHUB_TOKEN A5C_AGENT_GITHUB_TOKEN
+events enrich --in samples/pull_request.synchronize.json --use-github || echo $?
+# -> exit code 3
+```
 ```
 
 #### Mentions flags (code comment scanning)
