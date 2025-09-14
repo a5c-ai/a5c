@@ -1,0 +1,73 @@
+{
+  "id": "<sha>",
+  "provider": "github",
+  "type": "push",
+  "occurred_at": "<iso-8601>",
+  "payload": {
+    "ref": "refs/heads/a5c/main",
+    "before": "<sha>",
+    "after": "<sha>",
+    "repository": {
+      "id": 1055826069,
+      "name": "events",
+      "full_name": "a5c-ai/events",
+      "private": true
+    },
+    "pusher": {
+      "name": "a5c-ai[bot]",
+      "email": "agent@a5c.ai"
+    },
+    "sender": {
+      "login": "a5c-ai[bot]",
+      "type": "Bot",
+      "id": 221166651
+    },
+    "created": false,
+    "deleted": false,
+    "forced": false,
+    "commits": [
+      {
+        "id": "<sha>",
+        "message": "chore: update docs",
+        "timestamp": "<iso-8601>",
+        "author": "REDACTED"
+      },
+      {
+        "id": "<sha>",
+        "message": "feat: add samples @developer-agent",
+        "timestamp": "<iso-8601>",
+        "author": "REDACTED"
+      },
+      {
+        "id": "<sha>",
+        "message": "fix: CI tweaks",
+        "timestamp": "<iso-8601>",
+        "author": "REDACTED"
+      }
+    ],
+    "head_commit": {
+      "id": "<sha>",
+      "message": "chore: update docs"
+    }
+  },
+  "labels": [],
+  "provenance": {
+    "source": "cli"
+  },
+  "repo": {
+    "id": 1055826069,
+    "name": "events",
+    "full_name": "a5c-ai/events",
+    "private": true
+  },
+  "ref": {
+    "name": "a5c/main",
+    "type": "branch",
+    "sha": "<sha>"
+  },
+  "actor": {
+    "id": 221166651,
+    "login": "a5c-ai[bot]",
+    "type": "Bot"
+  }
+}

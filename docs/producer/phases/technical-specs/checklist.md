@@ -1,39 +1,21 @@
-# Technical Specs Phase – Checklist
+# Technical Specs – Phase Checklist
 
-Use this list to gate readiness to exit the Specification Phase. Check items only when the linked artifact exists and aligns with current code.
+Track readiness of the Technical Specifications phase. Check items when complete and verified on `a5c/main`.
 
-1) Core stack locked
-- [x] TypeScript, Node >= 18, ESM — see [Tech Stack](./tech-stack.md)
+- [x] Tech stack decided and documented — see docs/producer/phases/technical-specs/tech-stack.md
+- [x] NE schema validation strategy defined (Ajv + formats) — see tests/ne.schema.compile.test.ts and docs/specs/ne.schema.json
+- [x] Provider adapter (GitHub) mapping MVP implemented — see src/providers/github/map.ts and docs/producer/phases/technical-specs/events/input-mapping.md
+- [x] Enrichment flags and bounds set (commit/file limits; patch toggle) — see src/enrich.ts
+- [x] CLI commands documented with parity to code (normalize, enrich, mentions) — see docs/producer/phases/technical-specs/apis/cli-commands.md and src/cli.ts
+- [ ] Emit command designed/spec’d (not yet implemented) — see docs/producer/phases/technical-specs/apis/cli-commands.md
+- [x] CI workflows present and green on a5c/main (lint, tests) — see .github/workflows/*.yml
+- [x] Release workflow configured (semantic-release) and publishing targets set — see package.json and .github/workflows/release.yml
+- [x] Cross-links from specs overview to technical-specs index — see docs/specs/README.md and docs/producer/phases/technical-specs/README.md
+- [x] Integration points defined (GitHub Actions/webhooks/MCP) — see docs/producer/phases/technical-specs/integrations/*.md
+- [x] Data models outlined (Normalized Event, Enrichment Types) — see docs/producer/phases/technical-specs/data-models/*.md
 
-2) CLI decisions
-- [x] Framework `yargs`, binary `events` — see [Technical Specs – Stack](../../../specs/tech-specs.md#stack)
+Notes:
+- When the Emit command is implemented and verified in CI, mark it complete.
+- Before advancing phase, verify CI green for `a5c/main` latest.
 
-3) NE schema and validation
-- [x] NE schema at [docs/specs/ne.schema.json](../../../specs/ne.schema.json)
-- [x] Ajv compile + formats (date-time) in tests — [tests/ne.schema.compile.test.ts](../../../../tests/ne.schema.compile.test.ts), [Ajv formats note](../../../validation/83/high/tests/01-ajv-formats-date-time.md)
-
-4) Provider adapter (GitHub MVP)
-- [x] Mapping scaffolded — [Providers](./system-components/providers.md), [src/providers/github/map.ts](../../../../src/providers/github/map.ts)
-- [ ] Enrichment coverage outlined (owners, conflicts, repo metadata) — [Specs – Enrichment Taxonomy](../../../specs/README.md#4-enrichment-taxonomy)
-
-5) Enrichment bounds
-- [x] Commit/file bounds described — [Enrichment Types](./data-models/enrichment-types.md)
-- [ ] Default limits specified in code/docs (max commits/files per PR)
-
-6) CLI parity with specs
-- [x] Commands defined in specs (normalize, enrich, emit) — [CLI Commands](./apis/cli-commands.md)
-- [x] Normalize/enrich implemented — [src/normalize.ts](../../../../src/normalize.ts), [src/enrich.ts](../../../../src/enrich.ts), [CLI Reference](../../../cli/reference.md)
-- [ ] Emit/sinks documented and stubbed (stdout/file, artifacts)
-
-7) CI status
-- [ ] CI (build, tests, lint) green on `a5c/main` — see [.github/workflows](../../../../.github/workflows)
-
-8) Release & publishing
-- [x] Release workflow scaffolded for `a5c/main` pushes — [Publishing](./deployment/publishing.md)
-- [ ] Package metadata and release tooling (semantic-release/Changesets) verified
-
-9) Cross-links
-- [x] Specs index references this directory — [Specs README](../../../specs/README.md)
-- [x] Checklist cross-links to [docs/specs/tech-specs.md](../../../specs/tech-specs.md)
-
-When all items are checked, update `docs/producer/phases/current-phase.txt` to the next phase.
+See also: docs/specs/tech-specs.md
