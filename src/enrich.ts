@@ -50,16 +50,13 @@ export async function handleEnrich(opts: {
       }
 
   let githubEnrichment: any = {}
-  if (!useGithub) {
-    // Offline/default mode: do not perform network enrichment
-    githubEnrichment = { provider: 'github', partial: true, reason: 'github_enrich_disabled' }
-  } else if (!token) {
-    // Enabled but missing token: mark partial with reason without attempting network calls
+  const hasAuth = Boolean(token || opts.octokit)
+  if (!(useGithub && hasAuth)) {
+    // Default: no network enrichment unless flag+token provided
     githubEnrichment = {
       provider: 'github',
-      partial: true,
-      reason: 'github_token_missing',
-      errors: [{ message: 'GitHub token is required for enrichment' }]
+      skipped: true,
+      reason: !useGithub ? 'flag:not_set' : 'token:missing',
     }
   } else {
     try {
@@ -77,16 +74,20 @@ export async function handleEnrich(opts: {
       } else {
         // Ensure a defined patch key when include_patch=true so callers can rely on presence
         if (githubEnrichment.pr?.files) {
-          githubEnrichment.pr.files = githubEnrichment.pr.files.map((f: any) => (Object.prototype.hasOwnProperty.call(f, 'patch') ? f : { ...f, patch: '' }))
+          githubEnrichment.pr.files = githubEnrichment.pr.files.map((f: any) => (
+            Object.prototype.hasOwnProperty.call(f, 'patch') ? f : { ...f, patch: '' }
+          ))
         }
         if (githubEnrichment.push?.files) {
-          githubEnrichment.push.files = githubEnrichment.push.files.map((f: any) => (Object.prototype.hasOwnProperty.call(f, 'patch') ? f : { ...f, patch: '' }))
+          githubEnrichment.push.files = githubEnrichment.push.files.map((f: any) => (
+            Object.prototype.hasOwnProperty.call(f, 'patch') ? f : { ...f, patch: '' }
+          ))
         }
       }
     } catch (e: any) {
       const errMessage = String(e?.message || e)
-      // When explicit GitHub enrichment is requested and it fails, surface as code 3
-      return { code: 3, output: { error: `github enrichment failed: ${errMessage}` } }
+      // For handleEnrich (programmatic), do not fail the whole command; mark partial with error
+      githubEnrichment = { provider: 'github', partial: true, errors: [{ message: errMessage }] }
     }
   }
 
@@ -158,51 +159,53 @@ export async function handleEnrich(opts: {
     void 0
   }
 
-  // Mentions from code comments in changed files (PR/push)
-  try {
-    const gh = (githubEnrichment || {}) as any
-    let owner: string | undefined = gh.owner
-    let repo: string | undefined = gh.repo
-    let filesList: any[] | undefined = gh?.pr?.files || gh?.push?.files
-    let ref: string | undefined = (baseEvent as any)?.pull_request?.head?.sha || (baseEvent as any)?.pull_request?.head?.ref || (baseEvent as any)?.after || (baseEvent as any)?.head_commit?.id
+  // Mentions from code comments in changed files (PR/push) — requires opt-in and auth
+  if (useGithub && hasAuth) {
+    try {
+      const gh = (githubEnrichment || {}) as any
+      let owner: string | undefined = gh.owner
+      let repo: string | undefined = gh.repo
+      let filesList: any[] | undefined = gh?.pr?.files || gh?.push?.files
+      let ref: string | undefined = (baseEvent as any)?.pull_request?.head?.sha || (baseEvent as any)?.pull_request?.head?.ref || (baseEvent as any)?.after || (baseEvent as any)?.head_commit?.id
 
-    // Fallback to payload if enrichment missing
-    if (!owner || !repo) {
-      const full = (baseEvent as any)?.repository?.full_name
-      if (typeof full === 'string' && full.includes('/')) {
-        const parts = full.split('/')
-        owner = parts[0]
-        repo = parts[1]
+      // Fallback to payload if enrichment missing
+      if (!owner || !repo) {
+        const full = (baseEvent as any)?.repository?.full_name
+        if (typeof full === 'string' && full.includes('/')) {
+          const parts = full.split('/')
+          owner = parts[0]
+          repo = parts[1]
+        }
       }
-    }
 
-    const mod: any = await import('./enrichGithubEvent.js')
-    const octokit = opts.octokit || mod.createOctokit?.(token)
+      const mod: any = await import('./enrichGithubEvent.js')
+      const octokit = opts.octokit || mod.createOctokit?.(token)
 
-    if ((!filesList || !Array.isArray(filesList)) && octokit && owner && repo) {
-      // Derive changed files using GitHub API if possible
-      if ((baseEvent as any)?.pull_request?.number) {
-        try {
-          const number = (baseEvent as any).pull_request.number
-          const list = await octokit.paginate(octokit.pulls.listFiles, { owner, repo, pull_number: number, per_page: 100 })
-          filesList = Array.isArray(list) ? list : []
-        } catch {}
-      } else if ((baseEvent as any)?.before && (baseEvent as any)?.after) {
-        try {
-          const comp = await octokit.repos.compareCommits({ owner, repo, base: (baseEvent as any).before, head: (baseEvent as any).after })
-          filesList = (comp?.data?.files as any[]) || []
-          ref = (baseEvent as any).after
-        } catch {}
+      if ((!filesList || !Array.isArray(filesList)) && octokit && owner && repo) {
+        // Derive changed files using GitHub API if possible
+        if ((baseEvent as any)?.pull_request?.number) {
+          try {
+            const number = (baseEvent as any).pull_request.number
+            const list = await octokit.paginate(octokit.pulls.listFiles, { owner, repo, pull_number: number, per_page: 100 })
+            filesList = Array.isArray(list) ? list : []
+          } catch {}
+        } else if ((baseEvent as any)?.before && (baseEvent as any)?.after) {
+          try {
+            const comp = await octokit.repos.compareCommits({ owner, repo, base: (baseEvent as any).before, head: (baseEvent as any).after })
+            filesList = (comp?.data?.files as any[]) || []
+            ref = (baseEvent as any).after
+          } catch {}
+        }
       }
-    }
 
-    if (owner && repo && Array.isArray(filesList) && filesList.length && ref && octokit) {
-      const files = filesList.map((f: any) => ({ filename: f.filename }))
-      const codeMentions = await scanCodeCommentsForMentions({ owner, repo, ref, files, octokit, options: { fileSizeCapBytes: 200 * 1024, languageFilters: ['js','ts','md'] } })
-      if (codeMentions.length) mentions.push(...codeMentions)
+      if (owner && repo && Array.isArray(filesList) && filesList.length && ref && octokit) {
+        const files = filesList.map((f: any) => ({ filename: f.filename }))
+        const codeMentions = await scanCodeCommentsForMentions({ owner, repo, ref, files, octokit, options: { fileSizeCapBytes: 200 * 1024, languageFilters: ['js','ts','md'] } })
+        if (codeMentions.length) mentions.push(...codeMentions)
+      }
+    } catch {
+      // ignore code comment scanning failures; treated as best-effort enrichment
     }
-  } catch {
-    // ignore code comment scanning failures; treated as best-effort enrichment
   }
 
   // Optional: scan changed files for code comment mentions
@@ -238,6 +241,7 @@ export async function handleEnrich(opts: {
     ...(neShell as any),
     enriched: {
       ...(neShell.enriched || {}),
+      // Always expose github enrichment; in offline mode it's a partial stub with reason
       github: githubEnrichment,
       metadata: { ...(neShell.enriched?.metadata || {}), rules: opts.rules },
       derived: { ...(neShell.enriched?.derived || {}), flags: opts.flags || {} },
