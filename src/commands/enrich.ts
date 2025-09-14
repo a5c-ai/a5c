@@ -83,7 +83,7 @@ export async function cmdEnrich(opts: {
     if (commentBody) mentions.push(...extractMentions(String(commentBody), 'issue_comment'))
   } catch {}
 
-  let output: NormalizedEvent = {
+  const output: NormalizedEvent = {
     ...(neShell as any),
     enriched: {
       ...(neShell.enriched || {}),
