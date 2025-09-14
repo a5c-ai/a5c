@@ -5,55 +5,42 @@ description: Commands, flags, and examples for the Events CLI (`mentions`, `norm
 
 # CLI Reference
 
-<<<<<<< HEAD
 The CLI transforms provider payloads into a Normalized Event (NE), extracts mentions, and can enrich with repository context. Implemented with `commander` (see `src/cli.ts`).
-=======
-The CLI transforms provider payloads into a Normalized Event (NE), extracts mentions, and optionally enriches with repository context.
->>>>>>> 26dab8d (docs(cli): sync reference, quick-start, README with implemented commands and flags\n\n- Add mentions command docs\n- Remove unimplemented select/filter\n- Document enrich flags: include_patch, commit_limit, file_limit, --use-github\n- Update install scope and Node version\n\nBy: developer-agent(https://app.a5c.ai/a5c/agents/development/developer-agent))
 
 ## Commands
 
 ### `events mentions`
-Extract `@mentions` from text.
+Extract `@mentions` from text (stdin) or a file.
 
 Usage:
 ```bash
-events mentions [--file FILE] [--source <kind>] [--window N] [--known-agent NAME...]
+events mentions [--file FILE] [--source KIND] [--window N] [--known-agent NAME...]
 ```
 
-<<<<<<< HEAD
-- `--file FILE`: optional path to read text; defaults to stdin
-- `--source <kind>`: where text came from, e.g. `pr_body`, `pr_title`, `commit_message`, `issue_comment` (default: `pr_body`)
-- `--window N`: context window size for excerpts (default: 30)
-=======
-- `--source KIND`: mention source kind (`pr_body|pr_title|commit_message|issue_comment`) [default: `pr_body`]
+- `--source KIND`: mention source kind (e.g., `pr_body`, `commit_message`) [default: `pr_body`]
 - `--file FILE`: read from file instead of stdin
 - `--window N`: context window size around mentions [default: `30`]
->>>>>>> 26dab8d (docs(cli): sync reference, quick-start, README with implemented commands and flags\n\n- Add mentions command docs\n- Remove unimplemented select/filter\n- Document enrich flags: include_patch, commit_limit, file_limit, --use-github\n- Update install scope and Node version\n\nBy: developer-agent(https://app.a5c.ai/a5c/agents/development/developer-agent))
 - `--known-agent NAME...`: known agent names to boost confidence
 
-Example:
+Examples:
 ```bash
-events mentions --file README.md --source pr_body --known-agent developer-agent validator-agent
+echo "Ping @developer-agent" | events mentions --source issue_comment | jq -r '.[].normalized_target'
 ```
 
 ### `events normalize`
-Normalize a raw provider payload into the NE schema.
+Normalize a raw event payload into the NE schema.
 
 Usage:
 ```bash
-events normalize [--in FILE] [--out FILE] [--source <actions|webhook|cli>] [--label KEY=VAL...]
+events normalize [--in FILE] [--out FILE] [--source NAME] [--label KEY=VAL...] [--select PATHS] [--filter EXPR]
 ```
 
 - `--in FILE`: path to a JSON webhook payload
 - `--out FILE`: write result JSON (stdout if omitted)
-<<<<<<< HEAD
-- `--source <name>`: provenance source (default: `cli`)
-- `--label KEY=VAL...`: attach labels (repeatable as `--label a=1 --label b=2`)
-=======
 - `--source NAME`: provenance (`actions|webhook|cli`) [default: `cli`]
-- `--label KEY=VAL...`: attach labels to top-level `labels[]` (repeatable)
->>>>>>> d4fe2d0 (docs: align labels top-level (NE))
+- `--label KEY=VAL...`: attach labels (repeatable)
+- `--select PATHS`: comma-separated dot paths to include in output
+- `--filter EXPR`: filter expression `path[=value]`; if not matched, exits with code `2` and no output
 
 Examples:
 ```bash
@@ -61,60 +48,53 @@ events normalize --in samples/workflow_run.completed.json | jq '.type, .repo.ful
 ```
 
 ### `events enrich`
-Enrich a normalized event (or raw GitHub payload) with repository and provider metadata.
+Enrich a previously normalized event with repository and provider metadata.
 
 Usage:
 ```bash
 events enrich --in FILE [--out FILE] [--rules FILE] \
-  [--flag KEY=VAL...] [--use-github] [--label KEY=VAL...]
+  [--flag KEY=VAL...] [--use-github] [--label KEY=VAL...] \
+  [--select PATHS] [--filter EXPR]
 ```
 
-- `--in FILE`: input JSON (normalized event or raw GitHub payload)
+- `--in FILE`: normalized event input (from `normalize`) or raw provider payload
 - `--out FILE`: write result JSON (stdout if omitted)
-<<<<<<< HEAD
-- `--rules FILE`: path to rules file (YAML/JSON) recorded in `enriched.metadata.rules`
-- `--flag KEY=VAL...`: enrichment flags map recorded in `enriched.derived.flags`
-  - Recognized flags include:
-    - `include_patch=true|false` (default false) – include diff patches; when false, patches are removed
-    - `commit_limit=<n>` (default 50) – limit commits fetched for PR/push
-    - `file_limit=<n>` (default 200) – limit files per compare list
-    - `use_github=true|false` – enable GitHub API enrichment (also enabled via `--use-github`)
-- `--use-github`: convenience to set `use_github=true` (requires `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`)
-- `--label KEY=VAL...`: labels to attach
-=======
 - `--rules FILE`: YAML/JSON rules file (optional)
 - `--flag KEY=VAL...`: enrichment flags (repeatable); notable flags:
-  - `include_patch`: include diff patches in files [default: `false`]
-  - `commit_limit`: max commits to include [default: `50`]
-  - `file_limit`: max files to include [default: `200`]
+  - `include_patch=true|false` (default: `true`) – include diff patches; when `false`, patches are removed
+  - `commit_limit=<n>` (default: `50`) – limit commits fetched for PR/push
+  - `file_limit=<n>` (default: `200`) – limit files per compare list
 - `--use-github`: enable GitHub API enrichment (requires `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`)
-- `--label KEY=VAL...`: attach labels to top-level `labels[]`
->>>>>>> d4fe2d0 (docs: align labels top-level (NE))
+- `--label KEY=VAL...`: attach labels
+- `--select PATHS`: comma-separated dot paths to include in output
+- `--filter EXPR`: filter expression `path[=value]`; if not matched, exits with code `2` and no output
 
 Examples:
 ```bash
-export GITHUB_TOKEN=...  # required for GitHub API lookups
+export A5C_AGENT_GITHUB_TOKEN=...  # preferred if available; otherwise set GITHUB_TOKEN
 
-events enrich --in samples/pull_request.synchronize.json --use-github \
-  --flag include_patch=false --flag commit_limit=30 --out out.json
-jq '.enriched.github.pr.has_conflicts, .enriched.github.pr.mergeable_state' out.json
+events enrich --in samples/pull_request.synchronize.json \
+  --use-github \
+  --flag include_patch=false \
+  | jq '.enriched.github.pr.mergeable_state'
 ```
 
-## Global Options
+## Global / Built-in Flags
 - `--help`: show command help
 - `--version`: print version
 
 ## Exit Codes
 - `0`: success
 - `1`: generic error (unexpected failure writing output, etc.)
-- `2`: input/validation error (missing `--in` where required, invalid/parse errors)
+- `2`: input/validation error (missing `--in` where required, invalid/parse errors, filter mismatch)
 - `3`: provider/network error (only when `--use-github` is requested and API calls fail)
 
-## Security and Redaction
-- Secrets: known patterns are redacted in output and logs by default; see `src/utils/redact.ts`.
-- Tokens: set `A5C_AGENT_GITHUB_TOKEN` or `GITHUB_TOKEN` for GitHub enrichment (precedence: `A5C_AGENT_GITHUB_TOKEN` then `GITHUB_TOKEN`); tokens are never printed.
+## Notes
+- Token precedence: runtime uses `A5C_AGENT_GITHUB_TOKEN` first, then `GITHUB_TOKEN` (see `src/config.ts`).
+- Redaction: CLI redacts known secret patterns and sensitive keys in output by default (see `src/utils/redact.ts`).
+  - Sensitive keys include: `token`, `secret`, `password`, `passwd`, `pwd`, `api_key`, `apikey`, `key`, `client_secret`, `access_token`, `refresh_token`, `private_key`, `ssh_key`, `authorization`, `auth`, `session`, `cookie`, `webhook_secret`.
+  - Pattern masking includes (non-exhaustive): GitHub PATs (`ghp_`, `gho_`, `ghu_`, `ghs_`, `ghe_`), JWTs, `Bearer ...` headers, AWS `AKIA...`/`ASIA...` keys, Stripe `sk_live_`/`sk_test_`, Slack `xox...` tokens, and URL basic auth (`https://user:pass@host`).
+- Tests: See `test/config.loadConfig.test.ts`, `test/redact.test.ts`, and `test/enrich.redaction.test.ts` for coverage and regression fixtures.
+- Large payloads: JSON is read/written from files/stdin/stdout; providers may add streaming in future.
 
-## Cross-References
-- Specs: `docs/specs/README.md`
-- Samples: `samples/`
-- Tests: `tests/mentions.*`, `tests/enrich.basic.test.ts`, `tests/cli.enrich.flags.test.ts`
+See also: `docs/specs/README.md`.
