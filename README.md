@@ -165,7 +165,7 @@ See `docs/specs/README.md` for examples and behavior-driven test outlines. Add y
 - Build: `npm run build`
 - Dev CLI: `npm run dev` (runs `src/cli.ts` via tsx)
 - Lint/format: `npm run lint` / `npm run format`
-- Minimal Node types + yargs; TypeScript configured in `tsconfig.json`
+- Minimal Node types + commander; TypeScript configured in `tsconfig.json`
 
 Project structure:
 - `src/cli.ts` – CLI entrypoint (mentions, normalize, enrich)

@@ -101,4 +101,4 @@ jq '.enriched.github.pr.has_conflicts, .enriched.github.pr.mergeable_state' out.
 ## Cross-References
 - Specs: `docs/specs/README.md`
 - Samples: `samples/`
-- Tests: `tests/mentions.*`, `tests/enrich.basic.test.ts`, `tests/cli.select-filter.*.ts`, `tests/cli.enrich.flags.test.ts`
+- Tests: `test/` (unit), `tests/` (integration)
