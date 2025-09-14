@@ -2,7 +2,12 @@ import type { NormalizedEvent, Mention } from './types.js'
 import { readJSONFile, loadConfig } from './config.js'
 import { extractMentions } from './extractor.js'
 import { scanMentionsInCodeComments } from './utils/commentScanner.js'
+<<<<<<< HEAD
 import { evaluateRulesDetailed, loadRules } from './rules.js'
+=======
+import { evaluateRules, loadRules } from './rules.js'
+import { scanCodeCommentsForMentions } from './codeComments.js'
+>>>>>>> a06211a (feat(mentions): scan code comments in changed files for @mentions with size cap + language filters; integrate into handleEnrich for PR/push; add tests for JS/TS/README and large file skip\n\nBy: developer-agent(https://app.a5c.ai/a5c/agents/development/developer-agent))
 
 // Backwards-compatible API used by tests and Node consumers
 export async function handleEnrich(opts: {
@@ -134,6 +139,51 @@ export async function handleEnrich(opts: {
     // ignore scanning errors; do not block enrichment
     void 0
   }
+
+  // Mentions from code comments in changed files (PR/push)
+  try {
+    const gh = (githubEnrichment || {}) as any
+    let owner: string | undefined = gh.owner
+    let repo: string | undefined = gh.repo
+    let filesList: any[] | undefined = gh?.pr?.files || gh?.push?.files
+    let ref: string | undefined = (baseEvent as any)?.pull_request?.head?.sha || (baseEvent as any)?.pull_request?.head?.ref || (baseEvent as any)?.after || (baseEvent as any)?.head_commit?.id
+
+    // Fallback to payload if enrichment missing
+    if (!owner || !repo) {
+      const full = (baseEvent as any)?.repository?.full_name
+      if (typeof full === 'string' && full.includes('/')) {
+        const parts = full.split('/')
+        owner = parts[0]
+        repo = parts[1]
+      }
+    }
+
+    const mod: any = await import('./enrichGithubEvent.js')
+    const octokit = opts.octokit || mod.createOctokit?.(token)
+
+    if ((!filesList || !Array.isArray(filesList)) && octokit && owner && repo) {
+      // Derive changed files using GitHub API if possible
+      if ((baseEvent as any)?.pull_request?.number) {
+        try {
+          const number = (baseEvent as any).pull_request.number
+          const list = await octokit.paginate(octokit.pulls.listFiles, { owner, repo, pull_number: number, per_page: 100 })
+          filesList = Array.isArray(list) ? list : []
+        } catch {}
+      } else if ((baseEvent as any)?.before && (baseEvent as any)?.after) {
+        try {
+          const comp = await octokit.repos.compareCommits({ owner, repo, base: (baseEvent as any).before, head: (baseEvent as any).after })
+          filesList = (comp?.data?.files as any[]) || []
+          ref = (baseEvent as any).after
+        } catch {}
+      }
+    }
+
+    if (owner && repo && Array.isArray(filesList) && filesList.length && ref && octokit) {
+      const files = filesList.map((f: any) => ({ filename: f.filename }))
+      const codeMentions = await scanCodeCommentsForMentions({ owner, repo, ref, files, octokit, options: { fileSizeCapBytes: 200 * 1024, languageFilters: ['js','ts','md'] } })
+      if (codeMentions.length) mentions.push(...codeMentions)
+    }
+  } catch {}
 
   const output: NormalizedEvent = {
     ...(neShell as any),

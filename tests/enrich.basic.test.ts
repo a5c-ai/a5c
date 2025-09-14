@@ -47,12 +47,23 @@ describe('handleEnrich', () => {
     const { output } = await handleEnrich({ in: 'samples/pull_request.synchronize.json', flags: { use_github: 'true', include_patch: 'true' } });
     const gh: any = (output.enriched as any)?.github || {};
     const prFiles = gh.pr?.files || [];
-    // When token is missing, enrichment is partial and prFiles may be absent; only assert when files exist
     if (Array.isArray(prFiles) && prFiles.length) {
-      // We cannot guarantee real patch data in tests without hitting API; we just assert property presence is not forcibly removed
       const hasPatchProp = prFiles.some((f: any) => Object.prototype.hasOwnProperty.call(f, 'patch'));
       expect(hasPatchProp).toBe(true);
     }
+  });
+
+  it('adds code_comment mentions when enrichment contains files', async () => {
+    const files = [{ filename: 'README.md', status: 'modified' }];
+    const mockOctokit = {
+      repos: { async getContent() { return { data: { content: Buffer.from('hello @developer-agent', 'utf8').toString('base64'), encoding: 'base64', size: 20 } }; } },
+      pulls: { async listFiles() { return { data: files }; } },
+      paginate: async (_fn: any, _opts: any) => files,
+    } as any;
+
+    const res = await handleEnrich({ in: 'samples/pull_request.synchronize.json', labels: [], rules: undefined, flags: {}, octokit: mockOctokit });
+    const mentions = (res.output.enriched as any).mentions || [];
+    expect(mentions.some((m: any) => m.source === 'code_comment')).toBe(true);
   });
 
   it('merges GitHub enrichment when flag enabled but missing token marks partial', async () => {
