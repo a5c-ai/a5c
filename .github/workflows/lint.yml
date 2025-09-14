@@ -16,5 +16,5 @@ jobs:
       - run: npm ci
       - name: Lint
         run: npm run lint
-      - name: Typecheck
+      - name: Typecheck (src-only)
         run: npm run typecheck

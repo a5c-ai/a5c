@@ -29,6 +29,7 @@ We enforce fast pre-commit checks to keep `main` and `a5c/main` healthy:
 - Staged file hygiene: trailing whitespace and end-of-file newline via `git diff --check`.
 - Filename guard: blocks Windows-invalid `:` in staged filenames.
 - Lint and typecheck: runs `npm run lint` and `npm run typecheck`.
+  - Note: `typecheck` uses `tsconfig.typecheck.json` (src-only) to avoid false positives from test typings. Vitest type-checks tests during `npm test`.
 - Tests: runs `vitest` with `--passWithNoTests` when test or source files are staged.
 
 The hook is implemented in `scripts/precommit.sh` and invoked from `.husky/pre-commit`.
@@ -64,9 +65,18 @@ npm test -- --passWithNoTests
 Pull requests to `a5c/main` run fast checks:
 
 - Commit hygiene: validates PR title and commit messages.
-- Lint workflow: runs `npm run lint` and `npm run typecheck` on PRs to `a5c/main` and `main`.
+- Lint workflow: runs `npm run lint` and a separate Typecheck step (src-only).
 
-If any check fails, edit the PR title, reword commits, or fix code issues accordingly.
+Example snippet:
+
+```
+  - name: Lint
+    run: npm run lint
+  - name: Typecheck (src-only)
+    run: npm run typecheck
+```
+
+`typecheck` uses `tsconfig.typecheck.json` and checks `src/**`. Tests are type-checked within the Vitest run.
 
 ## Getting Started
 
