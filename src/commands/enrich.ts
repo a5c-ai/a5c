@@ -2,7 +2,7 @@ import type { NormalizedEvent, Mention } from '../types.js'
 import { readJSONFile, loadConfig } from '../config.js'
 import { extractMentions } from '../extractor.js'
 
-export async function handleEnrich(opts: {
+export async function cmdEnrich(opts: {
   in?: string
   labels?: string[]
   rules?: string
@@ -36,7 +36,7 @@ export async function handleEnrich(opts: {
 
   let githubEnrichment: any = {}
   try {
-    const mod: any = await import('../providers/github/enrich.js')
+    const mod: any = await import('../enrichGithubEvent.js')
     const fn = (mod.enrichGithubEvent || mod.default) as (e: any, o?: any) => Promise<any>
     const enriched = await fn(baseEvent, { token, commitLimit, fileLimit, octokit: opts.octokit })
     githubEnrichment = enriched?._enrichment || {}
@@ -52,7 +52,6 @@ export async function handleEnrich(opts: {
     githubEnrichment = { provider: 'github', partial: true, errors: [{ message: String(e?.message || e) }] }
   }
 
-  // Mentions from common text locations
   const mentions: Mention[] = []
   try {
     const pr = (baseEvent as any)?.pull_request
@@ -83,12 +82,10 @@ function toBool(v: any): boolean {
   if (typeof v === 'boolean') return v
   if (v == null) return false
   const s = String(v).toLowerCase()
-  return s === '1' || s === 'true' || s === 'yes' || s === 'on'
+  return s === '1' || s === 'true' || s === 'yes' || s === 'y' || s === 'on'
 }
 
-function toInt(v: any, d = 0): number {
-  const n = Number(v)
-  return Number.isFinite(n) ? n : d
+function toInt(v: any, def = 0): number {
+  const n = Number.parseInt(String(v ?? ''), 10)
+  return Number.isFinite(n) ? n : def
 }
-
-export default handleEnrich

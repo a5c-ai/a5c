@@ -12,4 +12,3 @@ export default _default
 
 // Optional factory that the JS module may export; typed loosely on purpose.
 export declare function createOctokit(token?: string): any
-
