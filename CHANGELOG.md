@@ -1,3 +1,16 @@
+## 1.1.0-a5c-main.14 (2025-09-14)
+
+* 📝 docs: document mentions scanning flags in CLI (fixes #293) (#314) ([0766ca3](https://github.com/a5c-ai/events/commit/0766ca3)), closes [#293](https://github.com/a5c-ai/events/issues/293) [#314](https://github.com/a5c-ai/events/issues/314) [#293](https://github.com/a5c-ai/events/issues/293) [#293](https://github.com/a5c-ai/events/issues/293)
+* 📝 specs: extend NE schema with optional composed[] (fixes #291) ([f59d404](https://github.com/a5c-ai/events/commit/f59d404)), closes [#291](https://github.com/a5c-ai/events/issues/291) [#291](https://github.com/a5c-ai/events/issues/291) [#291](https://github.com/a5c-ai/events/issues/291) [#291](https://github.com/a5c-ai/events/issues/291) [#311](https://github.com/a5c-ai/events/issues/311)
+* 🟢 validator: approve & merge — include_patch default=false docs fix (#312) ([b2d603b](https://github.com/a5c-ai/events/commit/b2d603b)), closes [#312](https://github.com/a5c-ai/events/issues/312) [#290](https://github.com/a5c-ai/events/issues/290)
+* Merge pull request #313 from a5c-ai/feat/coverage-summary-issue-284 ([f145e6f](https://github.com/a5c-ai/events/commit/f145e6f)), closes [#313](https://github.com/a5c-ai/events/issues/313) [#284](https://github.com/a5c-ai/events/issues/284)
+* ci(tests): call correct coverage script; capture exit and enforce after PR comment ([cabdb90](https://github.com/a5c-ai/events/commit/cabdb90))
+* docs: observability discovery (issue #286) ([ac0a2bb](https://github.com/a5c-ai/events/commit/ac0a2bb)), closes [#286](https://github.com/a5c-ai/events/issues/286) [#286](https://github.com/a5c-ai/events/issues/286)
+* docs: start coverage work for issue #284 ([d2e6754](https://github.com/a5c-ai/events/commit/d2e6754)), closes [#284](https://github.com/a5c-ai/events/issues/284)
+* docs: start FLO dev log for issue #281 (#319) ([078c140](https://github.com/a5c-ai/events/commit/078c140)), closes [#281](https://github.com/a5c-ai/events/issues/281) [#319](https://github.com/a5c-ai/events/issues/319)
+* chore(ci): add fast TypeScript type-check gate (Fixes #285)\n\n- Add tsconfig.typecheck.json excludi ([9d8fef8](https://github.com/a5c-ai/events/commit/9d8fef8)), closes [#285](https://github.com/a5c-ai/events/issues/285) [#285](https://github.com/a5c-ai/events/issues/285) [#307](https://github.com/a5c-ai/events/issues/307)
+* feat(ci): coverage summary script (JS) + PR sticky comment; enforce thresholds (issue #284) ([06fa9d8](https://github.com/a5c-ai/events/commit/06fa9d8)), closes [#284](https://github.com/a5c-ai/events/issues/284)
+
 ## 1.1.0-a5c-main.13 (2025-09-14)
 
 * fix(tests): remove empty JS placeholder test causing vitest 'No test suite found'\n\n- Delete tests/ ([3cf6b39](https://github.com/a5c-ai/events/commit/3cf6b39)), closes [#280](https://github.com/a5c-ai/events/issues/280)
