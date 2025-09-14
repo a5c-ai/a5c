@@ -2,10 +2,7 @@ import type { NormalizedEvent, Mention } from './types.js'
 import { readJSONFile, loadConfig } from './config.js'
 import { extractMentions } from './extractor.js'
 import { scanMentionsInCodeComments } from './utils/commentScanner.js'
-<<<<<<< HEAD
 import { evaluateRulesDetailed, loadRules } from './rules.js'
-=======
-import { evaluateRules, loadRules } from './rules.js'
 import { scanCodeCommentsForMentions } from './codeComments.js'
 >>>>>>> a06211a (feat(mentions): scan code comments in changed files for @mentions with size cap + language filters; integrate into handleEnrich for PR/push; add tests for JS/TS/README and large file skip\n\nBy: developer-agent(https://app.a5c.ai/a5c/agents/development/developer-agent))
 
@@ -192,7 +189,7 @@ export async function handleEnrich(opts: {
     enriched: {
       ...(neShell.enriched || {}),
       github: githubEnrichment,
-      metadata: { ...(neShell.enriched?.metadata || {}), rules: opts.rules || null },
+      metadata: { ...(neShell.enriched?.metadata || {}), rules: opts.rules },
       derived: { ...(neShell.enriched?.derived || {}), flags: opts.flags || {} },
       ...(mentions.length ? { mentions } : {})
     }
@@ -203,6 +200,7 @@ export async function handleEnrich(opts: {
     if (rules.length) {
       const evalObj: any = { ...output, enriched: output.enriched, labels: output.labels || [] }
       const res = evaluateRulesDetailed(evalObj, rules)
+<<<<<<< HEAD
       if (res?.composed?.length) {
         const composed = res.composed.map((c: any) => ({
           key: c.key,
@@ -213,6 +211,9 @@ export async function handleEnrich(opts: {
         }))
         ;(output as any).composed = composed
       }
+=======
+      if (res?.composed?.length) (output as any).composed = res.composed
+>>>>>>> 44a1343 (✨ Rules evaluator and composed events (fixes #141) (#157))
       const meta: any = (output.enriched as any).metadata || {}
       ;(output.enriched as any).metadata = { ...meta, rules_status: res.status }
     }

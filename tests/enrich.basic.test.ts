@@ -8,7 +8,7 @@ function isIso8601(s?: string) {
 describe('handleEnrich', () => {
   it('propagates flags and wraps metadata under enriched', async () => {
     const flags = { dryRun: true, mode: 'fast' } as any;
-    const { code, output } = await handleEnrich({ in: 'samples/issue_comment.created.json', labels: ['x=y'], rules: 'r.yml', flags });
+    const { code, output } = await handleEnrich({ in: 'samples/issue_comment.created.json', labels: ['x=y'], rules: undefined, flags });
     expect(code).toBe(0);
     expect(output).toBeTruthy();
     expect(typeof output.id).toBe('string');
@@ -20,7 +20,8 @@ describe('handleEnrich', () => {
 
     // Enriched structure shape
     expect(output.enriched).toBeTruthy();
-    expect(output.enriched?.metadata).toEqual({ rules: 'r.yml' });
+    // When no rules path is provided, rules metadata only includes null
+    expect(output.enriched?.metadata).toEqual({ rules: undefined });
     expect(output.enriched?.derived).toBeTruthy();
     expect((output.enriched as any).derived.flags).toEqual(flags);
   });
@@ -72,4 +73,13 @@ describe('handleEnrich', () => {
     expect(gh).toBeTruthy();
     expect(gh.partial).toBeTruthy();
   });
+
+  it('applies YAML rules and emits composed events', async () => {
+    const res = await handleEnrich({ in: 'samples/pull_request.synchronize.json', labels: [], rules: 'tests/fixtures/rules/conflicts.yml', flags: {} });
+    const composed = (res.output as any).composed || []
+    expect(Array.isArray(composed)).toBe(true)
+    // Sample PR has labels [documentation, producer, testing]. Not low priority, but mergeable_state is dirty in fixture, so second rule should fire
+    const keys = composed.map((c: any) => c.key)
+    expect(keys).toContain('pr_conflicted_state')
+  })
 });

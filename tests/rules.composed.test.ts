@@ -17,8 +17,8 @@ describe('rules composed events', () => {
         key: 'conflict_in_pr_with_low_priority_label',
         when: {
           all: [
-            { path: 'payload.pull_request.mergeable_state', in: ['dirty', 'blocked'] },
-            { path: 'payload.pull_request.labels[0].name', contains: 'priority:low' }
+            { path: 'enriched.github.pr.mergeable_state', in: ['dirty', 'blocked'] },
+            { path: 'payload.pull_request.labels[*].name', contains: 'priority:low' }
           ]
         },
         targets: ['developer-agent']
@@ -64,4 +64,3 @@ describe('rules composed events', () => {
     expect(keys).not.toContain('conflict_in_pr_with_low_priority_label');
   });
 });
-
