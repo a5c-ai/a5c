@@ -59,7 +59,7 @@ jq '.type, .repo.full_name, .provenance.workflow?.name' out.json
   - `--in <file>`: normalized event JSON (or raw payload; NE shell will be created)
   - `--out <file>`: write enriched result
   - `--rules <file>`: rules file path (yaml/json)
-  - `--flag include_patch=<true|false>`: include diff patches in files (default: false)
+  - `--flag include_patch=<true|false>`: include diff patches in files (default: true)
   - `--flag commit_limit=<n>`: max commits to include (default: 50)
   - `--flag file_limit=<n>`: max files to include (default: 200)
 <<<<<<< HEAD
