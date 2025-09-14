@@ -5,8 +5,9 @@ import util from 'node:util'
 import { extractMentions } from './extractor.js'
 import type { ExtractorOptions, MentionSource } from './types.js'
 import { loadConfig, writeJSONFile } from './config.js'
-import { normalizeCommand } from './commands/normalize.js'
-import { enrichCommand } from './commands/enrich.js'
+import { handleNormalize } from './normalize.js'
+import { resolveNormalizeInput } from './cli-helpers.js'
+import { handleEnrich } from './enrich.js'
 import { redactObject } from './utils/redact.js'
 import { getVersionSync } from './version.js'
 
@@ -66,8 +67,16 @@ program
     void cfg // currently unused but reserved for future needs
     logv('[normalize] in=%s labels=%d', cmdOpts.in || '<stdin>', (cmdOpts.label || []).length || 0)
     const labels = Object.entries(cmdOpts.label || {}).map(([k, v]) => `${k}=${v}`)
-    const { code, output } = await normalizeCommand({
-      in: cmdOpts.in,
+    // Resolve input path when running in GitHub Actions and --in is not provided
+    let inputPath: string | undefined
+    try {
+      inputPath = resolveNormalizeInput(cmdOpts.in, cmdOpts.source, process.env)
+    } catch (err: any) {
+      process.stderr.write(`[events] ${err?.message || 'Input resolution error'}\n`)
+      process.exit(2)
+    }
+    const { code, output } = await handleNormalize({
+      in: inputPath,
       source: cmdOpts.source,
       labels,
     })
