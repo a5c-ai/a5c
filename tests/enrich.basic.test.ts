@@ -84,7 +84,7 @@ describe('handleEnrich', () => {
       paginate: async (_fn: any, _opts: any) => files,
     } as any;
 
-    const res = await handleEnrich({ in: 'samples/pull_request.synchronize.json', labels: [], rules: undefined, flags: {}, octokit: mockOctokit });
+    const res = await handleEnrich({ in: 'samples/pull_request.synchronize.json', labels: [], rules: undefined, flags: { use_github: 'true' }, octokit: mockOctokit });
     const mentions = (res.output.enriched as any).mentions || [];
     expect(mentions.some((m: any) => m.source === 'code_comment')).toBe(true);
   });
