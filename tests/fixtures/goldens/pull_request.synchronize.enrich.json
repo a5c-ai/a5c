@@ -54,15 +54,6 @@
     "source": "cli"
   },
   "enriched": {
-    "github": {
-      "provider": "github",
-      "partial": true,
-      "errors": [
-        {
-          "message": "GitHub token is required"
-        }
-      ]
-    },
     "metadata": {},
     "derived": {
       "flags": {}
