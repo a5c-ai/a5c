@@ -78,7 +78,6 @@ events enrich --in FILE [--out FILE] [--rules FILE] \
   - `commit_limit=<n>` (default: `50`) – limit commits fetched for PR/push
   - `file_limit=<n>` (default: `200`) – limit files per compare list
 - `--use-github`: enable GitHub API enrichment; equivalent to `--flag use_github=true` (requires `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`). Without this flag, the CLI performs no network calls and sets `enriched.github = { provider: 'github', skipped: true, reason: 'flag:not_set' }`.
-- `--use-github`: enable GitHub API enrichment; equivalent to `--flag use_github=true` (requires `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`). Without this flag, the CLI performs no network calls and sets `enriched.github = { provider: 'github', skipped: true, reason: 'flag:not_set' }`.
 - `--label KEY=VAL...`: labels to attach
 - `--select PATHS`: comma-separated dot paths to include in output
 - `--filter EXPR`: filter expression `path[=value]`; if it doesn't pass, exits with code `2`
@@ -101,8 +100,34 @@ Note:
 - `.composed` may be absent or `null` when no rules match. Guard with `(.composed // [])` as above.
 - The `reason` field may be omitted depending on rule configuration. See specs §6.1 for composed events structure: `docs/specs/README.md#61-rule-engine-and-composed-events`.
 - Token precedence: runtime prefers `A5C_AGENT_GITHUB_TOKEN` over `GITHUB_TOKEN` when both are set (see `src/config.ts`).
-- Redaction: CLI redacts sensitive keys and common secret patterns in output by default (see `src/utils/redact.ts`).
+  - Redaction: CLI redacts sensitive keys and common secret patterns in output by default (see `src/utils/redact.ts`).
 ```
+
+#### Mentions flags (code comment scanning)
+Mentions extraction can scan changed files for `@mentions` inside code comments. Control this behavior with the following `--flag` keys:
+
+- `--flag mentions.scan.changed_files=true|false` (default: `true`)
+- `--flag mentions.max_file_bytes=<bytes>` (default: `204800`)
+- `--flag mentions.languages=js,ts,md` (optional CSV allowlist; autodetect by filename if omitted)
+
+Examples:
+```bash
+# Disable scanning changed files for code comment mentions
+events enrich --in samples/pull_request.synchronize.json \
+  --use-github \
+  --flag mentions.scan.changed_files=false
+
+# Limit scanned file size to ~100KB and restrict to JS/TS/Markdown
+events enrich --in samples/pull_request.synchronize.json \
+  --use-github \
+  --flag mentions.max_file_bytes=102400 \
+  --flag mentions.languages=js,ts,md
+```
+
+Notes:
+- These flags affect enrichment-time code-comment scanning over changed files.
+- Defaults are implemented in code: see `src/enrich.ts`.
+- See also: Specs §4.2 Mentions Schema in `docs/specs/README.md#42-mentions-schema`.
 
 Outputs:
 - When enriching a PR with `--use-github`, the CLI exposes per-file owners under `enriched.github.pr.owners` and the deduplicated, sorted union of all CODEOWNERS across changed files under `enriched.github.pr.owners_union`.
@@ -111,8 +136,6 @@ Without network calls (mentions only):
 ```bash
 events enrich --in samples/push.json --out out.json
 jq '.enriched.mentions' out.json
-```
-  | jq '[.composed[] | {key, reason}]'
 ```
 ### `events validate`
 Validate a JSON document against the NE JSON Schema.
