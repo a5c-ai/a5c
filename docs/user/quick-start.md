@@ -1,14 +1,14 @@
 ---
 title: Quick Start
-description: Run the Events SDK/CLI locally and in CI to normalize and enrich GitHub events.
+description: Run the Events SDK/CLI locally and in CI to extract mentions, normalize and enrich GitHub events.
 ---
 
 # Quick Start
 
-Use the Events SDK/CLI to turn raw GitHub payloads into a Normalized Event (NE) and add useful enrichment for downstream automations.
+Use the Events SDK/CLI to extract mentions from text, turn raw GitHub payloads into a Normalized Event (NE), and add useful enrichment for downstream automations.
 
 ## Prerequisites
-- Node.js 18+ and npm
+- Node.js 20+ and npm
 - GitHub token (for enrichment that queries repo metadata): set `GITHUB_TOKEN`
 - Repo cloned with this project or install the package once published
 
@@ -27,12 +27,24 @@ When published as a package:
 npm install -g @a5c-ai/events
 ```
 
+## Extract mentions from text
+
+```bash
+echo "Please review @developer-agent" | events mentions --source issue_comment
+```
+
 ## Normalize a webhook payload
 
 ```bash
 events normalize --in samples/workflow_run.completed.json --out out.json
 
 jq '.type, .repo.full_name, .provenance.workflow?.name' out.json
+
+# Filter and select
+events normalize --in samples/workflow_run.completed.json \
+  --filter 'type=workflow_run' \
+  --select 'type,repo.full_name'
+jq '.type, .repo.full_name' out.json
 ```
 
 Expected output (example):
@@ -48,7 +60,7 @@ Expected output (example):
 ```bash
 export GITHUB_TOKEN=ghp_xxx # or use Actions token in CI
 
-events enrich --in samples/pull_request.synchronize.json --out out.json --use-github
+events enrich --in samples/pull_request.synchronize.json --out out.json --use-github --flag include_patch=false
 
 jq '.enriched.github.pr.has_conflicts, .enriched.github.pr.mergeable_state' out.json
 ```

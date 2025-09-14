@@ -26,6 +26,7 @@ export async function handleEnrich(opts: {
   const includePatch = toBool(opts.flags?.include_patch ?? false)
   const commitLimit = toInt(opts.flags?.commit_limit, 50)
   const fileLimit = toInt(opts.flags?.file_limit, 200)
+  const useGithub = toBool(opts.flags?.use_github)
 
   const cfg = loadConfig()
   const token = cfg.githubToken
@@ -48,47 +49,53 @@ export async function handleEnrich(opts: {
       }
 
   let githubEnrichment: any = {}
-  const useGithub = toBool(opts.flags?.use_github)
   const hasOctokit = !!opts.octokit
   const shouldEnrichGithub = useGithub || hasOctokit
-  if (shouldEnrichGithub) {
-    if (!token && !hasOctokit && useGithub) {
-      // Flag requested but no token (and no injected octokit): mark as partial and do NOT call network
-      githubEnrichment = { provider: 'github', partial: true, errors: [{ message: 'GITHUB_TOKEN missing; skipped API enrichment' }] }
-    } else {
-      try {
-        const mod: any = await import('./enrichGithubEvent.js')
-        const fn = (mod.enrichGithubEvent || mod.default) as (e: any, o?: any) => Promise<any>
-        const enriched = await fn(baseEvent, { token, commitLimit, fileLimit, octokit: opts.octokit, includePatch })
-        githubEnrichment = enriched?._enrichment || {}
-        if (!includePatch) {
-          if (githubEnrichment.pr?.files) {
-            githubEnrichment.pr.files = githubEnrichment.pr.files.map((f: any) => ({ ...f, patch: undefined }))
-          }
-          if (githubEnrichment.push?.files) {
-            githubEnrichment.push.files = githubEnrichment.push.files.map((f: any) => ({ ...f, patch: undefined }))
-          }
-        } else {
-          // Ensure a defined patch key when include_patch=true so callers can rely on presence
-          if (githubEnrichment.pr?.files) {
-            githubEnrichment.pr.files = githubEnrichment.pr.files.map((f: any) => (
-              Object.prototype.hasOwnProperty.call(f, 'patch') ? f : { ...f, patch: '' }
-            ))
-          }
-          if (githubEnrichment.push?.files) {
-            githubEnrichment.push.files = githubEnrichment.push.files.map((f: any) => (
-              Object.prototype.hasOwnProperty.call(f, 'patch') ? f : { ...f, patch: '' }
-            ))
-          }
+  if (!shouldEnrichGithub) {
+    // Offline/default mode: do not perform network enrichment
+    githubEnrichment = { provider: 'github', partial: true, reason: 'github_enrich_disabled' }
+  } else if (useGithub && !token && !hasOctokit) {
+    // Flag requested but no token (and no injected octokit): mark as partial and do NOT call network
+    githubEnrichment = {
+      provider: 'github',
+      partial: true,
+      reason: 'github_token_missing',
+      errors: [{ message: 'GitHub token is required for enrichment' }]
+    }
+  } else {
+    try {
+      const mod: any = await import('./enrichGithubEvent.js')
+      const fn = (mod.enrichGithubEvent || mod.default) as (e: any, o?: any) => Promise<any>
+      const enriched = await fn(baseEvent, { token, commitLimit, fileLimit, octokit: opts.octokit, includePatch })
+      githubEnrichment = enriched?._enrichment || {}
+      if (!includePatch) {
+        if (githubEnrichment.pr?.files) {
+          githubEnrichment.pr.files = githubEnrichment.pr.files.map((f: any) => ({ ...f, patch: undefined }))
         }
-      } catch (e: any) {
-        // Only treat as provider error when the user explicitly requested --use-github
-        if (useGithub) return { code: 3, output: { error: `github enrichment failed: ${String(e?.message || e)}` } }
-        // Otherwise, degrade gracefully
-        githubEnrichment = { provider: 'github', partial: true, errors: [{ message: String(e?.message || e) }] }
+        if (githubEnrichment.push?.files) {
+          githubEnrichment.push.files = githubEnrichment.push.files.map((f: any) => ({ ...f, patch: undefined }))
+        }
+      } else {
+        // Ensure a defined patch key when include_patch=true so callers can rely on presence
+        if (githubEnrichment.pr?.files) {
+          githubEnrichment.pr.files = githubEnrichment.pr.files.map((f: any) => (
+            Object.prototype.hasOwnProperty.call(f, 'patch') ? f : { ...f, patch: '' }
+          ))
+        }
+        if (githubEnrichment.push?.files) {
+          githubEnrichment.push.files = githubEnrichment.push.files.map((f: any) => (
+            Object.prototype.hasOwnProperty.call(f, 'patch') ? f : { ...f, patch: '' }
+          ))
+        }
       }
+    } catch (e: any) {
+      // Only treat as provider error when the user explicitly requested --use-github
+      if (useGithub) return { code: 3, output: { error: `github enrichment failed: ${String(e?.message || e)}` } }
+      // Otherwise, degrade gracefully
+      githubEnrichment = { provider: 'github', partial: true, errors: [{ message: String(e?.message || e) }] }
     }
   }
+
 
   // Mentions from common text locations
   const mentions: Mention[] = []
@@ -237,8 +244,8 @@ export async function handleEnrich(opts: {
     ...(neShell as any),
     enriched: {
       ...(neShell.enriched || {}),
-      // Expose github enrichment only when it was attempted
-      ...(shouldEnrichGithub ? { github: githubEnrichment } : {}),
+      // Always expose github enrichment; in offline mode it's a partial stub with reason
+      github: githubEnrichment,
       metadata: { ...(neShell.enriched?.metadata || {}), rules: opts.rules },
       derived: { ...(neShell.enriched?.derived || {}), flags: opts.flags || {} },
       ...(mentions.length ? { mentions } : {})
@@ -250,7 +257,17 @@ export async function handleEnrich(opts: {
     if (rules.length) {
       const evalObj: any = { ...output, enriched: output.enriched, labels: output.labels || [] }
       const res = evaluateRulesDetailed(evalObj, rules)
-      if (res?.composed?.length) (output as any).composed = res.composed
+      if (res?.composed?.length) {
+        // Map detailed criteria to a human-readable reason string (join with AND)
+        const composed = res.composed.map((c: any) => ({
+          key: c.key,
+          reason: Array.isArray(c.criteria) && c.criteria.length ? c.criteria.join(' && ') : undefined,
+          targets: c.targets,
+          labels: c.labels,
+          payload: c.payload,
+        }))
+        ;(output as any).composed = composed
+      }
       const meta: any = (output.enriched as any).metadata || {}
       ;(output.enriched as any).metadata = { ...meta, rules_status: res.status }
     }

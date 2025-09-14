@@ -1,61 +1,45 @@
-export type JSONObject = Record<string, any>;
-
-// Resolve a dot path like "a.b.c" from an object, returning undefined if missing
-export function getByPath(obj: any, path: string): any {
-  if (!path) return obj;
-  const parts = path.split('.');
-  let cur: any = obj;
-  for (const p of parts) {
-    if (cur == null) return undefined;
-    cur = cur[p];
-  }
-  return cur;
-}
-
-// Build a new object containing only the selected fields. Supports nested dot paths.
-export function selectFields(obj: JSONObject, paths: string[]): JSONObject {
-  if (!paths || paths.length === 0) return obj;
-  const out: JSONObject = {};
-  for (const raw of paths) {
-    const path = String(raw).trim();
-    if (!path) continue;
-    const val = getByPath(obj, path);
-    if (val === undefined) continue;
-    // set nested structure on out
-    const parts = path.split('.');
-    let cur = out as any;
-    for (let i = 0; i < parts.length; i++) {
-      const k = parts[i];
-      if (i === parts.length - 1) {
-        cur[k] = val;
+export function selectFields<T extends Record<string, any>>(obj: T, paths: string[]): any {
+  if (!paths || !paths.length) return obj
+  const out: any = {}
+  for (const p of paths) {
+    const segs = p.split('.')
+    let src: any = obj
+    let dst: any = out
+    for (let i = 0; i < segs.length; i++) {
+      const k = segs[i]
+      if (src == null || typeof src !== 'object' || !(k in src)) break
+      if (i === segs.length - 1) {
+        dst[k] = src[k]
       } else {
-        cur[k] = cur[k] ?? {};
-        if (typeof cur[k] !== 'object') cur[k] = {};
-        cur = cur[k];
+        dst[k] = dst[k] || {}
+        dst = dst[k]
+        src = src[k]
       }
     }
   }
-  return out;
+  return out
 }
 
-export type FilterSpec = { path: string; value?: string };
+export type FilterSpec = { path?: string; value?: string | number | boolean } | null
 
-// Parse filter expression of the form "a.b.c=value" or presence check "a.b.c"
-export function parseFilter(expr?: string): FilterSpec | null {
-  if (!expr) return null;
-  const s = String(expr).trim();
-  if (!s) return null;
-  const eqIdx = s.indexOf('=');
-  if (eqIdx === -1) return { path: s };
-  return { path: s.slice(0, eqIdx), value: s.slice(eqIdx + 1) };
+export function parseFilter(expr?: string): FilterSpec {
+  if (!expr) return null
+  const [path, value] = String(expr).split('=')
+  if (!path) return null
+  if (value == null || value === '') return { path }
+  const vLower = value.toLowerCase()
+  const v = vLower === 'true' ? true : vLower === 'false' ? false : Number.isFinite(Number(value)) ? Number(value) : value
+  return { path, value: v as any }
 }
 
-// Returns true if object passes filter: equals when value provided, otherwise presence/truthy
-export function passesFilter(obj: JSONObject, filter: FilterSpec | null): boolean {
-  if (!filter) return true;
-  const got = getByPath(obj, filter.path);
-  if (filter.value == null) return Boolean(got);
-  // string compare; coerce to string for pragmatic CLI behavior
-  return String(got) === filter.value;
+export function passesFilter(obj: any, spec: FilterSpec): boolean {
+  if (!spec || !spec.path) return true
+  const segs = spec.path.split('.')
+  let cur: any = obj
+  for (const k of segs) {
+    if (cur == null || typeof cur !== 'object' || !(k in cur)) return false
+    cur = cur[k]
+  }
+  if (!('value' in spec) || spec.value === undefined) return Boolean(cur)
+  return cur === spec.value
 }
-

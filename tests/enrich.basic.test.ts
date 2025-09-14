@@ -36,11 +36,13 @@ describe('handleEnrich', () => {
     expect(names).toContain('developer-agent');
   });
 
-  it('skips API enrichment unless --use-github is set', async () => {
+  // Offline default: enriched.github exists with partial + reason when not using --use-github
+  it('does not perform GitHub enrichment when --use-github is not set (offline mode)', async () => {
     const res = await handleEnrich({ in: 'samples/pull_request.synchronize.json', labels: [], rules: undefined, flags: {} });
     const gh = (res.output.enriched as any)?.github;
-    // No github enrichment object injected when flag is absent
-    expect(gh).toBeUndefined();
+    expect(gh).toBeTruthy();
+    expect(gh.partial).toBeTruthy();
+    expect(gh.reason).toBe('github_enrich_disabled');
   });
 
   it('omits patch fields by default (include_patch=false)', async () => {
@@ -51,6 +53,23 @@ describe('handleEnrich', () => {
       expect(prFiles.every((f: any) => f.patch === undefined)).toBe(true);
     }
   });
+
+  it('merges GitHub enrichment when flag enabled but missing token marks partial', async () => {
+    const res = await handleEnrich({ in: 'samples/pull_request.synchronize.json', labels: [], rules: undefined, flags: { use_github: 'true' } });
+    const gh = (res.output.enriched as any)?.github;
+    expect(gh).toBeTruthy();
+    expect(gh.partial).toBeTruthy();
+    expect(gh.reason === 'github_token_missing' || Array.isArray(gh.errors)).toBe(true);
+  });
+
+  it('does not perform GitHub enrichment when --use-github is not set (offline mode)', async () => {
+    const res = await handleEnrich({ in: 'samples/pull_request.synchronize.json', labels: [], rules: undefined, flags: {} });
+    const gh = (res.output.enriched as any)?.github;
+    expect(gh).toBeTruthy();
+    expect(gh.partial).toBeTruthy();
+    expect(gh.reason).toBe('github_enrich_disabled');
+  });
+  
 
   it('includes patch fields when explicitly enabled (include_patch=true)', async () => {
     const { output } = await handleEnrich({ in: 'samples/pull_request.synchronize.json', flags: { use_github: 'true', include_patch: 'true' } });
@@ -77,7 +96,7 @@ describe('handleEnrich', () => {
     expect(mentions.some((m: any) => m.source === 'code_comment')).toBe(true);
   });
 
-  it('merges GitHub enrichment when flag enabled but missing token marks partial', async () => {
+  it('when --use-github is requested, API failures return code 3; if token present, enrichment succeeds', async () => {
     const res = await handleEnrich({ in: 'samples/pull_request.synchronize.json', labels: [], rules: undefined, flags: { use_github: 'true' } });
     if (res.code === 3) {
       expect(String((res.output as any).error || '')).toMatch(/github enrichment failed/i)

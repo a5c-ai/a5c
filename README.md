@@ -5,14 +5,14 @@
 Normalize and enrich GitHub (and other) events for agentic workflows. Use the CLI in CI or locally to turn raw webhook/Actions payloads into a compact, consistent schema that downstream agents and automations can trust.
 
 - Quick install via npm
-- Commands: `events normalize`, `events enrich`
+- Commands: `events mentions`, `events normalize`, `events enrich`
 - Output: JSON to stdout or file
 - Extensible via provider adapters and enrichers
 
 ## Quick Start
 
 Prerequisites:
-- Node.js 18+ (Node 20 LTS recommended)
+- Node.js 20+ (LTS recommended)
 
 Install:
 ```bash
@@ -35,9 +35,9 @@ jq '.type, .repo.full_name, .provenance.workflow?.name' out.json
 `events mentions`
 - Purpose: Extract @mentions from text (stdin) or a file.
 - Common flags:
-  - `--source <kind>`: mention source kind (e.g., `pr_body`, `commit_message`) [default: `pr_body`]
+  - `--source <kind>`: `pr_body|pr_title|commit_message|issue_comment` (default: `pr_body`)
   - `--file <path>`: read from file instead of stdin
-  - `--window <n>`: context window size [default: `30`]
+  - `--window <n>`: context window size (default: 30)
   - `--known-agent <name...>`: known agent names to boost confidence
 
 `events normalize`
@@ -60,9 +60,14 @@ jq '.type, .repo.full_name, .provenance.workflow?.name' out.json
   - `--flag commit_limit=<n>`: max commits to include (default: 50)
   - `--flag file_limit=<n>`: max files to include (default: 200)
   - `--use-github`: enable GitHub API enrichment (requires `GITHUB_TOKEN`)
+  - `--use-github`: enable GitHub API enrichment (requires token)
   - `--select <paths>`: comma-separated dot paths to include in output
   - `--filter <expr>`: filter expression `path[=value]`; if not matching, exits with code 2 and no output
   - `--label <key=value...>`: attach labels to top‑level `labels[]`
+
+Behavior:
+- Offline by default: without `--use-github`, no network calls occur. Output includes `enriched.github` with `partial=true` and `reason="github_enrich_disabled"`.
+- When `--use-github` is set but no token is configured, output is partial with `reason="github_token_missing"` and an error entry. Mentions extraction still runs.
 
 Exit codes: `0` success, non‑zero on errors (invalid input, etc.).
 
@@ -112,22 +117,10 @@ events enrich --in samples/pull_request.synchronize.json \
 jq '.enriched' enriched.json
 ```
 
-Selecting and filtering:
-```bash
-# Keep only two fields from normalized output
-events normalize --in samples/push.json --select type,repo.full_name
-
-# Filter gate: exit 2 and no output if condition fails
-events enrich --in samples/pull_request.synchronize.json \
-  --filter enriched.github.pr.mergeable_state=dirty
-
-# Presence filter example (works without network enrichment too)
-events enrich --in samples/pull_request.synchronize.json \
-  --filter payload.pull_request.mergeable_state
-```
-
 Redaction:
 - CLI output is redacted to mask common secret patterns and sensitive keys (see `src/utils/redact.ts`).
+Tokens precedence:
+- `A5C_AGENT_GITHUB_TOKEN` is preferred over `GITHUB_TOKEN` (see `src/config.ts`).
 
 ### Validate against schema
 
@@ -161,8 +154,8 @@ echo "Please route to @developer-agent and @validator-agent" | \
 ## Configuration
 
 Environment variables:
-- `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`: enables GitHub API enrichment
-- `DEBUG`: set to `true` to enable debug mode
+- `A5C_AGENT_GITHUB_TOKEN` or `GITHUB_TOKEN`: required when using `--use-github`
+- Debug flags TBD (`DEBUG=@a5c/events*`)
 
 CLI behavior:
 - Defaults are safe for local runs (no network calls unless `--use-github` is set).
@@ -178,7 +171,7 @@ See `docs/specs/README.md` for examples and behavior-driven test outlines. Add y
 - Build: `npm run build`
 - Dev CLI: `npm run dev` (runs `src/cli.ts` via tsx)
 - Lint/format: `npm run lint` / `npm run format`
-- Minimal Node types + yargs; TypeScript configured in `tsconfig.json`
+- Minimal Node types + commander; TypeScript configured in `tsconfig.json`
 
 Project structure:
 - `src/cli.ts` – CLI entrypoint (mentions, normalize, enrich)

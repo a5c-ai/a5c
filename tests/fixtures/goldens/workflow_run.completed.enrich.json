@@ -45,6 +45,11 @@
     "source": "cli"
   },
   "enriched": {
+    "github": {
+      "provider": "github",
+      "partial": true,
+      "reason": "github_enrich_disabled"
+    },
     "metadata": {},
     "derived": {
       "flags": {}
