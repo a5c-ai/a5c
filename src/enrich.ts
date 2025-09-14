@@ -1,6 +1,7 @@
 import type { NormalizedEvent, Mention } from './types.js'
 import { readJSONFile, loadConfig } from './config.js'
 import { extractMentions } from './extractor.js'
+import { scanMentionsInCodeComments } from './utils/commentScanner.js'
 import { evaluateRulesDetailed, loadRules } from './rules.js'
 
 // Backwards-compatible API used by tests and Node consumers
@@ -66,7 +67,60 @@ export async function handleEnrich(opts: {
     }
     const commentBody = (baseEvent as any)?.comment?.body
     if (commentBody) mentions.push(...extractMentions(String(commentBody), 'issue_comment'))
-  } catch {}
+  } catch {
+    // ignore mention extraction errors from optional fields
+    void 0
+  }
+
+  // Mentions from changed files (code comments)
+  try {
+    const scanChangedFiles = toBool((opts.flags as any)?.['mentions.scan.changed_files'] ?? true)
+    const maxFileBytes = toInt((opts.flags as any)?.['mentions.max_file_bytes'], 200 * 1024)
+    const langFilterRaw = (opts.flags as any)?.['mentions.languages']
+    const languageFilters = typeof langFilterRaw === 'string' && langFilterRaw.length
+      ? String(langFilterRaw).split(',').map((s) => s.trim()).filter(Boolean)
+      : undefined
+
+    if (scanChangedFiles) {
+      const files: { filename: string; patch?: string; raw_url?: string; blob_url?: string }[] = []
+      const gh = githubEnrichment || {}
+      const prFiles = gh?.pr?.files || []
+      const pushFiles = gh?.push?.files || []
+      for (const f of prFiles) files.push({ filename: f.filename, patch: f.patch, raw_url: f.raw_url, blob_url: f.blob_url })
+      for (const f of pushFiles) files.push({ filename: f.filename, patch: f.patch, raw_url: f.raw_url, blob_url: f.blob_url })
+
+      // If patch available, synthesize per-line content context; otherwise attempt to fetch raw if token provided
+      for (const f of files) {
+        // Prefer patch text if present, as it is already constrained in size
+        const patch = typeof f.patch === 'string' ? f.patch : ''
+        if (!patch) continue
+        // Build a lightweight pseudo-file content from patch lines starting with '+' or ' ' to approximate context
+        const lines = patch.split(/\r?\n/)
+        const approxFile: string[] = []
+        for (const l of lines) {
+          if (l.startsWith('+++') || l.startsWith('---') || l.startsWith('@@')) { approxFile.push('') ; continue }
+          if (l.startsWith('+') || l.startsWith(' ') || l.startsWith('-')) {
+            // include all lines to keep positions consistent; deletions still matter for mentions in comments
+            approxFile.push(l.slice(1))
+          } else {
+            approxFile.push(l)
+          }
+        }
+        const content = approxFile.join('\n')
+        const found = scanMentionsInCodeComments({
+          content,
+          filename: f.filename,
+          maxBytes: maxFileBytes,
+          languageFilters,
+          source: 'code_comment',
+        })
+        mentions.push(...found)
+      }
+    }
+  } catch {
+    // ignore scanning errors; do not block enrichment
+    void 0
+  }
 
   const output: NormalizedEvent = {
     ...(neShell as any),
