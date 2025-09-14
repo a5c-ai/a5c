@@ -5,11 +5,7 @@ description: Commands, flags, and examples for the Events CLI (`mentions`, `norm
 
 # CLI Reference
 
-<<<<<<< HEAD
 The CLI transforms provider payloads into a Normalized Event (NE), extracts mentions, and can enrich with repository context. Implemented with `commander` (see `src/cli.ts`).
-=======
-The CLI transforms provider payloads into a Normalized Event (NE) and can enrich with repository context. Implemented with `commander` (see `src/cli.ts`).
->>>>>>> d6864b0 (docs(cli): sync CLI reference and quick-start with implementation)
 
 ## Commands
 
@@ -36,31 +32,17 @@ Normalize a raw provider payload into the NE schema.
 
 Usage:
 ```bash
-<<<<<<< HEAD
-<<<<<<< HEAD
-events normalize [--in FILE] [--out FILE] [--source NAME] [--label KEY=VAL...] [--select PATHS] [--filter EXPR]
-=======
 events normalize [--in FILE] [--out FILE] [--source <actions|webhook|cli>] [--label KEY=VAL...] [--select PATHS] [--filter EXPR]
->>>>>>> d6864b0 (docs(cli): sync CLI reference and quick-start with implementation)
-=======
 events normalize [--in FILE] [--out FILE] [--source <actions|webhook|cli>] \
   [--label KEY=VAL...] [--select PATHS] [--filter EXPR]
->>>>>>> c849247 (docs: sync CLI docs and examples for issue #196 (select/filter, include_patch default=false, token precedence, cross-links)\n\nBy: developer-agent(https://app.a5c.ai/a5c/agents/development/developer-agent))
 ```
 
 - `--in FILE`: path to a JSON webhook payload
 - `--out FILE`: write result JSON (stdout if omitted)
-<<<<<<< HEAD
-- `--source NAME`: provenance (`actions|webhook|cli`) [default: `cli`]
-- `--label KEY=VAL...`: attach labels to top-level `labels[]` (repeatable)
-- `--select PATHS`: comma-separated dot paths to include in output
-- `--filter EXPR`: filter expression `path[=value]`; if not matched, exits with code `2` and no output
-=======
 - `--source <name>`: provenance source (`actions|webhook|cli`) [default: `cli`]
 - `--label KEY=VAL...`: attach labels to top‑level `labels[]` (repeatable)
 - `--select PATHS`: comma‑separated dot paths to include in output (e.g., `type,repo.full_name`)
 - `--filter EXPR`: filter expression `path[=value]`; if it doesn't pass, exits with code `2`
->>>>>>> d6864b0 (docs(cli): sync CLI reference and quick-start with implementation)
 
 Examples:
 ```bash
@@ -81,32 +63,12 @@ Enrich a normalized event (or raw GitHub payload) with repository and provider m
 Usage:
 ```bash
 events enrich --in FILE [--out FILE] [--rules FILE] \
-<<<<<<< HEAD
-<<<<<<< HEAD
   [--flag KEY=VAL...] [--use-github] [--label KEY=VAL...] \
   [--select PATHS] [--filter EXPR]
-=======
-  [--flag KEY=VAL...] [--use-github] [--label KEY=VAL...] [--select PATHS] [--filter EXPR]
->>>>>>> d6864b0 (docs(cli): sync CLI reference and quick-start with implementation)
-=======
-  [--flag KEY=VAL...] [--use-github] [--label KEY=VAL...] \
-  [--select PATHS] [--filter EXPR]
->>>>>>> c849247 (docs: sync CLI docs and examples for issue #196 (select/filter, include_patch default=false, token precedence, cross-links)\n\nBy: developer-agent(https://app.a5c.ai/a5c/agents/development/developer-agent))
 ```
 
 - `--in FILE`: input JSON (normalized event or raw GitHub payload)
 - `--out FILE`: write result JSON (stdout if omitted)
-<<<<<<< HEAD
-- `--rules FILE`: YAML/JSON rules file (optional)
-- `--flag KEY=VAL...`: enrichment flags (repeatable); notable flags:
-  - `include_patch=true|false` (default: `true`) – include diff patches; when `false`, patches are removed
-  - `commit_limit=<n>` (default: `50`) – limit commits fetched for PR/push
-  - `file_limit=<n>` (default: `200`) – limit files per compare list
-- `--use-github`: enable GitHub API enrichment (requires `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`)
-- `--label KEY=VAL...`: attach labels to top-level `labels[]`
-- `--select PATHS`: comma-separated dot paths to include in output
-- `--filter EXPR`: filter expression `path[=value]`; if not matched, exits with code `2` and no output
-=======
 - `--rules FILE`: path to rules file (YAML/JSON); recorded in `enriched.metadata.rules`
 - `--flag KEY=VAL...`: enrichment flags map; recorded in `enriched.derived.flags`. Recognized flags include:
   - `include_patch=true|false` (default: `true`) – include diff patches; when `false`, patches are removed
@@ -116,7 +78,6 @@ events enrich --in FILE [--out FILE] [--rules FILE] \
 - `--label KEY=VAL...`: labels to attach
 - `--select PATHS`: comma-separated dot paths to include in output
 - `--filter EXPR`: filter expression `path[=value]`; if it doesn't pass, exits with code `2`
->>>>>>> d6864b0 (docs(cli): sync CLI reference and quick-start with implementation)
 
 Examples:
 ```bash
