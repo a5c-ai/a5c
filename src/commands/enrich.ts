@@ -1,6 +1,7 @@
 import type { NormalizedEvent, Mention } from '../types.js'
 import { readJSONFile, loadConfig } from '../config.js'
 import { extractMentions } from '../extractor.js'
+import { normalizeGithub } from '../providers/github/normalize.js'
 
 export async function cmdEnrich(opts: {
   in?: string
@@ -27,19 +28,10 @@ export async function cmdEnrich(opts: {
   const isNE = input && typeof input === 'object' && input.provider === 'github' && 'payload' in input
   const baseEvent = isNE ? input.payload : input
 
+  // Build a complete NE shell so schema validation can pass (repo, actor, ref)
   const neShell: NormalizedEvent = isNE
-    ? input
-    : {
-        id: String(baseEvent?.after || baseEvent?.workflow_run?.id || baseEvent?.pull_request?.id || 'temp-' + Math.random().toString(36).slice(2)),
-        provider: 'github',
-        type: baseEvent?.pull_request ? 'pull_request' : baseEvent?.workflow_run ? 'workflow_run' : baseEvent?.ref ? 'push' : 'commit',
-        occurred_at: new Date(
-          baseEvent?.head_commit?.timestamp || baseEvent?.workflow_run?.updated_at || baseEvent?.pull_request?.updated_at || Date.now()
-        ).toISOString(),
-        payload: baseEvent,
-        labels: opts.labels || [],
-        provenance: { source: 'cli' }
-      }
+    ? (input as NormalizedEvent)
+    : normalizeGithub(baseEvent, { source: 'cli', labels: opts.labels || [] })
 
   let githubEnrichment: any = {}
   try {
@@ -49,7 +41,7 @@ export async function cmdEnrich(opts: {
     const useGithub = toBool((opts.flags as any)?.use_github)
     const enriched = useGithub
       ? await fn(baseEvent, { token, commitLimit, fileLimit, octokit: opts.octokit })
-      : { _enrichment: { provider: 'github', skipped: true } }
+      : { _enrichment: { provider: 'github', partial: true, reason: 'github_enrich_disabled' } }
     githubEnrichment = enriched?._enrichment || {}
     if (!includePatch) {
       if (githubEnrichment.pr?.files) {
