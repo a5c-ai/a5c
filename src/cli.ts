@@ -4,8 +4,8 @@ import fs from 'node:fs'
 import { extractMentions } from './extractor.js'
 import type { ExtractorOptions, MentionSource } from './types.js'
 import { loadConfig, writeJSONFile } from './config.js'
-import { handleNormalize } from './normalize.js'
-import { handleEnrich } from './enrich.js'
+import { handleNormalize } from './commands/normalize.js'
+import { handleEnrich } from './commands/enrich.js'
 import { redactObject } from './utils/redact.js'
 
 const program = new Command()

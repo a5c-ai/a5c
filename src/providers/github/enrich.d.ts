@@ -7,4 +7,3 @@ export interface EnrichOptions {
 
 export declare function enrichGithubEvent(event: any, opts?: EnrichOptions): Promise<any>;
 export default enrichGithubEvent;
-
