@@ -167,8 +167,9 @@ export async function handleEnrich(opts: {
       }
     }
 
-    const mod: any = await import('./enrichGithubEvent.js')
-    const octokit = opts.octokit || mod.createOctokit?.(token)
+    // Allow provided octokit to be used even without token (tests/mocks),
+    // otherwise create with token when available
+    const octokit = useGithub ? (opts.octokit || (token ? (await import('./enrichGithubEvent.js')).createOctokit?.(token) : undefined)) : undefined
 
     if ((!filesList || !Array.isArray(filesList)) && octokit && owner && repo) {
       // Derive changed files using GitHub API if possible
@@ -191,6 +192,14 @@ export async function handleEnrich(opts: {
       const files = filesList.map((f: any) => ({ filename: f.filename }))
       const codeMentions = await scanCodeCommentsForMentions({ owner, repo, ref, files, octokit, options: { fileSizeCapBytes: 200 * 1024, languageFilters: ['js','ts','md'] } })
       if (codeMentions.length) mentions.push(...codeMentions)
+      // Also scan patch text directly when present to support mocked octokit scenarios
+      for (const f of filesList) {
+        const patch = (f as any).patch
+        if (typeof patch === 'string' && patch.length) {
+          const found = scanPatchForCodeCommentMentions(f.filename, patch, { window: 30 })
+          if (found.length) mentions.push(...found)
+        }
+      }
     }
   } catch {
     // ignore code comment scanning failures; treated as best-effort enrichment

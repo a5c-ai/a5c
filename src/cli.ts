@@ -95,7 +95,7 @@ program
 
 program
   .command('enrich')
-  .description('Enrich a normalized event with metadata and derived info')
+  .description('Enrich a normalized event. No network calls unless --use-github (token required).')
   .option('--in <file>', 'input JSON file path')
   .option('--out <file>', 'output JSON file path')
   .option('--rules <file>', 'rules file path (yaml/json)')
