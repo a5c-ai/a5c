@@ -157,11 +157,33 @@ export function evaluateRules(event: any, rules: (Rule | JsonRule)[]): ComposedE
   return evaluateRulesDetailed(event, rules).composed
 }
 
-function evalExpr(ctx: any, expr: Expr): boolean {
+function evalExpr(ctx: any, expr: any): boolean {
   if (!expr || typeof expr !== 'object') return false
-  if ('all' in expr) return (expr.all || []).every((e) => evalExpr(ctx, e))
-  if ('any' in expr) return (expr.any || []).some((e) => evalExpr(ctx, e))
+  if ('all' in expr) return (expr.all || []).every((e: any) => evalExpr(ctx, e))
+  if ('any' in expr) return (expr.any || []).some((e: any) => evalExpr(ctx, e))
   if ('not' in expr) return !evalExpr(ctx, expr.not as Expr)
+  // Support condensed condition objects like { path, eq|contains|in|exists }
+  if ('path' in expr) {
+    const p = String(expr.path)
+    const got = getPath(ctx, p)
+    if (Object.prototype.hasOwnProperty.call(expr, 'eq')) {
+      return deepEqual(got, (expr as any).eq)
+    }
+    if (Object.prototype.hasOwnProperty.call(expr, 'contains')) {
+      const val = (expr as any).contains
+      if (Array.isArray(got)) return got.some((x) => deepEqual(x, val))
+      if (typeof got === 'string') return String(got).includes(String(val))
+      return false
+    }
+    if (Object.prototype.hasOwnProperty.call(expr, 'in')) {
+      const arr = (expr as any).in as any[]
+      if (!Array.isArray(arr)) return false
+      return arr.some((v) => deepEqual(got, v))
+    }
+    if (Object.prototype.hasOwnProperty.call(expr, 'exists')) {
+      return got !== undefined && got !== null
+    }
+  }
   if ('eq' in expr) {
     const [p, val] = expr.eq
     const got = getPath(ctx, p)
