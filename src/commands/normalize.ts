@@ -42,4 +42,5 @@ export async function runNormalize(opts: { in?: string; source?: string; labels?
 }
 
 // Backward/CLI adapter name expected by src/cli.ts
-export const cmdNormalize = runNormalize
+// Note: keep runNormalize for programmatic usage via src/normalize.ts.
+// Do not re-export it as cmdNormalize to avoid duplicate identifier.
