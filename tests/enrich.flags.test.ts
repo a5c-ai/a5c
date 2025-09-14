@@ -4,15 +4,15 @@ import { handleEnrich } from '../src/enrich.js'
 function makeMockOctokit({ prFiles = [] as any[] } = {}) {
   const pr = { number: 1, state: 'open', merged: false, draft: false, base: { ref: 'main' }, head: { ref: 'feat' }, changed_files: prFiles.length, additions: 0, deletions: 0 }
   const commits = [{ sha: 'abc', commit: { message: 'm' } }]
-  return {
+  const octo: any = {
     pulls: {
       async get() { return { data: pr } },
       async listFiles() { return { data: prFiles, headers: {}, status: 200 } },
       async listCommits() { return { data: commits, headers: {}, status: 200 } },
     },
     paginate: async (fn: any) => {
-      if (fn === (this as any)?.pulls?.listFiles) return prFiles
-      if (fn === (this as any)?.pulls?.listCommits) return commits
+      if (fn === octo.pulls.listFiles) return prFiles
+      if (fn === octo.pulls.listCommits) return commits
       return []
     },
     repos: {
@@ -21,6 +21,7 @@ function makeMockOctokit({ prFiles = [] as any[] } = {}) {
       async getBranchProtection() { throw Object.assign(new Error('forbidden'), { status: 403 }) },
     },
   }
+  return octo
 }
 
 const samplePR = 'samples/pull_request.synchronize.json'
@@ -57,4 +58,3 @@ describe('enrich flags: include_patch default and override', () => {
     expect(files[0].patch).toContain('const b=2')
   })
 })
-
