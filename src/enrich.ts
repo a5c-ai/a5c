@@ -49,18 +49,13 @@ export async function handleEnrich(opts: {
       }
 
   let githubEnrichment: any = {}
-  const hasOctokit = !!opts.octokit
-  const shouldEnrichGithub = useGithub || hasOctokit
-  if (!shouldEnrichGithub) {
-    // Offline/default mode: do not perform network enrichment
-    githubEnrichment = { provider: 'github', partial: true, reason: 'github_enrich_disabled' }
-  } else if (useGithub && !token && !hasOctokit) {
-    // Flag requested but no token (and no injected octokit): mark as partial and do NOT call network
+  const hasAuth = Boolean(token || opts.octokit)
+  if (!(useGithub && hasAuth)) {
+    // Default: no network enrichment unless flag+token provided
     githubEnrichment = {
       provider: 'github',
-      partial: true,
-      reason: 'github_token_missing',
-      errors: [{ message: 'GitHub token is required for enrichment' }]
+      skipped: true,
+      reason: !useGithub ? 'flag:not_set' : 'token:missing',
     }
   } else {
     try {
@@ -89,10 +84,10 @@ export async function handleEnrich(opts: {
         }
       }
     } catch (e: any) {
-      // Only treat as provider error when the user explicitly requested --use-github
-      if (useGithub) return { code: 3, output: { error: `github enrichment failed: ${String(e?.message || e)}` } }
-      // Otherwise, degrade gracefully
-      githubEnrichment = { provider: 'github', partial: true, errors: [{ message: String(e?.message || e) }] }
+      const errMessage = String(e?.message || e)
+      // For handleEnrich (programmatic), do not fail the whole command; mark partial with error
+      githubEnrichment = { provider: 'github', partial: true, errors: [{ message: errMessage }] }
+    }
     }
   }
 
@@ -164,51 +159,53 @@ export async function handleEnrich(opts: {
     void 0
   }
 
-  // Mentions from code comments in changed files (PR/push)
-  try {
-    const gh = (githubEnrichment || {}) as any
-    let owner: string | undefined = gh.owner
-    let repo: string | undefined = gh.repo
-    let filesList: any[] | undefined = gh?.pr?.files || gh?.push?.files
-    let ref: string | undefined = (baseEvent as any)?.pull_request?.head?.sha || (baseEvent as any)?.pull_request?.head?.ref || (baseEvent as any)?.after || (baseEvent as any)?.head_commit?.id
+  // Mentions from code comments in changed files (PR/push) — requires opt-in and auth
+  if (useGithub && hasAuth) {
+    try {
+      const gh = (githubEnrichment || {}) as any
+      let owner: string | undefined = gh.owner
+      let repo: string | undefined = gh.repo
+      let filesList: any[] | undefined = gh?.pr?.files || gh?.push?.files
+      let ref: string | undefined = (baseEvent as any)?.pull_request?.head?.sha || (baseEvent as any)?.pull_request?.head?.ref || (baseEvent as any)?.after || (baseEvent as any)?.head_commit?.id
 
-    // Fallback to payload if enrichment missing
-    if (!owner || !repo) {
-      const full = (baseEvent as any)?.repository?.full_name
-      if (typeof full === 'string' && full.includes('/')) {
-        const parts = full.split('/')
-        owner = parts[0]
-        repo = parts[1]
+      // Fallback to payload if enrichment missing
+      if (!owner || !repo) {
+        const full = (baseEvent as any)?.repository?.full_name
+        if (typeof full === 'string' && full.includes('/')) {
+          const parts = full.split('/')
+          owner = parts[0]
+          repo = parts[1]
+        }
       }
-    }
 
-    const mod: any = await import('./enrichGithubEvent.js')
-    const octokit = opts.octokit ?? (useGithub && token ? mod.createOctokit?.(token) : undefined)
+      const mod: any = await import('./enrichGithubEvent.js')
+      const octokit = opts.octokit || mod.createOctokit?.(token)
 
-    if ((!filesList || !Array.isArray(filesList)) && octokit && owner && repo) {
-      // Derive changed files using GitHub API if possible
-      if ((baseEvent as any)?.pull_request?.number) {
-        try {
-          const number = (baseEvent as any).pull_request.number
-          const list = await octokit.paginate(octokit.pulls.listFiles, { owner, repo, pull_number: number, per_page: 100 })
-          filesList = Array.isArray(list) ? list : []
-        } catch {}
-      } else if ((baseEvent as any)?.before && (baseEvent as any)?.after) {
-        try {
-          const comp = await octokit.repos.compareCommits({ owner, repo, base: (baseEvent as any).before, head: (baseEvent as any).after })
-          filesList = (comp?.data?.files as any[]) || []
-          ref = (baseEvent as any).after
-        } catch {}
+      if ((!filesList || !Array.isArray(filesList)) && octokit && owner && repo) {
+        // Derive changed files using GitHub API if possible
+        if ((baseEvent as any)?.pull_request?.number) {
+          try {
+            const number = (baseEvent as any).pull_request.number
+            const list = await octokit.paginate(octokit.pulls.listFiles, { owner, repo, pull_number: number, per_page: 100 })
+            filesList = Array.isArray(list) ? list : []
+          } catch {}
+        } else if ((baseEvent as any)?.before && (baseEvent as any)?.after) {
+          try {
+            const comp = await octokit.repos.compareCommits({ owner, repo, base: (baseEvent as any).before, head: (baseEvent as any).after })
+            filesList = (comp?.data?.files as any[]) || []
+            ref = (baseEvent as any).after
+          } catch {}
+        }
       }
-    }
 
-    if (owner && repo && Array.isArray(filesList) && filesList.length && ref && octokit) {
-      const files = filesList.map((f: any) => ({ filename: f.filename }))
-      const codeMentions = await scanCodeCommentsForMentions({ owner, repo, ref, files, octokit, options: { fileSizeCapBytes: 200 * 1024, languageFilters: ['js','ts','md'] } })
-      if (codeMentions.length) mentions.push(...codeMentions)
+      if (owner && repo && Array.isArray(filesList) && filesList.length && ref && octokit) {
+        const files = filesList.map((f: any) => ({ filename: f.filename }))
+        const codeMentions = await scanCodeCommentsForMentions({ owner, repo, ref, files, octokit, options: { fileSizeCapBytes: 200 * 1024, languageFilters: ['js','ts','md'] } })
+        if (codeMentions.length) mentions.push(...codeMentions)
+      }
+    } catch {
+      // ignore code comment scanning failures; treated as best-effort enrichment
     }
-  } catch {
-    // ignore code comment scanning failures; treated as best-effort enrichment
   }
 
   // Optional: scan changed files for code comment mentions

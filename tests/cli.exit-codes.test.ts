@@ -37,6 +37,7 @@ describe('CLI exit codes', () => {
   it('enrich: exits 3 when --use-github is set but no token (provider failure)', () => {
     const inFile = path.resolve('tests/fixtures/github/pull_request.synchronize.json')
     const res = runCLI(['enrich', '--in', inFile, '--use-github'])
+    // cmdEnrich continues to throw code 3 in CLI path
     expect(res.status, res.stderr).toBe(3)
     expect(res.stderr).toMatch(/GitHub enrichment failed|token is required/i)
   })
