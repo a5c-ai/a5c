@@ -141,4 +141,8 @@ Evaluation:
 - PII: minimal collection; configurable redaction; allowlist of emitted fields.
 - Audit: include `provenance` with run ids, actor, and hash of raw payload; optional signed artifacts.
 - Permissions: least-privilege tokens; document scopes required for GitHub (`repo:read`, `actions:read`).
+<<<<<<< HEAD
 - Diffs: patch bodies can contain secrets; `include_patch` defaults to false. Enable explicitly with `--flag include_patch=true` when needed. This reduces payload size and lowers risk of leaking secrets embedded in diffs. Redaction still applies to known patterns and sensitive keys, and size caps are respected.
+=======
+- Diffs: patch bodies can contain secrets; `include_patch` defaults to true (can be disabled with `--flag include_patch=false`); redact known patterns; respect size caps.
+>>>>>>> origin/main

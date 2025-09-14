@@ -5,7 +5,11 @@
 Normalize and enrich GitHub (and other) events for agentic workflows. Use the CLI in CI or locally to turn raw webhook/Actions payloads into a compact, consistent schema that downstream agents and automations can trust.
 
 - Quick install via npm
+<<<<<<< HEAD
 - Commands: `events mentions`, `events normalize`, `events enrich`, `events validate`
+=======
+- Commands: `events mentions`, `events normalize`, `events enrich`
+>>>>>>> origin/main
 - Output: JSON to stdout or file
 - Extensible via provider adapters and enrichers
 
@@ -63,7 +67,6 @@ cat out.json | npx @a5c-ai/events validate --quiet
   - `--flag commit_limit=<n>`: max commits to include (default: 50)
   - `--flag file_limit=<n>`: max files to include (default: 200)
   - `--use-github`: enable GitHub API enrichment (requires `GITHUB_TOKEN`)
-  - `--use-github`: enable GitHub API enrichment (requires token)
   - `--select <paths>`: comma-separated dot paths to include in output
   - `--filter <expr>`: filter expression `path[=value]`; if not matching, exits with code 2 and no output
   - `--label <key=value...>`: attach labels to top‑level `labels[]`

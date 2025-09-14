@@ -1,28 +1,15 @@
-# Sample rules per docs/specs §6.1
 rules:
   - name: conflict_in_pr_with_low_priority_label
     on: pull_request
     when:
-      any:
-        - contains: ["$.payload.pull_request.labels[*].name", "priority:low"]
-        - contains: ["$.payload.pull_request.labels[*].name", "low priority"]
+      all:
+        - { path: "$.enriched.github.pr.mergeable_state", in: ["dirty", "blocked"] }
+        - { path: "$.payload.pull_request.labels[*].name", contains: "priority:low" }
     emit:
       key: conflict_in_pr_with_low_priority_label
-      targets: [developer-agent, triager-agent]
       labels: [conflict, pr, priority:low]
+      targets: [developer-agent, triager-agent]
       payload:
-        pr_number: "$.payload.pull_request.number"
-        mergeable_state: "$.enriched.github.pr.mergeable_state"
-  - name: pr_conflicted_state
-    on: pull_request
-    when:
-      all:
-        - eq: ["$.enriched.github.pr.mergeable_state", "dirty"]
-    emit:
-      key: pr_conflicted_state
-      targets: [developer-agent]
-      labels: [conflict, pr]
-      payload:
-        pr_number: "$.payload.pull_request.number"
-        mergeable_state: "$.enriched.github.pr.mergeable_state"
-
+        pr_number: $.payload.pull_request.number
+        repo: $.repository.full_name
+        mergeable_state: $.enriched.github.pr.mergeable_state

@@ -1,4 +1,5 @@
 ## 1.1.0-a5c-main.10 (2025-09-14)
+## 1.1.0-a5c-main.10 (2025-09-14)
 
 * ✨ Provider: add issues/check_run mapping + tests (fixes #231) (#235) ([29c3683](https://github.com/a5c-ai/events/commit/29c3683)), closes [#231](https://github.com/a5c-ai/events/issues/231) [#235](https://github.com/a5c-ai/events/issues/235) [#226](https://github.com/a5c-ai/events/issues/226) [#89](https://github.com/a5c-ai/events/issues/89) [#89](https://github.com/a5c-ai/events/issues/89) [#95](https://github.com/a5c-ai/events/issues/95) [#92](https://github.com/a5c-ai/events/issues/92) [#100](https://github.com/a5c-ai/events/issues/100)
 * 🧪 ci(build): pin Node 20 in Build; stabilize enrich tests handling (#275) ([4004d3d](https://github.com/a5c-ai/events/commit/4004d3d)), closes [#275](https://github.com/a5c-ai/events/issues/275)
@@ -140,6 +141,8 @@
 * resolve: unify offline/disabled GitHub enrichment semantics; remove conflict markers ([ede9deb](https://github.com/a5c-ai/events/commit/ede9deb))
 * validator: document non-blocking lint warnings for PR #178 ([944d967](https://github.com/a5c-ai/events/commit/944d967)), closes [#178](https://github.com/a5c-ai/events/issues/178)
 * validator: fix tests and gating to allow mock octokit offline; include github block when octokit pro ([997e509](https://github.com/a5c-ai/events/commit/997e509))
+
+## 1.1.0-a5c-main.5 (2025-09-14)
 
 ## 1.1.0-a5c-main.5 (2025-09-14)
 

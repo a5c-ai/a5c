@@ -7,7 +7,6 @@ import prettier from 'eslint-config-prettier'
 
 /** @type {import('eslint').Linter.FlatConfig[]} */
 export default [
-  // Global ignores (include fixtures and samples to speed up lint)
   // Global ignores (merge of base + PR)
   { ignores: ['dist/**', 'node_modules/**', 'tests/fixtures/**', 'samples/**', 'src/**/*.d.ts'] },
 
@@ -74,7 +73,6 @@ export default [
         '@typescript-eslint/no-explicit-any': 'off',
         '@typescript-eslint/no-require-imports': 'off',
         '@typescript-eslint/ban-ts-comment': 'off',
-        '@typescript-eslint/no-require-imports': 'off',
         'no-empty': ['error', { allowEmptyCatch: true }],
       },
     },
