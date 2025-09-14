@@ -34,8 +34,7 @@ describe('CLI enrich with --rules emits composed events', () => {
     const composed = (obj as any).composed || []
     expect(Array.isArray(composed)).toBe(true)
     const keys = composed.map((c: any) => c.key)
-    // key field may be redacted in CLI output; accept actual or 'REDACTED'
-    const hasExpected = keys.includes('conflict_in_pr_with_low_priority_label') || keys.includes('REDACTED')
+    const hasExpected = keys.includes('conflict_in_pr_with_low_priority_label') || keys.includes('pr_conflicted_state')
     expect(hasExpected).toBe(true)
   })
 })

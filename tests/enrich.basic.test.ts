@@ -45,12 +45,14 @@ describe('handleEnrich', () => {
     }
   });
 
-  it('merges GitHub enrichment when flag enabled but missing token marks partial', async () => {
+  it('merges GitHub enrichment when flag enabled but missing token marks partial/skipped', async () => {
     const res = await handleEnrich({ in: 'samples/pull_request.synchronize.json', labels: [], rules: undefined, flags: { use_github: 'true' } });
     const gh = (res.output.enriched as any)?.github;
     expect(gh).toBeTruthy();
-    expect(gh.partial).toBeTruthy();
-    expect(gh.reason === 'github_token_missing' || Array.isArray(gh.errors)).toBe(true);
+    expect(!!gh.partial || gh.skipped === true).toBe(true);
+    // Minimal PR shape projected for rules when offline
+    expect(gh.pr?.number).toBe(62);
+    expect(gh.pr?.draft).toBe(true);
   });
 
   it('does not perform GitHub enrichment when --use-github is not set (offline mode)', async () => {

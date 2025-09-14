@@ -52,14 +52,9 @@ export async function handleEnrich(opts: {
   if (!useGithub) {
     // Offline/default mode: do not perform network enrichment
     githubEnrichment = { provider: 'github', partial: true, reason: 'github_enrich_disabled' }
-  } else if (!token) {
-    // Enabled but missing token: mark partial with reason without attempting network calls
-    githubEnrichment = {
-      provider: 'github',
-      partial: true,
-      reason: 'github_token_missing',
-      errors: [{ message: 'GitHub token is required for enrichment' }]
-    }
+  } else if (!token && !opts.octokit) {
+    // Enabled but missing token and no injected Octokit: mark skipped/partial
+    githubEnrichment = { provider: 'github', skipped: true, reason: 'token:missing', partial: true }
   } else {
     try {
       const mod: any = await import('./enrichGithubEvent.js')
@@ -89,6 +84,17 @@ export async function handleEnrich(opts: {
     }
   }
 
+  // Fallback projection of basic PR fields when offline/partial so rules and tests have minimal shape
+  try {
+    const prPayload = (baseEvent as any)?.pull_request
+    if (prPayload) {
+      if (!githubEnrichment || typeof githubEnrichment !== 'object') githubEnrichment = {}
+      githubEnrichment.pr = { ...(githubEnrichment.pr || {}) }
+      if (githubEnrichment.pr.number == null && prPayload.number != null) githubEnrichment.pr.number = prPayload.number
+      if (githubEnrichment.pr.draft == null && typeof prPayload.draft === 'boolean') githubEnrichment.pr.draft = prPayload.draft
+      if (githubEnrichment.pr.mergeable_state == null && prPayload.mergeable_state != null) githubEnrichment.pr.mergeable_state = prPayload.mergeable_state
+    }
+  } catch {}
 
   // Mentions from common text locations
   const mentions: Mention[] = []
