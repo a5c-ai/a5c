@@ -5,11 +5,7 @@
 Normalize and enrich GitHub (and other) events for agentic workflows. Use the CLI in CI or locally to turn raw webhook/Actions payloads into a compact, consistent schema that downstream agents and automations can trust.
 
 - Quick install via npm
-<<<<<<< HEAD
 - Commands: `events mentions`, `events normalize`, `events enrich`, `events validate`
-=======
-- Commands: `events mentions`, `events normalize`, `events enrich`
->>>>>>> origin/main
 - Output: JSON to stdout or file
 - Extensible via provider adapters and enrichers
 
@@ -34,6 +30,7 @@ npx @a5c-ai/events normalize --in samples/workflow_run.completed.json --out out.
 jq '.type, .repo.full_name, .provenance.workflow?.name' out.json
 
 # Validate against the NE schema (quiet on success)
+# Uses default schema path: docs/specs/ne.schema.json
 cat out.json | npx @a5c-ai/events validate --quiet
 ```
 
