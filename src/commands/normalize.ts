@@ -41,4 +41,6 @@ export async function runNormalize(opts: { in?: string; source?: string; labels?
   }
 }
 
-// Note: Keep distinct exports: `cmdNormalize` (CLI wrapper) and `runNormalize` (programmatic API).
+// Backward/CLI adapter name expected by src/cli.ts
+// Note: keep runNormalize for programmatic usage via src/normalize.ts.
+// Do not re-export it as cmdNormalize to avoid duplicate identifier.
