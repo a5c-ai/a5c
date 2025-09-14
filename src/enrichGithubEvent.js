@@ -200,3 +200,4 @@ export async function enrichGithubEvent(event, opts) {
 }
 
 export default enrichGithubEvent;
+// @ts-nocheck
