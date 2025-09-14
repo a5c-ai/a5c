@@ -5,7 +5,6 @@ import { createRequire } from 'node:module'
 let yamlParse: ((s: string) => any) | undefined
 try {
   const req = createRequire(import.meta.url)
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const y = req('yaml')
   yamlParse = y.parse || y.load
 } catch {
@@ -221,12 +220,18 @@ function tokenizePath(p: string): (string | { wildcard: true })[] {
   while (i < p.length) {
     const ch = p[i]
     if (ch === '.') {
-      if (cur) tokens.push(cur), (cur = '')
+      if (cur) {
+        tokens.push(cur)
+        cur = ''
+      }
       i++
       continue
     }
     if (ch === '[') {
-      if (cur) tokens.push(cur), (cur = '')
+      if (cur) {
+        tokens.push(cur)
+        cur = ''
+      }
       const end = p.indexOf(']', i)
       const inside = p.slice(i + 1, end).trim()
       if (inside === '*') tokens.push({ wildcard: true })
@@ -318,7 +323,7 @@ function parseMiniYaml(src: string): any {
     else current[key] = value
   }
 
-  for (let raw of lines) {
+  for (const raw of lines) {
     const line = raw.replace(/#.*$/, '')
     if (!line.trim()) continue
     const indent = line.match(/^\s*/)?.[0].length || 0
