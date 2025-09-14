@@ -93,6 +93,9 @@ jq '.enriched.mentions' out.json
 ## Notes
 - Token precedence: runtime uses `A5C_AGENT_GITHUB_TOKEN` first, then `GITHUB_TOKEN` (see `src/config.ts`).
 - Redaction: CLI redacts known secret patterns and sensitive keys in output by default (see `src/utils/redact.ts`).
+  - Sensitive keys include: `token`, `secret`, `password`, `passwd`, `pwd`, `api_key`, `apikey`, `key`, `client_secret`, `access_token`, `refresh_token`, `private_key`, `ssh_key`, `authorization`, `auth`, `session`, `cookie`, `webhook_secret`.
+  - Pattern masking includes (non-exhaustive): GitHub PATs (`ghp_`, `gho_`, `ghu_`, `ghs_`, `ghe_`), JWTs, `Bearer ...` headers, AWS `AKIA...`/`ASIA...` keys, Stripe `sk_live_`/`sk_test_`, Slack `xox...` tokens, and URL basic auth (`https://user:pass@host`).
+- Tests: See `test/config.loadConfig.test.ts`, `test/redact.test.ts`, and `test/enrich.redaction.test.ts` for coverage and regression fixtures.
 - Large payloads: JSON is read/written from files/stdin/stdout; providers may add streaming in future.
 
 See also: `docs/specs/README.md`.
