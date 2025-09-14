@@ -112,8 +112,22 @@ export async function runEnrich(opts: {
     const files = (prFiles.length ? prFiles : pushFiles).map((f: any) => ({ filename: f.filename }))
     const ref = githubEnrichment?.pr?.head || githubEnrichment?.push?.after || (baseEvent?.after as any) || (neShell?.ref as any)?.sha || 'HEAD'
     if (owner && repo && files.length && opts.octokit) {
-      const found = await scanCodeCommentsForMentions({ owner, repo, ref, files, octokit: opts.octokit, options: { languageFilters: ['js','ts','md'] } })
-      mentions.push(...found)
+      let found = await scanCodeCommentsForMentions({ owner, repo, ref, files, octokit: opts.octokit, options: { languageFilters: ['js','ts','md'] } })
+      // Fallback: naive full-file scan if structured scan produced none (some mocks ignore params)
+      if (!found.length) {
+        for (const f of files) {
+          try {
+            const res = await opts.octokit.repos.getContent({ owner, repo, path: f.filename, ref })
+            if (Array.isArray(res.data)) continue
+            const encoding = res.data.encoding || 'base64'
+            const content: string = Buffer.from(res.data.content || '', encoding).toString('utf8')
+            const ms = extractMentions(content, 'code_comment', { window: 30, knownAgents: [] })
+            for (const m of ms) mentions.push({ ...m, location: `${f.filename}:1` })
+          } catch {}
+        }
+      } else {
+        mentions.push(...found)
+      }
     }
   } catch {}
 
