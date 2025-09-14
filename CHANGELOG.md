@@ -1,5 +1,22 @@
 ## 1.1.0-a5c-main.15 (2025-09-14)
 
+* 📝 Clarify token precedence + redaction in docs (Auth UX) (#317) ([d30aa0b](https://github.com/a5c-ai/events/commit/d30aa0b)), closes [#317](https://github.com/a5c-ai/events/issues/317) [#294](https://github.com/a5c-ai/events/issues/294)
+* 📝 Docs: CLI/spec alignment + conflict cleanup (refs #289) (#318) ([1d15c55](https://github.com/a5c-ai/events/commit/1d15c55)), closes [#289](https://github.com/a5c-ai/events/issues/289) [#318](https://github.com/a5c-ai/events/issues/318) [#289](https://github.com/a5c-ai/events/issues/289)
+* 🧩 docs: README includes 'events validate' and quiet example (fixes #292) ([f00ca90](https://github.com/a5c-ai/events/commit/f00ca90)), closes [#292](https://github.com/a5c-ai/events/issues/292)
+* 🧩 docs: README includes 'events validate' and quiet example (fixes #292) ([c8a40a5](https://github.com/a5c-ai/events/commit/c8a40a5)), closes [#292](https://github.com/a5c-ai/events/issues/292)
+* Merge pull request #315 from a5c-ai/docs/composed-validate-example-issue-295 ([daf9478](https://github.com/a5c-ai/events/commit/daf9478)), closes [#315](https://github.com/a5c-ai/events/issues/315) [#295](https://github.com/a5c-ai/events/issues/295)
+* docs: composed+validate walkthrough; resolve conflict markers; clarify include_patch default ([47d1c05](https://github.com/a5c-ai/events/commit/47d1c05))
+* docs: finalize conflict cleanup in CLI reference (remove stray markers) ([ddc6627](https://github.com/a5c-ai/events/commit/ddc6627))
+* docs: start task log for issue #295 – composed+validate walkthrough ([68ae0e1](https://github.com/a5c-ai/events/commit/68ae0e1)), closes [#295](https://github.com/a5c-ai/events/issues/295)
+* docs(cli): fix stray code fence; clarify outputs block ([4939344](https://github.com/a5c-ai/events/commit/4939344))
+* fix(conflicts): rebase onto a5c/main; resolve CLI reference + changelog markers; keep include_patch  ([1b24b3a](https://github.com/a5c-ai/events/commit/1b24b3a))
+* Release: a5c/main → main (validated by validator-agent) ([6b2a377](https://github.com/a5c-ai/events/commit/6b2a377)), closes [#96](https://github.com/a5c-ai/events/issues/96)
+* test: fix duplicate declarations in tests; dedupe vars in enrichGithubEvent; add noop JS placeholder ([7e78504](https://github.com/a5c-ai/events/commit/7e78504)), closes [#315](https://github.com/a5c-ai/events/issues/315)
+* test: fix duplicates and docs conflict ([e7d5989](https://github.com/a5c-ai/events/commit/e7d5989))
+* resolve: fix merge markers in CLI reference and changelog; continue rebase ([9264831](https://github.com/a5c-ai/events/commit/9264831))
+
+## 1.1.0-a5c-main.15 (2025-09-14)
+
 * docs: resolve merge conflicts in README/CLI reference; specs: clarify include_patch default
 
 ## 1.1.0-a5c-main.14 (2025-09-14)
