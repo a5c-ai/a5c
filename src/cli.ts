@@ -110,10 +110,10 @@ program
   .option('--rules <file>', 'rules file path (yaml/json)')
   .option('--flag <key=value...>', 'enrichment flags', collectKeyValue, {})
   .option('--use-github', 'enable GitHub API enrichment (requires GITHUB_TOKEN)')
+  .option('--validate', 'validate output against NE schema')
   .option('--select <paths>', 'comma-separated dot paths to include in output')
   .option('--filter <expr>', 'filter expression path[=value] to gate output')
   .option('--label <key=value...>', 'labels to attach', collectKeyValue, [])
-  .option('--validate', 'validate output against NE schema')
   .action(async (cmdOpts: any) => {
     const flags = { ...(cmdOpts.flag || {}) }
     if (cmdOpts.useGithub || cmdOpts['use-github']) flags.use_github = 'true'
