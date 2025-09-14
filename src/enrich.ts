@@ -197,7 +197,6 @@ export async function handleEnrich(opts: {
     } catch {
       // ignore code comment scanning failures; treated as best-effort enrichment
     }
-    }
   }
 
   // Optional: scan changed files for code comment mentions
