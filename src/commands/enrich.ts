@@ -97,8 +97,16 @@ export async function runEnrich(opts: {
 
   // Code comment mentions from changed files when octokit available
   try {
-    const owner: string | undefined = githubEnrichment?.owner
-    const repo: string | undefined = githubEnrichment?.repo
+    let owner: string | undefined = githubEnrichment?.owner
+    let repo: string | undefined = githubEnrichment?.repo
+    if (!owner || !repo) {
+      const full = (baseEvent as any)?.repository?.full_name as string | undefined
+      if (full && full.includes('/')) {
+        const [o, r] = full.split('/')
+        owner = owner || o
+        repo = repo || r
+      }
+    }
     const prFiles: any[] = githubEnrichment?.pr?.files || []
     const pushFiles: any[] = githubEnrichment?.push?.files || []
     const files = (prFiles.length ? prFiles : pushFiles).map((f: any) => ({ filename: f.filename }))
