@@ -60,6 +60,7 @@ Expected output (example):
 ```bash
 export GITHUB_TOKEN=ghp_xxx # or use Actions token in CI
 
+# No network by default; add --use-github to opt in to API lookups
 events enrich --in samples/pull_request.synchronize.json --out out.json --use-github --flag include_patch=false
 
 jq '.enriched.github.pr.has_conflicts, .enriched.github.pr.mergeable_state' out.json

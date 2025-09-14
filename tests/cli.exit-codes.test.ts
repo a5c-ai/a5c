@@ -9,8 +9,8 @@ const cliTs = path.resolve('src/cli.ts')
 function runCLI(args: string[], opts?: { env?: NodeJS.ProcessEnv }) {
   const env = { ...process.env, ...(opts?.env || {}) }
   // Ensure tokens are not inherited unless explicitly set
-  delete env.GITHUB_TOKEN
-  delete env.A5C_AGENT_GITHUB_TOKEN
+  delete (env as any).GITHUB_TOKEN
+  delete (env as any).A5C_AGENT_GITHUB_TOKEN
   const res = spawnSync(tsxBin, [cliTs, ...args], {
     encoding: 'utf8',
     env,
@@ -37,6 +37,7 @@ describe('CLI exit codes', () => {
   it('enrich: exits 3 when --use-github is set but no token (provider failure)', () => {
     const inFile = path.resolve('tests/fixtures/github/pull_request.synchronize.json')
     const res = runCLI(['enrich', '--in', inFile, '--use-github'])
+    // cmdEnrich continues to throw code 3 in CLI path
     expect(res.status, res.stderr).toBe(3)
     expect(res.stderr).toMatch(/GitHub enrichment failed|token is required/i)
   })
@@ -48,4 +49,3 @@ describe('CLI exit codes', () => {
     expect(res.stdout).toMatch(/"provider":\s*"github"/)
   })
 })
-

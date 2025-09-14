@@ -1,4 +1,5 @@
 import Ajv, { type ErrorObject } from 'ajv'
+import addFormats from 'ajv-formats'
 import fs from 'node:fs'
 import path from 'node:path'
 
@@ -18,42 +19,72 @@ const meta2020 = {
   type: ['object', 'boolean'],
 } as const
 
-function addFormats(ajv: any) {
-  ajv.addFormat('date-time', {
-    type: 'string',
-    validate: (s: string) => /\d{4}-\d{2}-\d{2}T\d{2}:.+Z/.test(s),
-  })
+export type ValidationResult = {
+  valid: boolean
+  errors: ErrorObject[]
+}
+
+type AjvValidate = ((data: unknown) => boolean) & { errors?: ErrorObject[] }
+let cachedValidate: AjvValidate | null = null
+
+export function buildAjv() {
+  const ajv = new Ajv({ strict: false, allErrors: true })
+  // Provide date-time and other formats (Ajv v8+)
+  addFormats(ajv as any)
+  // Ensure 2020-12 meta-schema available when $schema references it
+  // @ts-ignore – Ajv types accept this at runtime
+  ajv.addMetaSchema(meta2020)
   return ajv
 }
 
-let cached: { ajv: Ajv; validate: any } | null = null
-
-function getValidator() {
-  if (cached) return cached
-  const schemaPath = path.resolve('docs/specs/ne.schema.json')
-  const schema = JSON.parse(fs.readFileSync(schemaPath, 'utf8'))
-  const ajv = new Ajv({ strict: false, allErrors: true })
-  addFormats(ajv)
-  ajv.addMetaSchema(meta2020 as any)
-  const validate = ajv.compile(schema)
-  cached = { ajv, validate }
-  return cached
+export function loadSchema(): any {
+  // Resolve schema relative to project root when running from source.
+  // dist/* files live one level deeper; attempt a few roots.
+  const candidates = [
+    path.resolve('docs/specs/ne.schema.json'),
+    path.resolve(process.cwd(), 'docs/specs/ne.schema.json'),
+    // When running from dist, project root is one level up from dist
+    path.resolve(path.dirname(new URL(import.meta.url).pathname), '../docs/specs/ne.schema.json'),
+    path.resolve(path.dirname(new URL(import.meta.url).pathname), '../../docs/specs/ne.schema.json'),
+  ]
+  for (const p of candidates) {
+    try {
+      if (fs.existsSync(p)) {
+        const raw = fs.readFileSync(p, 'utf8')
+        return JSON.parse(raw)
+      }
+    } catch {
+      // try next
+    }
+  }
+  throw new Error('NE schema not found: docs/specs/ne.schema.json')
 }
 
-export async function validateNE(data: unknown): Promise<{ valid: boolean; errors: ErrorObject[] | null | undefined }>{
-  const { validate } = getValidator()
-  const ok = validate(data)
-  return { valid: !!ok, errors: validate.errors }
+export function getValidator(): AjvValidate {
+  if (cachedValidate) return cachedValidate
+  const schema = loadSchema()
+  const ajv = buildAjv()
+  cachedValidate = ajv.compile(schema) as AjvValidate
+  return cachedValidate
 }
 
-export function formatAjvErrors(errors: ErrorObject[] | null | undefined): string {
-  if (!errors || errors.length === 0) return 'No validation errors.'
-  return errors
-    .map((e) => {
-      const inst = e.instancePath || e.schemaPath || ''
-      const loc = inst.replace(/\btoken\b|secret|password|pass|key/gi, '[REDACTED]')
-      const params = e.params ? JSON.stringify(e.params) : ''
-      return `- ${e.message || 'error'} at ${loc} ${params}`.trim()
-    })
-    .join('\n')
+export function validateNE(data: unknown): ValidationResult {
+  const validate = getValidator()
+  const valid = validate(data)
+  const errors = (validate.errors || []) as ErrorObject[]
+  return { valid: !!valid, errors }
+}
+
+export function formatErrors(errors: ErrorObject[]): string[] {
+  const lines: string[] = []
+  for (const err of errors) {
+    // Prefer instancePath when available; for required, append missingProperty
+    let pathStr = err.instancePath || ''
+    if (!pathStr && (err.params as any)?.missingProperty) pathStr = '/' + (err.params as any).missingProperty
+    // Ensure non-empty
+    if (!pathStr) pathStr = '/'
+    const msg = err.message || 'validation error'
+    lines.push(`${pathStr}: ${msg}`)
+  }
+  return lines
 }

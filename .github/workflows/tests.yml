@@ -25,6 +25,18 @@ jobs:
       - name: Test
         run: |
           ./scripts/test.sh
+      - name: CLI smoke: normalize | validate sample
+        run: |
+          # build CLI if not already built by pretest
+          npm run build --silent
+          # normalize a sample and validate against the schema using built-in validator
+          node dist/cli.js normalize \
+            --in samples/workflow_run.completed.json \
+            --out /tmp/out.validate.json
+          node dist/cli.js validate \
+            --in /tmp/out.validate.json \
+            --schema docs/specs/ne.schema.json \
+            --quiet
       - name: Upload coverage artifact
         if: always()
         uses: actions/upload-artifact@v4

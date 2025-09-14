@@ -23,7 +23,7 @@ describe('rules composed events', () => {
         },
         targets: ['developer-agent']
       }
-    ];
+    ] as any;
     const tmpRules = 'tmp.rules.json';
     fs.writeFileSync(tmpRules, JSON.stringify(rules));
 
