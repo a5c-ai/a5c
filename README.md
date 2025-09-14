@@ -160,6 +160,8 @@ echo "Please route to @developer-agent and @validator-agent" | \
 ## Configuration
 
 Environment variables:
+- `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`: enables GitHub API enrichment
+- `DEBUG`: set to `true` to enable debug mode
 - `A5C_AGENT_GITHUB_TOKEN` or `GITHUB_TOKEN`: required when using `--use-github`
 - Debug flags TBD (`DEBUG=@a5c/events*`)
 

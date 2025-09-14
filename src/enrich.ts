@@ -91,7 +91,6 @@ export async function handleEnrich(opts: {
     }
   }
 
-
   // Mentions from common text locations
   const mentions: Mention[] = []
   try {
@@ -252,7 +251,24 @@ export async function handleEnrich(opts: {
   try {
     const rules = loadRules(opts.rules)
     if (rules.length) {
-      const evalObj: any = { ...output, enriched: output.enriched, labels: output.labels || [] }
+      // Build an evaluation context with minimal inferred fields if API enrichment is missing
+      const pr = (baseEvent as any)?.pull_request
+      const inferred = pr
+        ? {
+            pr: {
+              number: pr.number,
+              draft: pr.draft,
+              mergeable_state: pr.mergeable_state,
+              head: pr.head?.ref,
+              base: pr.base?.ref,
+            },
+          }
+        : {}
+      const evalObj: any = {
+        ...output,
+        enriched: { ...(output as any).enriched, github: { ...((output as any).enriched?.github || {}), ...inferred } },
+        labels: output.labels || [],
+      }
       const res = evaluateRulesDetailed(evalObj, rules)
       if (res?.composed?.length) {
         // Map detailed criteria to a human-readable reason string (join with AND)
