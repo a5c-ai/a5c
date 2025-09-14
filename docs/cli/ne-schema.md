@@ -9,11 +9,12 @@ The NE schema provides a consistent shape across providers for downstream agents
 
 ## Top-level fields (MVP)
 - `type`: normalized event type (e.g., `workflow_run`, `pull_request`, `push`)
-- `source`: provider (e.g., `github`)
+- `provider`: event source provider (e.g., `github`)
 - `repo`: `{ id, full_name, default_branch, visibility }`
 - `actor`: `{ id, login, type }`
-- `timestamps`: `{ observed, provider, received }`
-- `provenance`: `{ workflow: { name, run_id, attempt }, run: { id }, labels: [] }`
+- `occurred_at`: ISO timestamp for the event occurrence
+- `provenance`: `{ workflow: { name, run_id, attempt }, run: { id }, source }`
+- `labels`: `string[]` used for routing and filtering (e.g., `env=staging`)
 - `payload`: selected/raw fields needed downstream (curated)
 - `enriched`: provider-specific derived data (e.g., `github.pr`, `commits`, `diff`, `mentions`)
 - `composed`: optional derived events emitted by rules
@@ -22,8 +23,8 @@ The NE schema provides a consistent shape across providers for downstream agents
 Mentions are extracted from commit messages, PR/Issue title/body, comments, and code comments (language-aware) as per specs. Each mention includes a `source` and short `context` snippet.
 
 ## JSON Schema location
-A canonical JSON Schema will live at:
-- `docs/specs/ne.schema.json` (planned)
+The canonical JSON Schema lives at:
+- `docs/specs/ne.schema.json`
 
 Validation examples (when schema is added):
 ```bash

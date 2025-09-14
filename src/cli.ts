@@ -4,9 +4,12 @@ import fs from 'node:fs'
 import { extractMentions } from './extractor.js'
 import type { ExtractorOptions, MentionSource } from './types.js'
 import { loadConfig, writeJSONFile } from './config.js'
-import { handleNormalize } from './normalize.js'
-import { handleEnrich } from './enrich.js'
+import { cmdNormalize } from './commands/normalize.js'
+import { cmdEnrich } from './commands/enrich.js'
+import { handleEmit } from './emit.js'
 import { redactObject } from './utils/redact.js'
+import path from 'node:path'
+import Ajv from 'ajv'
 
 const program = new Command()
 program
@@ -33,8 +36,14 @@ program
       window: opts.window,
       knownAgents: opts.knownAgent || opts.knownAgents || [],
     }
-    const mentions = extractMentions(text, src, options)
-    process.stdout.write(JSON.stringify(mentions, null, 2) + '\n')
+    try {
+      const mentions = extractMentions(text, src, options)
+      process.stdout.write(JSON.stringify(mentions, null, 2) + '\n')
+      process.exit(0)
+    } catch (e: any) {
+      process.stderr.write(String(e?.message || e) + '\n')
+      process.exit(1)
+    }
   })
 
 program
@@ -43,20 +52,38 @@ program
   .option('--in <file>', 'input JSON file path')
   .option('--out <file>', 'output JSON file path')
   .addOption(new Option('--source <name>', 'source name (actions|webhook|cli)').default('cli'))
+  .option('--select <paths>', 'comma-separated dot paths to include in output')
+  .option('--filter <expr>', 'filter expression path[=value] to gate output')
   .option('--label <key=value...>', 'labels to attach', collectKeyValue, [])
   .action(async (cmdOpts: any) => {
     const cfg = loadConfig()
-    void cfg // currently unused but reserved for future needs
+    void cfg
     const labels = Object.entries(cmdOpts.label || {}).map(([k, v]) => `${k}=${v}`)
-    const { code, output } = await handleNormalize({
+    const { code, output, errorMessage } = await cmdNormalize({
       in: cmdOpts.in,
       source: cmdOpts.source,
       labels,
     })
-    const safe = redactObject(output)
-    if (cmdOpts.out) writeJSONFile(cmdOpts.out, safe)
-    else process.stdout.write(JSON.stringify(safe, null, 2) + '\n')
-    process.exit(code)
+    if (code !== 0 || !output) {
+      if (errorMessage) process.stderr.write(errorMessage + '\n')
+      return process.exit(code || 1)
+    }
+    // filter/select
+    const { selectFields, parseFilter, passesFilter } = await import('./utils/selectFilter.js')
+    const filterSpec = parseFilter(cmdOpts.filter)
+    if (!passesFilter(output as any, filterSpec)) {
+      return process.exit(2)
+    }
+    const selected = cmdOpts.select ? selectFields(output as any, String(cmdOpts.select).split(',').map((s) => s.trim()).filter(Boolean)) : output
+    const safe = redactObject(selected)
+    try {
+      if (cmdOpts.out) writeJSONFile(cmdOpts.out, safe)
+      else process.stdout.write(JSON.stringify(safe, null, 2) + '\n')
+    } catch (e: any) {
+      process.stderr.write(String(e?.message || e) + '\n')
+      return process.exit(1)
+    }
+    process.exit(0)
   })
 
 program
@@ -67,21 +94,121 @@ program
   .option('--rules <file>', 'rules file path (yaml/json)')
   .option('--flag <key=value...>', 'enrichment flags', collectKeyValue, {})
   .option('--use-github', 'enable GitHub API enrichment (requires GITHUB_TOKEN)')
+  .option('--select <paths>', 'comma-separated dot paths to include in output')
+  .option('--filter <expr>', 'filter expression path[=value] to gate output')
   .option('--label <key=value...>', 'labels to attach', collectKeyValue, [])
   .action(async (cmdOpts: any) => {
     const flags = { ...(cmdOpts.flag || {}) }
     if (cmdOpts.useGithub || cmdOpts['use-github']) flags.use_github = 'true'
     const labels = Object.entries(cmdOpts.label || {}).map(([k, v]) => `${k}=${v}`)
-    const { code, output } = await handleEnrich({
+    const { code, output, errorMessage } = await cmdEnrich({
       in: cmdOpts.in,
       labels,
       rules: cmdOpts.rules,
       flags,
     })
-    const safe = redactObject(output)
-    if (cmdOpts.out) writeJSONFile(cmdOpts.out, safe)
-    else process.stdout.write(JSON.stringify(safe, null, 2) + '\n')
+    if (code !== 0 || !output) {
+      if (errorMessage) process.stderr.write(errorMessage + '\n')
+      return process.exit(code || 1)
+    }
+    const { selectFields, parseFilter, passesFilter } = await import('./utils/selectFilter.js')
+    const filterSpec = parseFilter(cmdOpts.filter)
+    if (!passesFilter(output as any, filterSpec)) {
+      return process.exit(2)
+    }
+    const selected = cmdOpts.select ? selectFields(output as any, String(cmdOpts.select).split(',').map((s) => s.trim()).filter(Boolean)) : output
+    const safe = redactObject(selected)
+    try {
+      if (cmdOpts.out) writeJSONFile(cmdOpts.out, safe)
+      else process.stdout.write(JSON.stringify(safe, null, 2) + '\n')
+    } catch (e: any) {
+      process.stderr.write(String(e?.message || e) + '\n')
+      return process.exit(1)
+    }
+    process.exit(0)
+  })
+
+program
+  .command('emit')
+  .description("Emit an event to a sink (stdout or file)")
+  .option('--in <file>', 'input JSON file path (default: stdin)')
+  .option('--out <file>', 'output JSON file path (for file sink)')
+  .option('--sink <name>', 'sink name (stdout|file)', 'stdout')
+  .action(async (cmdOpts: any) => {
+    const { code, output } = await handleEmit({
+      in: cmdOpts.in,
+      out: cmdOpts.out,
+      sink: cmdOpts.sink,
+    })
+    // handleEmit already wrote to sink; also print redacted to stdout if sink=file and no --quiet flag (future)
+    if (cmdOpts.sink !== 'file' && !cmdOpts.out) {
+      const safe = redactObject(output)
+      process.stdout.write(JSON.stringify(safe, null, 2) + '\n')
+    }
     process.exit(code)
+  })
+
+program
+  .command('validate')
+  .description('Validate a JSON payload against the NE schema')
+  .option('--in <file>', 'input JSON file path (defaults to stdin if omitted)')
+  .option('--schema <file>', 'schema file path', 'docs/specs/ne.schema.json')
+  .option('--quiet', 'print nothing on success, only errors', false)
+  .action(async (cmdOpts: any) => {
+    try {
+      const inputStr = cmdOpts.in ? fs.readFileSync(path.resolve(cmdOpts.in), 'utf8') : fs.readFileSync(0, 'utf8')
+      const data = JSON.parse(inputStr)
+      const schema = JSON.parse(fs.readFileSync(path.resolve(cmdOpts.schema), 'utf8'))
+      const ajv = new Ajv({ strict: false, allErrors: true })
+      // Inline minimal 2020-12 meta-schema so Ajv can compile referenced schema
+      const meta2020 = {
+        $id: 'https://json-schema.org/draft/2020-12/schema',
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        $vocabulary: {
+          'https://json-schema.org/draft/2020-12/vocab/core': true,
+          'https://json-schema.org/draft/2020-12/vocab/applicator': true,
+          'https://json-schema.org/draft/2020-12/vocab/unevaluated': true,
+          'https://json-schema.org/draft/2020-12/vocab/validation': true,
+          'https://json-schema.org/draft/2020-12/vocab/meta-data': true,
+          'https://json-schema.org/draft/2020-12/vocab/format-annotation': true,
+          'https://json-schema.org/draft/2020-12/vocab/content': true
+        },
+        type: ['object', 'boolean']
+      } as const
+      // Minimal date-time support to avoid ajv-formats ESM issues in CLI runtime
+      ajv.addFormat('date-time', {
+        type: 'string',
+        validate: (s: string) => /\d{4}-\d{2}-\d{2}T\d{2}:.+Z/.test(s)
+      } as any)
+      // ensure meta registered
+      // @ts-ignore
+      ajv.addMetaSchema(meta2020)
+      const validate = ajv.compile(schema)
+      const ok = validate(data)
+      if (!ok) {
+        const errs = validate.errors || []
+        const out = {
+          valid: false,
+          errorCount: errs.length,
+          errors: errs.map((e) => ({
+            instancePath: e.instancePath,
+            schemaPath: e.schemaPath,
+            message: e.message,
+            params: e.params
+          }))
+        }
+        process.stdout.write(JSON.stringify(out, null, 2) + '\n')
+        process.exit(2)
+      }
+      if (!cmdOpts.quiet) {
+        process.stdout.write(JSON.stringify({ valid: true }, null, 2) + '\n')
+      }
+      process.exit(0)
+    } catch (err: any) {
+      const msg = String(err?.message || err)
+      process.stderr.write(`validate: ${msg}\n`)
+      process.exit(1)
+    }
   })
 
 program.parseAsync(process.argv)
