@@ -119,6 +119,19 @@ export async function enrichGithubEvent(event, opts) {
       for (const o of arr) ownersUnionSet.add(o);
     }
     const ownersUnion = Array.from(ownersUnionSet).sort();
+
+    const mergeableState = prCheck.data.mergeable_state;
+    const hasConflicts = mergeableState === "dirty" || mergeableState === "blocked";
+
+    // Labels and review requests
+    const prLabels = Array.isArray(prData.labels) ? prData.labels.map((l) => l?.name).filter(Boolean) : [];
+    const requestedReviewers = Array.isArray(prData.requested_reviewers)
+      ? prData.requested_reviewers.map((u) => u?.login).filter(Boolean)
+      : [];
+    const requestedTeams = Array.isArray(prData.requested_teams)
+      ? prData.requested_teams.map((t) => t?.slug || t?.name).filter(Boolean)
+      : [];
+
     const mergeableState = prCheck.data.mergeable_state;
     const hasConflicts = mergeableState === "dirty" || mergeableState === "blocked";
 

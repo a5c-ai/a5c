@@ -1,6 +1,6 @@
 {
   "name": "@a5c-ai/events",
-  "version": "1.1.0-a5c-main.16",
+  "version": "1.1.0-a5c-main.11",
   "description": "Events SDK and CLI for normalizing and enriching repo/CI events for agentic workflows",
   "type": "module",
   "private": false,
@@ -18,14 +18,13 @@
   },
   "scripts": {
     "pretest": "npm run build",
-    "prepare": "husky install || true",
+    "prepare": "npm run build",
     "clean": "rimraf dist .turbo .vitest coverage",
     "build": "tsc -p tsconfig.build.json && node scripts/build-post.js",
     "build:clean": "rimraf dist && npm run build",
     "lint": "eslint \"src/**/*.ts\" \"test/**/*.ts\" \"tests/**/*.ts\"",
     "format": "prettier -w .",
-    "typecheck": "tsc --noEmit -p tsconfig.typecheck.json",
-    "typecheck:tests": "tsc --noEmit -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run",
     "test:ci": "vitest run --coverage --reporter=dot",
     "dev": "tsx watch src/cli.ts -- --help",
@@ -59,8 +58,6 @@
   "author": "a5c.ai",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@commitlint/cli": "^19.5.0",
-    "@commitlint/config-conventional": "^19.5.0",
     "@eslint/js": "9.35.0",
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/git": "^10.0.1",
@@ -81,7 +78,6 @@
     "prettier": "^3.3.3",
     "rimraf": "^5.0.5",
     "semantic-release": "^24.2.0",
-    "husky": "^9.1.6",
     "tsx": "^4.19.1",
     "typescript": "5.9.2",
     "typescript-eslint": "8.43.0",
@@ -94,6 +90,6 @@
     "dotenv": "^16.4.5",
     "minimatch": "^9.0.5",
     "yaml": "^2.8.1",
-    "zod": "3.25.76"
+    "zod": "^3.23.8"
   }
 }
