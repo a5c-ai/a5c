@@ -32,7 +32,6 @@ Normalize a raw provider payload into the NE schema.
 
 Usage:
 ```bash
-events normalize [--in FILE] [--out FILE] [--source <actions|webhook|cli>] [--label KEY=VAL...] [--select PATHS] [--filter EXPR]
 events normalize [--in FILE] [--out FILE] [--source <actions|webhook|cli>] \
   [--label KEY=VAL...] [--select PATHS] [--filter EXPR]
 ```
@@ -69,9 +68,9 @@ events enrich --in FILE [--out FILE] [--rules FILE] \
 
 - `--in FILE`: input JSON (normalized event or raw GitHub payload)
 - `--out FILE`: write result JSON (stdout if omitted)
-- `--rules FILE`: path to rules file (YAML/JSON); recorded in `enriched.metadata.rules`
-- `--flag KEY=VAL...`: enrichment flags map; recorded in `enriched.derived.flags`. Recognized flags include:
-  - `include_patch=true|false` (default: `true`) – include diff patches; when `false`, patches are removed
+- `--rules FILE`: YAML/JSON rules file (optional). When provided, matching rules emit `composed[]` with `{ key, reason, targets?, labels?, payload? }`.
+- `--flag KEY=VAL...`: enrichment flags (repeatable); notable flags:
+  - `include_patch=true|false` (default: `false`) – include diff patches; when `false`, patches are removed
   - `commit_limit=<n>` (default: `50`) – limit commits fetched for PR/push
   - `file_limit=<n>` (default: `200`) – limit files per compare list
 - `--use-github`: enable GitHub API enrichment; equivalent to `--flag use_github=true` (requires `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`)
@@ -83,9 +82,15 @@ Examples:
 ```bash
 export GITHUB_TOKEN=...  # required for GitHub API lookups
 
-events enrich --in samples/pull_request.synchronize.json --use-github \
-  --flag include_patch=false --flag commit_limit=30 --out out.json
-jq '.enriched.github.pr.has_conflicts, .enriched.github.pr.mergeable_state' out.json
+events enrich --in samples/pull_request.synchronize.json \
+  --use-github \
+  --flag include_patch=false \
+  | jq '.enriched.github.pr.mergeable_state'
+
+# With rules (composed events)
+events enrich --in samples/pull_request.synchronize.json \
+  --rules samples/rules/conflicts.yml \
+  | jq '[.composed[] | {key, reason}]'
 ```
 
 ## Global Options
@@ -98,6 +103,12 @@ jq '.enriched.github.pr.has_conflicts, .enriched.github.pr.mergeable_state' out.
 - `2`: input/validation error (missing `--in` where required, invalid/parse errors, filter mismatch, missing `GITHUB_EVENT_PATH` when `--source actions`)
 - `3`: provider/network error (only when `--use-github` is requested and API calls fail)
 
-## Security and Redaction
-- Secrets: known patterns are redacted in output and logs by default; see `src/utils/redact.ts`.
-- Tokens: set `A5C_AGENT_GITHUB_TOKEN` or `GITHUB_TOKEN` for GitHub enrichment; tokens are never printed. If both are set, `A5C_AGENT_GITHUB_TOKEN` takes precedence.
+## Notes
+- Token precedence: runtime prefers `A5C_AGENT_GITHUB_TOKEN` over `GITHUB_TOKEN` when both are set (see `src/config.ts`).
+- Redaction: CLI redacts sensitive keys and common secret patterns in output by default (see `src/utils/redact.ts`).
+  - Sensitive keys include: `token`, `secret`, `password`, `passwd`, `pwd`, `api_key`, `apikey`, `key`, `client_secret`, `access_token`, `refresh_token`, `private_key`, `ssh_key`, `authorization`, `auth`, `session`, `cookie`, `webhook_secret`.
+  - Pattern masking includes (non-exhaustive): GitHub PATs (`ghp_`, `gho_`, `ghu_`, `ghs_`, `ghe_`), JWTs, `Bearer ...` headers, AWS `AKIA...`/`ASIA...` keys, Stripe `sk_live_`/`sk_test_`, Slack `xox...` tokens, and URL basic auth (`https://user:pass@host`).
+- Tests: See `test/config.loadConfig.test.ts`, `test/redact.test.ts`, `test/enrich.redaction.test.ts`, and additional cases under `tests/` for coverage.
+- Large payloads: JSON is read/written from files/stdin/stdout; providers may add streaming in future.
+
+See also: `docs/specs/README.md`. Technical specs reference for token precedence: `docs/producer/phases/technical-specs/tech-stack.md`.
