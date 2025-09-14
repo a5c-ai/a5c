@@ -5,7 +5,7 @@ description: Commands, flags, and examples for the Events CLI (`mentions`, `norm
 
 # CLI Reference
 
-The CLI transforms provider payloads into a Normalized Event (NE) and can enrich with repository context. Implemented with `commander` (see `src/cli.ts`).
+The CLI transforms provider payloads into a Normalized Event (NE), extracts mentions, and can enrich with repository context. Implemented with `commander` (see `src/cli.ts`).
 
 ## Commands
 
@@ -18,7 +18,7 @@ events mentions [--file FILE] [--source <kind>] [--window N] [--known-agent NAME
 ```
 
 - `--file FILE`: optional path to read text; defaults to stdin
-- `--source <kind>`: where text came from, e.g. `pr_body`, `pr_title`, `commit_message` (default: `pr_body`)
+- `--source <kind>`: where text came from, e.g. `pr_body`, `pr_title`, `commit_message`, `issue_comment` (default: `pr_body`)
 - `--window N`: context window size for excerpts (default: 30)
 - `--known-agent NAME...`: known agent names to boost confidence
 
@@ -32,25 +32,17 @@ Normalize a raw provider payload into the NE schema.
 
 Usage:
 ```bash
-events normalize [--in FILE] [--out FILE] [--source <actions|webhook|cli>] \
-  [--label KEY=VAL...] [--select PATHS] [--filter EXPR]
+events normalize [--in FILE] [--out FILE] [--source <actions|webhook|cli>] [--label KEY=VAL...]
 ```
 
 - `--in FILE`: path to a JSON webhook payload
 - `--out FILE`: write result JSON (stdout if omitted)
 - `--source <name>`: provenance source (default: `cli`)
 - `--label KEY=VAL...`: attach labels (repeatable as `--label a=1 --label b=2`)
-- `--select PATHS`: comma-separated dot paths to include in output (e.g., `type,repo.full_name`)
-- `--filter EXPR`: filter expression `path[=value]`; if not matched, exits code `2` with no output
 
 Examples:
 ```bash
-# Select a few fields
-events normalize --in samples/workflow_run.completed.json \
-  --select 'type,repo.full_name,provenance.workflow.name'
-
-# Gate output via filter (exit 2 if not matched)
-events normalize --in samples/workflow_run.completed.json --filter 'type=workflow_run'
+events normalize --in samples/workflow_run.completed.json | jq '.type, .repo.full_name'
 ```
 
 ### `events enrich`
@@ -59,8 +51,7 @@ Enrich a normalized event (or raw GitHub payload) with repository and provider m
 Usage:
 ```bash
 events enrich --in FILE [--out FILE] [--rules FILE] \
-  [--flag KEY=VAL...] [--use-github] [--label KEY=VAL...] \
-  [--select PATHS] [--filter EXPR]
+  [--flag KEY=VAL...] [--use-github] [--label KEY=VAL...]
 ```
 
 - `--in FILE`: input JSON (normalized event or raw GitHub payload)
@@ -74,8 +65,6 @@ events enrich --in FILE [--out FILE] [--rules FILE] \
     - `use_github=true|false` – enable GitHub API enrichment (also enabled via `--use-github`)
 - `--use-github`: convenience to set `use_github=true` (requires `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`)
 - `--label KEY=VAL...`: labels to attach
-- `--select PATHS`: comma-separated dot paths to include in output
-- `--filter EXPR`: filter expression `path[=value]`; if not matched, exits code `2` with no output
 
 Examples:
 ```bash
@@ -92,7 +81,9 @@ jq '.enriched.github.pr.has_conflicts, .enriched.github.pr.mergeable_state' out.
 
 ## Exit Codes
 - `0`: success
-- Non-zero: errors (input/validation/provider). The CLI exits with the handler code.
+- `1`: generic error (unexpected failure writing output, etc.)
+- `2`: input/validation error (missing `--in` where required, invalid/parse errors)
+- `3`: provider/network error (only when `--use-github` is requested and API calls fail)
 
 ## Security and Redaction
 - Secrets: known patterns are redacted in output and logs by default; see `src/utils/redact.ts`.
@@ -101,4 +92,4 @@ jq '.enriched.github.pr.has_conflicts, .enriched.github.pr.mergeable_state' out.
 ## Cross-References
 - Specs: `docs/specs/README.md`
 - Samples: `samples/`
-- Tests: `test/` (unit), `tests/` (integration)
+- Tests: `tests/mentions.*`, `tests/enrich.basic.test.ts`, `tests/cli.enrich.flags.test.ts`

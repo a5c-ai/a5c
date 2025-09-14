@@ -153,7 +153,8 @@ Environment variables:
 - `DEBUG`: set to `true` to enable debug mode
 
 CLI behavior:
-- Defaults are safe for local runs (no network calls in MVP commands).
+- Defaults are safe for local runs (no network calls unless `--use-github` is set).
+- Exit codes: 0 success; 1 generic error; 2 input/validation error (missing `--in`, invalid JSON, filter mismatch); 3 provider/network error when `--use-github` is requested and calls fail.
 - For CI, prefer explicit `--in` and write `--out` artifacts for downstream steps.
 
 ## Samples
