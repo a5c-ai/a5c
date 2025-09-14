@@ -36,13 +36,13 @@ describe('handleEnrich', () => {
     expect(names).toContain('developer-agent');
   });
 
-  // Offline default: enriched.github exists with stub reason when not using --use-github
+  // Offline default: enriched.github exists with partial marker when not using --use-github
   it('does not perform GitHub enrichment when --use-github is not set (offline mode)', async () => {
     const res = await handleEnrich({ in: 'samples/pull_request.synchronize.json', labels: [], rules: undefined, flags: {} });
     const gh = (res.output.enriched as any)?.github;
     expect(gh).toBeTruthy();
-    expect(gh.skipped).toBeTruthy();
-    expect(gh.reason).toBe('flag:not_set');
+    expect(gh.partial).toBeTruthy();
+    expect(gh.reason).toBe('github_enrich_disabled');
   });
 
   it('omits patch fields by default (include_patch=false)', async () => {

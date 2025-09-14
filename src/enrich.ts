@@ -51,12 +51,13 @@ export async function handleEnrich(opts: {
 
   let githubEnrichment: any = {}
   const hasAuth = Boolean(token || opts.octokit)
-  if (!useGithub) {
-    // Offline/default mode: no network calls; expose stub aligned with goldens
-    githubEnrichment = { provider: 'github', skipped: true, reason: 'flag:not_set' }
-  } else if (!hasAuth) {
-    // Flag requested but no token/octokit supplied: expose stub aligned with tests
-    githubEnrichment = { provider: 'github', skipped: true, reason: 'token:missing' }
+  if (!(useGithub && hasAuth)) {
+    // Unified behavior:
+    // - Offline (no --use-github): partial with github_enrich_disabled
+    // - Requested but unauthenticated: skipped with token:missing
+    githubEnrichment = !useGithub
+      ? { provider: 'github', partial: true, reason: 'github_enrich_disabled' }
+      : { provider: 'github', skipped: true, reason: 'token:missing' }
   } else {
     try {
       const mod: any = await import('./enrichGithubEvent.js')
