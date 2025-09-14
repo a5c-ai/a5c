@@ -43,13 +43,8 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
           NPM_CONFIG_USERCONFIG: ${{ env.NPM_CONFIG_USERCONFIG }}
         run: |
-<<<<<<< HEAD
           # Use project .npmrc so only @a5c-ai scope hits GPR; others resolve from npmjs
           npx -y @a5c-ai/events@latest --help
-=======
-          # Explicitly set GPR registry for npx and fully qualify the package
-          npx --registry=https://npm.pkg.github.com -y @a5c-ai/events@latest --help
->>>>>>> 89cb3f9 (🚑 CI: fix npx auth/registry for GPR (Packages Npx Test) (#100))
 
       - name: Run npx package version
         env:
@@ -58,7 +53,6 @@ jobs:
         run: |
           node -v
           npm -v
-<<<<<<< HEAD
           npx -y @a5c-ai/events@latest --version || true
 
       - name: Smoke – normalize sample payload
@@ -91,6 +85,3 @@ jobs:
           path: |
             out.normalize.json
             out.enrich.json
-=======
-          npx --registry=https://npm.pkg.github.com -y @a5c-ai/events@latest --version || true
->>>>>>> 89cb3f9 (🚑 CI: fix npx auth/registry for GPR (Packages Npx Test) (#100))

@@ -17,10 +17,10 @@ export default defineConfig({
         statements: 60,
       },
     },
-    // TS-first tests; legacy JS stubs are intentionally not included
+    // Include both TS and legacy JS tests (issue #251)
     include: [
-      'tests/**/*.{test,spec}.ts',
-      'test/**/*.{test,spec}.ts',
+      'tests/**/*.{test,spec}.{ts,js}',
+      'test/**/*.{test,spec}.{ts,js}',
     ],
     exclude: ['dist/**', 'node_modules/**']
   }
