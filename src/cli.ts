@@ -161,25 +161,25 @@ program
   })
 
 // Emit command (single definition)
-program
-  .command('emit')
-  .description("Emit an event to a sink (stdout or file)")
-  .option('--in <file>', 'input JSON file path (default: stdin)')
-  .option('--out <file>', 'output JSON file path (for file sink)')
-  .option('--sink <name>', 'sink name (stdout|file)', 'stdout')
-  .action(async (cmdOpts: any) => {
-    const { code, output } = await handleEmit({
-      in: cmdOpts.in,
-      out: cmdOpts.out,
-      sink: cmdOpts.sink,
+  program
+    .command('emit')
+    .description("Emit an event to a sink (stdout or file)")
+    .option('--in <file>', 'input JSON file path (default: stdin)')
+    .option('--out <file>', 'output JSON file path (for file sink)')
+    .option('--sink <name>', 'sink name (stdout|file)', 'stdout')
+    .action(async (cmdOpts: any) => {
+      const { code, output } = await handleEmit({
+        in: cmdOpts.in,
+        out: cmdOpts.out,
+        sink: cmdOpts.sink,
+      })
+      // handleEmit already wrote to sink; also print redacted to stdout if sink=file and no --quiet flag (future)
+      if (cmdOpts.sink !== 'file' && !cmdOpts.out) {
+        const safe = redactObject(output)
+        process.stdout.write(JSON.stringify(safe, null, 2) + '\n')
+      }
+      process.exit(code)
     })
-    // handleEmit already wrote to sink; also print redacted to stdout if sink=file and no --quiet flag (future)
-    if (cmdOpts.sink !== 'file' && !cmdOpts.out) {
-      const safe = redactObject(output)
-      process.stdout.write(JSON.stringify(safe, null, 2) + '\n')
-    }
-    process.exit(code)
-  })
 
 // Validate command (single definition)
 program

@@ -3,7 +3,7 @@ import { readJSONFile, loadConfig } from '../config.js'
 import { extractMentions } from '../extractor.js'
 import { scanCodeCommentsForMentions } from '../codeComments.js'
 import { githubProvider } from '../providers/github/index.js'
-import { loadRules, evaluateRulesDetailed } from '../rules.js'
+import { evaluateRulesDetailed, loadRules } from '../rules.js'
 
 function toBool(v: any): boolean { if (typeof v === 'boolean') return v; if (v == null) return false; const s = String(v).toLowerCase(); return s === '1' || s === 'true' || s === 'yes' || s === 'on' }
 function toInt(v: any, d = 0): number { const n = Number(v); return Number.isFinite(n) ? n : d }
@@ -152,8 +152,7 @@ export async function runEnrich(opts: {
       ...(mentions.length ? { mentions } : {})
     }
   }
-
-  // Evaluate rules, if provided (detailed form with payload + reason)
+  // Evaluate composed event rules (if provided)
   try {
     const rules = loadRules(opts.rules)
     if (rules.length) {
@@ -172,7 +171,11 @@ export async function runEnrich(opts: {
       const meta: any = (output.enriched as any).metadata || {}
       ;(output.enriched as any).metadata = { ...meta, rules_status: res.status }
     }
-  } catch {}
+  } catch (e) {
+    // do not fail enrichment on rules errors; record under enriched.metadata
+    const meta: any = (output.enriched as any).metadata || {}
+    ;(output.enriched as any).metadata = { ...meta, rules_status: { ok: false, warnings: [String((e as any)?.message || e)] } }
+  }
   return { code: 0, output }
 }
 
