@@ -79,6 +79,13 @@ export async function handleEnrich(opts: {
               Object.prototype.hasOwnProperty.call(f, 'patch') ? f : { ...f, patch: '' }
             ))
           }
+        }
+      } catch (e: any) {
+        return { code: 3, output: { error: `github enrichment failed: ${String(e?.message || e)}` } }
+      }
+    }
+  }
+
   // Mentions from common text locations
   const mentions: Mention[] = []
   try {
