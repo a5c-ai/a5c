@@ -21,7 +21,6 @@ describe('handleEnrich', () => {
     // Enriched structure shape
     expect(output.enriched).toBeTruthy();
     // When no rules path is provided, rules metadata reflects provided value (undefined here)
-    // When no rules path is provided, rules metadata only includes null
     expect(output.enriched?.metadata).toEqual({ rules: undefined });
     expect(output.enriched?.derived).toBeTruthy();
     expect((output.enriched as any).derived.flags).toEqual(flags);
@@ -43,7 +42,7 @@ describe('handleEnrich', () => {
     expect(gh).toBeUndefined();
   });
 
-  // (Removed stray/duplicate test header that caused a syntax error)
+  // GitHub enrichment gating / patch behavior
   it('omits patch fields by default (include_patch=false)', async () => {
     const { output } = await handleEnrich({ in: 'samples/pull_request.synchronize.json', flags: { use_github: 'true' } });
     const gh: any = (output.enriched as any)?.github || {};

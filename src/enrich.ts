@@ -40,15 +40,16 @@ export async function handleEnrich(opts: {
 
   let githubEnrichment: any = {}
   const useGithub = toBool(opts.flags?.use_github)
-  if (useGithub) {
-    if (!token) {
+  const hasOctokit = !!opts.octokit
+  if (useGithub || hasOctokit) {
+    if (useGithub && !token && !hasOctokit) {
       // Flag requested but no token available: mark as partial and do NOT call network
       githubEnrichment = { provider: 'github', partial: true, errors: [{ message: 'GITHUB_TOKEN missing; skipped API enrichment' }] }
     } else {
       try {
         const mod: any = await import('./enrichGithubEvent.js')
         const fn = (mod.enrichGithubEvent || mod.default) as (e: any, o?: any) => Promise<any>
-        const enriched = await fn(baseEvent, { token, commitLimit, fileLimit, octokit: opts.octokit })
+        const enriched = await fn(baseEvent, { token, commitLimit, fileLimit, octokit: opts.octokit, includePatch })
         githubEnrichment = enriched?._enrichment || {}
         if (!includePatch) {
           if (githubEnrichment.pr?.files) {
@@ -69,53 +70,12 @@ export async function handleEnrich(opts: {
               Object.prototype.hasOwnProperty.call(f, 'patch') ? f : { ...f, patch: '' }
             ))
           }
-let githubEnrichment: any = {}
-const useGithub = toBool(opts.flags?.use_github)
-const hasOctokit = !!opts.octokit
-// Enrichment gating:
-// - If --use-github is provided, we enrich via API (requires token). If token missing, mark partial and skip network.
-// - If a mock/provided octokit is passed, allow offline enrichment even without --use-github (tests rely on this behavior).
-if (useGithub || hasOctokit) {
-  if (useGithub && !token && !hasOctokit) {
-    // Flag requested but no token available: mark as partial and do NOT call network
-    githubEnrichment = { provider: 'github', partial: true, errors: [{ message: 'GITHUB_TOKEN missing; skipped API enrichment' }] }
-  } else {
-    try {
-      const mod: any = await import('./enrichGithubEvent.js')
-      const fn = (mod.enrichGithubEvent || mod.default) as (e: any, o?: any) => Promise<any>
-      const enriched = await fn(baseEvent, { token, commitLimit, fileLimit, octokit: opts.octokit, includePatch })
-      githubEnrichment = enriched?._enrichment || {}
-      if (!includePatch) {
-        if (githubEnrichment.pr?.files) {
-          githubEnrichment.pr.files = githubEnrichment.pr.files.map((f: any) => ({ ...f, patch: undefined }))
         }
-        if (githubEnrichment.push?.files) {
-          githubEnrichment.push.files = githubEnrichment.push.files.map((f: any) => ({ ...f, patch: undefined }))
-        }
-      } else {
-        // Ensure a defined patch key when include_patch=true so callers can rely on presence
-        if (githubEnrichment.pr?.files) {
-          githubEnrichment.pr.files = githubEnrichment.pr.files.map((f: any) => (
-            Object.prototype.hasOwnProperty.call(f, 'patch') ? f : { ...f, patch: '' }
-          ))
-        }
-        if (githubEnrichment.push?.files) {
-          githubEnrichment.push.files = githubEnrichment.push.files.map((f: any) => (
-            Object.prototype.hasOwnProperty.call(f, 'patch') ? f : { ...f, patch: '' }
-          ))
-        }
+      } catch (e: any) {
+        githubEnrichment = { provider: 'github', partial: true, errors: [{ message: String(e?.message || e) }] }
       }
-      // If we ran without --use-github (offline via mock octokit), do not force partial flag.
-      if (!useGithub && hasOctokit) {
-        if (githubEnrichment && typeof githubEnrichment === 'object') {
-          delete (githubEnrichment as any).partial
-        }
-      }
-    } catch (e: any) {
-      githubEnrichment = { provider: 'github', partial: true, errors: [{ message: String(e?.message || e) }] }
     }
   }
-}
 
   // Mentions from common text locations
   const mentions: Mention[] = []
@@ -202,9 +162,8 @@ if (useGithub || hasOctokit) {
       }
     }
 
-    const octokit = useGithub && token ? (opts.octokit || (await import('./enrichGithubEvent.js')).createOctokit?.(token)) : undefined
-    const mod: any = await import('./enrichGithubEvent.js')
-    const octokit = opts.octokit || (useGithub ? mod.createOctokit?.(token) : undefined)
+    const mod2: any = await import('./enrichGithubEvent.js')
+    const octokit = opts.octokit ?? (useGithub && token ? mod2.createOctokit?.(token) : undefined)
 
     if ((!filesList || !Array.isArray(filesList)) && octokit && owner && repo) {
       // Derive changed files using GitHub API if possible
