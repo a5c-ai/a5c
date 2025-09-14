@@ -1,39 +1,39 @@
 # Technical Specs Phase – Checklist
 
-Use this list to gate readiness to exit the Specification Phase and enter implementation hardening. Check items only when the linked artifact exists and aligns with the current code.
+Use this list to gate readiness to exit the Specification Phase. Check items only when the linked artifact exists and aligns with current code.
 
-## Core Decisions
-- [x] Tech stack locked (TypeScript, Node >=18, ESM) — see docs/producer/phases/technical-specs/tech-stack.md
-- [x] CLI framework chosen (`yargs`), binary name `events` — see docs/specs/tech-specs.md#stack
+1) Core stack locked
+- [x] TypeScript, Node >= 18, ESM — see docs/producer/phases/technical-specs/tech-stack.md
 
-## Schema & Validation
-- [x] NE schema committed at docs/specs/ne.schema.json
-- [x] Ajv validation in tests; formats enabled (date-time) — see tests/ne.schema.compile.test.ts and docs/validation/83/high/tests/01-ajv-formats-date-time.md
+2) CLI decisions
+- [x] Framework `yargs`, binary `events` — see docs/specs/tech-specs.md#stack
 
-## Provider Adapters
-- [x] GitHub adapter mapping scaffolded — see docs/producer/phases/technical-specs/system-components/providers.md and src/providers/github/map.ts
-- [ ] GitHub enrichment coverage defined (owners, conflicts, repo metadata) — see docs/specs/README.md#enrichment
+3) NE schema and validation
+- [x] NE schema at docs/specs/ne.schema.json
+- [x] Ajv compile + formats (date-time) in tests — tests/ne.schema.compile.test.ts, docs/validation/83/high/tests/01-ajv-formats-date-time.md
 
-## Enrichment Bounds
-- [x] Commit/file bounds defined in docs (paginate/paginate) — see docs/producer/phases/technical-specs/data-models/enrichment-types.md
-- [ ] Default limits codified in code and docs (max commits/files per PR)
+4) Provider adapter (GitHub MVP)
+- [x] Mapping scaffolded — docs/producer/phases/technical-specs/system-components/providers.md, src/providers/github/map.ts
+- [ ] Enrichment coverage outlined (owners, conflicts, repo metadata) — docs/specs/README.md#enrichment
 
-## CLI Parity
-- [x] Commands defined in specs (normalize, enrich, emit) — see docs/producer/phases/technical-specs/apis/cli-commands.md
-- [x] CLI implemented for normalize/enrich — see src/normalize.ts, src/enrich.ts, docs/cli/reference.md
+5) Enrichment bounds
+- [x] Commit/file bounds described — docs/producer/phases/technical-specs/data-models/enrichment-types.md
+- [ ] Default limits specified in code/docs (max commits/files per PR)
+
+6) CLI parity with specs
+- [x] Commands defined in specs (normalize, enrich, emit) — docs/producer/phases/technical-specs/apis/cli-commands.md
+- [x] Normalize/enrich implemented — src/normalize.ts, src/enrich.ts, docs/cli/reference.md
 - [ ] Emit/sinks documented and stubbed (stdout/file, artifacts)
 
-## CI & Quality
-- [x] CI workflows present (build, tests) and green on a5c/main — see .github/workflows
-- [ ] Lint and coverage thresholds documented; workflows include lint
+7) CI status
+- [ ] CI (build, tests, lint) green on `a5c/main` — see .github/workflows
 
-## Release & Publishing
-- [x] Release workflow scaffolded for a5c/main push — see docs/producer/phases/technical-specs/deployment/publishing.md
-- [ ] Package metadata ready (name, access, registry) and semantic-release/changesets configured
+8) Release & publishing
+- [x] Release workflow scaffolded for `a5c/main` pushes — docs/producer/phases/technical-specs/deployment/publishing.md
+- [ ] Package metadata and release tooling (semantic-release/Changesets) verified
 
-## Cross-links
-- [x] Specs index references technical-specs directory — see docs/specs/README.md
-- [x] This checklist cross-links to docs/specs/tech-specs.md
+9) Cross-links
+- [x] Specs index references this directory — docs/specs/README.md
+- [x] Checklist cross-links to docs/specs/tech-specs.md
 
----
-References: docs/specs/tech-specs.md, docs/specs/README.md
+When all items are checked, update `docs/producer/phases/current-phase.txt` to the next phase.
