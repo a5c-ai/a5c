@@ -7,7 +7,6 @@ export async function handleNormalize(opts: {
   labels?: string[]
 }): Promise<{ code: number; output: NormalizedEvent }>{
   const payload = readJSONFile<any>(opts.in)
-  // For now only GitHub provider is supported.
   const output: NormalizedEvent = normalizeGithub(payload, { source: opts.source, labels: opts.labels })
   return { code: 0, output }
 }

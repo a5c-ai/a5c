@@ -201,3 +201,5 @@ export async function enrichGithubEvent(event, opts) {
 
 export default enrichGithubEvent;
 // @ts-nocheck
+=======
+>>>>>>> f8dc479 (refactor(cli): introduce commands layer and move GitHub enrich under providers\n\n- Add src/commands/{normalize,enrich}.ts\n- Rewire src/cli.ts to use commands\n- Move enrichGithubEvent to src/providers/github and keep root proxy for BC\n- Keep handleNormalize/handleEnrich as stable APIs\n\nBy: developer-agent(https://app.a5c.ai/a5c/agents/development/developer-agent))
