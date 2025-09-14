@@ -50,9 +50,10 @@ export async function handleEnrich(opts: {
   let githubEnrichment: any = {}
   const useGithub = toBool(opts.flags?.use_github)
   const hasOctokit = !!opts.octokit
-  if (useGithub || hasOctokit) {
-    if (!token) {
-      // Flag requested but no token available: mark as partial and do NOT call network
+  const shouldEnrichGithub = useGithub || hasOctokit
+  if (shouldEnrichGithub) {
+    if (!token && !hasOctokit && useGithub) {
+      // Flag requested but no token (and no injected octokit): mark as partial and do NOT call network
       githubEnrichment = { provider: 'github', partial: true, errors: [{ message: 'GITHUB_TOKEN missing; skipped API enrichment' }] }
     } else {
       try {
@@ -81,7 +82,10 @@ export async function handleEnrich(opts: {
           }
         }
       } catch (e: any) {
-        return { code: 3, output: { error: `github enrichment failed: ${String(e?.message || e)}` } }
+        // Only treat as provider error when the user explicitly requested --use-github
+        if (useGithub) return { code: 3, output: { error: `github enrichment failed: ${String(e?.message || e)}` } }
+        // Otherwise, degrade gracefully
+        githubEnrichment = { provider: 'github', partial: true, errors: [{ message: String(e?.message || e) }] }
       }
     }
   }
@@ -233,7 +237,8 @@ export async function handleEnrich(opts: {
     ...(neShell as any),
     enriched: {
       ...(neShell.enriched || {}),
-      ...(useGithub ? { github: githubEnrichment } : {}),
+      // Expose github enrichment only when it was attempted
+      ...(shouldEnrichGithub ? { github: githubEnrichment } : {}),
       metadata: { ...(neShell.enriched?.metadata || {}), rules: opts.rules },
       derived: { ...(neShell.enriched?.derived || {}), flags: opts.flags || {} },
       ...(mentions.length ? { mentions } : {})
