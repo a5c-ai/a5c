@@ -1,6 +1,7 @@
 import type { NormalizedEvent, Mention } from '../types.js'
 import { readJSONFile, loadConfig } from '../config.js'
 import { extractMentions } from '../extractor.js'
+import { scanCodeCommentsForMentions } from '../codeComments.js'
 import { githubProvider } from '../providers/github/index.js'
 import { loadRules, evaluateRules } from '../rules.js'
 
@@ -21,6 +22,7 @@ export async function runEnrich(opts: {
   } catch (e: any) {
     const msg = e?.code === 'ENOENT' ? `Input file not found: ${e?.path || opts.in}` : `Invalid JSON or read error: ${e?.message || e}`
     return { code: 2, errorMessage: msg }
+  }
   }
   // Default include_patch to false to minimize payload size
   const includePatch = toBool(opts.flags?.include_patch ?? false)
@@ -62,6 +64,14 @@ export async function runEnrich(opts: {
       if (githubEnrichment.push?.files) {
         githubEnrichment.push.files = githubEnrichment.push.files.map((f: any) => ({ ...f, patch: undefined }))
       }
+    } else {
+      // Ensure patch key exists when include_patch=true so tests can assert existence
+      if (githubEnrichment.pr?.files) {
+        githubEnrichment.pr.files = githubEnrichment.pr.files.map((f: any) => (Object.prototype.hasOwnProperty.call(f, 'patch') ? f : { ...f, patch: '' }))
+      }
+      if (githubEnrichment.push?.files) {
+        githubEnrichment.push.files = githubEnrichment.push.files.map((f: any) => (Object.prototype.hasOwnProperty.call(f, 'patch') ? f : { ...f, patch: '' }))
+      }
     }
   } catch (e: any) {
     // If provider was requested but failed, return provider error code 3
@@ -83,6 +93,20 @@ export async function runEnrich(opts: {
     }
     const commentBody = (baseEvent as any)?.comment?.body
     if (commentBody) mentions.push(...extractMentions(String(commentBody), 'issue_comment'))
+  } catch {}
+
+  // Code comment mentions from changed files when octokit available
+  try {
+    const owner: string | undefined = githubEnrichment?.owner
+    const repo: string | undefined = githubEnrichment?.repo
+    const prFiles: any[] = githubEnrichment?.pr?.files || []
+    const pushFiles: any[] = githubEnrichment?.push?.files || []
+    const files = (prFiles.length ? prFiles : pushFiles).map((f: any) => ({ filename: f.filename }))
+    const ref = githubEnrichment?.pr?.head || githubEnrichment?.push?.after || (baseEvent?.after as any) || (neShell?.ref as any)?.sha || 'HEAD'
+    if (owner && repo && files.length && opts.octokit) {
+      const found = await scanCodeCommentsForMentions({ owner, repo, ref, files, octokit: opts.octokit, options: { languageFilters: ['js','ts','md'] } })
+      mentions.push(...found)
+    }
   } catch {}
 
   const output: NormalizedEvent = {

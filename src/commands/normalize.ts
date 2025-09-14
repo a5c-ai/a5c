@@ -29,7 +29,7 @@ export async function cmdNormalize(opts: {
 // Programmatic API used by src/normalize.ts compatibility re-export
 export async function runNormalize(opts: { in?: string; source?: string; labels?: string[] }): Promise<{ code: number; output: NormalizedEvent }>{
   if (!opts.in) {
-    return { code: 2, output: { id: 'error', provider: 'github', type: 'error', occurred_at: new Date().toISOString(), payload: {}, labels: opts.labels, provenance: { source: opts.source }, enriched: { metadata: { error: 'missing --in' } } } as any }
+    return { code: 2, output: { id: 'error', provider: 'github', type: 'error', occurred_at: new Date().toISOString(), payload: {}, labels: opts.labels, provenance: { source: opts.source }, error: 'missing --in', enriched: { metadata: { error: 'missing --in' } } } as any }
   }
   try {
     const payload = readJSONFile<any>(opts.in) || {}
