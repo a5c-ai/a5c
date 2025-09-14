@@ -1,3 +1,8 @@
+## 1.1.0-a5c-main.13 (2025-09-14)
+
+* fix(tests): remove empty JS placeholder test causing vitest 'No test suite found'\n\n- Delete tests/ ([3cf6b39](https://github.com/a5c-ai/events/commit/3cf6b39)), closes [#280](https://github.com/a5c-ai/events/issues/280)
+* test: add legacy JS placeholder for enrichGithubEvent test to satisfy include patterns ([d5e5c5d](https://github.com/a5c-ai/events/commit/d5e5c5d))
+
 ## 1.1.0-a5c-main.12 (2025-09-14)
 
 * fix(build): stabilize CI tests ([41cc2c7](https://github.com/a5c-ai/events/commit/41cc2c7))
