@@ -66,8 +66,8 @@ jq '.type, .repo.full_name, .provenance.workflow?.name' out.json
   - `--label <key=value...>`: attach labels to top‑level `labels[]`
 
 Behavior:
-- Offline by default: without `--use-github`, no network calls occur. Output includes `enriched.github` with `partial=true` and `reason="github_enrich_disabled"`.
-- When `--use-github` is set but no token is configured, output is partial with `reason="github_token_missing"` and an error entry. Mentions extraction still runs.
+- Offline by default: without `--use-github`, no network calls occur. Output includes `enriched.github` with `skipped=true` and `reason="flag:not_set"`.
+- When `--use-github` is set but no token is configured, output includes `enriched.github` with `skipped=true` and `reason="token:missing"`. Mentions extraction still runs.
 
 Exit codes: `0` success, non‑zero on errors (invalid input, etc.).
 
