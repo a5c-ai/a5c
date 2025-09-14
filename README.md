@@ -5,7 +5,7 @@
 Normalize and enrich GitHub (and other) events for agentic workflows. Use the CLI in CI or locally to turn raw webhook/Actions payloads into a compact, consistent schema that downstream agents and automations can trust.
 
 - Quick install via npm
-- Commands: `events normalize`, `events enrich`
+- Commands: `events mentions`, `events normalize`, `events enrich`
 - Output: JSON to stdout or file
 - Extensible via provider adapters and enrichers
 
@@ -46,8 +46,6 @@ jq '.type, .repo.full_name, .provenance.workflow?.name' out.json
   - `--in <file>`: input JSON file (raw event)
   - `--out <file>`: write result to file (default: stdout)
   - `--source <name>`: provenance (`actions|webhook|cli`) [default: `cli`]
-  - `--select <paths>`: comma-separated dot paths to include in output
-  - `--filter <expr>`: filter expression `path[=value]`; if not matching, exits with code 2 and no output
   - `--label <key=value...>`: attach labels (repeatable)
 
 `events enrich`
@@ -56,12 +54,10 @@ jq '.type, .repo.full_name, .provenance.workflow?.name' out.json
   - `--in <file>`: normalized event JSON (or raw payload; NE shell will be created)
   - `--out <file>`: write enriched result
   - `--rules <file>`: rules file path (yaml/json)
-  - `--flag include_patch=<true|false>`: include diff patches in files (default: false)
+  - `--flag include_patch=<true|false>`: include diff patches in files (default: true)
   - `--flag commit_limit=<n>`: max commits to include (default: 50)
   - `--flag file_limit=<n>`: max files to include (default: 200)
   - `--use-github`: enable GitHub API enrichment (requires `GITHUB_TOKEN`)
-  - `--select <paths>`: comma-separated dot paths to include in output
-  - `--filter <expr>`: filter expression `path[=value]`; if not matching, exits with code 2 and no output
   - `--label <key=value...>`: attach labels
 
 Exit codes: `0` success, non‑zero on errors (invalid input, etc.).
@@ -110,20 +106,6 @@ events enrich --in samples/pull_request.synchronize.json \
   --flag include_patch=false --flag commit_limit=50 --flag file_limit=200 \
   --use-github --out enriched.json
 jq '.enriched' enriched.json
-```
-
-Selecting and filtering:
-```bash
-# Keep only two fields from normalized output
-events normalize --in samples/push.json --select type,repo.full_name
-
-# Filter gate: exit 2 and no output if condition fails
-events enrich --in samples/pull_request.synchronize.json \
-  --filter enriched.github.pr.mergeable_state=dirty
-
-# Presence filter example (works without network enrichment too)
-events enrich --in samples/pull_request.synchronize.json \
-  --filter payload.pull_request.mergeable_state
 ```
 
 Redaction:
