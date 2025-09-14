@@ -147,7 +147,6 @@ Notes:
 - Defaults are implemented in code: see `src/enrich.ts`.
 - See also: Specs §4.2 Mentions Schema in `docs/specs/README.md#42-mentions-schema`.
 
-```
 Outputs:
 - When enriching a PR with `--use-github`, the CLI exposes per-file owners under `enriched.github.pr.owners` and the deduplicated, sorted union of all CODEOWNERS across changed files under `enriched.github.pr.owners_union`.
 
