@@ -119,7 +119,6 @@ export async function enrichGithubEvent(event, opts) {
       for (const o of arr) ownersUnionSet.add(o);
     }
     const ownersUnion = Array.from(ownersUnionSet).sort();
-
     const mergeableState = prCheck.data.mergeable_state;
     const hasConflicts = mergeableState === "dirty" || mergeableState === "blocked";
 
