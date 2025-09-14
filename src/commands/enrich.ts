@@ -2,6 +2,7 @@ import type { NormalizedEvent, Mention } from '../types.js'
 import { readJSONFile, loadConfig } from '../config.js'
 import { extractMentions } from '../extractor.js'
 import { githubProvider } from '../providers/github/index.js'
+import { loadRules, evaluateRules } from '../rules.js'
 
 function toBool(v: any): boolean { if (typeof v === 'boolean') return v; if (v == null) return false; const s = String(v).toLowerCase(); return s === '1' || s === 'true' || s === 'yes' || s === 'on' }
 function toInt(v: any, d = 0): number { const n = Number(v); return Number.isFinite(n) ? n : d }
@@ -89,11 +90,20 @@ export async function runEnrich(opts: {
     enriched: {
       ...(neShell.enriched || {}),
       github: githubEnrichment,
-      metadata: { ...(neShell.enriched?.metadata || {}), rules: opts.rules || null },
+      metadata: { ...(neShell.enriched?.metadata || {}), rules: opts.rules },
       derived: { ...(neShell.enriched?.derived || {}), flags: opts.flags || {} },
       ...(mentions.length ? { mentions } : {})
     }
   }
+
+  // Evaluate rules, if provided
+  try {
+    const rules = loadRules(opts.rules)
+    if (rules.length) {
+      const composed = evaluateRules(output as any, rules)
+      ;(output as any).composed = composed
+    }
+  } catch {}
   return { code: 0, output }
 }
 

@@ -13,7 +13,7 @@ export function detectTypeAndId(payload: any): DetectResult {
     const pr = payload.pull_request;
     const occurred_at = pr.updated_at || pr.created_at || payload.repository?.pushed_at || new Date().toISOString();
     // Prefer number for stable, compact identity as used by tests/consumers
-    const id = String(pr.number ?? pr.id);
+    const id = String((pr as any).number ?? pr.id ?? `${payload.repository?.full_name || 'repo'}/pr/${pr.number}`);
     return { type: 'pull_request', occurred_at, id };
   }
   // workflow_run
