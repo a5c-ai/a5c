@@ -52,7 +52,7 @@ export async function handleEnrich(opts: {
     const mod: any = await import('./enrichGithubEvent.js')
     const fn = (mod.enrichGithubEvent || mod.default) as (e: any, o?: any) => Promise<any>
     const enriched = await fn(baseEvent, { token, commitLimit, fileLimit, octokit: opts.octokit, includePatch: includePatch })
-    githubEnrichment = enriched?._enrichment || {}
+    githubEnrichment = { ...githubEnrichment, ...(enriched?._enrichment || {}) }
     if (!includePatch) {
       if (githubEnrichment.pr?.files) {
         githubEnrichment.pr.files = githubEnrichment.pr.files.map((f: any) => ({ ...f, patch: undefined }))
@@ -79,7 +79,7 @@ export async function handleEnrich(opts: {
     if (requestedGitHub) {
       return { code: 3, output: { error: `github enrichment failed: ${errMessage}` } }
     }
-    githubEnrichment = { provider: 'github', partial: true, errors: [{ message: errMessage }] }
+    githubEnrichment = { ...githubEnrichment, provider: 'github', partial: true, errors: [...(githubEnrichment.errors || []), { message: errMessage }] }
   }
 
   // Mentions from common text locations
@@ -239,7 +239,24 @@ export async function handleEnrich(opts: {
   try {
     const rules = loadRules(opts.rules)
     if (rules.length) {
-      const evalObj: any = { ...output, enriched: output.enriched, labels: output.labels || [] }
+      // Build an evaluation context with minimal inferred fields if API enrichment is missing
+      const pr = (baseEvent as any)?.pull_request
+      const inferred = pr
+        ? {
+            pr: {
+              number: pr.number,
+              draft: pr.draft,
+              mergeable_state: pr.mergeable_state,
+              head: pr.head?.ref,
+              base: pr.base?.ref,
+            },
+          }
+        : {}
+      const evalObj: any = {
+        ...output,
+        enriched: { ...(output as any).enriched, github: { ...((output as any).enriched?.github || {}), ...inferred } },
+        labels: output.labels || [],
+      }
       const res = evaluateRulesDetailed(evalObj, rules)
       if (res?.composed?.length) (output as any).composed = res.composed
       const meta: any = (output.enriched as any).metadata || {}
