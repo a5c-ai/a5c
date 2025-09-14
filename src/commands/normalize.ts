@@ -32,3 +32,6 @@ export async function runNormalize(opts: { in?: string; source?: string; labels?
   const output = githubProvider.normalize(payload, { source: opts.source, labels: opts.labels })
   return { code: 0, output }
 }
+
+// Backward/CLI adapter name expected by src/cli.ts
+export const cmdNormalize = runNormalize
