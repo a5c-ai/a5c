@@ -119,5 +119,33 @@
         }
       }
     }
+    ,
+    "composed": {
+      "description": "Optional composed events emitted by rules; see specs §6.1",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["key"],
+        "properties": {
+          "key": { "type": "string", "description": "Machine-friendly identifier for the composed event" },
+          "reason": { "type": ["string", "null"], "description": "Optional human-readable reason derived from matched criteria" },
+          "targets": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Optional list of intended agent recipients"
+          },
+          "labels": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Optional routing labels for the composed event"
+          },
+          "payload": {
+            "description": "Optional payload projected from the source event",
+            "anyOf": [ { "type": "object" }, { "type": "array" }, { "type": "null" } ]
+          }
+        }
+      }
+    }
   }
 }

@@ -5,7 +5,11 @@
 Normalize and enrich GitHub (and other) events for agentic workflows. Use the CLI in CI or locally to turn raw webhook/Actions payloads into a compact, consistent schema that downstream agents and automations can trust.
 
 - Quick install via npm
-- Commands: `events mentions`, `events normalize`, `events enrich`, `events validate`
+<<<<<<< HEAD
+- Commands: `events mentions`, `events normalize`, `events enrich`, `events emit`, `events validate`
+=======
+- Commands: `events mentions`, `events normalize`, `events enrich`, `events emit`, `events validate`
+>>>>>>> origin/a5c/main
 - Output: JSON to stdout or file
 - Extensible via provider adapters and enrichers
 
@@ -70,7 +74,7 @@ cat out.json | npx @a5c-ai/events validate --quiet
 
 Behavior:
 - Offline by default: without `--use-github`, no network calls occur. Output includes `enriched.github` with `partial=true` and `reason="github_enrich_disabled"`.
-- When `--use-github` is set but no token is configured, output is partial with `reason="github_token_missing"` and an error entry. Mentions extraction still runs.
+- When `--use-github` is set but no token is configured, enrichment is skipped/partial with `reason="token:missing"` in `enriched.github` and the CLI exits with code `3` (provider/network error). Mentions extraction still runs.
 
 Exit codes: `0` success, non‑zero on errors (invalid input, etc.).
 
@@ -120,10 +124,28 @@ events enrich --in samples/pull_request.synchronize.json \
 jq '.enriched' enriched.json
 ```
 
-Redaction:
-- CLI output is redacted to mask common secret patterns and sensitive keys (see `src/utils/redact.ts`).
-Tokens precedence:
-- `A5C_AGENT_GITHUB_TOKEN` is preferred over `GITHUB_TOKEN` (see `src/config.ts`).
+### Auth tokens: precedence & redaction
+
+- Token precedence: runtime prefers `A5C_AGENT_GITHUB_TOKEN` over `GITHUB_TOKEN` when both are set (see `src/config.ts`).
+- Redaction: CLI redacts sensitive keys and common secret patterns in output by default (see `src/utils/redact.ts`).
+  - Sensitive keys include: `token`, `secret`, `password`, `passwd`, `pwd`, `api_key`, `apikey`, `key`, `client_secret`, `access_token`, `refresh_token`, `private_key`, `ssh_key`, `authorization`, `auth`, `session`, `cookie`, `webhook_secret`.
+  - Pattern masking includes (non‑exhaustive): GitHub PATs (`ghp_`, `gho_`, `ghu_`, `ghs_`, `ghe_`), JWTs, `Bearer ...` headers, AWS `AKIA...`/`ASIA...` keys, Stripe `sk_live_`/`sk_test_`, Slack `xox...` tokens, and URL basic auth (`https://user:pass@host`).
+
+Examples:
+```bash
+# Precedence: A5C_AGENT_GITHUB_TOKEN wins when both are set
+export GITHUB_TOKEN=ghp_low_scope
+export A5C_AGENT_GITHUB_TOKEN=ghs_org_or_repo_scope
+events enrich --in samples/pull_request.synchronize.json --use-github | jq '.enriched.github.provider'
+
+# Missing token with --use-github: exits 3 and marks reason
+unset GITHUB_TOKEN A5C_AGENT_GITHUB_TOKEN
+events enrich --in samples/pull_request.synchronize.json --use-github || echo $?
+# stderr: GitHub enrichment failed: ...
+# exit code: 3
+```
+
+See also: CLI reference for flags and exit codes: `docs/cli/reference.md`.
 
 ### Validate against schema
 
@@ -182,7 +204,7 @@ See `docs/specs/README.md` for examples and behavior-driven test outlines. Add y
 - Minimal Node types + commander; TypeScript configured in `tsconfig.json`
 
 Project structure:
-- `src/cli.ts` – CLI entrypoint (mentions, normalize, enrich)
+- `src/cli.ts` – CLI entrypoint (mentions, normalize, enrich, emit, validate)
 - `src/normalize.ts` / `src/enrich.ts` – command handlers
 - `src/providers/*` – provider adapters (GitHub mapping under `providers/github`)
 - `src/utils/redact.ts` – redaction utilities

@@ -107,11 +107,13 @@ Configuration:
 - Purpose: derive higher-level signals from a single normalized/enriched event without external services.
 - Model: lightweight, declarative rules (YAML/JSON) that evaluate predicates over the normalized event and emit a new, composed event.
 - Composed Event envelope:
-  - `type: "composed"`, `key: string` (machine-friendly identifier)
-  - `source_event_id`: id of the originating event
-  - `labels`: additional routing labels
-  - `targets`: optional list of intended agent recipients (by name)
-  - `payload`: projected fields from the source event
+  - `key: string` (machine-friendly identifier)
+  - `reason?: string` (optional human-readable summary of matched criteria)
+  - `labels?: string[]` additional routing labels
+  - `targets?: string[]` optional list of intended agent recipients (by name)
+  - `payload?: any` projected fields from the source event
+
+Schema: `docs/specs/ne.schema.json` includes an optional top-level `composed[]` array matching the structure above (each item requires `key`).
 
 Example rule (YAML):
 ```
@@ -132,6 +134,29 @@ emit:
     mergeable_state: $.enriched.github.pr.mergeable_state
 ```
 
+Minimal output example (excerpt):
+```
+{
+  "id": "123",
+  "provider": "github",
+  "type": "pull_request",
+  "occurred_at": "2025-09-14T22:00:00Z",
+  "repo": { "id": 1, "name": "events", "full_name": "a5c-ai/events" },
+  "actor": { "id": 2, "login": "octocat", "type": "User" },
+  "payload": { /* ... */ },
+  "provenance": { "source": "cli" },
+  "composed": [
+    {
+      "key": "conflict_in_pr_with_low_priority_label",
+      "reason": "enriched.github.pr.has_conflicts && labels contains priority:low",
+      "targets": ["developer-agent"],
+      "labels": ["conflict", "pr", "priority:low"],
+      "payload": { "pr_number": 42 }
+    }
+  ]
+}
+```
+
 Evaluation:
 - Rules run in `classify` or `route` hook after `enrich` completes.
 - Emitted events are added alongside the original in outputs (stdout/file) and can be forwarded to downstream steps; if `targets` present, router can fan-out per target.
@@ -141,8 +166,4 @@ Evaluation:
 - PII: minimal collection; configurable redaction; allowlist of emitted fields.
 - Audit: include `provenance` with run ids, actor, and hash of raw payload; optional signed artifacts.
 - Permissions: least-privilege tokens; document scopes required for GitHub (`repo:read`, `actions:read`).
-<<<<<<< HEAD
 - Diffs: patch bodies can contain secrets; `include_patch` defaults to false. Enable explicitly with `--flag include_patch=true` when needed. This reduces payload size and lowers risk of leaking secrets embedded in diffs. Redaction still applies to known patterns and sensitive keys, and size caps are respected.
-=======
-- Diffs: patch bodies can contain secrets; `include_patch` defaults to true (can be disabled with `--flag include_patch=false`); redact known patterns; respect size caps.
->>>>>>> origin/main
