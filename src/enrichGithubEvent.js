@@ -112,6 +112,13 @@ export async function enrichGithubEvent(event, opts) {
 
     const changedFiles = files.map((f) => f.filename);
     const ownersMap = resolveOwnersForFiles(codeOwnerRules, changedFiles);
+    // Compute stable, deduplicated union of owners across all changed files
+    const ownersUnionSet = new Set();
+    for (const f of Object.keys(ownersMap)) {
+      const arr = Array.isArray(ownersMap[f]) ? ownersMap[f] : [];
+      for (const o of arr) ownersUnionSet.add(o);
+    }
+    const ownersUnion = Array.from(ownersUnionSet).sort();
 
     const mergeableState = prCheck.data.mergeable_state;
     const hasConflicts = mergeableState === "dirty" || mergeableState === "blocked";
@@ -144,7 +151,8 @@ export async function enrichGithubEvent(event, opts) {
       requested_teams: requestedTeams,
       commits: commitsSlice,
       files,
-      owners: ownersMap
+      owners: ownersMap,
+      ...(ownersUnion.length ? { owners_union: ownersUnion } : { owners_union: [] })
     };
 
     // Branch protection
