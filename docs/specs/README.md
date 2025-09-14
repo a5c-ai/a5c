@@ -66,8 +66,7 @@ Configuration:
 ## 5) Configuration
 - Env vars: `GITHUB_TOKEN` (or custom `A5C_AGENT_GITHUB_TOKEN`), debug flags, provider-specific tokens.
 - Sources: prefer GitHub Actions runtime env and `secrets.*` and `vars.*` as in existing workflows.
-- CLI flags (implemented): `--in file.json` (webhook sample), `--out out.json`, `--label key=value`.
-- CLI flags (planned/not yet implemented): `--select fields`, `--filter expr`.
+- CLI flags (implemented): `--in file.json` (webhook sample), `--out out.json`, `--label key=value`, `--select paths`, `--filter expr`.
 - Provider adapters: `providers/github`, stub interfaces for others. Auto-detect when running in Actions.
 
 ### 5.1) Environment Variables and Precedence
@@ -139,7 +138,7 @@ Evaluation:
 - PII: minimal collection; configurable redaction; allowlist of emitted fields.
 - Audit: include `provenance` with run ids, actor, and hash of raw payload; optional signed artifacts.
 - Permissions: least-privilege tokens; document scopes required for GitHub (`repo:read`, `actions:read`).
-- Diffs: patch bodies can contain secrets; `include_patch` defaults to true (can be disabled with `--flag include_patch=false`); redact known patterns; respect size caps.
+- Diffs: patch bodies can contain secrets; `include_patch` defaults to false (enable with `--flag include_patch=true`); redact known patterns; respect size caps.
  - Mentions: do not process binary files; skip files exceeding `mentions.max_file_bytes`.
 
 ## 8) Performance Targets and Constraints

@@ -32,20 +32,26 @@ Normalize a raw provider payload into the NE schema.
 
 Usage:
 ```bash
-events normalize [--in FILE] [--out FILE] [--source <actions|webhook|cli>] [--label KEY=VAL...]
+events normalize [--in FILE] [--out FILE] [--source <actions|webhook|cli>] \
+  [--label KEY=VAL...] [--select PATHS] [--filter EXPR]
 ```
 
 - `--in FILE`: path to a JSON webhook payload
 - `--out FILE`: write result JSON (stdout if omitted)
 - `--source <name>`: provenance source (default: `cli`)
 - `--label KEY=VAL...`: attach labels (repeatable as `--label a=1 --label b=2`)
+- `--select PATHS`: comma-separated dot paths to include in output (e.g., `type,repo.full_name`)
+- `--filter EXPR`: filter expression `path[=value]`; if not matched, exits code `2` with no output
 
-Example:
+Examples:
 ```bash
-events normalize --in samples/workflow_run.completed.json --out out.json --label env=staging
-```
+# Select a few fields
+events normalize --in samples/workflow_run.completed.json \
+  --select 'type,repo.full_name,provenance.workflow.name'
 
-Note: previously documented `--select`/`--filter` are not implemented yet. Use `jq` to post-process output.
+# Gate output via filter (exit 2 if not matched)
+events normalize --in samples/workflow_run.completed.json --filter 'type=workflow_run'
+```
 
 ### `events enrich`
 Enrich a normalized event (or raw GitHub payload) with repository and provider metadata.
@@ -53,7 +59,8 @@ Enrich a normalized event (or raw GitHub payload) with repository and provider m
 Usage:
 ```bash
 events enrich --in FILE [--out FILE] [--rules FILE] \
-  [--flag KEY=VAL...] [--use-github] [--label KEY=VAL...]
+  [--flag KEY=VAL...] [--use-github] [--label KEY=VAL...] \
+  [--select PATHS] [--filter EXPR]
 ```
 
 - `--in FILE`: input JSON (normalized event or raw GitHub payload)
@@ -61,12 +68,14 @@ events enrich --in FILE [--out FILE] [--rules FILE] \
 - `--rules FILE`: path to rules file (YAML/JSON) recorded in `enriched.metadata.rules`
 - `--flag KEY=VAL...`: enrichment flags map recorded in `enriched.derived.flags`
   - Recognized flags include:
-    - `include_patch=true|false` (default true) – include diff patches; when false, patches are removed
+    - `include_patch=true|false` (default false) – include diff patches; when false, patches are removed
     - `commit_limit=<n>` (default 50) – limit commits fetched for PR/push
     - `file_limit=<n>` (default 200) – limit files per compare list
     - `use_github=true|false` – enable GitHub API enrichment (also enabled via `--use-github`)
 - `--use-github`: convenience to set `use_github=true` (requires `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`)
 - `--label KEY=VAL...`: labels to attach
+- `--select PATHS`: comma-separated dot paths to include in output
+- `--filter EXPR`: filter expression `path[=value]`; if not matched, exits code `2` with no output
 
 Examples:
 ```bash
@@ -87,10 +96,9 @@ jq '.enriched.github.pr.has_conflicts, .enriched.github.pr.mergeable_state' out.
 
 ## Security and Redaction
 - Secrets: known patterns are redacted in output and logs by default; see `src/utils/redact.ts`.
-- Tokens: set `A5C_AGENT_GITHUB_TOKEN` or `GITHUB_TOKEN` for GitHub enrichment; tokens are never printed.
+- Tokens: set `A5C_AGENT_GITHUB_TOKEN` or `GITHUB_TOKEN` for GitHub enrichment (precedence: `A5C_AGENT_GITHUB_TOKEN` then `GITHUB_TOKEN`); tokens are never printed.
 
 ## Cross-References
 - Specs: `docs/specs/README.md`
 - Samples: `samples/`
-- Tests: `tests/mentions.*`, `tests/enrich.basic.test.ts`
-
+- Tests: `tests/mentions.*`, `tests/enrich.basic.test.ts`, `tests/cli.select-filter.*.ts`, `tests/cli.enrich.flags.test.ts`

@@ -33,6 +33,11 @@ npm install -g @a5c-ai/events
 events normalize --in samples/workflow_run.completed.json --out out.json
 
 jq '.type, .repo.full_name, .provenance.workflow?.name' out.json
+
+# Filter and select
+events normalize --in samples/workflow_run.completed.json \
+  --filter 'type=workflow_run' \
+  --select 'type,repo.full_name'
 ```
 
 Expected output (example):

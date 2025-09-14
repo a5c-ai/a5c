@@ -47,6 +47,8 @@ jq '.type, .repo.full_name, .provenance.workflow?.name' out.json
   - `--out <file>`: write result to file (default: stdout)
   - `--source <name>`: provenance (`actions|webhook|cli`) [default: `cli`]
   - `--label <key=value...>`: attach labels (repeatable)
+  - `--select <paths>`: comma-separated dot paths to include
+  - `--filter <expr>`: `path[=value]`; non-match exits with code 2
 
 `events enrich`
 - Purpose: Add metadata and correlations to a normalized event.
@@ -54,11 +56,13 @@ jq '.type, .repo.full_name, .provenance.workflow?.name' out.json
   - `--in <file>`: normalized event JSON (or raw payload; NE shell will be created)
   - `--out <file>`: write enriched result
   - `--rules <file>`: rules file path (yaml/json)
-  - `--flag include_patch=<true|false>`: include diff patches in files (default: true)
+  - `--flag include_patch=<true|false>`: include diff patches in files (default: false)
   - `--flag commit_limit=<n>`: max commits to include (default: 50)
   - `--flag file_limit=<n>`: max files to include (default: 200)
   - `--use-github`: enable GitHub API enrichment (requires `GITHUB_TOKEN`)
   - `--label <key=value...>`: attach labels
+  - `--select <paths>`: comma-separated dot paths to include
+  - `--filter <expr>`: `path[=value]`; non-match exits with code 2
 
 Exit codes: `0` success, non‑zero on errors (invalid input, etc.).
 
@@ -110,6 +114,8 @@ jq '.enriched' enriched.json
 
 Redaction:
 - CLI output is redacted to mask common secret patterns and sensitive keys (see `src/utils/redact.ts`).
+Tokens precedence:
+- `A5C_AGENT_GITHUB_TOKEN` is preferred over `GITHUB_TOKEN` (see `src/config.ts`).
 
 ### Validate against schema
 
