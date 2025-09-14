@@ -1,10 +1,11 @@
 import type { NormalizedEvent, Mention } from './types.js'
 import { readJSONFile, loadConfig } from './config.js'
 import { extractMentions } from './extractor.js'
+import { scanPatchForCodeCommentMentions, isBinaryPatch, scanCodeCommentsForMentions } from './codeComments.js'
 import { scanMentionsInCodeComments } from './utils/commentScanner.js'
 import { evaluateRulesDetailed, loadRules } from './rules.js'
-import { scanCodeCommentsForMentions } from './codeComments.js'
->>>>>>> a06211a (feat(mentions): scan code comments in changed files for @mentions with size cap + language filters; integrate into handleEnrich for PR/push; add tests for JS/TS/README and large file skip\n\nBy: developer-agent(https://app.a5c.ai/a5c/agents/development/developer-agent))
+=======
+>>>>>>> 69dd3bd (🧩 Extract mentions from code comments — Mentions (fixes #170) (#175))
 
 // Backwards-compatible API used by tests and Node consumers
 export async function handleEnrich(opts: {
@@ -185,6 +186,35 @@ export async function handleEnrich(opts: {
     // ignore code comment scanning failures; treated as best-effort enrichment
   }
 
+  // Optional: scan changed files for code comment mentions
+  try {
+    const flags = opts.flags || {}
+    const scanChanged = toBool((flags as any)['mentions.scan.changed_files'] ?? true)
+    if (scanChanged) {
+      const maxBytes = toInt((flags as any)['mentions.max_file_bytes'], 200 * 1024)
+      const langAllowRaw = (flags as any)['mentions.languages']
+      const langAllow = Array.isArray(langAllowRaw)
+        ? langAllowRaw
+        : typeof langAllowRaw === 'string' && langAllowRaw.length
+        ? String(langAllowRaw).split(',').map((s) => s.trim()).filter(Boolean)
+        : undefined
+
+      const files: any[] = (
+        (githubEnrichment?.pr?.files as any[]) || (githubEnrichment?.push?.files as any[]) || []
+      )
+      for (const f of files) {
+        const filename = f?.filename
+        const patch = f?.patch as string | undefined
+        if (!filename || isBinaryPatch(patch)) continue
+        const size = (patch || '').length
+        if (size > maxBytes) continue
+        if (langAllow && !langAllow.some((ext) => filename.toLowerCase().endsWith(`.${ext}`))) continue
+        const found = scanPatchForCodeCommentMentions(filename, patch!, { window: 30 })
+        if (found.length) mentions.push(...found)
+      }
+    }
+  } catch {}
+
   const output: NormalizedEvent = {
     ...(neShell as any),
     enriched: {
@@ -201,20 +231,6 @@ export async function handleEnrich(opts: {
     if (rules.length) {
       const evalObj: any = { ...output, enriched: output.enriched, labels: output.labels || [] }
       const res = evaluateRulesDetailed(evalObj, rules)
-<<<<<<< HEAD
-      if (res?.composed?.length) {
-        const composed = res.composed.map((c: any) => ({
-          key: c.key,
-          reason: Array.isArray(c.criteria) && c.criteria.length ? c.criteria.join(' && ') : undefined,
-          targets: c.targets,
-          labels: c.labels,
-          payload: c.payload,
-        }))
-        ;(output as any).composed = composed
-      }
-=======
-      if (res?.composed?.length) (output as any).composed = res.composed
->>>>>>> 44a1343 (✨ Rules evaluator and composed events (fixes #141) (#157))
       const meta: any = (output.enriched as any).metadata || {}
       ;(output.enriched as any).metadata = { ...meta, rules_status: res.status }
     }
