@@ -73,7 +73,6 @@ export async function handleEnrich(opts: {
         if (githubEnrichment.pr.mergeable_state == null && prPayload.mergeable_state != null) githubEnrichment.pr.mergeable_state = prPayload.mergeable_state
       }
     } catch {}
-
     if (!includePatch) {
       if (githubEnrichment.pr?.files) githubEnrichment.pr.files = githubEnrichment.pr.files.map((f: any) => ({ ...f, patch: undefined }))
       if (githubEnrichment.push?.files) githubEnrichment.push.files = githubEnrichment.push.files.map((f: any) => ({ ...f, patch: undefined }))
@@ -178,8 +177,6 @@ export async function handleEnrich(opts: {
     }
   } catch {}
     }
-  } catch {}
-
   const output: NormalizedEvent = {
     ...(neShell as any),
     enriched: {
