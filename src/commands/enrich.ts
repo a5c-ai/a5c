@@ -2,7 +2,7 @@ import type { NormalizedEvent, Mention } from '../types.js'
 import { readJSONFile, loadConfig } from '../config.js'
 import { extractMentions } from '../extractor.js'
 
-export async function enrichCommand(opts: {
+export async function handleEnrich(opts: {
   in?: string
   labels?: string[]
   rules?: string
@@ -36,8 +36,7 @@ export async function enrichCommand(opts: {
 
   let githubEnrichment: any = {}
   try {
-    // Import through the root proxy to leverage existing ambient typings
-    const mod: any = await import('../enrichGithubEvent.js')
+    const mod: any = await import('../providers/github/enrich.js')
     const fn = (mod.enrichGithubEvent || mod.default) as (e: any, o?: any) => Promise<any>
     const enriched = await fn(baseEvent, { token, commitLimit, fileLimit, octokit: opts.octokit })
     githubEnrichment = enriched?._enrichment || {}
@@ -91,3 +90,8 @@ function toInt(v: any, d = 0): number {
   const n = Number(v)
   return Number.isFinite(n) ? n : d
 }
+<<<<<<< HEAD
+=======
+
+export default handleEnrich
+>>>>>>> 99325b2 (🚧 refactor(cli): provider abstraction and commands structure (issue #193) (#204))

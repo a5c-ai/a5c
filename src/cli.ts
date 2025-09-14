@@ -5,9 +5,14 @@ import util from 'node:util'
 import { extractMentions } from './extractor.js'
 import type { ExtractorOptions, MentionSource } from './types.js'
 import { loadConfig, writeJSONFile } from './config.js'
+<<<<<<< HEAD
 import { handleNormalize } from './normalize.js'
 import { resolveNormalizeInput } from './cli-helpers.js'
 import { handleEnrich } from './enrich.js'
+=======
+import { handleNormalize } from './commands/normalize.js'
+import { handleEnrich } from './commands/enrich.js'
+>>>>>>> 99325b2 (🚧 refactor(cli): provider abstraction and commands structure (issue #193) (#204))
 import { redactObject } from './utils/redact.js'
 import { getVersionSync } from './version.js'
 
@@ -110,7 +115,7 @@ program
     if (cmdOpts.useGithub || cmdOpts['use-github']) flags.use_github = 'true'
     logv('[enrich] in=%s rules=%s useGithub=%s labels=%d', cmdOpts.in || '<stdin>', cmdOpts.rules || '-', String(flags.use_github === 'true'), (cmdOpts.label || []).length || 0)
     const labels = Object.entries(cmdOpts.label || {}).map(([k, v]) => `${k}=${v}`)
-    const { code, output } = await enrichCommand({
+    const { code, output } = await handleEnrich({
       in: cmdOpts.in,
       labels,
       rules: cmdOpts.rules,

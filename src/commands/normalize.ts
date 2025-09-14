@@ -2,7 +2,7 @@ import type { NormalizedEvent } from '../types.js'
 import { readJSONFile } from '../config.js'
 import { mapToNE } from '../providers/github/map.js'
 
-export async function normalizeCommand(opts: {
+export async function handleNormalize(opts: {
   in?: string
   source?: string
   labels?: string[]
@@ -12,3 +12,4 @@ export async function normalizeCommand(opts: {
   return { code: 0, output }
 }
 
+export default handleNormalize
