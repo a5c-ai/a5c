@@ -95,13 +95,18 @@ events enrich --in samples/pull_request.synchronize.json \
 events enrich --in samples/pull_request.synchronize.json \
   --rules samples/rules/conflicts.yml \
   | jq '(.composed // []) | map({key, reason})'
+```
 
 Note:
 - `.composed` may be absent or `null` when no rules match. Guard with `(.composed // [])` as above.
 - The `reason` field may be omitted depending on rule configuration. See specs §6.1 for composed events structure: `docs/specs/README.md#61-rule-engine-and-composed-events`.
 - Token precedence: runtime prefers `A5C_AGENT_GITHUB_TOKEN` over `GITHUB_TOKEN` when both are set (see `src/config.ts`).
 - Redaction: CLI redacts sensitive keys and common secret patterns in output by default (see `src/utils/redact.ts`).
+<<<<<<< HEAD
 ```
+=======
+
+>>>>>>> dba5d8e (Release: a5c/main → main (validated by validator-agent))
 ### Auth tokens: precedence, behavior, and examples
 
 - Precedence: `A5C_AGENT_GITHUB_TOKEN` > `GITHUB_TOKEN`.
