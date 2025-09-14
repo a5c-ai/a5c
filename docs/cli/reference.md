@@ -70,7 +70,7 @@ events enrich --in FILE [--out FILE] [--rules FILE] \
 - `--out FILE`: write result JSON (stdout if omitted)
 - `--rules FILE`: YAML/JSON rules file (optional). When provided, matching rules emit `composed[]` with `{ key, reason, targets?, labels?, payload? }`.
 - `--flag KEY=VAL...`: enrichment flags (repeatable); notable flags:
-  - `include_patch=true|false` (default: `false`) – include diff patches; when `false`, patches are removed
+  - `include_patch=true|false` (default: `true`) – include diff patches; when `false`, patches are removed
   - `commit_limit=<n>` (default: `50`) – limit commits fetched for PR/push
   - `file_limit=<n>` (default: `200`) – limit files per compare list
 - `--use-github`: enable GitHub API enrichment; equivalent to `--flag use_github=true` (requires `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`)
