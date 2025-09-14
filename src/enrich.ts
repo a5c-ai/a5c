@@ -1,7 +1,7 @@
 import type { NormalizedEvent, Mention } from './types.js'
 import { readJSONFile, loadConfig } from './config.js'
 import { extractMentions } from './extractor.js'
-import { scanCodeCommentsForMentions } from './codeComments.js'
+import { scanCodeCommentsForMentions, isBinaryPatch, scanPatchForCodeCommentMentions } from './codeComments.js'
 import { evaluateRulesDetailed, loadRules } from './rules.js'
 import { normalizeGithub } from './providers/github/normalize.js'
 
@@ -61,6 +61,18 @@ export async function handleEnrich(opts: {
         githubEnrichment.pr.owners_union = Array.from(set).sort((a, b) => a.localeCompare(b))
       }
     }
+
+    // Fallback: when offline/partial, project basic PR fields from payload so rules can work
+    try {
+      const prPayload = (baseEvent as any)?.pull_request
+      if (prPayload && (!githubEnrichment || typeof githubEnrichment !== 'object')) githubEnrichment = {}
+      if (prPayload) {
+        githubEnrichment.pr = { ...(githubEnrichment.pr || {}) }
+        if (githubEnrichment.pr.number == null && prPayload.number != null) githubEnrichment.pr.number = prPayload.number
+        if (githubEnrichment.pr.draft == null && typeof prPayload.draft === 'boolean') githubEnrichment.pr.draft = prPayload.draft
+        if (githubEnrichment.pr.mergeable_state == null && prPayload.mergeable_state != null) githubEnrichment.pr.mergeable_state = prPayload.mergeable_state
+      }
+    } catch {}
 
     if (!includePatch) {
       if (githubEnrichment.pr?.files) githubEnrichment.pr.files = githubEnrichment.pr.files.map((f: any) => ({ ...f, patch: undefined }))
@@ -134,6 +146,37 @@ export async function handleEnrich(opts: {
       // ignore code comment scanning failures; treated as best-effort enrichment
     }
   }
+    }
+  } catch {}
+
+  // Optional: scan changed files for code comment mentions
+  try {
+    const flags = opts.flags || {}
+    const scanChanged = toBool((flags as any)['mentions.scan.changed_files'] ?? true)
+    if (scanChanged) {
+      const maxBytes = toInt((flags as any)['mentions.max_file_bytes'], 200 * 1024)
+      const langAllowRaw = (flags as any)['mentions.languages']
+      const langAllow = Array.isArray(langAllowRaw)
+        ? langAllowRaw
+        : typeof langAllowRaw === 'string' && langAllowRaw.length
+        ? String(langAllowRaw).split(',').map((s) => s.trim()).filter(Boolean)
+        : undefined
+
+      const files: any[] = (
+        (githubEnrichment?.pr?.files as any[]) || (githubEnrichment?.push?.files as any[]) || []
+      )
+      for (const f of files) {
+        const filename = f?.filename
+        const patch = f?.patch as string | undefined
+        if (!filename || isBinaryPatch(patch)) continue
+        const size = (patch || '').length
+        if (size > maxBytes) continue
+        if (langAllow && !langAllow.some((ext) => filename.toLowerCase().endsWith(`.${ext}`))) continue
+        const found = scanPatchForCodeCommentMentions(filename, patch!, { window: 30 })
+        if (found.length) mentions.push(...found)
+      }
+    }
+  } catch {}
     }
   } catch {}
 
