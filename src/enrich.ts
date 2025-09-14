@@ -88,7 +88,6 @@ export async function handleEnrich(opts: {
       // For handleEnrich (programmatic), do not fail the whole command; mark partial with error
       githubEnrichment = { provider: 'github', partial: true, errors: [{ message: errMessage }] }
     }
-    }
   }
 
 
