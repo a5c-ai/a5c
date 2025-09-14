@@ -8,6 +8,11 @@ const GOLDENS_DIR = path.resolve('tests/fixtures/goldens')
 
 async function run(sample: string) {
   const { output } = await handleEnrich({ in: sample, labels: [], rules: undefined, flags: {} })
+  // Drop ephemeral seeded pr fields inserted to help rules without API
+  if ((output as any)?.enriched?.github?.pr) {
+    const gh: any = (output as any).enriched.github
+    gh.pr = { number: gh.pr.number, draft: gh.pr.draft, mergeable_state: gh.pr.mergeable_state }
+  }
   return stable(output)
 }
 

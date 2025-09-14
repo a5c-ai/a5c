@@ -1,8 +1,8 @@
 import type { NormalizedEvent } from '../types.js'
+import { githubProvider } from '../providers/github/index.js'
 import { readJSONFile } from '../config.js'
-import { mapToNE } from '../providers/github/map.js'
 
-// Command-layer wrapper to keep CLI thin
+// Command-layer wrapper to keep CLI thin and user-friendly
 export async function cmdNormalize(opts: {
   in?: string
   source?: string
@@ -17,11 +17,28 @@ export async function cmdNormalize(opts: {
   if (!inPath) return { code: 2, errorMessage: 'Missing required --in FILE (or use --source actions)' }
 
   try {
-    const payload = readJSONFile<any>(inPath)
-    const output = mapToNE(payload || {}, { source: opts.source, labels: opts.labels })
+    const payload = readJSONFile<any>(inPath) || {}
+    const output = githubProvider.normalize(payload, { source: opts.source, labels: opts.labels })
     return { code: 0, output }
   } catch (e: any) {
     const msg = e?.code === 'ENOENT' ? `Input file not found: ${e?.path || inPath}` : `Invalid JSON or read error: ${e?.message || e}`
     return { code: 2, errorMessage: msg }
   }
 }
+
+// Programmatic API used by src/normalize.ts compatibility re-export
+export async function runNormalize(opts: { in?: string; source?: string; labels?: string[] }): Promise<{ code: number; output: NormalizedEvent }>{
+  if (!opts.in) {
+    return { code: 2, output: { id: 'error', provider: 'github', type: 'error', occurred_at: new Date().toISOString(), payload: {}, labels: opts.labels, provenance: { source: opts.source }, error: 'missing --in', enriched: { metadata: { error: 'missing --in' } } } as any }
+  }
+  try {
+    const payload = readJSONFile<any>(opts.in) || {}
+    const output = githubProvider.normalize(payload, { source: opts.source, labels: opts.labels })
+    return { code: 0, output }
+  } catch (e: any) {
+    const msg = String(e?.message || e)
+    return { code: 2, output: { id: 'error', provider: 'github', type: 'error', occurred_at: new Date().toISOString(), payload: {}, labels: opts.labels, provenance: { source: opts.source }, error: msg, enriched: { metadata: { error: msg } } } as any }
+  }
+}
+
+// Note: Keep distinct exports: `cmdNormalize` (CLI wrapper) and `runNormalize` (programmatic API).

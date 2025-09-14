@@ -20,6 +20,7 @@ describe('handleEnrich', () => {
 
     // Enriched structure shape
     expect(output.enriched).toBeTruthy();
+    // When no rules path is provided, rules metadata reflects provided value (undefined here)
     // When no rules path is provided, rules metadata only includes null
     expect(output.enriched?.metadata).toEqual({ rules: undefined });
     expect(output.enriched?.derived).toBeTruthy();
@@ -35,6 +36,14 @@ describe('handleEnrich', () => {
     expect(names).toContain('developer-agent');
   });
 
+  // Offline default: enriched.github exists with skip/partial reason when not using --use-github
+  it('does not perform GitHub enrichment when --use-github is not set (offline mode)', async () => {
+    const res = await handleEnrich({ in: 'samples/pull_request.synchronize.json', labels: [], rules: undefined, flags: {} });
+    const gh = (res.output.enriched as any)?.github;
+    expect(gh).toBeTruthy();
+    expect(Boolean(gh.skipped || gh.partial)).toBe(true);
+    expect(['flag:not_set', 'github_enrich_disabled']).toContain(gh.reason);
+  });
 
   it('omits patch fields by default (include_patch=false)', async () => {
     const { output } = await handleEnrich({ in: 'samples/pull_request.synchronize.json', flags: { use_github: 'true' } });
@@ -45,20 +54,20 @@ describe('handleEnrich', () => {
     }
   });
 
-  it('merges GitHub enrichment when flag enabled but missing token marks partial', async () => {
+  it('when flag enabled but token missing, enrichment is skipped with reason', async () => {
     const res = await handleEnrich({ in: 'samples/pull_request.synchronize.json', labels: [], rules: undefined, flags: { use_github: 'true' } });
     const gh = (res.output.enriched as any)?.github;
     expect(gh).toBeTruthy();
-    expect(gh.partial).toBeTruthy();
-    expect(gh.reason === 'github_token_missing' || Array.isArray(gh.errors)).toBe(true);
+    expect(gh.skipped).toBeTruthy();
+    expect(gh.reason).toBe('token:missing');
   });
 
   it('does not perform GitHub enrichment when --use-github is not set (offline mode)', async () => {
     const res = await handleEnrich({ in: 'samples/pull_request.synchronize.json', labels: [], rules: undefined, flags: {} });
     const gh = (res.output.enriched as any)?.github;
     expect(gh).toBeTruthy();
-    expect(gh.partial).toBeTruthy();
-    expect(gh.reason).toBe('github_enrich_disabled');
+    expect(gh.skipped).toBeTruthy();
+    expect(gh.reason).toBe('flag:not_set');
   });
   
 
@@ -82,7 +91,7 @@ describe('handleEnrich', () => {
       paginate: async (_fn: any, _opts: any) => files,
     } as any;
 
-    const res = await handleEnrich({ in: 'samples/pull_request.synchronize.json', labels: [], rules: undefined, flags: {}, octokit: mockOctokit });
+    const res = await handleEnrich({ in: 'samples/pull_request.synchronize.json', labels: [], rules: undefined, flags: { use_github: 'true' }, octokit: mockOctokit });
     const mentions = (res.output.enriched as any).mentions || [];
     expect(mentions.some((m: any) => m.source === 'code_comment')).toBe(true);
   });
