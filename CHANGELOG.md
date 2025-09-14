@@ -1,3 +1,17 @@
+## 1.1.0-a5c-main.11 (2025-09-14)
+
+* fix: resolve merge conflicts across CLI, core, tests, docs, and CI ([4221c64](https://github.com/a5c-ai/events/commit/4221c64))
+* docs(validation): PR 277 lint warnings documented ([f0add1f](https://github.com/a5c-ai/events/commit/f0add1f))
+* chore(lint): prefer-const fix in enrich command ([287be9b](https://github.com/a5c-ai/events/commit/287be9b))
+* rebase: resolve remaining conflicts (docs/cli reference + lockfile) ([cc7c00d](https://github.com/a5c-ai/events/commit/cc7c00d))
+* test: make rules CLI test robust to redaction; avoid over-redaction of 'key' field ([6796b1d](https://github.com/a5c-ai/events/commit/6796b1d))
+* test: remove duplicate JS suite for enrichGithubEvent (TS version covers cases) ([449de61](https://github.com/a5c-ai/events/commit/449de61))
+* test: stabilize enrich tests and rules matching; clean leftover conflict markers in tests and docs ([15ff7b1](https://github.com/a5c-ai/events/commit/15ff7b1))
+* 🚑 fix(ci): CLI enrich emits composed events from --rules (#278) ([21ffe3b](https://github.com/a5c-ai/events/commit/21ffe3b)), closes [#278](https://github.com/a5c-ai/events/issues/278)
+* resolve rebase: prefer current branch versions; keep duplicate JS test removed earlier ([f095f37](https://github.com/a5c-ai/events/commit/f095f37))
+* Update package.json ([d11f6d9](https://github.com/a5c-ai/events/commit/d11f6d9))
+* Release: a5c/main → main (#226) ([98ea92c](https://github.com/a5c-ai/events/commit/98ea92c)), closes [#226](https://github.com/a5c-ai/events/issues/226) [#89](https://github.com/a5c-ai/events/issues/89) [#89](https://github.com/a5c-ai/events/issues/89) [#95](https://github.com/a5c-ai/events/issues/95) [#92](https://github.com/a5c-ai/events/issues/92) [#100](https://github.com/a5c-ai/events/issues/100)
+
 ## 1.1.0-a5c-main.10 (2025-09-14)
 ## 1.1.0-a5c-main.10 (2025-09-14)
 
