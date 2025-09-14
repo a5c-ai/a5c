@@ -133,7 +133,7 @@ export async function runEnrich(opts: {
       } catch {}
     }
     if (owner && repo && files.length && opts.octokit) {
-      let found = await scanCodeCommentsForMentions({ owner, repo, ref, files, octokit: opts.octokit, options: { languageFilters: ['js','ts','md'] } })
+      const found = await scanCodeCommentsForMentions({ owner, repo, ref, files, octokit: opts.octokit, options: { languageFilters: ['js','ts','md'] } })
       // Fallback: naive full-file scan if structured scan produced none (some mocks ignore params)
       if (!found.length) {
         for (const f of files) {
