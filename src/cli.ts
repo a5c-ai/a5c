@@ -8,6 +8,8 @@ import { cmdNormalize } from './commands/normalize.js'
 import { cmdEnrich } from './commands/enrich.js'
 import { handleEmit } from './emit.js'
 import { redactObject } from './utils/redact.js'
+import path from 'node:path'
+import Ajv from 'ajv'
 
 const program = new Command()
 program
@@ -144,6 +146,69 @@ program
       process.stdout.write(JSON.stringify(safe, null, 2) + '\n')
     }
     process.exit(code)
+  })
+
+program
+  .command('validate')
+  .description('Validate a JSON payload against the NE schema')
+  .option('--in <file>', 'input JSON file path (defaults to stdin if omitted)')
+  .option('--schema <file>', 'schema file path', 'docs/specs/ne.schema.json')
+  .option('--quiet', 'print nothing on success, only errors', false)
+  .action(async (cmdOpts: any) => {
+    try {
+      const inputStr = cmdOpts.in ? fs.readFileSync(path.resolve(cmdOpts.in), 'utf8') : fs.readFileSync(0, 'utf8')
+      const data = JSON.parse(inputStr)
+      const schema = JSON.parse(fs.readFileSync(path.resolve(cmdOpts.schema), 'utf8'))
+      const ajv = new Ajv({ strict: false, allErrors: true })
+      // Inline minimal 2020-12 meta-schema so Ajv can compile referenced schema
+      const meta2020 = {
+        $id: 'https://json-schema.org/draft/2020-12/schema',
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        $vocabulary: {
+          'https://json-schema.org/draft/2020-12/vocab/core': true,
+          'https://json-schema.org/draft/2020-12/vocab/applicator': true,
+          'https://json-schema.org/draft/2020-12/vocab/unevaluated': true,
+          'https://json-schema.org/draft/2020-12/vocab/validation': true,
+          'https://json-schema.org/draft/2020-12/vocab/meta-data': true,
+          'https://json-schema.org/draft/2020-12/vocab/format-annotation': true,
+          'https://json-schema.org/draft/2020-12/vocab/content': true
+        },
+        type: ['object', 'boolean']
+      } as const
+      // Minimal date-time support to avoid ajv-formats ESM issues in CLI runtime
+      ajv.addFormat('date-time', {
+        type: 'string',
+        validate: (s: string) => /\d{4}-\d{2}-\d{2}T\d{2}:.+Z/.test(s)
+      } as any)
+      // ensure meta registered
+      // @ts-ignore
+      ajv.addMetaSchema(meta2020)
+      const validate = ajv.compile(schema)
+      const ok = validate(data)
+      if (!ok) {
+        const errs = validate.errors || []
+        const out = {
+          valid: false,
+          errorCount: errs.length,
+          errors: errs.map((e) => ({
+            instancePath: e.instancePath,
+            schemaPath: e.schemaPath,
+            message: e.message,
+            params: e.params
+          }))
+        }
+        process.stdout.write(JSON.stringify(out, null, 2) + '\n')
+        process.exit(2)
+      }
+      if (!cmdOpts.quiet) {
+        process.stdout.write(JSON.stringify({ valid: true }, null, 2) + '\n')
+      }
+      process.exit(0)
+    } catch (err: any) {
+      const msg = String(err?.message || err)
+      process.stderr.write(`validate: ${msg}\n`)
+      process.exit(1)
+    }
   })
 
 program.parseAsync(process.argv)
