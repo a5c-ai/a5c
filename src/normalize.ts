@@ -1,8 +1,6 @@
 import type { NormalizedEvent } from './types.js'
 import { readJSONFile } from './config.js'
 import { normalizeGithub } from './providers/github/normalize.js'
-
-// Backwards-compatible API used by tests and Node consumers
 export async function handleNormalize(opts: {
   in?: string
   source?: string
