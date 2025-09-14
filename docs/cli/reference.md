@@ -61,7 +61,7 @@ Enrich a normalized event (or raw GitHub payload) with repository and provider m
 
 Behavior:
 - No network calls are performed by default.
-- Pass `--use-github` to enable GitHub API enrichment. A `GITHUB_TOKEN` (or `A5C_AGENT_GITHUB_TOKEN`) must be present; otherwise the CLI returns exit code `3` and `enriched.github` will indicate a missing token reason.
+- Pass `--use-github` to enable GitHub API enrichment. A `GITHUB_TOKEN` (or `A5C_AGENT_GITHUB_TOKEN`) must be present; otherwise the CLI returns exit code `3` and prints an error to stderr. When using the programmatic API (not the CLI), a missing token is annotated as `enriched.github.reason = "token:missing"`.
 
 Usage:
 ```bash
