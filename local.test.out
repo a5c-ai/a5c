@@ -1,0 +1,146 @@
+[install] Node dependencies
+
+> @a5c-ai/events@1.1.0-a5c-main.5 prepare
+> npm run build
+
+
+> @a5c-ai/events@1.1.0-a5c-main.5 build
+> tsc -p tsconfig.build.json && node scripts/build-post.js
+
+
+added 660 packages in 7s
+[install] Done.
+[build] Running npm run build
+[test] Running test:ci (vitest)
+
+[1m[7m[36m RUN [39m[27m[22m [36mv2.1.9 [39m[90m/home/runner/work/events/events[39m
+      [2mCoverage enabled with [22m[33mv8[39m
+
+ [32m✓[39m tests/mentions.code-comments.test.ts [2m([22m[2m8 tests[22m[2m)[22m[90m 12[2mms[22m[39m
+ [32m✓[39m tests/enrich.basic.test.ts [2m([22m[2m9 tests[22m[2m)[22m[90m 95[2mms[22m[39m
+ [32m✓[39m tests/normalize.github.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 6[2mms[22m[39m
+ [32m✓[39m tests/rules.composed.test.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 34[2mms[22m[39m
+ [32m✓[39m tests/normalize.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 7[2mms[22m[39m
+ [32m✓[39m tests/cli.select-filter.test.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 32[2mms[22m[39m
+ [32m✓[39m tests/composed.rules.test.ts [2m([22m[2m1 test[22m[2m)[22m[90m 48[2mms[22m[39m
+ [32m✓[39m test/redact.test.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 6[2mms[22m[39m
+ [32m✓[39m tests/config.token.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 16[2mms[22m[39m
+ [32m✓[39m tests/normalize.schema.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 5[2mms[22m[39m
+ [32m✓[39m tests/cli.enrich.flags.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 3097[2mms[22m[39m
+   [33m[2m✓[22m[39m enrich flags: include_patch[2m > [22minclude_patch=true keeps patch fields [33m1591[2mms[22m[39m
+   [33m[2m✓[22m[39m enrich flags: include_patch[2m > [22minclude_patch=false removes patch fields [33m1504[2mms[22m[39m
+ [32m✓[39m tests/enrich.flags.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 3054[2mms[22m[39m
+   [33m[2m✓[22m[39m enrich flags: include_patch default and override[2m > [22mdefault include_patch=false removes patch from files [33m1549[2mms[22m[39m
+   [33m[2m✓[22m[39m enrich flags: include_patch default and override[2m > [22minclude_patch=true preserves patch in files [33m1503[2mms[22m[39m
+ [32m✓[39m tests/ne.schema.compile.test.ts [2m([22m[2m1 test[22m[2m)[22m[90m 44[2mms[22m[39m
+ [32m✓[39m tests/enrich.handle.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 1535[2mms[22m[39m
+   [33m[2m✓[22m[39m handleEnrich integrates enrichGithubEvent[2m > [22mmaps PR enrichment under enriched.github and respects include_patch=false [33m1533[2mms[22m[39m
+ [32m✓[39m test/enrich.redaction.test.ts [2m([22m[2m1 test[22m[2m)[22m[90m 56[2mms[22m[39m
+ [32m✓[39m tests/cli.validate.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 489[2mms[22m[39m
+   [33m[2m✓[22m[39m events validate (CLI)[2m > [22mvalidates a normalized sample and returns valid: true [33m335[2mms[22m[39m
+ [32m✓[39m test/config.loadConfig.test.ts [2m([22m[2m3 tests[22m[2m)[22m[90m 6[2mms[22m[39m
+ [32m✓[39m test/config.precedence.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 4[2mms[22m[39m
+ [32m✓[39m tests/cli.readme.examples.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 320[2mms[22m[39m
+ [32m✓[39m tests/cli.exit-codes.test.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 2045[2mms[22m[39m
+   [33m[2m✓[22m[39m CLI exit codes[2m > [22mnormalize: exits 2 when --in is missing (source=cli) [33m447[2mms[22m[39m
+   [33m[2m✓[22m[39m CLI exit codes[2m > [22mnormalize: exits 2 on invalid JSON input [33m481[2mms[22m[39m
+   [33m[2m✓[22m[39m CLI exit codes[2m > [22menrich: exits 3 when --use-github is set but no token (provider failure) [33m541[2mms[22m[39m
+   [33m[2m✓[22m[39m CLI exit codes[2m > [22menrich: exits 0 without --use-github even when no token [33m574[2mms[22m[39m
+ [32m✓[39m tests/cli.select-filter.e2e.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 1107[2mms[22m[39m
+   [33m[2m✓[22m[39m CLI select/filter[2m > [22mnormalize --select type,repo.full_name [33m552[2mms[22m[39m
+   [33m[2m✓[22m[39m CLI select/filter[2m > [22menrich --filter enriched.github.pr.mergeable_state=dirty (may be filtered depending on enrichment) [33m553[2mms[22m[39m
+ [32m✓[39m tests/cli.enrich.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 587[2mms[22m[39m
+   [33m[2m✓[22m[39m CLI enrich (smoke)[2m > [22mreads a sample and outputs enriched event shape [33m585[2mms[22m[39m
+ [32m✓[39m tests/mentions-code-comments.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 8[2mms[22m[39m
+ [32m✓[39m tests/cli.normalize.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 552[2mms[22m[39m
+   [33m[2m✓[22m[39m CLI normalize (smoke)[2m > [22mreads a sample and outputs normalized event shape [33m550[2mms[22m[39m
+{
+  "ref": "refs/heads/a5c/main",
+  "before": "1111111111111111111111111111111111111111",
+  "after": "2222222222222222222222222222222222222222",
+  "repository": {
+    "id": 1055826069,
+    "name": "events",
+    "full_name": "a5c-ai/events",
+    "private": true
+  },
+  "pusher": {
+    "name": "a5c-ai[bot]",
+    "email": "agent@a5c.ai"
+  },
+  "sender": {
+    "login": "a5c-ai[bot]",
+    "type": "Bot",
+    "id": 221166651
+  },
+  "created": false,
+  "deleted": false,
+  "forced": false,
+  "commits": [
+    {
+      "id": "2222222222222222222222222222222222222222",
+      "message": "chore: update docs",
+      "timestamp": "2025-09-13T10:45:00Z"
+    },
+    {
+      "id": "3333333333333333333333333333333333333333",
+      "message": "feat: add samples @developer-agent",
+      "timestamp": "2025-09-13T10:46:00Z"
+    },
+    {
+      "id": "4444444444444444444444444444444444444444",
+      "message": "fix: CI tweaks",
+      "timestamp": "2025-09-13T10:47:00Z"
+    }
+  ],
+  "head_commit": {
+    "id": "2222222222222222222222222222222222222222",
+    "message": "chore: update docs"
+  }
+}
+ [32m✓[39m tests/emit.basic.test.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 9[2mms[22m[39m
+ [32m✓[39m tests/golden.normalize.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 11[2mms[22m[39m
+ [32m✓[39m tests/golden.enrich.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 50[2mms[22m[39m
+ [32m✓[39m tests/normalize.basic.test.ts [2m([22m[2m1 test[22m[2m)[22m[90m 7[2mms[22m[39m
+ [32m✓[39m tests/enrich.redaction.test.ts [2m([22m[2m1 test[22m[2m)[22m[90m 50[2mms[22m[39m
+ [32m✓[39m tests/mentions.pr-body.test.ts [2m([22m[2m1 test[22m[2m)[22m[90m 4[2mms[22m[39m
+ [32m✓[39m tests/mentions.commit.test.ts [2m([22m[2m1 test[22m[2m)[22m[90m 5[2mms[22m[39m
+ [32m✓[39m tests/redact.patterns.test.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 5[2mms[22m[39m
+ [32m✓[39m test/sum.test.ts [2m([22m[2m1 test[22m[2m)[22m[90m 3[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m33 passed[39m[22m[90m (33)[39m
+[2m      Tests [22m [1m[32m93 passed[39m[22m[90m (93)[39m
+[2m   Start at [22m 18:11:04
+[2m   Duration [22m 7.96s[2m (transform 466ms, setup 0ms, collect 1.81s, tests 13.31s, environment 10ms, prepare 2.91s)[22m
+
+[34m % [39m[2mCoverage report from [22m[33mv8[39m
+-------------------|---------|----------|---------|---------|-------------------
+File               | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+-------------------|---------|----------|---------|---------|-------------------
+All files          |   64.18 |    71.97 |   78.66 |   64.18 |                   
+ src               |   68.79 |    71.11 |    92.5 |   68.79 |                   
+  cli.ts           |       0 |        0 |       0 |       0 | 1-223             
+  codeComments.ts  |   95.67 |    78.08 |     100 |   95.67 | 12-15,127,137-138 
+  config.ts        |   86.95 |    83.33 |      75 |   86.95 | 34-36             
+  emit.ts          |      72 |    42.85 |     100 |      72 | 17-19,30-33       
+  enrich.ts        |   87.77 |     67.1 |     100 |   87.77 | ...15,217,268-270 
+  extractor.ts     |     100 |       90 |     100 |     100 | 20                
+  index.ts         |     100 |      100 |     100 |     100 |                   
+  normalize.ts     |   73.33 |       40 |     100 |   73.33 | 12-13,20-21       
+  regex.ts         |     100 |      100 |     100 |     100 |                   
+  rules.ts         |    83.5 |    69.69 |   92.85 |    83.5 | ...77,196,210-212 
+  types.ts         |       0 |        0 |       0 |       0 |                   
+ src/commands      |    1.86 |      100 |       0 |    1.86 |                   
+  enrich.ts        |    1.12 |      100 |       0 |    1.12 | 5-108             
+  normalize.ts     |    5.55 |      100 |       0 |    5.55 | 6-27              
+ src/providers     |       0 |        0 |       0 |       0 |                   
+  types.ts         |       0 |        0 |       0 |       0 |                   
+ ...oviders/github |   48.29 |    77.14 |   53.33 |   48.29 |                   
+  map.ts           |    5.55 |      100 |       0 |    5.55 | ...89-117,123-126 
+  normalize.ts     |   95.87 |    77.14 |     100 |   95.87 | 34-35,43-44       
+ src/utils         |   83.38 |    71.42 |    87.5 |   83.38 |                   
+  ...entScanner.ts |   91.72 |       60 |     100 |   91.72 | ...95-100,138-139 
+  redact.ts        |    91.2 |    84.61 |   83.33 |    91.2 | 71,110-116        
+  selectFilter.ts  |     100 |    74.07 |     100 |     100 | 2,10,28,31,36     
+  stable.ts        |       0 |        0 |       0 |       0 | 1-33              
+-------------------|---------|----------|---------|---------|-------------------

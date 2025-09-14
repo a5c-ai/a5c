@@ -5,7 +5,11 @@
 Normalize and enrich GitHub (and other) events for agentic workflows. Use the CLI in CI or locally to turn raw webhook/Actions payloads into a compact, consistent schema that downstream agents and automations can trust.
 
 - Quick install via npm
+<<<<<<< HEAD
+- Commands: `events mentions`, `events normalize`, `events enrich`, `events validate`
+=======
 - Commands: `events mentions`, `events normalize`, `events enrich`
+>>>>>>> origin/main
 - Output: JSON to stdout or file
 - Extensible via provider adapters and enrichers
 
@@ -28,6 +32,9 @@ npx @a5c-ai/events normalize --in samples/workflow_run.completed.json --out out.
 
 # Inspect selected fields
 jq '.type, .repo.full_name, .provenance.workflow?.name' out.json
+
+# Validate against the NE schema (quiet on success)
+cat out.json | npx @a5c-ai/events validate --quiet
 ```
 
 ## CLI Reference
@@ -60,7 +67,6 @@ jq '.type, .repo.full_name, .provenance.workflow?.name' out.json
   - `--flag commit_limit=<n>`: max commits to include (default: 50)
   - `--flag file_limit=<n>`: max files to include (default: 200)
   - `--use-github`: enable GitHub API enrichment (requires `GITHUB_TOKEN`)
-  - `--use-github`: enable GitHub API enrichment (requires token)
   - `--select <paths>`: comma-separated dot paths to include in output
   - `--filter <expr>`: filter expression `path[=value]`; if not matching, exits with code 2 and no output
   - `--label <key=value...>`: attach labels to top‑level `labels[]`
@@ -124,14 +130,17 @@ Tokens precedence:
 
 ### Validate against schema
 
-Use the NE JSON Schema at `docs/specs/ne.schema.json` to validate CLI output (example uses ajv-cli):
+Use the NE JSON Schema at `docs/specs/ne.schema.json` to validate CLI output.
 
 ```bash
 # Normalize a sample workflow_run payload
 events normalize --in samples/workflow_run.completed.json --out out.json
 
-# Validate result against the schema
-npx ajv validate -s docs/specs/ne.schema.json -d out.json --spec=draft2020
+# Validate result using the built-in validator
+events validate --in out.json --schema docs/specs/ne.schema.json --quiet
+
+# Alternative (ajv-cli)
+# npx ajv validate -s docs/specs/ne.schema.json -d out.json --spec=draft2020
 ```
 
 ### Extract mentions
@@ -156,7 +165,6 @@ echo "Please route to @developer-agent and @validator-agent" | \
 Environment variables:
 - `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`: enables GitHub API enrichment
 - `DEBUG`: set to `true` to enable debug mode
-=======
 - `A5C_AGENT_GITHUB_TOKEN` or `GITHUB_TOKEN`: required when using `--use-github`
 - Debug flags TBD (`DEBUG=@a5c/events*`)
 

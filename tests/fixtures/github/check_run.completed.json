@@ -1,0 +1,26 @@
+{
+  "action": "completed",
+  "check_run": {
+    "id": 2002,
+    "name": "build",
+    "status": "completed",
+    "conclusion": "success",
+    "head_sha": "abc123def456",
+    "started_at": "2025-09-14T05:30:00Z",
+    "completed_at": "2025-09-14T05:35:00Z",
+    "check_suite": {
+      "id": 3003,
+      "head_branch": "a5c/main",
+      "head_sha": "abc123def456"
+    }
+  },
+  "repository": {
+    "id": 1055826069,
+    "name": "events",
+    "full_name": "a5c-ai/events",
+    "private": true,
+    "visibility": "private"
+  },
+  "sender": { "id": 221166651, "login": "a5c-ai[bot]", "type": "Bot" }
+}
+

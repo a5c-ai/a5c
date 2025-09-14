@@ -59,6 +59,10 @@ Notes:
 ### `events enrich`
 Enrich a normalized event (or raw GitHub payload) with repository and provider metadata.
 
+Behavior:
+- No network calls are performed by default.
+- Pass `--use-github` to enable GitHub API enrichment. A `GITHUB_TOKEN` (or `A5C_AGENT_GITHUB_TOKEN`) must be present; otherwise enrichment is skipped and marked as partial.
+
 Usage:
 ```bash
 events enrich --in FILE [--out FILE] [--rules FILE] \
@@ -70,10 +74,11 @@ events enrich --in FILE [--out FILE] [--rules FILE] \
 - `--out FILE`: write result JSON (stdout if omitted)
 - `--rules FILE`: YAML/JSON rules file (optional). When provided, matching rules emit `composed[]` with `{ key, reason, targets?, labels?, payload? }`.
 - `--flag KEY=VAL...`: enrichment flags (repeatable); notable flags:
-  - `include_patch=true|false` (default: `true`) – include diff patches; when `false`, patches are removed
+  - `include_patch=true|false` (default: `false`) – include diff patches; when `false`, patches are removed. Defaulting to false avoids leaking secrets via diffs and keeps outputs small; enable only when required.
   - `commit_limit=<n>` (default: `50`) – limit commits fetched for PR/push
   - `file_limit=<n>` (default: `200`) – limit files per compare list
-- `--use-github`: enable GitHub API enrichment; equivalent to `--flag use_github=true` (requires `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`)
+- `--use-github`: enable GitHub API enrichment; equivalent to `--flag use_github=true` (requires `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`). Without this flag, the CLI performs no network calls and sets `enriched.github = { provider: 'github', skipped: true, reason: 'flag:not_set' }`.
+- `--use-github`: enable GitHub API enrichment; equivalent to `--flag use_github=true` (requires `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`). Without this flag, the CLI performs no network calls and sets `enriched.github = { provider: 'github', skipped: true, reason: 'flag:not_set' }`.
 - `--label KEY=VAL...`: labels to attach
 - `--select PATHS`: comma-separated dot paths to include in output
 - `--filter EXPR`: filter expression `path[=value]`; if it doesn't pass, exits with code `2`
@@ -90,9 +95,25 @@ events enrich --in samples/pull_request.synchronize.json \
 # With rules (composed events)
 events enrich --in samples/pull_request.synchronize.json \
   --rules samples/rules/conflicts.yml \
-  | jq '[.composed[] | {key, reason}]'
+  | jq '(.composed // []) | map({key, reason})'
+
+Note:
+- `.composed` may be absent or `null` when no rules match. Guard with `(.composed // [])` as above.
+- The `reason` field may be omitted depending on rule configuration. See specs §6.1 for composed events structure: `docs/specs/README.md#61-rule-engine-and-composed-events`.
+- Token precedence: runtime prefers `A5C_AGENT_GITHUB_TOKEN` over `GITHUB_TOKEN` when both are set (see `src/config.ts`).
+- Redaction: CLI redacts sensitive keys and common secret patterns in output by default (see `src/utils/redact.ts`).
 ```
 
+Outputs:
+- When enriching a PR with `--use-github`, the CLI exposes per-file owners under `enriched.github.pr.owners` and the deduplicated, sorted union of all CODEOWNERS across changed files under `enriched.github.pr.owners_union`.
+
+Without network calls (mentions only):
+```bash
+events enrich --in samples/push.json --out out.json
+jq '.enriched.mentions' out.json
+```
+  | jq '[.composed[] | {key, reason}]'
+```
 ### `events validate`
 Validate a JSON document against the NE JSON Schema.
 

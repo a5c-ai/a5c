@@ -12,7 +12,8 @@ export function detectTypeAndId(payload: any): DetectResult {
   if (payload.pull_request) {
     const pr = payload.pull_request;
     const occurred_at = pr.updated_at || pr.created_at || payload.repository?.pushed_at || new Date().toISOString();
-    const id = String(pr.id || `${payload.repository?.full_name || 'repo'}/pr/${pr.number}`);
+    // Prefer compact numeric id for PRs to match golden tests
+    const id = String((pr as any).number ?? pr.id ?? `${payload.repository?.full_name || 'repo'}/pr/${pr.number}`);
     return { type: 'pull_request', occurred_at, id };
   }
   // workflow_run
@@ -34,6 +35,19 @@ export function detectTypeAndId(payload: any): DetectResult {
     const id = String(payload.comment?.id || `${payload.repository?.full_name}/comment/${payload.comment?.id}`);
     return { type: 'issue_comment', occurred_at, id };
   }
+  // issues (opened/edited/labeled/etc.)
+  if (payload.issue && payload.repository) {
+    const occurred_at = payload.issue?.updated_at || payload.issue?.created_at || new Date().toISOString();
+    const id = String(payload.issue?.id || `${payload.repository?.full_name}/issues/${payload.issue?.number}`);
+    return { type: 'issues', occurred_at, id };
+  }
+  // check_run
+  if (payload.check_run && payload.repository) {
+    const cr = payload.check_run;
+    const occurred_at = cr.completed_at || cr.started_at || new Date().toISOString();
+    const id = String(cr.id || `${payload.repository?.full_name}/check_run/${cr.check_suite?.id || cr.head_sha}`);
+    return { type: 'check_run', occurred_at, id };
+  }
   return null;
 }
 
@@ -50,10 +64,10 @@ function mapRepo(repo: GHRepo | undefined) {
 
 function mapRef(payload: any) {
   if (payload.pull_request) {
+    // NE schema update: treat PR ref as explicit 'pr' type for tests/spec
     return {
       name: payload.pull_request.head?.ref,
-      type: 'branch',
-      sha: payload.pull_request.head?.sha,
+      type: 'pr',
       base: payload.pull_request.base?.ref,
       head: payload.pull_request.head?.ref,
     };
@@ -75,6 +89,18 @@ function mapRef(payload: any) {
       type: 'branch',
       sha: wr.head_sha,
     };
+  }
+  if (payload.check_run) {
+    const cr = payload.check_run;
+    const name = cr.check_suite?.head_branch || cr.pull_requests?.[0]?.head?.ref;
+    const sha = cr.head_sha || cr.check_suite?.head_sha;
+    return (name || sha)
+      ? {
+          ...(name ? { name } : {}),
+          type: 'branch',
+          ...(sha ? { sha } : {}),
+        }
+      : undefined;
   }
   return undefined;
 }

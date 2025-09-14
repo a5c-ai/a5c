@@ -22,8 +22,15 @@ export default [
       },
     },
   },
-  // Base JS recommended rules
-  js.configs.recommended,
+  // Base JS recommended rules with minor tweaks
+  {
+    ...js.configs.recommended,
+    rules: {
+      ...(js.configs.recommended.rules || {}),
+      // Allow intentionally empty catch blocks for defensive parsing paths
+      'no-empty': ['error', { allowEmptyCatch: true }],
+    },
+  },
 
   // TypeScript support for project files
   ...tseslint.config(
