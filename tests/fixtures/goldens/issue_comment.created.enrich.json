@@ -1,7 +1,7 @@
 {
   "id": "<id>",
   "provider": "github",
-  "type": "commit",
+  "type": "issue_comment",
   "occurred_at": "<iso-8601>",
   "payload": {
     "action": "created",
