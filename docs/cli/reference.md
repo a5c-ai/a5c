@@ -66,6 +66,10 @@ events enrich --in samples/pull_request.synchronize.json \
 
 ## Notes
 - Secrets: CLI redacts known secret patterns in logs and output by default.
+  - Redacted patterns include GitHub PATs (`ghp_...`), JWTs, `Bearer <token>`, Stripe `sk_*`, Slack `xox*`, AWS keys, and URL basic auth.
+  - Sensitive keys in objects (case-insensitive match on: `token`, `secret`, `password`, `api_key`, `client_secret`, `access_token`, etc.) are masked entirely.
+  - The default mask is `REDACTED`.
+  - Env tokens: `A5C_AGENT_GITHUB_TOKEN` takes precedence over `GITHUB_TOKEN` when both are set.
 - Large payloads: processing is streamed where possible; see performance targets in specs.
 
-See also: `docs/specs/README.md`.
+See also: `docs/specs/README.md` and `docs/producer/phases/technical-specs/README.md`.

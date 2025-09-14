@@ -8,3 +8,8 @@
 
 ## Notes
 Implementation exists in `src/config.ts` and `src/utils/redact.ts`; focus on tests and docs.
+
+## Results
+- Added tests: `tests/config.token-precedence.test.ts`, `tests/redaction.regression.test.ts`
+- Updated docs: `docs/cli/reference.md` (secrets & precedence), added `docs/producer/phases/technical-specs/notes-token-precedence-redaction.md`
+- All tests passing locally via `npm test`
