@@ -50,6 +50,8 @@ function makeMockOctokit({ prFiles, compareFiles }: { prFiles?: any[]; compareFi
 
 describe('enrich include_patch flag behavior', () => {
   it('keeps patch when include_patch=true for PR files', async () => {
+    const prev = process.env.A5C_AGENT_GITHUB_TOKEN
+    process.env.A5C_AGENT_GITHUB_TOKEN = 'test-token'
     const prFiles = [
       { filename: 'src/a.ts', additions: 1, deletions: 0, changes: 1, patch: '@@ -1 +1 @@\n+1' },
     ];
@@ -57,14 +59,17 @@ describe('enrich include_patch flag behavior', () => {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'evt-'));
     const file = path.join(tmp, 'pr.json');
     fs.writeFileSync(file, JSON.stringify(makePullRequestEvent()));
-    const { output } = await handleEnrich({ in: file, labels: [], rules: undefined, flags: { include_patch: 'true' }, octokit, });
+    const { output } = await handleEnrich({ in: file, labels: [], rules: undefined, flags: { include_patch: 'true', use_github: 'true' }, octokit, });
     const files = (output.enriched as any)?.github?.pr?.files || [];
     expect(files.length).toBe(1);
     // when include_patch=true, patch is present (may be empty string if provider omitted it)
     expect(files[0].patch).toBeDefined();
+    if (prev === undefined) delete process.env.A5C_AGENT_GITHUB_TOKEN; else process.env.A5C_AGENT_GITHUB_TOKEN = prev
   });
 
   it('removes patch when include_patch=false for PR files', async () => {
+    const prev = process.env.A5C_AGENT_GITHUB_TOKEN
+    process.env.A5C_AGENT_GITHUB_TOKEN = 'test-token'
     const prFiles = [
       { filename: 'src/a.ts', additions: 1, deletions: 0, changes: 1, patch: '@@ -1 +1 @@\n+1' },
     ];
@@ -72,13 +77,16 @@ describe('enrich include_patch flag behavior', () => {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'evt-'));
     const file = path.join(tmp, 'pr.json');
     fs.writeFileSync(file, JSON.stringify(makePullRequestEvent()));
-    const { output } = await handleEnrich({ in: file, labels: [], rules: undefined, flags: { include_patch: 'false' }, octokit, });
+    const { output } = await handleEnrich({ in: file, labels: [], rules: undefined, flags: { include_patch: 'false', use_github: 'true' }, octokit, });
     const files = (output.enriched as any)?.github?.pr?.files || [];
     expect(files.length).toBe(1);
     expect(files[0].patch).toBeUndefined();
+    if (prev === undefined) delete process.env.A5C_AGENT_GITHUB_TOKEN; else process.env.A5C_AGENT_GITHUB_TOKEN = prev
   });
 
   it('applies include_patch flag for push files (compare API)', async () => {
+    const prev = process.env.A5C_AGENT_GITHUB_TOKEN
+    process.env.A5C_AGENT_GITHUB_TOKEN = 'test-token'
     const compareFiles = [
       { filename: 'src/b.ts', additions: 1, deletions: 0, changes: 1, patch: '@@ -1 +1 @@\n+1' },
     ];
@@ -88,7 +96,7 @@ describe('enrich include_patch flag behavior', () => {
     let tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'evt-'));
     let file = path.join(tmp, 'push.json');
     fs.writeFileSync(file, JSON.stringify(makePushEvent()));
-    let { output } = await handleEnrich({ in: file, labels: [], rules: undefined, flags: { include_patch: 'true' }, octokit, });
+    let { output } = await handleEnrich({ in: file, labels: [], rules: undefined, flags: { include_patch: 'true', use_github: 'true' }, octokit, });
     let files = (output.enriched as any)?.github?.push?.files || [];
     expect(files[0].patch).toBeDefined();
 
@@ -96,8 +104,9 @@ describe('enrich include_patch flag behavior', () => {
     tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'evt-'));
     file = path.join(tmp, 'push.json');
     fs.writeFileSync(file, JSON.stringify(makePushEvent()));
-    ;({ output } = await handleEnrich({ in: file, labels: [], rules: undefined, flags: { include_patch: 'false' }, octokit, }));
+    ;({ output } = await handleEnrich({ in: file, labels: [], rules: undefined, flags: { include_patch: 'false', use_github: 'true' }, octokit, }));
     files = (output.enriched as any)?.github?.push?.files || [];
     expect(files[0].patch).toBeUndefined();
+    if (prev === undefined) delete process.env.A5C_AGENT_GITHUB_TOKEN; else process.env.A5C_AGENT_GITHUB_TOKEN = prev
   });
 });

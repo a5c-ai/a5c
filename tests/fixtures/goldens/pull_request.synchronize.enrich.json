@@ -74,11 +74,7 @@
     "github": {
       "provider": "github",
       "partial": true,
-      "errors": [
-        {
-          "message": "GitHub token is required"
-        }
-      ]
+      "reason": "github_enrich_disabled"
     },
     "metadata": {},
     "derived": {

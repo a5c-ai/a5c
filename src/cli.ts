@@ -55,13 +55,17 @@ program
   .option('--label <key=value...>', 'labels to attach', collectKeyValue, [])
   .action(async (cmdOpts: any) => {
     const cfg = loadConfig()
-    void cfg // currently unused but reserved for future needs
+    void cfg
     const labels = Object.entries(cmdOpts.label || {}).map(([k, v]) => `${k}=${v}`)
-    const { code, output } = await cmdNormalize({
+    const { code, output, errorMessage } = await cmdNormalize({
       in: cmdOpts.in,
       source: cmdOpts.source,
       labels,
     })
+    if (code !== 0 || !output) {
+      if (errorMessage) process.stderr.write(errorMessage + '\n')
+      return process.exit(code || 1)
+    }
     if (cmdOpts.validate) {
       const { validateNE, formatAjvErrors } = await import('./validate.js')
       const ok = await validateNE(output)
@@ -75,8 +79,7 @@ program
     const { selectFields, parseFilter, passesFilter } = await import('./utils/selectFilter.js')
     const filterSpec = parseFilter(cmdOpts.filter)
     if (!passesFilter(output as any, filterSpec)) {
-      // filtered out: no output, exit code 2
-      process.exit(2)
+      return process.exit(2)
     }
     const selected = cmdOpts.select ? selectFields(output as any, String(cmdOpts.select).split(',').map((s) => s.trim()).filter(Boolean)) : output
     const safe = redactObject(selected)
@@ -87,7 +90,7 @@ program
       process.stderr.write(String(e?.message || e) + '\n')
       return process.exit(1)
     }
-    process.exit(code)
+    process.exit(0)
   })
 
 program
@@ -106,12 +109,16 @@ program
     const flags = { ...(cmdOpts.flag || {}) }
     if (cmdOpts.useGithub || cmdOpts['use-github']) flags.use_github = 'true'
     const labels = Object.entries(cmdOpts.label || {}).map(([k, v]) => `${k}=${v}`)
-    const { code, output } = await cmdEnrich({
+    const { code, output, errorMessage } = await cmdEnrich({
       in: cmdOpts.in,
       labels,
       rules: cmdOpts.rules,
       flags,
     })
+    if (code !== 0 || !output) {
+      if (errorMessage) process.stderr.write(errorMessage + '\n')
+      return process.exit(code || 1)
+    }
     if (cmdOpts.validate) {
       const { validateNE, formatAjvErrors } = await import('./validate.js')
       const ok = await validateNE(output)
@@ -124,7 +131,7 @@ program
     const { selectFields, parseFilter, passesFilter } = await import('./utils/selectFilter.js')
     const filterSpec = parseFilter(cmdOpts.filter)
     if (!passesFilter(output as any, filterSpec)) {
-      process.exit(2)
+      return process.exit(2)
     }
     const selected = cmdOpts.select ? selectFields(output as any, String(cmdOpts.select).split(',').map((s) => s.trim()).filter(Boolean)) : output
     const safe = redactObject(selected)
@@ -135,7 +142,7 @@ program
       process.stderr.write(String(e?.message || e) + '\n')
       return process.exit(1)
     }
-    process.exit(code)
+    process.exit(0)
   })
 
 program.parseAsync(process.argv)
