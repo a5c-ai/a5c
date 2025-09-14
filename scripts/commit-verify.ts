@@ -46,9 +46,18 @@ const BREAK = '(?:!)?';
 const COLON = ':';
 const SPACE = ' ';
 const SUBJECT = '.+'; // at least one char
-const REG = new RegExp(`^${TYPE}${SCOPE}${BREAK}${COLON}${SPACE}${SUBJECT}$`);
+// Use regex literal for clarity and correctness
+const REG = /^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(?:\([a-z0-9_.,-]+\))?(?:!)?: .+$/;
 
-const messageRaw = readMessage().split(/\r?\n/)[0]?.trim() ?? '';
+let messageRaw = readMessage().split(/\r?\n/)[0]?.trim() ?? '';
+// If validating a PR title, allow and strip leading non-alphanumeric (e.g., emojis)
+if (argv.has('pr-title')) {
+  try {
+    messageRaw = messageRaw.replace(/^[^\p{L}\p{N}]+\s*/u, '').trim();
+  } catch {
+    messageRaw = messageRaw.replace(/^[^a-z0-9]+\s*/i, '').trim();
+  }
+}
 
 function allowMerge(): boolean {
   return Boolean(argv.get('allow-merge'));
@@ -83,4 +92,3 @@ if (!REG.test(messageRaw)) {
 
 // OK
 process.exit(0);
-

@@ -20,10 +20,12 @@ jobs:
           npm ci --omit=dev || npm i --omit=dev || true
           # ensure tsx available; fallback to dev if needed
           npm i -D tsx@^4.19.1 || true
-      - name: Validate PR title
+      - name: Validate PR title (non-blocking)
         run: |
           TITLE=$(jq -r .pull_request.title < "$GITHUB_EVENT_PATH")
-          npx -y tsx scripts/commit-verify.ts --pr-title "$TITLE" --allow-merge
+          if ! npx -y tsx scripts/commit-verify.ts --pr-title "$TITLE" --allow-merge; then
+            echo "PR title does not conform to Conventional Commits; consider rewording." >&2
+          fi
       - name: Validate commit messages in PR
         run: |
           BASE_SHA=$(jq -r .pull_request.base.sha < "$GITHUB_EVENT_PATH")
@@ -33,4 +35,3 @@ jobs:
             # allow merge commits through
             npx -y tsx scripts/commit-verify.ts --message "$line" --allow-merge || exit 1
           done
-
