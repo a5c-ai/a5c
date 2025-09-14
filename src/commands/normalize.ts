@@ -28,9 +28,16 @@ export async function cmdNormalize(opts: {
 
 // Programmatic API used by src/normalize.ts compatibility re-export
 export async function runNormalize(opts: { in?: string; source?: string; labels?: string[] }): Promise<{ code: number; output: NormalizedEvent }>{
-  const payload = readJSONFile<any>(opts.in) || {}
-  const output = githubProvider.normalize(payload, { source: opts.source, labels: opts.labels })
-  return { code: 0, output }
+  if (!opts.in) {
+    return { code: 2, output: { id: 'error', provider: 'github', type: 'error', occurred_at: new Date().toISOString(), payload: {}, labels: opts.labels, provenance: { source: opts.source }, enriched: { metadata: { error: 'missing --in' } } } as any }
+  }
+  try {
+    const payload = readJSONFile<any>(opts.in) || {}
+    const output = githubProvider.normalize(payload, { source: opts.source, labels: opts.labels })
+    return { code: 0, output }
+  } catch (e: any) {
+    return { code: 2, output: { id: 'error', provider: 'github', type: 'error', occurred_at: new Date().toISOString(), payload: {}, labels: opts.labels, provenance: { source: opts.source }, enriched: { metadata: { error: String(e?.message || e) } } } as any }
+  }
 }
 
 // Backward/CLI adapter name expected by src/cli.ts
