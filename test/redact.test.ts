@@ -29,4 +29,16 @@ describe('redaction', () => {
     const got = redactEnv(input)
     expect(got).toEqual({ STRIPE_SECRET_KEY: 'REDACTED', NORMAL: 'x' })
   })
+
+  it('masks representative fixture payload values', () => {
+    const json = JSON.parse(
+      require('node:fs').readFileSync('tests/fixtures/redaction/sample-with-secrets.json', 'utf8')
+    )
+    const got = redactObject(json)
+    const s = JSON.stringify(got)
+    expect(s).toContain('REDACTED')
+    expect(s).not.toContain('ghp_123456')
+    expect(s).not.toContain('Bearer abcdef')
+    expect(s).not.toContain('user:pass@')
+  })
 })
