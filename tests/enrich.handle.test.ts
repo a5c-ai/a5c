@@ -21,16 +21,9 @@ describe('handleEnrich integrates enrichGithubEvent', () => {
     }
     const tmp = require('node:os').tmpdir() + '/event-pr.json'
     require('node:fs').writeFileSync(tmp, JSON.stringify(baseEvent))
-<<<<<<< HEAD
     const { output } = await handleEnrich({ in: tmp, flags: { use_github: true, include_patch: false }, octokit: mock })
     expect(output.enriched?.github?.pr?.number).toBe(1)
     expect(output.enriched?.github?.pr?.files?.[0]?.patch).toBeUndefined()
     if (prev === undefined) delete process.env.A5C_AGENT_GITHUB_TOKEN; else process.env.A5C_AGENT_GITHUB_TOKEN = prev
-=======
-    const { output } = await handleEnrich({ in: tmp, flags: { use_github: true, include_patch: false }, octokit: mock })
-    expect(output.enriched?.github?.pr?.number).toBe(1)
-    expect(output.enriched?.github?.pr?.files?.[0]?.patch).toBeUndefined()
-    if (prev === undefined) delete process.env.A5C_AGENT_GITHUB_TOKEN; else process.env.A5C_AGENT_GITHUB_TOKEN = prev
->>>>>>> origin/a5c/main
   })
 })
