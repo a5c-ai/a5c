@@ -1,8 +1,8 @@
 {
-  "id": "1234567890",
+  "id": "<id>",
   "provider": "github",
   "type": "workflow_run",
-  "occurred_at": "2025-09-13T10:44:59.000Z",
+  "occurred_at": "<iso-8601>",
   "payload": {
     "action": "completed",
     "workflow_run": {
@@ -14,10 +14,10 @@
       "status": "completed",
       "conclusion": "success",
       "head_branch": "a5c/main",
-      "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "head_sha": "<sha>",
       "pull_requests": [],
-      "created_at": "2025-09-13T10:40:00Z",
-      "updated_at": "2025-09-13T10:44:59Z",
+      "created_at": "<iso-8601>",
+      "updated_at": "<iso-8601>",
       "html_url": "https://github.com/a5c-ai/events/actions/runs/1234567890",
       "url": "https://api.github.com/repos/a5c-ai/events/actions/runs/1234567890",
       "repository": {
@@ -50,7 +50,7 @@
       "partial": true,
       "errors": [
         {
-          "message": "Cannot find module '/home/runner/work/events/events/dist/enrichGithubEvent.js' imported from /home/runner/work/events/events/dist/enrich.js"
+          "message": "GitHub token is required"
         }
       ]
     },

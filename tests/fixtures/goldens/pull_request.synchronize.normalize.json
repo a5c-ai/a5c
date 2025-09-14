@@ -2,7 +2,7 @@
   "id": "62",
   "provider": "github",
   "type": "pull_request",
-  "occurred_at": "2025-09-14T00:44:06.549Z",
+  "occurred_at": "<iso-8601>",
   "payload": {
     "action": "synchronize",
     "number": 62,
@@ -14,11 +14,11 @@
       "mergeable_state": "dirty",
       "base": {
         "ref": "a5c/main",
-        "sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        "sha": "<sha>"
       },
       "head": {
         "ref": "feat/samples-fixtures-issue48",
-        "sha": "cccccccccccccccccccccccccccccccccccccccc"
+        "sha": "<sha>"
       },
       "labels": [
         {

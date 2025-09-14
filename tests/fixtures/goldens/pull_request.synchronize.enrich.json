@@ -1,8 +1,8 @@
 {
-  "id": "temp-yy7nbw0k9hi",
+  "id": "<id>",
   "provider": "github",
   "type": "pull_request",
-  "occurred_at": "2025-09-14T00:44:06.631Z",
+  "occurred_at": "<iso-8601>",
   "payload": {
     "action": "synchronize",
     "number": 62,
@@ -14,11 +14,11 @@
       "mergeable_state": "dirty",
       "base": {
         "ref": "a5c/main",
-        "sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        "sha": "<sha>"
       },
       "head": {
         "ref": "feat/samples-fixtures-issue48",
-        "sha": "cccccccccccccccccccccccccccccccccccccccc"
+        "sha": "<sha>"
       },
       "labels": [
         {
@@ -59,7 +59,7 @@
       "partial": true,
       "errors": [
         {
-          "message": "Cannot find module '/home/runner/work/events/events/dist/enrichGithubEvent.js' imported from /home/runner/work/events/events/dist/enrich.js"
+          "message": "GitHub token is required"
         }
       ]
     },

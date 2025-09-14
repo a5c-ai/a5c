@@ -1,8 +1,8 @@
 {
-  "id": "3288098509",
+  "id": "<id>",
   "provider": "github",
   "type": "issue_comment",
-  "occurred_at": "2025-09-13T11:00:31Z",
+  "occurred_at": "<iso-8601>",
   "payload": {
     "action": "created",
     "issue": {
@@ -21,7 +21,7 @@
         "id": 1934369,
         "type": "User"
       },
-      "created_at": "2025-09-13T11:00:31Z"
+      "created_at": "<iso-8601>"
     },
     "repository": {
       "id": 1055826069,

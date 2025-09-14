@@ -7,7 +7,7 @@ import { stable } from './helpers/snapshot.js'
 const GOLDENS_DIR = path.resolve('tests/fixtures/goldens')
 
 async function run(sample: string) {
-  const { output } = await handleEnrich({ in: sample, labels: ['env=test'], rules: undefined, flags: {} })
+  const { output } = await handleEnrich({ in: sample, labels: [], rules: undefined, flags: {} })
   return stable(output)
 }
 
@@ -33,4 +33,3 @@ describe('golden enrich', () => {
     })
   }
 })
-

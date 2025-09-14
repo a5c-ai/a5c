@@ -7,7 +7,7 @@ import { stable } from './helpers/snapshot.js'
 const GOLDENS_DIR = path.resolve('tests/fixtures/goldens')
 
 async function run(sample: string) {
-  const { output } = await handleNormalize({ in: sample, source: 'cli', labels: ['env=test'] })
+  const { output } = await handleNormalize({ in: sample, source: 'cli' })
   return stable(output)
 }
 
@@ -33,4 +33,3 @@ describe('golden normalize', () => {
     })
   }
 })
-

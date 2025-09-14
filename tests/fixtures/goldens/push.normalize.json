@@ -1,12 +1,12 @@
 {
-  "id": "2222222222222222222222222222222222222222",
+  "id": "<sha>",
   "provider": "github",
   "type": "push",
-  "occurred_at": "2025-09-14T00:44:06.716Z",
+  "occurred_at": "<iso-8601>",
   "payload": {
     "ref": "refs/heads/a5c/main",
-    "before": "1111111111111111111111111111111111111111",
-    "after": "2222222222222222222222222222222222222222",
+    "before": "<sha>",
+    "after": "<sha>",
     "repository": {
       "id": 1055826069,
       "name": "events",
@@ -27,26 +27,26 @@
     "forced": false,
     "commits": [
       {
-        "id": "2222222222222222222222222222222222222222",
+        "id": "<sha>",
         "message": "chore: update docs",
-        "timestamp": "2025-09-13T10:45:00Z",
+        "timestamp": "<iso-8601>",
         "author": "REDACTED"
       },
       {
-        "id": "3333333333333333333333333333333333333333",
+        "id": "<sha>",
         "message": "feat: add samples @developer-agent",
-        "timestamp": "2025-09-13T10:46:00Z",
+        "timestamp": "<iso-8601>",
         "author": "REDACTED"
       },
       {
-        "id": "4444444444444444444444444444444444444444",
+        "id": "<sha>",
         "message": "fix: CI tweaks",
-        "timestamp": "2025-09-13T10:47:00Z",
+        "timestamp": "<iso-8601>",
         "author": "REDACTED"
       }
     ],
     "head_commit": {
-      "id": "2222222222222222222222222222222222222222",
+      "id": "<sha>",
       "message": "chore: update docs"
     }
   },
@@ -63,7 +63,7 @@
   "ref": {
     "name": "a5c/main",
     "type": "branch",
-    "sha": "2222222222222222222222222222222222222222"
+    "sha": "<sha>"
   },
   "actor": {
     "id": 221166651,
