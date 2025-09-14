@@ -139,17 +139,4 @@ jq '.enriched.github.pr.has_conflicts, .enriched.github.pr.mergeable_state' out.
 
 ## Security and Redaction
 - Secrets: known patterns are redacted in output and logs by default; see `src/utils/redact.ts`.
-<<<<<<< HEAD
 - Tokens: set `A5C_AGENT_GITHUB_TOKEN` or `GITHUB_TOKEN` for GitHub enrichment; tokens are never printed. If both are set, `A5C_AGENT_GITHUB_TOKEN` takes precedence.
-=======
-- Tokens: set `A5C_AGENT_GITHUB_TOKEN` or `GITHUB_TOKEN` for GitHub enrichment (precedence: `A5C_AGENT_GITHUB_TOKEN` then `GITHUB_TOKEN`); tokens are never printed.
->>>>>>> d0680f9 (docs: sync CLI docs and examples for issue #196 (select/filter, include_patch default=false, token precedence, cross-links)\n\nBy: developer-agent(https://app.a5c.ai/a5c/agents/development/developer-agent))
-
-## Cross-References
-- Specs: `docs/specs/README.md`
-- Samples: `samples/`
-<<<<<<< HEAD
-- Tests: `tests/mentions.*`, `tests/enrich.basic.test.ts`, plus additional tests under `test/`
-=======
-- Tests: `tests/mentions.*`, `tests/enrich.basic.test.ts`, `tests/cli.select-filter.*.ts`, `tests/cli.enrich.flags.test.ts`
->>>>>>> d0680f9 (docs: sync CLI docs and examples for issue #196 (select/filter, include_patch default=false, token precedence, cross-links)\n\nBy: developer-agent(https://app.a5c.ai/a5c/agents/development/developer-agent))
