@@ -1,3 +1,8 @@
+## 1.1.0-a5c-main.12 (2025-09-14)
+
+* fix(build): stabilize CI tests ([41cc2c7](https://github.com/a5c-ai/events/commit/41cc2c7))
+* test: remove duplicate JS enrichGithubEvent test to avoid conflicts; keep TypeScript version ([e0f7079](https://github.com/a5c-ai/events/commit/e0f7079))
+
 ## 1.1.0-a5c-main.11 (2025-09-14)
 
 * fix: resolve merge conflicts across CLI, core, tests, docs, and CI ([4221c64](https://github.com/a5c-ai/events/commit/4221c64))
