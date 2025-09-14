@@ -36,7 +36,8 @@ export async function runNormalize(opts: { in?: string; source?: string; labels?
     const output = githubProvider.normalize(payload, { source: opts.source, labels: opts.labels })
     return { code: 0, output }
   } catch (e: any) {
-    return { code: 2, output: { id: 'error', provider: 'github', type: 'error', occurred_at: new Date().toISOString(), payload: {}, labels: opts.labels, provenance: { source: opts.source }, enriched: { metadata: { error: String(e?.message || e) } } } as any }
+    const msg = String(e?.message || e)
+    return { code: 2, output: { id: 'error', provider: 'github', type: 'error', occurred_at: new Date().toISOString(), payload: {}, labels: opts.labels, provenance: { source: opts.source }, error: msg, enriched: { metadata: { error: msg } } } as any }
   }
 }
 
