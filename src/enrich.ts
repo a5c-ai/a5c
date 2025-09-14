@@ -176,7 +176,7 @@ export async function handleEnrich(opts: {
       }
     }
   } catch {}
-    }
+  
   const output: NormalizedEvent = {
     ...(neShell as any),
     enriched: {
