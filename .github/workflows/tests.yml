@@ -44,11 +44,18 @@ jobs:
           name: coverage-lcov
           path: |
             coverage/lcov.info
-      - name: Coverage summary (enforce thresholds)
+      - name: Coverage summary (compute and save)
+        id: coverage
         if: always()
         run: |
+          set -euo pipefail
           node --version
-          node scripts/coverage-summary.ts | tee /tmp/coverage-summary.md || true
+          # Run the summary script and capture its exit code without failing this step
+          set +e
+          node scripts/coverage-summary.js | tee /tmp/coverage-summary.md
+          rc=$?
+          set -e
+          echo "status=$rc" >> "$GITHUB_OUTPUT"
       - name: Comment coverage on PR
         if: ${{ github.event_name == 'pull_request' }}
         env:
@@ -72,3 +79,8 @@ jobs:
               repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments \
               -f body@"$body_file"
           fi
+      - name: Enforce coverage thresholds
+        if: ${{ steps.coverage.outputs.status != '0' }}
+        run: |
+          echo "Coverage thresholds not met"
+          exit 1
