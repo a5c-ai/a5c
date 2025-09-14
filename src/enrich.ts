@@ -1,3 +1,4 @@
+/* conflict resolved by conflict-resolver-agent */
 import type { NormalizedEvent, Mention } from './types.js'
 import { readJSONFile, loadConfig } from './config.js'
 import { extractMentions } from './extractor.js'
@@ -286,3 +287,4 @@ function toInt(v: any, d = 0): number {
   const n = Number(v)
   return Number.isFinite(n) ? n : d
 }
+// Note: keep the full handleEnrich implementation for compatibility

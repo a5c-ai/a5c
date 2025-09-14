@@ -102,6 +102,32 @@ Without network calls (mentions only):
 events enrich --in samples/push.json --out out.json
 jq '.enriched.mentions' out.json
 ```
+### `events validate`
+Validate a JSON document against the NE JSON Schema.
+
+Usage:
+```bash
+events validate [--in FILE | < stdin ] [--schema FILE] [--quiet]
+```
+
+- `--in FILE`: JSON input file (reads from stdin if omitted)
+- `--schema FILE`: schema path (defaults to `docs/specs/ne.schema.json`)
+- `--quiet`: print nothing on success; still exits with code 0
+
+Examples:
+```bash
+# Validate normalized output from a sample
+events normalize --in samples/push.json | events validate --quiet
+
+# Validate a file explicitly
+events validate --in out.json --schema docs/specs/ne.schema.json
+```
+
+Exit codes:
+- 0: valid
+- 2: schema validation failed (invalid)
+- 1: other error (I/O, JSON parse)
+
 ## Global Options
 - `--help`: show command help
 - `--version`: print version
@@ -117,6 +143,7 @@ jq '.enriched.mentions' out.json
 - Redaction: CLI redacts known secret patterns and sensitive keys in output by default (see `src/utils/redact.ts`).
   - Sensitive keys include: `token`, `secret`, `password`, `passwd`, `pwd`, `api_key`, `apikey`, `key`, `client_secret`, `access_token`, `refresh_token`, `private_key`, `ssh_key`, `authorization`, `auth`, `session`, `cookie`, `webhook_secret`.
   - Pattern masking includes (non-exhaustive): GitHub PATs (`ghp_`, `gho_`, `ghu_`, `ghs_`, `ghe_`), JWTs, `Bearer ...` headers, AWS `AKIA...`/`ASIA...` keys, Stripe `sk_live_`/`sk_test_`, Slack `xox...` tokens, and URL basic auth (`https://user:pass@host`).
+
 - Tests: See `test/config.loadConfig.test.ts`, `test/redact.test.ts`, `test/enrich.redaction.test.ts`, `test/config.precedence.test.ts`, and additional cases under `tests/` for coverage and regression fixtures.
 - Large payloads: JSON is read/written from files/stdin/stdout; providers may add streaming in future.
 
