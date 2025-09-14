@@ -15,5 +15,12 @@ describe('mentions extractor - PR body', () => {
     expect(names).toContain('team/platform');
     expect(out.every((m) => m.context.length > 0)).toBe(true);
   });
-});
 
+  it('extracts from PR title as pr_title source (issue #250)', () => {
+    const title = 'Fix: pipeline – thanks @developer-agent';
+    const out = extractMentions(title, 'pr_title', { knownAgents: ['developer-agent'] });
+    const names = out.map((m) => m.normalized_target)
+    expect(names).toContain('developer-agent')
+    expect(out.some((m) => m.source === 'pr_title')).toBe(true)
+  })
+});

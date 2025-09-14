@@ -37,4 +37,3 @@ describe('CLI --validate integration', () => {
     expect(res.errors.length).toBeGreaterThan(0)
   })
 })
-

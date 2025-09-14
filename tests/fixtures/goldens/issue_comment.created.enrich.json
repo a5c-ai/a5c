@@ -1,7 +1,7 @@
 {
   "id": "<id>",
   "provider": "github",
-  "type": "commit",
+  "type": "issue_comment",
   "occurred_at": "<iso-8601>",
   "payload": {
     "action": "created",
@@ -39,11 +39,22 @@
   "provenance": {
     "source": "cli"
   },
+  "repo": {
+    "id": 1055826069,
+    "name": "events",
+    "full_name": "a5c-ai/events",
+    "private": true
+  },
+  "actor": {
+    "id": 1934369,
+    "login": "tmuskal",
+    "type": "User"
+  },
   "enriched": {
     "github": {
       "provider": "github",
-      "skipped": true,
-      "reason": "flag:not_set"
+      "partial": true,
+      "reason": "github_enrich_disabled"
     },
     "metadata": {},
     "derived": {

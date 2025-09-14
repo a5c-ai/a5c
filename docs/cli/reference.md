@@ -94,10 +94,17 @@ events enrich --in samples/pull_request.synchronize.json \
 # With rules (composed events)
 events enrich --in samples/pull_request.synchronize.json \
   --rules samples/rules/conflicts.yml \
-  | jq '[.composed[] | {key, reason}]'
+  | jq '(.composed // []) | map({key, reason})'
+
+Note:
+- `.composed` may be absent or `null` when no rules match. Guard with `(.composed // [])` as above.
+- The `reason` field may be omitted depending on rule configuration. See specs §6.1 for composed events structure: `docs/specs/README.md#61-rule-engine-and-composed-events`.
 - Token precedence: runtime prefers `A5C_AGENT_GITHUB_TOKEN` over `GITHUB_TOKEN` when both are set (see `src/config.ts`).
 - Redaction: CLI redacts sensitive keys and common secret patterns in output by default (see `src/utils/redact.ts`).
 ```
+
+Outputs:
+- When enriching a PR with `--use-github`, the CLI exposes per-file owners under `enriched.github.pr.owners` and the deduplicated, sorted union of all CODEOWNERS across changed files under `enriched.github.pr.owners_union`.
 
 Without network calls (mentions only):
 ```bash

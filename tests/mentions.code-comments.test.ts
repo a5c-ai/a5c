@@ -12,9 +12,9 @@ function mkOctokitWithFiles(map: Record<string, string | { content: string; enco
           const b = Buffer.from(val, 'utf8').toString('base64');
           return { data: { content: b, encoding: 'base64', size: Buffer.byteLength(val) } } as any;
         }
-        const enc = val.encoding || 'base64';
+        const enc = (val.encoding || 'base64') as (BufferEncoding | 'base64');
         const content = val.content;
-        const size = val.size ?? Buffer.byteLength(content, enc === 'base64' ? 'utf8' : enc);
+        const size = val.size ?? Buffer.byteLength(content, (enc === 'base64' ? 'utf8' : enc) as BufferEncoding);
         const payload = enc === 'base64' ? { content: Buffer.from(content, 'utf8').toString('base64'), encoding: 'base64', size } : { content, encoding: enc, size };
         return { data: payload } as any;
       }
@@ -70,10 +70,10 @@ export const a = 1; // cc @someone
 `;
     const octokit = mkOctokitWithFiles({ 'src/a.js': js, 'src/b.ts': ts });
     const out = await scanCodeCommentsForMentions({ owner: 'o', repo: 'r', ref: 'sha', files: [{ filename: 'src/a.js' }, { filename: 'src/b.ts' }], octokit, options: { languageFilters: ['js', 'ts'] } });
-    const locs = out.map(m => m.location);
+    const locs = out.map(m => (typeof m.location === 'string' ? m.location : (m.location as any)?.file));
     expect(locs).toContain('src/a.js:2');
-    expect(locs.some(l => l?.startsWith('src/a.js:'))).toBe(true);
-    expect(locs.some(l => l?.startsWith('src/b.ts:'))).toBe(true);
+    expect(locs.some(l => typeof l === 'string' && l.startsWith('src/a.js:'))).toBe(true);
+    expect(locs.some(l => typeof l === 'string' && l.startsWith('src/b.ts:'))).toBe(true);
     const sources = new Set(out.map(m => m.source));
     expect(sources.has('code_comment')).toBe(true);
   });
@@ -98,7 +98,7 @@ export const a = 1; // cc @someone
 describe('enrich() integration — uses patch content for changed files', () => {
   it('adds code_comment mentions from PR files when patch includes comment with @mention', async () => {
     const patch = `diff --git a/x.ts b/x.ts\n@@\n+ // @researcher-base-agent please review\n+ export const x = 1;`;
-    const out = scanMentionsInCodeComments({ content: patch.split('\n').map(l => l.startsWith('+') ? l.slice(1) : l).join('\n'), filename: 'x.ts' });
+    const out = scanMentionsInCodeComments({ content: patch.split('\n').map((l: string) => l.startsWith('+') ? l.slice(1) : l).join('\n'), filename: 'x.ts' });
     const names = out.map(m => m.normalized_target);
     expect(names).toContain('researcher-base-agent');
   });
