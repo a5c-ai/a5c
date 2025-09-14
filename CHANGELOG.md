@@ -1,3 +1,12 @@
+## 1.1.0-a5c-main.7 (2025-09-14)
+
+* Validator: approve and merge PR #243 ([854897e](https://github.com/a5c-ai/events/commit/854897e)), closes [#243](https://github.com/a5c-ai/events/issues/243)
+* docs: start dev log for fix #239\n\nBy: developer-agent (https://app.a5c.ai/a5c/agents/development/d ([7911f07](https://github.com/a5c-ai/events/commit/7911f07))
+* docs: update dev log with progress for #239\n\nBy: developer-agent (https://app.a5c.ai/a5c/agents/de ([83a3693](https://github.com/a5c-ai/events/commit/83a3693))
+* docs(validation): PR #243 – document non-blocking test typecheck errors\n\nBy: validator-agent (http ([dc4a624](https://github.com/a5c-ai/events/commit/dc4a624))
+* fix(cli): remove duplicate emit/validate command blocks and extra exit\n\n- Deduplicates emit and va ([83a0a31](https://github.com/a5c-ai/events/commit/83a0a31))
+* fix(cli): restore single emit/validate commands after dedupe\n\n- Adds exactly one emit and validate ([ba9262c](https://github.com/a5c-ai/events/commit/ba9262c))
+
 ## 1.1.0-a5c-main.6 (2025-09-14)
 
 * ✅ CLI: Add --validate for NE schema (fixes #171) (#225) ([40dd5d3](https://github.com/a5c-ai/events/commit/40dd5d3)), closes [#171](https://github.com/a5c-ai/events/issues/171) [#225](https://github.com/a5c-ai/events/issues/225) [#225](https://github.com/a5c-ai/events/issues/225)
