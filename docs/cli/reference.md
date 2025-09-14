@@ -93,6 +93,32 @@ events enrich --in samples/pull_request.synchronize.json \
   | jq '[.composed[] | {key, reason}]'
 ```
 
+### `events validate`
+Validate a JSON document against the NE JSON Schema.
+
+Usage:
+```bash
+events validate [--in FILE | < stdin ] [--schema FILE] [--quiet]
+```
+
+- `--in FILE`: JSON input file (reads from stdin if omitted)
+- `--schema FILE`: schema path (defaults to `docs/specs/ne.schema.json`)
+- `--quiet`: print nothing on success; still exits with code 0
+
+Examples:
+```bash
+# Validate normalized output from a sample
+events normalize --in samples/push.json | events validate --quiet
+
+# Validate a file explicitly
+events validate --in out.json --schema docs/specs/ne.schema.json
+```
+
+Exit codes:
+- 0: valid
+- 2: schema validation failed (invalid)
+- 1: other error (I/O, JSON parse)
+
 ## Global Options
 - `--help`: show command help
 - `--version`: print version
