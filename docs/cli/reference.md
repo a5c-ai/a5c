@@ -1,91 +1,96 @@
 ---
 title: CLI Reference
-description: Commands, flags, and examples for the Events CLI (`normalize`, `enrich`).
+description: Commands, flags, and examples for the Events CLI (`mentions`, `normalize`, `enrich`).
 ---
 
 # CLI Reference
 
-The CLI transforms provider payloads into a Normalized Event (NE) and optionally enriches with repository context.
+The CLI transforms provider payloads into a Normalized Event (NE) and can enrich with repository context. Implemented with `commander` (see `src/cli.ts`).
 
 ## Commands
 
 ### `events mentions`
-Extract `@mentions` from text (stdin) or a file.
+Extract `@mentions` from text.
 
 Usage:
 ```bash
-events mentions [--file FILE] [--source KIND] [--window N] [--known-agent NAME...]
+events mentions [--file FILE] [--source <kind>] [--window N] [--known-agent NAME...]
 ```
 
-- `--source KIND`: mention source kind (e.g., `pr_body`, `commit_message`) [default: `pr_body`]
-- `--file FILE`: read from file instead of stdin
-- `--window N`: context window size around mentions [default: `30`]
+- `--file FILE`: optional path to read text; defaults to stdin
+- `--source <kind>`: where text came from, e.g. `pr_body`, `pr_title`, `commit_message` (default: `pr_body`)
+- `--window N`: context window size for excerpts (default: 30)
 - `--known-agent NAME...`: known agent names to boost confidence
 
-Examples:
+Example:
 ```bash
-echo "Ping @developer-agent" | events mentions --source issue_comment | jq -r '.[].normalized_target'
+events mentions --file README.md --source pr_body --known-agent developer-agent validator-agent
 ```
 
 ### `events normalize`
-Normalize a raw event payload into the NE schema.
+Normalize a raw provider payload into the NE schema.
 
 Usage:
 ```bash
-events normalize [--in FILE] [--out FILE] [--source NAME] [--label KEY=VAL...]
+events normalize [--in FILE] [--out FILE] [--source <actions|webhook|cli>] [--label KEY=VAL...]
 ```
 
 - `--in FILE`: path to a JSON webhook payload
 - `--out FILE`: write result JSON (stdout if omitted)
-- `--source NAME`: provenance (`actions|webhook|cli`) [default: `cli`]
-- `--label KEY=VAL...`: attach labels (repeatable)
+- `--source <name>`: provenance source (default: `cli`)
+- `--label KEY=VAL...`: attach labels (repeatable as `--label a=1 --label b=2`)
 
-Examples:
+Example:
 ```bash
-events normalize --in samples/workflow_run.completed.json | jq '.type, .repo.full_name'
+events normalize --in samples/workflow_run.completed.json --out out.json --label env=staging
 ```
 
+Note: previously documented `--select`/`--filter` are not implemented yet. Use `jq` to post-process output.
+
 ### `events enrich`
-Enrich a previously normalized event with repository and provider metadata.
+Enrich a normalized event (or raw GitHub payload) with repository and provider metadata.
 
 Usage:
 ```bash
-events enrich --in FILE [--out FILE] [--rules FILE] [--flag KEY=VAL...] [--use-github] [--label KEY=VAL...]
+events enrich --in FILE [--out FILE] [--rules FILE] \
+  [--flag KEY=VAL...] [--use-github] [--label KEY=VAL...]
 ```
 
-- `--in FILE`: normalized event input (from `normalize`) or raw provider payload
+- `--in FILE`: input JSON (normalized event or raw GitHub payload)
 - `--out FILE`: write result JSON (stdout if omitted)
-- `--rules FILE`: YAML/JSON rules file (optional)
-- `--flag KEY=VAL...`: enrichment flags (repeatable); notable flags:
-  - `include_patch`: include diff patches in files [default: `false`]
-  - `commit_limit`: max commits to include [default: `50`]
-  - `file_limit`: max files to include [default: `200`]
-- `--use-github`: enable GitHub API enrichment (requires `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`)
-- `--label KEY=VAL...`: attach labels
+- `--rules FILE`: path to rules file (YAML/JSON) recorded in `enriched.metadata.rules`
+- `--flag KEY=VAL...`: enrichment flags map recorded in `enriched.derived.flags`
+  - Recognized flags include:
+    - `include_patch=true|false` (default true) – include diff patches; when false, patches are removed
+    - `commit_limit=<n>` (default 50) – limit commits fetched for PR/push
+    - `file_limit=<n>` (default 200) – limit files per compare list
+    - `use_github=true|false` – enable GitHub API enrichment (also enabled via `--use-github`)
+- `--use-github`: convenience to set `use_github=true` (requires `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`)
+- `--label KEY=VAL...`: labels to attach
 
 Examples:
 ```bash
-export A5C_AGENT_GITHUB_TOKEN=...  # preferred if available; otherwise set GITHUB_TOKEN
+export GITHUB_TOKEN=...  # required for GitHub API lookups
 
-events enrich --in samples/pull_request.synchronize.json \
-  --use-github \
-  --flag include_patch=false \
-  | jq '.enriched.github.pr.mergeable_state'
+events enrich --in samples/pull_request.synchronize.json --use-github \
+  --flag include_patch=false --flag commit_limit=30 --out out.json
+jq '.enriched.github.pr.has_conflicts, .enriched.github.pr.mergeable_state' out.json
 ```
 
-## Global / Built-in Flags
+## Global Options
 - `--help`: show command help
 - `--version`: print version
 
 ## Exit Codes
-- `0`: success (commands exit with non-zero when errors occur)
+- `0`: success
+- Non-zero: errors (input/validation/provider). The CLI exits with the handler code.
 
-## Notes
-- Token precedence: runtime uses `A5C_AGENT_GITHUB_TOKEN` first, then `GITHUB_TOKEN` (see `src/config.ts`).
-- Redaction: CLI redacts known secret patterns and sensitive keys in output by default (see `src/utils/redact.ts`).
-  - Sensitive keys include: `token`, `secret`, `password`, `passwd`, `pwd`, `api_key`, `apikey`, `key`, `client_secret`, `access_token`, `refresh_token`, `private_key`, `ssh_key`, `authorization`, `auth`, `session`, `cookie`, `webhook_secret`.
-  - Pattern masking includes (non-exhaustive): GitHub PATs (`ghp_`, `gho_`, `ghu_`, `ghs_`, `ghe_`), JWTs, `Bearer ...` headers, AWS `AKIA...`/`ASIA...` keys, Stripe `sk_live_`/`sk_test_`, Slack `xox...` tokens, and URL basic auth (`https://user:pass@host`).
-- Tests: See `test/config.loadConfig.test.ts`, `test/redact.test.ts`, and `test/enrich.redaction.test.ts` for coverage and regression fixtures.
-- Large payloads: JSON is read/written from files/stdin/stdout; providers may add streaming in future.
+## Security and Redaction
+- Secrets: known patterns are redacted in output and logs by default; see `src/utils/redact.ts`.
+- Tokens: set `A5C_AGENT_GITHUB_TOKEN` or `GITHUB_TOKEN` for GitHub enrichment; tokens are never printed.
 
-See also: `docs/specs/README.md`.
+## Cross-References
+- Specs: `docs/specs/README.md`
+- Samples: `samples/`
+- Tests: `tests/mentions.*`, `tests/enrich.basic.test.ts`
+
