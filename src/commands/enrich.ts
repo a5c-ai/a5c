@@ -8,8 +8,15 @@ export async function cmdEnrich(opts: {
   rules?: string
   flags?: Record<string, string | boolean | number>
   octokit?: any
-}): Promise<{ code: number; output: NormalizedEvent }>{
-  const input = readJSONFile<any>(opts.in) || {}
+}): Promise<{ code: number; output?: NormalizedEvent; errorMessage?: string }>{
+  if (!opts.in) return { code: 2, errorMessage: 'Missing required --in FILE' }
+  let input: any
+  try {
+    input = readJSONFile<any>(opts.in) || {}
+  } catch (e: any) {
+    const msg = e?.code === 'ENOENT' ? `Input file not found: ${e?.path || opts.in}` : `Invalid JSON or read error: ${e?.message || e}`
+    return { code: 2, errorMessage: msg }
+  }
   const includePatch = toBool(opts.flags?.include_patch ?? true)
   const commitLimit = toInt(opts.flags?.commit_limit, 50)
   const fileLimit = toInt(opts.flags?.file_limit, 200)
@@ -38,7 +45,11 @@ export async function cmdEnrich(opts: {
   try {
     const mod: any = await import('../enrichGithubEvent.js')
     const fn = (mod.enrichGithubEvent || mod.default) as (e: any, o?: any) => Promise<any>
-    const enriched = await fn(baseEvent, { token, commitLimit, fileLimit, octokit: opts.octokit })
+    // Only call provider if explicitly requested via flags.use_github truthy
+    const useGithub = toBool((opts.flags as any)?.use_github)
+    const enriched = useGithub
+      ? await fn(baseEvent, { token, commitLimit, fileLimit, octokit: opts.octokit })
+      : { _enrichment: { provider: 'github', skipped: true } }
     githubEnrichment = enriched?._enrichment || {}
     if (!includePatch) {
       if (githubEnrichment.pr?.files) {
@@ -49,6 +60,11 @@ export async function cmdEnrich(opts: {
       }
     }
   } catch (e: any) {
+    // If provider was requested but failed, return provider error code 3
+    const useGithub = toBool((opts.flags as any)?.use_github)
+    if (useGithub) {
+      return { code: 3, errorMessage: `GitHub enrichment failed: ${e?.message || e}` }
+    }
     githubEnrichment = { provider: 'github', partial: true, errors: [{ message: String(e?.message || e) }] }
   }
 
