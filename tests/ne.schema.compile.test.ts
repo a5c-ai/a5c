@@ -10,7 +10,6 @@ function addFormats(ajv: any) {
 import fs from 'node:fs';
 // Ajv does not include the 2020-12 meta-schema automatically in some builds.
 // Add it explicitly so schemas with $schema: 2020-12 compile.
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore - path is valid in ajv package
 // Inline 2020-12 meta-schema to avoid ESM path issues in Vite
 const meta2020 = {

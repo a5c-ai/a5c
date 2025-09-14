@@ -40,7 +40,6 @@ async function run(sample: string, type: string) {
   expect(output.type).toBe(type)
   const ok = validate(output)
   if (!ok) {
-    // eslint-disable-next-line no-console
     console.error(validate.errors)
   }
   expect(ok).toBe(true)
