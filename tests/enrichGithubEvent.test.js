@@ -44,6 +44,8 @@ test('PR enrichment adds pr fields and owners', async () => {
   assert.equal(out._enrichment.pr.files.length, 2);
   assert.deepEqual(out._enrichment.pr.owners['src/a.js'], ['@team-a']);
   assert.deepEqual(out._enrichment.pr.owners['README.md'], ['@docs']);
+  // owners_union should include both teams, sorted
+  assert.deepEqual(out._enrichment.pr.owners_union, ['@docs','@team-a']);
   // labels and reviewers
   assert.deepEqual(out._enrichment.pr.labels, ['documentation','testing']);
   assert.deepEqual(out._enrichment.pr.requested_reviewers, ['alice']);

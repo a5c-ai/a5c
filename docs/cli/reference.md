@@ -99,6 +99,9 @@ events enrich --in samples/pull_request.synchronize.json \
 - Redaction: CLI redacts sensitive keys and common secret patterns in output by default (see `src/utils/redact.ts`).
 ```
 
+Outputs:
+- When enriching a PR with `--use-github`, the CLI exposes per-file owners under `enriched.github.pr.owners` and the deduplicated, sorted union of all CODEOWNERS across changed files under `enriched.github.pr.owners_union`.
+
 Without network calls (mentions only):
 ```bash
 events enrich --in samples/push.json --out out.json
