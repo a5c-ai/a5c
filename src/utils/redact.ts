@@ -9,7 +9,6 @@ export const DEFAULT_SENSITIVE_KEYS = [
   'pwd',
   'api_key',
   'apikey',
-  'key',
   'client_secret',
   'access_token',
   'refresh_token',
@@ -114,4 +113,3 @@ export function buildRedactor(opts: RedactOptions = {}) {
     redactEnv: (e?: NodeJS.ProcessEnv) => redactEnv(e, opts),
   }
 }
-
