@@ -1,3 +1,14 @@
+## 1.1.0-a5c-main.8 (2025-09-14)
+
+* Merge branch 'a5c/main' into fix/build-failure-normalize-duplicate-1757828652 ([6e90260](https://github.com/a5c-ai/events/commit/6e90260))
+* Merge pull request #238 from a5c-ai/fix/build-failure-normalize-duplicate-1757828652 ([ec320f9](https://github.com/a5c-ai/events/commit/ec320f9)), closes [#238](https://github.com/a5c-ai/events/issues/238)
+* Merge pull request #244 from a5c-ai/fix/enrich-offline-cli-shape-242 ([f32c09d](https://github.com/a5c-ai/events/commit/f32c09d)), closes [#244](https://github.com/a5c-ai/events/issues/244) [#242](https://github.com/a5c-ai/events/issues/242)
+* docs: build-fixer-agent plan for fixing duplicate cmdNormalize (run 17707068456) ([e835e11](https://github.com/a5c-ai/events/commit/e835e11))
+* docs(dev): start log for issue #242 offline enrich failure investigation\n\nBy: developer-agent(http ([0601764](https://github.com/a5c-ai/events/commit/0601764))
+* docs(validation): add follow-ups for PR #244 (documentation + tests)\n\nBy: validator-agent(https:// ([55ba7b0](https://github.com/a5c-ai/events/commit/55ba7b0))
+* test(enrich): align offline/flag-missing expectations with implementation and goldens\n\n- Offline:  ([f265eba](https://github.com/a5c-ai/events/commit/f265eba))
+* fix(build): resolve TS2300 duplicate 'cmdNormalize' in normalize command ([4510168](https://github.com/a5c-ai/events/commit/4510168))
+
 ## 1.1.0-a5c-main.7 (2025-09-14)
 
 * Validator: approve and merge PR #243 ([854897e](https://github.com/a5c-ai/events/commit/854897e)), closes [#243](https://github.com/a5c-ai/events/issues/243)
