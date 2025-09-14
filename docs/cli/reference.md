@@ -38,7 +38,7 @@ events normalize [--in FILE] [--out FILE] [--source NAME] [--label KEY=VAL...]
 - `--in FILE`: path to a JSON webhook payload
 - `--out FILE`: write result JSON (stdout if omitted)
 - `--source NAME`: provenance (`actions|webhook|cli`) [default: `cli`]
-- `--label KEY=VAL...`: attach labels (repeatable)
+- `--label KEY=VAL...`: attach labels to top-level `labels[]` (repeatable)
 
 Examples:
 ```bash
@@ -65,7 +65,7 @@ events enrich --in FILE [--out FILE] [--rules FILE] [--flag KEY=VAL...] [--use-g
   - `commit_limit`: max commits to include [default: `50`]
   - `file_limit`: max files to include [default: `200`]
 - `--use-github`: enable GitHub API enrichment (requires `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`)
-- `--label KEY=VAL...`: attach labels
+- `--label KEY=VAL...`: attach labels to top-level `labels[]`
 
 Examples:
 ```bash
