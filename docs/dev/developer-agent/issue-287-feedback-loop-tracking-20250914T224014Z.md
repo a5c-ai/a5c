@@ -19,3 +19,14 @@ Scope: Commit hygiene, pre-commit, CI gates, coverage surfacing, observability d
 
 ## Notes
 Initialized by developer-agent.
+
+## Child issues
+- #297 — Commit hygiene policy and docs
+- #298 — Pre-commit checks and formatting
+- #299 — CI gates and fast PR checks
+- #300 — Coverage surfacing and thresholds
+- #301 — Observability discovery for CI and agents
+
+PR: https://github.com/a5c-ai/events/pull/296 (draft)
+
+Notes: Attempted to link sub-issues via REST API; received 422/404 due to sub-issue API constraints. Using task list and comments for linkage.
