@@ -1,0 +1,13 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Validate commit message against Conventional Commits
+MSG_FILE="$1"
+if [ -f "$MSG_FILE" ]; then
+  if command -v npx >/dev/null 2>&1; then
+    npx -y tsx scripts/commit-verify.ts --file "$MSG_FILE" --allow-merge || exit 1
+  else
+    node --loader tsx scripts/commit-verify.ts --file "$MSG_FILE" --allow-merge || exit 1
+  fi
+fi
+
