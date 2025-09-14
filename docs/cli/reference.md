@@ -55,7 +55,7 @@ events enrich --in FILE [--out FILE] [--rules FILE] [--flag KEY=VAL...] [--use-g
 
 - `--in FILE`: normalized event input (from `normalize`) or raw provider payload
 - `--out FILE`: write result JSON (stdout if omitted)
-- `--rules FILE`: YAML/JSON rules file (optional)
+- `--rules FILE`: YAML/JSON rules file (optional). When provided, matching rules emit `composed[]` with `{ key, reason, targets?, labels?, payload? }`.
 - `--flag KEY=VAL...`: enrichment flags (repeatable); notable flags:
   - `include_patch`: include diff patches in files [default: `false`]
   - `commit_limit`: max commits to include [default: `50`]
@@ -71,6 +71,11 @@ events enrich --in samples/pull_request.synchronize.json \
   --use-github \
   --flag include_patch=false \
   | jq '.enriched.github.pr.mergeable_state'
+
+# With rules (composed events)
+events enrich --in samples/pull_request.synchronize.json \
+  --rules samples/rules/conflicts.yml \
+  | jq '[.composed[] | {key, reason}]'
 ```
 
 ## Global / Built-in Flags
