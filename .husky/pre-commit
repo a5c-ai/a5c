@@ -1,8 +1,16 @@
 #!/usr/bin/env sh
+set -e
+
 echo "Running pre-commit checks..."
 if command -v npm >/dev/null 2>&1 && [ -f package.json ]; then
   npm run -s lint || true
   npm test --silent || true
-else
-  echo "No Node project detected; skipping lint/test"
+fi
+
+# Guard against Windows-invalid filenames (e.g., ':')
+if git diff --cached --name-only | grep -E ':' >/dev/null 2>&1; then
+  echo "\n\033[31mError: staged filenames contain ':' which breaks Windows checkouts.\033[0m"
+  echo "Please rename to use '-' instead."
+  git diff --cached --name-only | grep -E ':' || true
+  exit 1
 fi
