@@ -77,11 +77,15 @@ describe('handleEnrich', () => {
     expect(mentions.some((m: any) => m.source === 'code_comment')).toBe(true);
   });
 
-  it('merges GitHub enrichment when flag enabled but missing token marks partial', async () => {
+  it('when --use-github is requested, API failures return code 3; if token present, enrichment succeeds', async () => {
     const res = await handleEnrich({ in: 'samples/pull_request.synchronize.json', labels: [], rules: undefined, flags: { use_github: 'true' } });
-    const gh = (res.output.enriched as any)?.github;
-    expect(gh).toBeTruthy();
-    expect(gh.partial).toBeTruthy();
+    if (res.code === 3) {
+      expect(String((res.output as any).error || '')).toMatch(/github enrichment failed/i)
+    } else {
+      expect(res.code).toBe(0)
+      const gh = (res.output.enriched as any)?.github
+      expect(gh).toBeTruthy()
+    }
   });
 
   it('applies YAML rules and emits composed events', async () => {

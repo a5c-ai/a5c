@@ -11,8 +11,17 @@ export async function handleEnrich(opts: {
   rules?: string
   flags?: Record<string, string | boolean | number>
   octokit?: any
-}): Promise<{ code: number; output: NormalizedEvent }>{
-  const input = readJSONFile<any>(opts.in) || {}
+}): Promise<{ code: number; output: NormalizedEvent | Record<string, unknown> }>{
+  // Require --in for enrich
+  if (!opts.in) {
+    return { code: 2, output: { error: 'enrich: missing --in' } }
+  }
+  let input: any
+  try {
+    input = readJSONFile<any>(opts.in) || {}
+  } catch (e: any) {
+    return { code: 2, output: { error: String(e?.message || e) } }
+  }
   // Default to false to avoid large payloads and potential secret leakage
   const includePatch = toBool(opts.flags?.include_patch ?? false)
   const commitLimit = toInt(opts.flags?.commit_limit, 50)
@@ -42,38 +51,47 @@ export async function handleEnrich(opts: {
   const useGithub = toBool(opts.flags?.use_github)
   const hasOctokit = !!opts.octokit
   if (useGithub || hasOctokit) {
-    if (useGithub && !token && !hasOctokit) {
-      // Flag requested but no token available: mark as partial and do NOT call network
-      githubEnrichment = { provider: 'github', partial: true, errors: [{ message: 'GITHUB_TOKEN missing; skipped API enrichment' }] }
-    } else {
-      try {
-        const mod: any = await import('./enrichGithubEvent.js')
-        const fn = (mod.enrichGithubEvent || mod.default) as (e: any, o?: any) => Promise<any>
-        const enriched = await fn(baseEvent, { token, commitLimit, fileLimit, octokit: opts.octokit, includePatch })
-        githubEnrichment = enriched?._enrichment || {}
-        if (!includePatch) {
-          if (githubEnrichment.pr?.files) {
-            githubEnrichment.pr.files = githubEnrichment.pr.files.map((f: any) => ({ ...f, patch: undefined }))
+    try {
+      if (useGithub && !token && !hasOctokit) {
+        // Flag requested but no token available: mark as partial and do NOT call network
+        githubEnrichment = { provider: 'github', partial: true, errors: [{ message: 'GITHUB_TOKEN missing; skipped API enrichment' }] }
+      } else {
+        try {
+          const mod: any = await import('./enrichGithubEvent.js')
+          const fn = (mod.enrichGithubEvent || mod.default) as (e: any, o?: any) => Promise<any>
+          const enriched = await fn(baseEvent, { token, commitLimit, fileLimit, octokit: opts.octokit, includePatch })
+          githubEnrichment = enriched?._enrichment || {}
+          if (!includePatch) {
+            if (githubEnrichment.pr?.files) {
+              githubEnrichment.pr.files = githubEnrichment.pr.files.map((f: any) => ({ ...f, patch: undefined }))
+            }
+            if (githubEnrichment.push?.files) {
+              githubEnrichment.push.files = githubEnrichment.push.files.map((f: any) => ({ ...f, patch: undefined }))
+            }
+          } else {
+            // Ensure a defined patch key when include_patch=true so callers can rely on presence
+            if (githubEnrichment.pr?.files) {
+              githubEnrichment.pr.files = githubEnrichment.pr.files.map((f: any) => (
+                Object.prototype.hasOwnProperty.call(f, 'patch') ? f : { ...f, patch: '' }
+              ))
+            }
+            if (githubEnrichment.push?.files) {
+              githubEnrichment.push.files = githubEnrichment.push.files.map((f: any) => (
+                Object.prototype.hasOwnProperty.call(f, 'patch') ? f : { ...f, patch: '' }
+              ))
+            }
           }
-          if (githubEnrichment.push?.files) {
-            githubEnrichment.push.files = githubEnrichment.push.files.map((f: any) => ({ ...f, patch: undefined }))
-          }
-        } else {
-          // Ensure a defined patch key when include_patch=true so callers can rely on presence
-          if (githubEnrichment.pr?.files) {
-            githubEnrichment.pr.files = githubEnrichment.pr.files.map((f: any) => (
-              Object.prototype.hasOwnProperty.call(f, 'patch') ? f : { ...f, patch: '' }
-            ))
-          }
-          if (githubEnrichment.push?.files) {
-            githubEnrichment.push.files = githubEnrichment.push.files.map((f: any) => (
-              Object.prototype.hasOwnProperty.call(f, 'patch') ? f : { ...f, patch: '' }
-            ))
-          }
+        } catch (e: any) {
+          githubEnrichment = { provider: 'github', partial: true, errors: [{ message: String(e?.message || e) }] }
         }
-      } catch (e: any) {
-        githubEnrichment = { provider: 'github', partial: true, errors: [{ message: String(e?.message || e) }] }
       }
+    } catch (e: any) {
+      const requestedGitHub = toBool((opts.flags as any)?.use_github)
+      const errMessage = String(e?.message || e)
+      if (requestedGitHub) {
+        return { code: 3, output: { error: `github enrichment failed: ${errMessage}` } }
+      }
+      githubEnrichment = { provider: 'github', partial: true, errors: [{ message: errMessage }] }
     }
   }
 
