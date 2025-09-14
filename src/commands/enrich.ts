@@ -1,6 +1,7 @@
 import type { NormalizedEvent, Mention } from '../types.js'
 import { readJSONFile, loadConfig } from '../config.js'
 import { extractMentions } from '../extractor.js'
+import { loadRules, evaluateRulesDetailed } from '../rules.js'
 
 export async function cmdEnrich(opts: {
   in?: string
@@ -82,7 +83,7 @@ export async function cmdEnrich(opts: {
     if (commentBody) mentions.push(...extractMentions(String(commentBody), 'issue_comment'))
   } catch {}
 
-  const output: NormalizedEvent = {
+  let output: NormalizedEvent = {
     ...(neShell as any),
     enriched: {
       ...(neShell.enriched || {}),
@@ -91,6 +92,29 @@ export async function cmdEnrich(opts: {
       derived: { ...(neShell.enriched?.derived || {}), flags: opts.flags || {} },
       ...(mentions.length ? { mentions } : {})
     }
+  }
+  // Evaluate composed event rules when --rules provided
+  try {
+    const rules = loadRules(opts.rules)
+    if (rules.length) {
+      const evalObj: any = { ...output, enriched: output.enriched, labels: output.labels || [] }
+      const res = evaluateRulesDetailed(evalObj, rules)
+      if (res?.composed?.length) {
+        const composed = res.composed.map((c: any) => ({
+          key: c.key,
+          reason: Array.isArray(c.criteria) && c.criteria.length ? c.criteria.join(' && ') : undefined,
+          targets: c.targets,
+          labels: c.labels,
+          payload: c.payload,
+        }))
+        ;(output as any).composed = composed
+      }
+      const meta: any = (output.enriched as any).metadata || {}
+      ;(output.enriched as any).metadata = { ...meta, rules_status: res.status }
+    }
+  } catch (e) {
+    const meta: any = (output.enriched as any).metadata || {}
+    ;(output.enriched as any).metadata = { ...meta, rules_status: { ok: false, warnings: [String((e as any)?.message || e)] } }
   }
   return { code: 0, output }
 }
