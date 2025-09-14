@@ -37,10 +37,15 @@ Normalize a raw provider payload into the NE schema.
 Usage:
 ```bash
 <<<<<<< HEAD
+<<<<<<< HEAD
 events normalize [--in FILE] [--out FILE] [--source NAME] [--label KEY=VAL...] [--select PATHS] [--filter EXPR]
 =======
 events normalize [--in FILE] [--out FILE] [--source <actions|webhook|cli>] [--label KEY=VAL...] [--select PATHS] [--filter EXPR]
 >>>>>>> d6864b0 (docs(cli): sync CLI reference and quick-start with implementation)
+=======
+events normalize [--in FILE] [--out FILE] [--source <actions|webhook|cli>] \
+  [--label KEY=VAL...] [--select PATHS] [--filter EXPR]
+>>>>>>> c849247 (docs: sync CLI docs and examples for issue #196 (select/filter, include_patch default=false, token precedence, cross-links)\n\nBy: developer-agent(https://app.a5c.ai/a5c/agents/development/developer-agent))
 ```
 
 - `--in FILE`: path to a JSON webhook payload
@@ -53,13 +58,18 @@ events normalize [--in FILE] [--out FILE] [--source <actions|webhook|cli>] [--la
 =======
 - `--source <name>`: provenance source (`actions|webhook|cli`) [default: `cli`]
 - `--label KEY=VAL...`: attach labels to top‑level `labels[]` (repeatable)
-- `--select PATHS`: comma‑separated dot paths to include in output
+- `--select PATHS`: comma‑separated dot paths to include in output (e.g., `type,repo.full_name`)
 - `--filter EXPR`: filter expression `path[=value]`; if it doesn't pass, exits with code `2`
 >>>>>>> d6864b0 (docs(cli): sync CLI reference and quick-start with implementation)
 
-Example:
+Examples:
 ```bash
-events normalize --in samples/workflow_run.completed.json --out out.json --label env=staging
+# Select a few fields
+events normalize --in samples/workflow_run.completed.json \
+  --select 'type,repo.full_name,provenance.workflow.name'
+
+# Gate output via filter (exit 2 if not matched)
+events normalize --in samples/workflow_run.completed.json --filter 'type=workflow_run'
 ```
 
 Notes:
@@ -72,11 +82,16 @@ Usage:
 ```bash
 events enrich --in FILE [--out FILE] [--rules FILE] \
 <<<<<<< HEAD
+<<<<<<< HEAD
   [--flag KEY=VAL...] [--use-github] [--label KEY=VAL...] \
   [--select PATHS] [--filter EXPR]
 =======
   [--flag KEY=VAL...] [--use-github] [--label KEY=VAL...] [--select PATHS] [--filter EXPR]
 >>>>>>> d6864b0 (docs(cli): sync CLI reference and quick-start with implementation)
+=======
+  [--flag KEY=VAL...] [--use-github] [--label KEY=VAL...] \
+  [--select PATHS] [--filter EXPR]
+>>>>>>> c849247 (docs: sync CLI docs and examples for issue #196 (select/filter, include_patch default=false, token precedence, cross-links)\n\nBy: developer-agent(https://app.a5c.ai/a5c/agents/development/developer-agent))
 ```
 
 - `--in FILE`: input JSON (normalized event or raw GitHub payload)
@@ -99,7 +114,7 @@ events enrich --in FILE [--out FILE] [--rules FILE] \
   - `file_limit=<n>` (default: `200`) – limit files per compare list
 - `--use-github`: enable GitHub API enrichment; equivalent to `--flag use_github=true` (requires `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`)
 - `--label KEY=VAL...`: labels to attach
-- `--select PATHS`: comma‑separated dot paths to include in output
+- `--select PATHS`: comma-separated dot paths to include in output
 - `--filter EXPR`: filter expression `path[=value]`; if it doesn't pass, exits with code `2`
 >>>>>>> d6864b0 (docs(cli): sync CLI reference and quick-start with implementation)
 
@@ -124,9 +139,17 @@ jq '.enriched.github.pr.has_conflicts, .enriched.github.pr.mergeable_state' out.
 
 ## Security and Redaction
 - Secrets: known patterns are redacted in output and logs by default; see `src/utils/redact.ts`.
+<<<<<<< HEAD
 - Tokens: set `A5C_AGENT_GITHUB_TOKEN` or `GITHUB_TOKEN` for GitHub enrichment; tokens are never printed. If both are set, `A5C_AGENT_GITHUB_TOKEN` takes precedence.
+=======
+- Tokens: set `A5C_AGENT_GITHUB_TOKEN` or `GITHUB_TOKEN` for GitHub enrichment (precedence: `A5C_AGENT_GITHUB_TOKEN` then `GITHUB_TOKEN`); tokens are never printed.
+>>>>>>> d0680f9 (docs: sync CLI docs and examples for issue #196 (select/filter, include_patch default=false, token precedence, cross-links)\n\nBy: developer-agent(https://app.a5c.ai/a5c/agents/development/developer-agent))
 
 ## Cross-References
 - Specs: `docs/specs/README.md`
 - Samples: `samples/`
+<<<<<<< HEAD
 - Tests: `tests/mentions.*`, `tests/enrich.basic.test.ts`, plus additional tests under `test/`
+=======
+- Tests: `tests/mentions.*`, `tests/enrich.basic.test.ts`, `tests/cli.select-filter.*.ts`, `tests/cli.enrich.flags.test.ts`
+>>>>>>> d0680f9 (docs: sync CLI docs and examples for issue #196 (select/filter, include_patch default=false, token precedence, cross-links)\n\nBy: developer-agent(https://app.a5c.ai/a5c/agents/development/developer-agent))
