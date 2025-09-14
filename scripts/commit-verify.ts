@@ -1,4 +1,4 @@
-#!/usr/bin/env -S node --loader tsx
+#!/usr/bin/env -S tsx
 /*
  Validates Conventional Commits for commit messages and PR titles.
  - When run with no args, reads HEAD commit message (for hooks).
