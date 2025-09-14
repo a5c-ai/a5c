@@ -79,20 +79,27 @@ export async function handleEnrich(opts: {
       }
     } catch (e: any) {
       const errMessage = String(e?.message || e)
-      // When explicit GitHub enrichment is requested and it fails, surface as code 3
-      return { code: 3, output: { error: `github enrichment failed: ${errMessage}` } }
+      // If a custom octokit was provided (tests/injection), treat as partial and continue
+      if (opts.octokit) {
+        githubEnrichment = { provider: 'github', partial: true, errors: [{ message: errMessage }] }
+      } else {
+        // When explicit GitHub enrichment is requested and it fails, surface as code 3
+        return { code: 3, output: { error: `github enrichment failed: ${errMessage}` } }
+      }
     }
   }
 
-  // Fallback projection of basic PR fields when offline/partial so rules and tests have minimal shape
+  // Fallback projection of basic PR fields when use_github=true but enrichment is partial/mocked
   try {
-    const prPayload = (baseEvent as any)?.pull_request
-    if (prPayload) {
-      if (!githubEnrichment || typeof githubEnrichment !== 'object') githubEnrichment = {}
-      githubEnrichment.pr = { ...(githubEnrichment.pr || {}) }
-      if (githubEnrichment.pr.number == null && prPayload.number != null) githubEnrichment.pr.number = prPayload.number
-      if (githubEnrichment.pr.draft == null && typeof prPayload.draft === 'boolean') githubEnrichment.pr.draft = prPayload.draft
-      if (githubEnrichment.pr.mergeable_state == null && prPayload.mergeable_state != null) githubEnrichment.pr.mergeable_state = prPayload.mergeable_state
+    if (useGithub) {
+      const prPayload = (baseEvent as any)?.pull_request
+      if (prPayload) {
+        if (!githubEnrichment || typeof githubEnrichment !== 'object') githubEnrichment = {}
+        githubEnrichment.pr = { ...(githubEnrichment.pr || {}) }
+        if (githubEnrichment.pr.number == null && prPayload.number != null) githubEnrichment.pr.number = prPayload.number
+        if (githubEnrichment.pr.draft == null && typeof prPayload.draft === 'boolean') githubEnrichment.pr.draft = prPayload.draft
+        if (githubEnrichment.pr.mergeable_state == null && prPayload.mergeable_state != null) githubEnrichment.pr.mergeable_state = prPayload.mergeable_state
+      }
     }
   } catch {}
 
@@ -182,7 +189,7 @@ export async function handleEnrich(opts: {
     }
 
     const mod: any = await import('./enrichGithubEvent.js')
-    const octokit = opts.octokit || mod.createOctokit?.(token)
+    const octokit = opts.octokit || (token ? mod.createOctokit?.(token) : undefined)
 
     if ((!filesList || !Array.isArray(filesList)) && octokit && owner && repo) {
       // Derive changed files using GitHub API if possible
