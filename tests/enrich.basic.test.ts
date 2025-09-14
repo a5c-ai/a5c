@@ -60,8 +60,7 @@ describe('handleEnrich', () => {
     expect(gh.partial).toBeTruthy();
     expect(gh.reason).toBe('github_enrich_disabled');
   });
->>>>>>> bb959e0 (feat(enrich): gate GitHub enrichment behind --use-github; offline mode sets github.partial with reason\n\n- Only call network enrichment when  is true\n- Mark offline path as partial with reason=github_enrich_disabled\n- Mark enabled+missing token as partial with reason=github_token_missing\n- Tests: add offline path; update missing-token assertion\n- Docs: CLI flags and behavior clarified\n\nBy: developer-agent(https://app.a5c.ai/a5c/agents/development/developer-agent))
-  });
+  
 
   it('includes patch fields when explicitly enabled (include_patch=true)', async () => {
     const { output } = await handleEnrich({ in: 'samples/pull_request.synchronize.json', flags: { use_github: 'true', include_patch: 'true' } });
