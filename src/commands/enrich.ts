@@ -3,7 +3,7 @@ import { readJSONFile, loadConfig } from '../config.js'
 import { extractMentions } from '../extractor.js'
 import { scanCodeCommentsForMentions } from '../codeComments.js'
 import { githubProvider } from '../providers/github/index.js'
-import { loadRules, evaluateRules } from '../rules.js'
+import { loadRules, evaluateRulesDetailed } from '../rules.js'
 
 function toBool(v: any): boolean { if (typeof v === 'boolean') return v; if (v == null) return false; const s = String(v).toLowerCase(); return s === '1' || s === 'true' || s === 'yes' || s === 'on' }
 function toInt(v: any, d = 0): number { const n = Number(v); return Number.isFinite(n) ? n : d }
@@ -111,10 +111,27 @@ export async function runEnrich(opts: {
         repo = repo || r
       }
     }
-    const prFiles: any[] = githubEnrichment?.pr?.files || []
-    const pushFiles: any[] = githubEnrichment?.push?.files || []
-    const files = (prFiles.length ? prFiles : pushFiles).map((f: any) => ({ filename: f.filename }))
-    const ref = githubEnrichment?.pr?.head || githubEnrichment?.push?.after || (baseEvent?.after as any) || (neShell?.ref as any)?.sha || 'HEAD'
+    let prFiles: any[] = githubEnrichment?.pr?.files || []
+    let pushFiles: any[] = githubEnrichment?.push?.files || []
+    let files = (prFiles.length ? prFiles : pushFiles).map((f: any) => ({ filename: f.filename }))
+    let ref = githubEnrichment?.pr?.head || githubEnrichment?.push?.after || (baseEvent?.after as any) || (neShell?.ref as any)?.sha || 'HEAD'
+    // Fallback: derive file list via API if enrichment didn't provide it
+    if (owner && repo && !files.length && opts.octokit) {
+      try {
+        if ((baseEvent as any)?.pull_request?.number) {
+          const number = (baseEvent as any).pull_request.number
+          const list = await opts.octokit.paginate(opts.octokit.pulls.listFiles, { owner, repo, pull_number: number, per_page: 100 })
+          prFiles = Array.isArray(list) ? list : []
+          files = prFiles.map((f: any) => ({ filename: f.filename }))
+          ref = (baseEvent as any)?.pull_request?.head?.sha || ref
+        } else if ((baseEvent as any)?.before && (baseEvent as any)?.after) {
+          const comp = await opts.octokit.repos.compareCommits({ owner, repo, base: (baseEvent as any).before, head: (baseEvent as any).after })
+          pushFiles = ((comp?.data as any)?.files as any[]) || []
+          files = pushFiles.map((f: any) => ({ filename: f.filename }))
+          ref = (baseEvent as any).after || ref
+        }
+      } catch {}
+    }
     if (owner && repo && files.length && opts.octokit) {
       let found = await scanCodeCommentsForMentions({ owner, repo, ref, files, octokit: opts.octokit, options: { languageFilters: ['js','ts','md'] } })
       // Fallback: naive full-file scan if structured scan produced none (some mocks ignore params)
@@ -146,16 +163,43 @@ export async function runEnrich(opts: {
     }
   }
 
-  // Evaluate rules, if provided
+  // Evaluate rules, if provided (detailed form with payload + reason)
   try {
     const rules = loadRules(opts.rules)
     if (rules.length) {
-      const composed = evaluateRules(output as any, rules)
-      ;(output as any).composed = composed
+      const evalObj: any = { ...output, enriched: output.enriched, labels: output.labels || [] }
+      const res = evaluateRulesDetailed(evalObj, rules)
+      if (res?.composed?.length) {
+        const composed = res.composed.map((c: any) => ({
+          key: c.key,
+          reason: Array.isArray(c.criteria) && c.criteria.length ? c.criteria.join(' && ') : undefined,
+          targets: c.targets,
+          labels: c.labels,
+          payload: c.payload,
+        }))
+        ;(output as any).composed = composed
+      }
+      const meta: any = (output.enriched as any).metadata || {}
+      ;(output.enriched as any).metadata = { ...meta, rules_status: res.status }
     }
   } catch {}
   return { code: 0, output }
 }
 
 // CLI-level command function expected by src/cli.ts
-export const cmdEnrich = runEnrich
+export async function cmdEnrich(opts: {
+  in?: string
+  labels?: string[]
+  rules?: string
+  flags?: Record<string, string | boolean | number>
+  octokit?: any
+}): Promise<{ code: number; output?: NormalizedEvent; errorMessage?: string }>{
+  const res = await runEnrich(opts)
+  const cfg = loadConfig()
+  const useGithub = toBool((opts.flags as any)?.use_github)
+  if (useGithub && !cfg.githubToken && res.code === 0) {
+    // Enrichment was requested but token missing; signal provider error as exit code 3
+    return { code: 3, errorMessage: 'GitHub token is required for enrichment' }
+  }
+  return res
+}
