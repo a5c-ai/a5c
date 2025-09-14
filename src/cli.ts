@@ -4,8 +4,8 @@ import fs from 'node:fs'
 import { extractMentions } from './extractor.js'
 import type { ExtractorOptions, MentionSource } from './types.js'
 import { loadConfig, writeJSONFile } from './config.js'
-import { handleNormalize } from './normalize.js'
-import { handleEnrich } from './enrich.js'
+import { cmdNormalize } from './commands/normalize.js'
+import { cmdEnrich } from './commands/enrich.js'
 import { handleEmit } from './emit.js'
 import { redactObject } from './utils/redact.js'
 
@@ -34,8 +34,14 @@ program
       window: opts.window,
       knownAgents: opts.knownAgent || opts.knownAgents || [],
     }
-    const mentions = extractMentions(text, src, options)
-    process.stdout.write(JSON.stringify(mentions, null, 2) + '\n')
+    try {
+      const mentions = extractMentions(text, src, options)
+      process.stdout.write(JSON.stringify(mentions, null, 2) + '\n')
+      process.exit(0)
+    } catch (e: any) {
+      process.stderr.write(String(e?.message || e) + '\n')
+      process.exit(1)
+    }
   })
 
 program
@@ -44,20 +50,38 @@ program
   .option('--in <file>', 'input JSON file path')
   .option('--out <file>', 'output JSON file path')
   .addOption(new Option('--source <name>', 'source name (actions|webhook|cli)').default('cli'))
+  .option('--select <paths>', 'comma-separated dot paths to include in output')
+  .option('--filter <expr>', 'filter expression path[=value] to gate output')
   .option('--label <key=value...>', 'labels to attach', collectKeyValue, [])
   .action(async (cmdOpts: any) => {
     const cfg = loadConfig()
-    void cfg // currently unused but reserved for future needs
+    void cfg
     const labels = Object.entries(cmdOpts.label || {}).map(([k, v]) => `${k}=${v}`)
-    const { code, output } = await handleNormalize({
+    const { code, output, errorMessage } = await cmdNormalize({
       in: cmdOpts.in,
       source: cmdOpts.source,
       labels,
     })
-    const safe = redactObject(output)
-    if (cmdOpts.out) writeJSONFile(cmdOpts.out, safe)
-    else process.stdout.write(JSON.stringify(safe, null, 2) + '\n')
-    process.exit(code)
+    if (code !== 0 || !output) {
+      if (errorMessage) process.stderr.write(errorMessage + '\n')
+      return process.exit(code || 1)
+    }
+    // filter/select
+    const { selectFields, parseFilter, passesFilter } = await import('./utils/selectFilter.js')
+    const filterSpec = parseFilter(cmdOpts.filter)
+    if (!passesFilter(output as any, filterSpec)) {
+      return process.exit(2)
+    }
+    const selected = cmdOpts.select ? selectFields(output as any, String(cmdOpts.select).split(',').map((s) => s.trim()).filter(Boolean)) : output
+    const safe = redactObject(selected)
+    try {
+      if (cmdOpts.out) writeJSONFile(cmdOpts.out, safe)
+      else process.stdout.write(JSON.stringify(safe, null, 2) + '\n')
+    } catch (e: any) {
+      process.stderr.write(String(e?.message || e) + '\n')
+      return process.exit(1)
+    }
+    process.exit(0)
   })
 
 program
@@ -68,21 +92,38 @@ program
   .option('--rules <file>', 'rules file path (yaml/json)')
   .option('--flag <key=value...>', 'enrichment flags', collectKeyValue, {})
   .option('--use-github', 'enable GitHub API enrichment (requires GITHUB_TOKEN)')
+  .option('--select <paths>', 'comma-separated dot paths to include in output')
+  .option('--filter <expr>', 'filter expression path[=value] to gate output')
   .option('--label <key=value...>', 'labels to attach', collectKeyValue, [])
   .action(async (cmdOpts: any) => {
     const flags = { ...(cmdOpts.flag || {}) }
     if (cmdOpts.useGithub || cmdOpts['use-github']) flags.use_github = 'true'
     const labels = Object.entries(cmdOpts.label || {}).map(([k, v]) => `${k}=${v}`)
-    const { code, output } = await handleEnrich({
+    const { code, output, errorMessage } = await cmdEnrich({
       in: cmdOpts.in,
       labels,
       rules: cmdOpts.rules,
       flags,
     })
-    const safe = redactObject(output)
-    if (cmdOpts.out) writeJSONFile(cmdOpts.out, safe)
-    else process.stdout.write(JSON.stringify(safe, null, 2) + '\n')
-    process.exit(code)
+    if (code !== 0 || !output) {
+      if (errorMessage) process.stderr.write(errorMessage + '\n')
+      return process.exit(code || 1)
+    }
+    const { selectFields, parseFilter, passesFilter } = await import('./utils/selectFilter.js')
+    const filterSpec = parseFilter(cmdOpts.filter)
+    if (!passesFilter(output as any, filterSpec)) {
+      return process.exit(2)
+    }
+    const selected = cmdOpts.select ? selectFields(output as any, String(cmdOpts.select).split(',').map((s) => s.trim()).filter(Boolean)) : output
+    const safe = redactObject(selected)
+    try {
+      if (cmdOpts.out) writeJSONFile(cmdOpts.out, safe)
+      else process.stdout.write(JSON.stringify(safe, null, 2) + '\n')
+    } catch (e: any) {
+      process.stderr.write(String(e?.message || e) + '\n')
+      return process.exit(1)
+    }
+    process.exit(0)
   })
 
 program

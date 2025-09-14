@@ -1,4 +1,5 @@
 import type { NormalizedEvent } from '../../types.js';
+import type { Provider, NormalizeOptions, EnrichOptions } from '../types.js';
 
 type GHRepo = { id: number; name: string; full_name: string; private?: boolean; visibility?: string | null; owner?: { login: string } };
 type GHUser = { id: number; login: string; type: string };
@@ -113,4 +114,14 @@ export function mapToNE(payload: any, opts: { source?: string; labels?: string[]
     }
   }
   return ne as NormalizedEvent;
+}
+
+// Optional: expose a Provider-compatible adapter without changing existing exports
+export const GitHubProvider: Provider = {
+  normalize: (payload: any, opts?: NormalizeOptions) => mapToNE(payload, { source: opts?.source, labels: opts?.labels }),
+  enrich: async (event: any, opts?: EnrichOptions) => {
+    const mod: any = await import('../../enrichGithubEvent.js')
+    const fn = (mod.enrichGithubEvent || mod.default) as (e: any, o?: any) => Promise<any>
+    return fn(event, opts)
+  }
 }
