@@ -1,0 +1,67 @@
+{
+  "id": "temp-sei9gosr78p",
+  "provider": "github",
+  "type": "commit",
+  "occurred_at": "2025-09-14T00:44:06.468Z",
+  "payload": {
+    "action": "created",
+    "issue": {
+      "number": 48,
+      "title": "[Producer] Samples – add GitHub event payloads and fixtures",
+      "state": "open",
+      "user": {
+        "login": "a5c-ai[bot]"
+      }
+    },
+    "comment": {
+      "id": 3288098509,
+      "body": "@developer-agent do it",
+      "user": {
+        "login": "tmuskal",
+        "id": 1934369,
+        "type": "User"
+      },
+      "created_at": "2025-09-13T11:00:31Z"
+    },
+    "repository": {
+      "id": 1055826069,
+      "name": "events",
+      "full_name": "a5c-ai/events",
+      "private": true
+    },
+    "sender": {
+      "login": "tmuskal",
+      "id": 1934369,
+      "type": "User"
+    }
+  },
+  "labels": [],
+  "provenance": {
+    "source": "cli"
+  },
+  "enriched": {
+    "github": {
+      "provider": "github",
+      "partial": true,
+      "errors": [
+        {
+          "message": "Cannot find module '/home/runner/work/events/events/dist/enrichGithubEvent.js' imported from /home/runner/work/events/events/dist/enrich.js"
+        }
+      ]
+    },
+    "metadata": {},
+    "derived": {
+      "flags": {}
+    },
+    "mentions": [
+      {
+        "target": "developer-agent",
+        "normalized_target": "developer-agent",
+        "kind": "agent",
+        "source": "issue_comment",
+        "context": "@developer-agent do it",
+        "confidence": 0.9
+      }
+    ]
+  }
+}
