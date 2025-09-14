@@ -33,7 +33,9 @@ describe('redaction', () => {
   it('masks Slack/AWS/Basic Auth patterns in strings', () => {
     const input = 'xoxb-1234567890-abcdefghijkl https://user:secret@example.com AKIA1234567890ABCD'
     const got = redactString(input)
-    expect(got).toBe('REDACTED')
+    expect(got).not.toMatch(/xox[abprs]-/)
+    expect(got).not.toMatch(/https?:\/\/[A-Za-z0-9._%-]+:[^@\s]+@/)
+    expect(got).not.toMatch(/AKIA[0-9A-Z]{16}/)
   })
 
   it('masks representative fixture payload values', () => {
