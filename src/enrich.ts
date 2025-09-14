@@ -141,12 +141,10 @@ export async function handleEnrich(opts: {
           } catch {}
         }
       }
-    } catch {
-      // ignore code comment scanning failures; treated as best-effort enrichment
     }
+  } catch {
+    // ignore code comment scanning failures; treated as best-effort enrichment
   }
-    }
-  } catch {}
 
   // Optional: scan changed files for code comment mentions
   try {
