@@ -102,27 +102,36 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [22] 
+        node-version: [20]
     steps:
       - uses: actions/checkout@v4
-      - name: Setup Node.js
-        continue-on-error: true
+      - name: Setup Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: ${{ matrix.node-version }}
           cache: 'npm'
           check-latest: true
+      - name: Show Node and npm versions
+        run: |
+          node -v
+          npm -v
       - run: ./scripts/build.sh
   test:
-    runs-on: runner8core
+    runs-on: ubuntu-latest
     needs: build
+    strategy:
+      matrix:
+        node-version: [20]
     steps:
       - uses: actions/checkout@v4
-      - name: Setup Node.js
-        continue-on-error: true
+      - name: Setup Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: ${{ matrix.node-version }}
           cache: 'npm'
           check-latest: true
+      - name: Show Node and npm versions
+        run: |
+          node -v
+          npm -v
       - run: ./scripts/test.sh
