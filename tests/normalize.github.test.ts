@@ -56,4 +56,27 @@ describe('GitHub normalization', () => {
     expect(ev.actor?.login).toBe('tmuskal');
     expect(typeof ev.id).toBe('string');
   });
+
+  it('issues -> NE fields', async () => {
+    const input = fx('issues.opened.json');
+    const tmp = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'events-test-')), 'issues.json');
+    fs.writeFileSync(tmp, JSON.stringify(input));
+    const { output: ev } = await handleNormalize({ in: tmp, source: 'webhook' });
+    expect(ev.type).toBe('issues');
+    expect(ev.repo?.full_name).toBe('a5c-ai/events');
+    expect(ev.actor?.login).toBe('tmuskal');
+    expect(typeof ev.id).toBe('string');
+  });
+
+  it('check_run -> NE fields', async () => {
+    const input = fx('check_run.completed.json');
+    const tmp = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'events-test-')), 'check_run.json');
+    fs.writeFileSync(tmp, JSON.stringify(input));
+    const { output: ev } = await handleNormalize({ in: tmp, source: 'webhook' });
+    expect(ev.type).toBe('check_run');
+    expect(ev.repo?.full_name).toBe('a5c-ai/events');
+    expect(ev.ref?.name).toBe('a5c/main');
+    expect(ev.ref?.sha).toBe('abc123def456');
+    expect(typeof ev.id).toBe('string');
+  });
 });

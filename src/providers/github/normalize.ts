@@ -31,6 +31,8 @@ function inferType(p?: AnyObj): string {
   if (p.pull_request) return 'pull_request';
   if (typeof p.ref === 'string' && p.after && p.commits) return 'push';
   if (p.comment && p.issue) return 'issue_comment';
+  if (p.issue && !p.comment) return 'issues';
+  if (p.check_run) return 'check_run';
   return 'unknown';
 }
 
@@ -40,6 +42,8 @@ function inferId(p?: AnyObj): string {
   if (p.pull_request?.number) return String(p.pull_request.number);
   if (p.after && typeof p.after === 'string') return String(p.after);
   if (p.comment?.id) return String(p.comment.id);
+  if (p.issue?.id) return String(p.issue.id);
+  if (p.check_run?.id) return String(p.check_run.id);
   return 'temp-' + Math.random().toString(36).slice(2);
 }
 
@@ -50,7 +54,11 @@ function inferOccurredAt(p?: AnyObj): string | undefined {
     p?.pull_request?.updated_at ||
     p?.pull_request?.created_at ||
     p?.head_commit?.timestamp ||
-    p?.comment?.created_at;
+    p?.comment?.created_at ||
+    p?.issue?.updated_at ||
+    p?.issue?.created_at ||
+    p?.check_run?.completed_at ||
+    p?.check_run?.started_at;
   return iso && typeof iso === 'string' ? iso : undefined;
 }
 
@@ -93,13 +101,25 @@ function inferRef(p?: AnyObj): AnyObj | undefined {
     const name = p.ref.startsWith('refs/heads/') ? p.ref.replace('refs/heads/', '') : p.ref;
     return { name, type: 'branch', sha: p.after };
   }
+  // issues: if available, use issue.pull_request or repository default branch context if ref provided in payload
+  if (p.issue && typeof p.ref === 'string') {
+    const name = p.ref.startsWith('refs/heads/') ? p.ref.replace('refs/heads/', '') : p.ref;
+    return { name, type: 'branch' };
+  }
+  // check_run: GitHub provides head_sha and head_branch via check_suite/repository
+  if (p.check_run) {
+    const cr = p.check_run;
+    const name = cr.check_suite?.head_branch || cr.pull_requests?.[0]?.head?.ref;
+    const sha = cr.head_sha || cr.check_suite?.head_sha;
+    if (name || sha) return { ...(name ? { name } : {}), type: 'branch', ...(sha ? { sha } : {}) };
+  }
   // issue_comment might not carry a ref; skip
   return undefined;
 }
 
 function inferActor(p?: AnyObj): AnyObj | undefined {
   if (!p) return undefined;
-  const s = p.sender || p.comment?.user || p.pusher;
+  const s = p.sender || p.comment?.user || p.pusher || p.issue?.user || p.check_run?.app;
   if (!s) return undefined;
   const out: AnyObj = {};
   if (s.id !== undefined) out.id = s.id;
