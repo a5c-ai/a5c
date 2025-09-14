@@ -5,11 +5,7 @@
 Normalize and enrich GitHub (and other) events for agentic workflows. Use the CLI in CI or locally to turn raw webhook/Actions payloads into a compact, consistent schema that downstream agents and automations can trust.
 
 - Quick install via npm
-<<<<<<< HEAD
-- Commands: `events mentions`, `events normalize`, `events enrich`, `events validate`
-=======
-- Commands: `events mentions`, `events normalize`, `events enrich`
->>>>>>> origin/main
+- Commands: `events mentions`, `events normalize`, `events enrich`, `events emit`, `events validate`
 - Output: JSON to stdout or file
 - Extensible via provider adapters and enrichers
 
@@ -185,7 +181,7 @@ See `docs/specs/README.md` for examples and behavior-driven test outlines. Add y
 - Minimal Node types + commander; TypeScript configured in `tsconfig.json`
 
 Project structure:
-- `src/cli.ts` – CLI entrypoint (mentions, normalize, enrich)
+- `src/cli.ts` – CLI entrypoint (mentions, normalize, enrich, emit, validate)
 - `src/normalize.ts` / `src/enrich.ts` – command handlers
 - `src/providers/*` – provider adapters (GitHub mapping under `providers/github`)
 - `src/utils/redact.ts` – redaction utilities
