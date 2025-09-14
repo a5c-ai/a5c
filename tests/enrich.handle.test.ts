@@ -3,6 +3,8 @@ import { handleEnrich } from '../src/enrich.js'
 
 describe('handleEnrich integrates enrichGithubEvent', () => {
   it('maps PR enrichment under enriched.github and respects include_patch=false', async () => {
+    const prev = process.env.A5C_AGENT_GITHUB_TOKEN
+    process.env.A5C_AGENT_GITHUB_TOKEN = 'test-token'
     const baseEvent = { repository: { full_name: 'a5c-ai/events' }, pull_request: { number: 1 } }
     // mock octokit path via opts.octokit by passing through to enrichGithubEvent
     const mock = {
@@ -19,9 +21,9 @@ describe('handleEnrich integrates enrichGithubEvent', () => {
     }
     const tmp = require('node:os').tmpdir() + '/event-pr.json'
     require('node:fs').writeFileSync(tmp, JSON.stringify(baseEvent))
-    const { output } = await handleEnrich({ in: tmp, flags: { include_patch: false }, octokit: mock })
+    const { output } = await handleEnrich({ in: tmp, flags: { use_github: true, include_patch: false }, octokit: mock })
     expect(output.enriched?.github?.pr?.number).toBe(1)
     expect(output.enriched?.github?.pr?.files?.[0]?.patch).toBeUndefined()
+    if (prev === undefined) delete process.env.A5C_AGENT_GITHUB_TOKEN; else process.env.A5C_AGENT_GITHUB_TOKEN = prev
   })
 })
-

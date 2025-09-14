@@ -20,6 +20,7 @@ export async function handleEnrich(opts: {
   const includePatch = toBool(opts.flags?.include_patch ?? false)
   const commitLimit = toInt(opts.flags?.commit_limit, 50)
   const fileLimit = toInt(opts.flags?.file_limit, 200)
+  const useGithub = toBool(opts.flags?.use_github)
 
   const cfg = loadConfig()
   const token = cfg.githubToken
@@ -43,34 +44,51 @@ export async function handleEnrich(opts: {
       }
 
   let githubEnrichment: any = {}
-  try {
-    const mod: any = await import('./enrichGithubEvent.js')
-    const fn = (mod.enrichGithubEvent || mod.default) as (e: any, o?: any) => Promise<any>
-    const enriched = await fn(baseEvent, { token, commitLimit, fileLimit, octokit: opts.octokit, includePatch: includePatch })
-    githubEnrichment = enriched?._enrichment || {}
-    if (!includePatch) {
-      if (githubEnrichment.pr?.files) {
-        githubEnrichment.pr.files = githubEnrichment.pr.files.map((f: any) => ({ ...f, patch: undefined }))
-      }
-      if (githubEnrichment.push?.files) {
-        githubEnrichment.push.files = githubEnrichment.push.files.map((f: any) => ({ ...f, patch: undefined }))
-      }
-    } else {
-      // Ensure a defined patch key when include_patch=true so callers can rely on presence
-      if (githubEnrichment.pr?.files) {
-        githubEnrichment.pr.files = githubEnrichment.pr.files.map((f: any) => (
-          Object.prototype.hasOwnProperty.call(f, 'patch') ? f : { ...f, patch: '' }
-        ))
-      }
-      if (githubEnrichment.push?.files) {
-        githubEnrichment.push.files = githubEnrichment.push.files.map((f: any) => (
-          Object.prototype.hasOwnProperty.call(f, 'patch') ? f : { ...f, patch: '' }
-        ))
-      }
+  if (!useGithub) {
+    // Offline/default mode: do not perform network enrichment
+    githubEnrichment = { provider: 'github', partial: true, reason: 'github_enrich_disabled' }
+  } else if (!token) {
+    // Enabled but missing token: mark partial with reason without attempting network calls
+    githubEnrichment = {
+      provider: 'github',
+      partial: true,
+      reason: 'github_token_missing',
+      errors: [{ message: 'GitHub token is required for enrichment' }]
     }
+<<<<<<< HEAD
   } catch (e: any) {
     githubEnrichment = { provider: 'github', partial: true, errors: [{ message: String(e?.message || e) }] }
+=======
+  } else {
+    try {
+      const mod: any = await import('./enrichGithubEvent.js')
+      const fn = (mod.enrichGithubEvent || mod.default) as (e: any, o?: any) => Promise<any>
+      const enriched = await fn(baseEvent, { token, commitLimit, fileLimit, octokit: opts.octokit, includePatch })
+      githubEnrichment = enriched?._enrichment || {}
+      if (!includePatch) {
+        if (githubEnrichment.pr?.files) {
+          githubEnrichment.pr.files = githubEnrichment.pr.files.map((f: any) => ({ ...f, patch: undefined }))
+        }
+        if (githubEnrichment.push?.files) {
+          githubEnrichment.push.files = githubEnrichment.push.files.map((f: any) => ({ ...f, patch: undefined }))
+        }
+      } else {
+        // Ensure a defined patch key when include_patch=true so callers can rely on presence
+        if (githubEnrichment.pr?.files) {
+          githubEnrichment.pr.files = githubEnrichment.pr.files.map((f: any) => (Object.prototype.hasOwnProperty.call(f, 'patch') ? f : { ...f, patch: '' }))
+        }
+        if (githubEnrichment.push?.files) {
+          githubEnrichment.push.files = githubEnrichment.push.files.map((f: any) => (Object.prototype.hasOwnProperty.call(f, 'patch') ? f : { ...f, patch: '' }))
+        }
+      }
+    } catch (e: any) {
+      const errMessage = String(e?.message || e)
+      // When explicit GitHub enrichment is requested and it fails, surface as code 3
+      return { code: 3, output: { error: `github enrichment failed: ${errMessage}` } }
+    }
+>>>>>>> 92b650e (✨ Enrichment gating validated)
   }
+
 
   // Mentions from common text locations
   const mentions: Mention[] = []
