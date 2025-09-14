@@ -5,19 +5,9 @@ import util from 'node:util'
 import { extractMentions } from './extractor.js'
 import type { ExtractorOptions, MentionSource } from './types.js'
 import { loadConfig, writeJSONFile } from './config.js'
-<<<<<<< HEAD
-<<<<<<< HEAD
-import { handleNormalize } from './normalize.js'
-import { resolveNormalizeInput } from './cli-helpers.js'
-import { handleEnrich } from './enrich.js'
-=======
-import { handleNormalize } from './commands/normalize.js'
-import { handleEnrich } from './commands/enrich.js'
->>>>>>> 99325b2 (🚧 refactor(cli): provider abstraction and commands structure (issue #193) (#204))
-=======
 import { cmdNormalize } from './commands/normalize.js'
 import { cmdEnrich } from './commands/enrich.js'
->>>>>>> a770e24 (🧩 CLI/provider refactor groundwork for #189 (#200))
+import { resolveNormalizeInput } from './cli-helpers.js'
 import { redactObject } from './utils/redact.js'
 import { getVersionSync } from './version.js'
 
@@ -77,7 +67,6 @@ program
     void cfg // currently unused but reserved for future needs
     logv('[normalize] in=%s labels=%d', cmdOpts.in || '<stdin>', (cmdOpts.label || []).length || 0)
     const labels = Object.entries(cmdOpts.label || {}).map(([k, v]) => `${k}=${v}`)
-<<<<<<< HEAD
     // Resolve input path when running in GitHub Actions and --in is not provided
     let inputPath: string | undefined
     try {
@@ -86,27 +75,31 @@ program
       process.stderr.write(`[events] ${err?.message || 'Input resolution error'}\n`)
       process.exit(2)
     }
-    const { code, output } = await handleNormalize({
+    const { code, output, errorMessage } = await cmdNormalize({
       in: inputPath,
-=======
-    const { code, output } = await cmdNormalize({
-      in: cmdOpts.in,
->>>>>>> a770e24 (🧩 CLI/provider refactor groundwork for #189 (#200))
       source: cmdOpts.source,
       labels,
     })
+    if (code !== 0 || !output) {
+      if (errorMessage) process.stderr.write(errorMessage + '\n')
+      return process.exit(code || 1)
+    }
     // filter/select
     const { selectFields, parseFilter, passesFilter } = await import('./utils/selectFilter.js')
     const filterSpec = parseFilter(cmdOpts.filter)
     if (!passesFilter(output as any, filterSpec)) {
-      // filtered out: no output, exit code 2
-      process.exit(2)
+      return process.exit(2)
     }
     const selected = cmdOpts.select ? selectFields(output as any, String(cmdOpts.select).split(',').map((s) => s.trim()).filter(Boolean)) : output
     const safe = redactObject(selected)
-    if (cmdOpts.out) writeJSONFile(cmdOpts.out, safe)
-    else process.stdout.write(JSON.stringify(safe, null, 2) + '\n')
-    process.exit(code)
+    try {
+      if (cmdOpts.out) writeJSONFile(cmdOpts.out, safe)
+      else process.stdout.write(JSON.stringify(safe, null, 2) + '\n')
+    } catch (e: any) {
+      process.stderr.write(String(e?.message || e) + '\n')
+      return process.exit(1)
+    }
+    process.exit(0)
   })
 
 program
@@ -125,22 +118,31 @@ program
     if (cmdOpts.useGithub || cmdOpts['use-github']) flags.use_github = 'true'
     logv('[enrich] in=%s rules=%s useGithub=%s labels=%d', cmdOpts.in || '<stdin>', cmdOpts.rules || '-', String(flags.use_github === 'true'), (cmdOpts.label || []).length || 0)
     const labels = Object.entries(cmdOpts.label || {}).map(([k, v]) => `${k}=${v}`)
-    const { code, output } = await cmdEnrich({
+    const { code, output, errorMessage } = await cmdEnrich({
       in: cmdOpts.in,
       labels,
       rules: cmdOpts.rules,
       flags,
     })
+    if (code !== 0 || !output) {
+      if (errorMessage) process.stderr.write(errorMessage + '\n')
+      return process.exit(code || 1)
+    }
     const { selectFields, parseFilter, passesFilter } = await import('./utils/selectFilter.js')
     const filterSpec = parseFilter(cmdOpts.filter)
     if (!passesFilter(output as any, filterSpec)) {
-      process.exit(2)
+      return process.exit(2)
     }
     const selected = cmdOpts.select ? selectFields(output as any, String(cmdOpts.select).split(',').map((s) => s.trim()).filter(Boolean)) : output
     const safe = redactObject(selected)
-    if (cmdOpts.out) writeJSONFile(cmdOpts.out, safe)
-    else process.stdout.write(JSON.stringify(safe, null, 2) + '\n')
-    process.exit(code)
+    try {
+      if (cmdOpts.out) writeJSONFile(cmdOpts.out, safe)
+      else process.stdout.write(JSON.stringify(safe, null, 2) + '\n')
+    } catch (e: any) {
+      process.stderr.write(String(e?.message || e) + '\n')
+      return process.exit(1)
+    }
+    process.exit(0)
   })
 
 program.parseAsync(process.argv)

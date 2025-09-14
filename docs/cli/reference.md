@@ -86,7 +86,14 @@ npx @a5c-ai/events enrich --in samples/pull_request.synchronize.json \
 - `--verbose`: increase log verbosity (writes diagnostics to stderr)
 
 ## Exit Codes
+<<<<<<< HEAD
 - `0`: success (commands exit with non-zero when errors occur)
+=======
+- `0`: success
+- `1`: generic error (unexpected failure writing output, etc.)
+- `2`: input/validation error (missing `--in` where required, invalid/parse errors, filter mismatch, missing `GITHUB_EVENT_PATH` when `--source actions`)
+- `3`: provider/network error (only when `--use-github` is requested and API calls fail)
+>>>>>>> 9c9e0c9 (🚀 CLI: consistent exit codes + actionable errors (#213))
 
 ## Notes
 - Token precedence: runtime uses `A5C_AGENT_GITHUB_TOKEN` first, then `GITHUB_TOKEN` (see `src/config.ts`).
