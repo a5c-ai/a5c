@@ -49,3 +49,9 @@ Based on docs/specs/README.md and current codebase:
 - [Producer] Provider – Add issue/check_run normalize mapping + tests
 - [Producer] CI/Docs – Wire `events validate` into README and CI
 
+\n## Created Issues
+https://github.com/a5c-ai/events/issues/228
+https://github.com/a5c-ai/events/issues/229
+https://github.com/a5c-ai/events/issues/230
+https://github.com/a5c-ai/events/issues/231
+https://github.com/a5c-ai/events/issues/232
