@@ -44,28 +44,43 @@ jobs:
           name: coverage-lcov
           path: |
             coverage/lcov.info
-      - name: Coverage summary
+      - name: Coverage summary (compute and save)
+        id: coverage
         if: always()
         run: |
-          if [ -f coverage/coverage-summary.json ]; then
-            node -e '
-              const fs = require("fs");
-              const sum = JSON.parse(fs.readFileSync("coverage/coverage-summary.json","utf8"));
-              const t = sum.total || {};
-              const row = (k) => `| ${k} | ${((t[k]?.pct ?? 0)).toFixed(2)}% | ${t[k]?.covered ?? 0}/${t[k]?.total ?? 0} |`;
-              const out = [
-                "## Coverage Summary",
-                "",
-                "| Metric | Percent | Covered/Total |",
-                "|---|---:|---:|",
-                row("lines"),
-                row("statements"),
-                row("functions"),
-                row("branches"),
-                "",
-              ].join("\n");
-              fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, out);
-            ';
-          else
-            echo "coverage/coverage-summary.json not found; ensure vitest json-summary reporter is enabled" >> "$GITHUB_STEP_SUMMARY";
+          set -euo pipefail
+          node --version
+          # Run the summary script and capture its exit code without failing this step
+          set +e
+          node scripts/coverage-summary.js | tee /tmp/coverage-summary.md
+          rc=$?
+          set -e
+          echo "status=$rc" >> "$GITHUB_OUTPUT"
+      - name: Comment coverage on PR
+        if: ${{ github.event_name == 'pull_request' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          body_file=/tmp/coverage-summary.md
+          if [ ! -s "$body_file" ]; then
+            echo "No coverage summary available." > "$body_file"
           fi
+          # Create or update a sticky comment
+          existing=$(gh api \
+            repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments \
+            --jq 'map(select(.body|startswith("## Coverage Summary"))) | .[0].id' || echo "")
+          if [ -n "$existing" ] && [ "$existing" != "null" ]; then
+            gh api -X PATCH \
+              repos/${{ github.repository }}/issues/comments/$existing \
+              -f body@"$body_file"
+          else
+            gh api -X POST \
+              repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments \
+              -f body@"$body_file"
+          fi
+      - name: Enforce coverage thresholds
+        if: ${{ steps.coverage.outputs.status != '0' }}
+        run: |
+          echo "Coverage thresholds not met"
+          exit 1
