@@ -1,4 +1,7 @@
-=======
+## 1.1.0-a5c-main.15 (2025-09-14)
+
+* docs: resolve merge conflicts in README/CLI reference; specs: clarify include_patch default
+
 ## 1.1.0-a5c-main.14 (2025-09-14)
 
 * 📝 docs: document mentions scanning flags in CLI (fixes #293) (#314) ([0766ca3](https://github.com/a5c-ai/events/commit/0766ca3)), closes [#293](https://github.com/a5c-ai/events/issues/293) [#314](https://github.com/a5c-ai/events/issues/314) [#293](https://github.com/a5c-ai/events/issues/293) [#293](https://github.com/a5c-ai/events/issues/293)
