@@ -80,7 +80,7 @@ events enrich --in samples/pull_request.synchronize.json \
 ## Exit Codes
 - `0`: success
 - `1`: generic error (unexpected failure writing output, etc.)
-- `2`: input/validation error (missing `--in` where required, invalid/parse errors, filter mismatch)
+- `2`: input/validation error (missing `--in` where required, invalid/parse errors, filter mismatch, missing `GITHUB_EVENT_PATH` when `--source actions`)
 - `3`: provider/network error (only when `--use-github` is requested and API calls fail)
 
 ## Notes
