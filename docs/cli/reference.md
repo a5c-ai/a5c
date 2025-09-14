@@ -144,15 +144,16 @@ Exit codes:
 ## Exit Codes
 - `0`: success
 - `1`: generic error (unexpected failure writing output, etc.)
-- `2`: input/validation error (missing `--in` where required, invalid/parse errors, filter mismatch)
+- `2`: input/validation error (missing `--in` where required, invalid/parse errors, filter mismatch, missing `GITHUB_EVENT_PATH` when `--source actions`)
 - `3`: provider/network error (only when `--use-github` is requested and API calls fail)
 
 ## Notes
-- Secrets: CLI redacts known secret patterns in logs and output by default.
-  - Redacted patterns include GitHub PATs (`ghp_...`), JWTs, `Bearer <token>`, Stripe `sk_*`, Slack `xox*`, AWS keys, and URL basic auth.
-  - Sensitive keys in objects (case-insensitive match on: `token`, `secret`, `password`, `api_key`, `client_secret`, `access_token`, etc.) are masked entirely.
-  - The default mask is `REDACTED`.
-  - Env tokens: `A5C_AGENT_GITHUB_TOKEN` takes precedence over `GITHUB_TOKEN` when both are set.
-- Large payloads: processing is streamed where possible; see performance targets in specs.
+- Token precedence: runtime prefers `A5C_AGENT_GITHUB_TOKEN` over `GITHUB_TOKEN` when both are set (see `src/config.ts`).
+- Redaction: CLI redacts sensitive keys and common secret patterns in output by default (see `src/utils/redact.ts`).
+  - Sensitive keys include: `token`, `secret`, `password`, `passwd`, `pwd`, `api_key`, `apikey`, `key`, `client_secret`, `access_token`, `refresh_token`, `private_key`, `ssh_key`, `authorization`, `auth`, `session`, `cookie`, `webhook_secret`.
+  - Pattern masking includes (non-exhaustive): GitHub PATs (`ghp_`, `gho_`, `ghu_`, `ghs_`, `ghe_`), JWTs, `Bearer ...` headers, AWS `AKIA...`/`ASIA...` keys, Stripe `sk_live_`/`sk_test_`, Slack `xox...` tokens, and URL basic auth (`https://user:pass@host`).
 
-See also: `docs/specs/README.md` and `docs/producer/phases/technical-specs/README.md`.
+- Tests: See `test/config.loadConfig.test.ts`, `test/redact.test.ts`, `test/enrich.redaction.test.ts`, `test/config.precedence.test.ts`, and additional cases under `tests/` for coverage and regression fixtures.
+- Large payloads: JSON is read/written from files/stdin/stdout; providers may add streaming in future.
+
+See also: `docs/specs/README.md`. Technical specs reference for token precedence: `docs/producer/phases/technical-specs/tech-stack.md`.
