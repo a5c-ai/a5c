@@ -12,7 +12,7 @@ Normalize and enrich GitHub (and other) events for agentic workflows. Use the CL
 ## Quick Start
 
 Prerequisites:
-- Node.js 18+ (Node 20 LTS recommended)
+- Node.js 20+ (LTS recommended)
 
 Install:
 ```bash
@@ -35,9 +35,9 @@ jq '.type, .repo.full_name, .provenance.workflow?.name' out.json
 `events mentions`
 - Purpose: Extract @mentions from text (stdin) or a file.
 - Common flags:
-  - `--source <kind>`: mention source kind (e.g., `pr_body`, `commit_message`) [default: `pr_body`]
+  - `--source <kind>`: `pr_body|pr_title|commit_message|issue_comment` (default: `pr_body`)
   - `--file <path>`: read from file instead of stdin
-  - `--window <n>`: context window size [default: `30`]
+  - `--window <n>`: context window size (default: 30)
   - `--known-agent <name...>`: known agent names to boost confidence
 
 `events normalize`
@@ -57,7 +57,11 @@ jq '.type, .repo.full_name, .provenance.workflow?.name' out.json
   - `--flag include_patch=<true|false>`: include diff patches in files (default: false)
   - `--flag commit_limit=<n>`: max commits to include (default: 50)
   - `--flag file_limit=<n>`: max files to include (default: 200)
+<<<<<<< HEAD
   - `--use-github`: enable GitHub API enrichment (requires `GITHUB_TOKEN`)
+=======
+  - `--use-github`: enable GitHub API enrichment (requires token)
+>>>>>>> 26dab8d (docs(cli): sync reference, quick-start, README with implemented commands and flags\n\n- Add mentions command docs\n- Remove unimplemented select/filter\n- Document enrich flags: include_patch, commit_limit, file_limit, --use-github\n- Update install scope and Node version\n\nBy: developer-agent(https://app.a5c.ai/a5c/agents/development/developer-agent))
   - `--label <key=value...>`: attach labels to top‑level `labels[]`
 
 Exit codes: `0` success, non‑zero on errors (invalid input, etc.).
@@ -85,11 +89,8 @@ GitHub Actions (normalize current run):
 ```yaml
 - name: Normalize workflow_run
   run: |
-    npx @a5c-ai/events normalize \
-      --source actions \
-      --in "$GITHUB_EVENT_PATH" \
-      --out event.json
-jq '.type, .repo.full_name, .labels' event.json
+    npx @a5c-ai/events normalize --in "$GITHUB_EVENT_PATH" --source actions > event.json
+    jq '.type, .repo.full_name, .labels' event.json
 ```
 
 Local payload file:

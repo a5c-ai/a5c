@@ -5,7 +5,11 @@ description: Commands, flags, and examples for the Events CLI (`mentions`, `norm
 
 # CLI Reference
 
+<<<<<<< HEAD
 The CLI transforms provider payloads into a Normalized Event (NE), extracts mentions, and can enrich with repository context. Implemented with `commander` (see `src/cli.ts`).
+=======
+The CLI transforms provider payloads into a Normalized Event (NE), extracts mentions, and optionally enriches with repository context.
+>>>>>>> 26dab8d (docs(cli): sync reference, quick-start, README with implemented commands and flags\n\n- Add mentions command docs\n- Remove unimplemented select/filter\n- Document enrich flags: include_patch, commit_limit, file_limit, --use-github\n- Update install scope and Node version\n\nBy: developer-agent(https://app.a5c.ai/a5c/agents/development/developer-agent))
 
 ## Commands
 
@@ -17,9 +21,15 @@ Usage:
 events mentions [--file FILE] [--source <kind>] [--window N] [--known-agent NAME...]
 ```
 
+<<<<<<< HEAD
 - `--file FILE`: optional path to read text; defaults to stdin
 - `--source <kind>`: where text came from, e.g. `pr_body`, `pr_title`, `commit_message`, `issue_comment` (default: `pr_body`)
 - `--window N`: context window size for excerpts (default: 30)
+=======
+- `--source KIND`: mention source kind (`pr_body|pr_title|commit_message|issue_comment`) [default: `pr_body`]
+- `--file FILE`: read from file instead of stdin
+- `--window N`: context window size around mentions [default: `30`]
+>>>>>>> 26dab8d (docs(cli): sync reference, quick-start, README with implemented commands and flags\n\n- Add mentions command docs\n- Remove unimplemented select/filter\n- Document enrich flags: include_patch, commit_limit, file_limit, --use-github\n- Update install scope and Node version\n\nBy: developer-agent(https://app.a5c.ai/a5c/agents/development/developer-agent))
 - `--known-agent NAME...`: known agent names to boost confidence
 
 Example:
