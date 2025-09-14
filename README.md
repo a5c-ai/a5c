@@ -46,6 +46,11 @@ jq '.type, .repo.full_name, .provenance.workflow?.name' out.json
   - `--in <file>`: input JSON file (raw event)
   - `--out <file>`: write result to file (default: stdout)
   - `--source <name>`: provenance (`actions|webhook|cli`) [default: `cli`]
+<<<<<<< HEAD
+=======
+  - `--select <paths>`: comma-separated dot paths to include in output
+  - `--filter <expr>`: filter expression `path[=value]`; if not matching, exits with code 2 and no output
+>>>>>>> d4fe2d0 (docs: align labels top-level (NE))
   - `--label <key=value...>`: attach labels to top‑level `labels[]` (repeatable)
 
 `events enrich`
@@ -59,9 +64,14 @@ jq '.type, .repo.full_name, .provenance.workflow?.name' out.json
   - `--flag file_limit=<n>`: max files to include (default: 200)
 <<<<<<< HEAD
   - `--use-github`: enable GitHub API enrichment (requires `GITHUB_TOKEN`)
+<<<<<<< HEAD
 =======
   - `--use-github`: enable GitHub API enrichment (requires token)
 >>>>>>> 26dab8d (docs(cli): sync reference, quick-start, README with implemented commands and flags\n\n- Add mentions command docs\n- Remove unimplemented select/filter\n- Document enrich flags: include_patch, commit_limit, file_limit, --use-github\n- Update install scope and Node version\n\nBy: developer-agent(https://app.a5c.ai/a5c/agents/development/developer-agent))
+=======
+  - `--select <paths>`: comma-separated dot paths to include in output
+  - `--filter <expr>`: filter expression `path[=value]`; if not matching, exits with code 2 and no output
+>>>>>>> d4fe2d0 (docs: align labels top-level (NE))
   - `--label <key=value...>`: attach labels to top‑level `labels[]`
 
 Exit codes: `0` success, non‑zero on errors (invalid input, etc.).
@@ -89,8 +99,11 @@ GitHub Actions (normalize current run):
 ```yaml
 - name: Normalize workflow_run
   run: |
-    npx @a5c-ai/events normalize --in "$GITHUB_EVENT_PATH" --source actions > event.json
-    jq '.type, .repo.full_name, .labels' event.json
+    npx @a5c-ai/events normalize \
+      --source actions \
+      --in "$GITHUB_EVENT_PATH" \
+      --out event.json
+jq '.type, .repo.full_name, .labels' event.json
 ```
 
 Local payload file:

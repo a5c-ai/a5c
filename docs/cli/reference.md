@@ -38,7 +38,7 @@ events normalize [--in FILE] [--out FILE] [--source NAME] [--label KEY=VAL...] [
 - `--in FILE`: path to a JSON webhook payload
 - `--out FILE`: write result JSON (stdout if omitted)
 - `--source NAME`: provenance (`actions|webhook|cli`) [default: `cli`]
-- `--label KEY=VAL...`: attach labels (repeatable)
+- `--label KEY=VAL...`: attach labels to top-level `labels[]` (repeatable)
 - `--select PATHS`: comma-separated dot paths to include in output
 - `--filter EXPR`: filter expression `path[=value]`; if not matched, exits with code `2` and no output
 
@@ -65,7 +65,7 @@ events enrich --in FILE [--out FILE] [--rules FILE] \
   - `commit_limit=<n>` (default: `50`) – limit commits fetched for PR/push
   - `file_limit=<n>` (default: `200`) – limit files per compare list
 - `--use-github`: enable GitHub API enrichment (requires `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`)
-- `--label KEY=VAL...`: attach labels
+- `--label KEY=VAL...`: attach labels to top-level `labels[]`
 - `--select PATHS`: comma-separated dot paths to include in output
 - `--filter EXPR`: filter expression `path[=value]`; if not matched, exits with code `2` and no output
 
