@@ -5,60 +5,83 @@ description: Commands, flags, and examples for the Events CLI (`mentions`, `norm
 
 # CLI Reference
 
+<<<<<<< HEAD
 The CLI transforms provider payloads into a Normalized Event (NE), extracts mentions, and can enrich with repository context. Implemented with `commander` (see `src/cli.ts`).
+=======
+The CLI transforms provider payloads into a Normalized Event (NE) and can enrich with repository context. Implemented with `commander` (see `src/cli.ts`).
+>>>>>>> d6864b0 (docs(cli): sync CLI reference and quick-start with implementation)
 
 ## Commands
 
 ### `events mentions`
-Extract `@mentions` from text (stdin) or a file.
+Extract `@mentions` from text.
 
 Usage:
 ```bash
-events mentions [--file FILE] [--source KIND] [--window N] [--known-agent NAME...]
+events mentions [--file FILE] [--source <kind>] [--window N] [--known-agent NAME...]
 ```
 
-- `--source KIND`: mention source kind (e.g., `pr_body`, `commit_message`) [default: `pr_body`]
-- `--file FILE`: read from file instead of stdin
-- `--window N`: context window size around mentions [default: `30`]
+- `--file FILE`: optional path to read text; defaults to stdin
+- `--source <kind>`: where text came from, e.g. `pr_body`, `pr_title`, `commit_message` (default: `pr_body`)
+- `--window N`: context window size for excerpts (default: 30)
 - `--known-agent NAME...`: known agent names to boost confidence
 
-Examples:
+Example:
 ```bash
-echo "Ping @developer-agent" | events mentions --source issue_comment | jq -r '.[].normalized_target'
+events mentions --file README.md --source pr_body --known-agent developer-agent validator-agent
 ```
 
 ### `events normalize`
-Normalize a raw event payload into the NE schema.
+Normalize a raw provider payload into the NE schema.
 
 Usage:
 ```bash
+<<<<<<< HEAD
 events normalize [--in FILE] [--out FILE] [--source NAME] [--label KEY=VAL...] [--select PATHS] [--filter EXPR]
+=======
+events normalize [--in FILE] [--out FILE] [--source <actions|webhook|cli>] [--label KEY=VAL...] [--select PATHS] [--filter EXPR]
+>>>>>>> d6864b0 (docs(cli): sync CLI reference and quick-start with implementation)
 ```
 
 - `--in FILE`: path to a JSON webhook payload
 - `--out FILE`: write result JSON (stdout if omitted)
+<<<<<<< HEAD
 - `--source NAME`: provenance (`actions|webhook|cli`) [default: `cli`]
 - `--label KEY=VAL...`: attach labels to top-level `labels[]` (repeatable)
 - `--select PATHS`: comma-separated dot paths to include in output
 - `--filter EXPR`: filter expression `path[=value]`; if not matched, exits with code `2` and no output
+=======
+- `--source <name>`: provenance source (`actions|webhook|cli`) [default: `cli`]
+- `--label KEY=VAL...`: attach labels to top‑level `labels[]` (repeatable)
+- `--select PATHS`: comma‑separated dot paths to include in output
+- `--filter EXPR`: filter expression `path[=value]`; if it doesn't pass, exits with code `2`
+>>>>>>> d6864b0 (docs(cli): sync CLI reference and quick-start with implementation)
 
-Examples:
+Example:
 ```bash
-events normalize --in samples/workflow_run.completed.json | jq '.type, .repo.full_name'
+events normalize --in samples/workflow_run.completed.json --out out.json --label env=staging
 ```
 
+Notes:
+- `--select` and `--filter` are implemented and applied after normalization.
+
 ### `events enrich`
-Enrich a previously normalized event with repository and provider metadata.
+Enrich a normalized event (or raw GitHub payload) with repository and provider metadata.
 
 Usage:
 ```bash
 events enrich --in FILE [--out FILE] [--rules FILE] \
+<<<<<<< HEAD
   [--flag KEY=VAL...] [--use-github] [--label KEY=VAL...] \
   [--select PATHS] [--filter EXPR]
+=======
+  [--flag KEY=VAL...] [--use-github] [--label KEY=VAL...] [--select PATHS] [--filter EXPR]
+>>>>>>> d6864b0 (docs(cli): sync CLI reference and quick-start with implementation)
 ```
 
-- `--in FILE`: normalized event input (from `normalize`) or raw provider payload
+- `--in FILE`: input JSON (normalized event or raw GitHub payload)
 - `--out FILE`: write result JSON (stdout if omitted)
+<<<<<<< HEAD
 - `--rules FILE`: YAML/JSON rules file (optional)
 - `--flag KEY=VAL...`: enrichment flags (repeatable); notable flags:
   - `include_patch=true|false` (default: `true`) – include diff patches; when `false`, patches are removed
@@ -68,18 +91,28 @@ events enrich --in FILE [--out FILE] [--rules FILE] \
 - `--label KEY=VAL...`: attach labels to top-level `labels[]`
 - `--select PATHS`: comma-separated dot paths to include in output
 - `--filter EXPR`: filter expression `path[=value]`; if not matched, exits with code `2` and no output
+=======
+- `--rules FILE`: path to rules file (YAML/JSON); recorded in `enriched.metadata.rules`
+- `--flag KEY=VAL...`: enrichment flags map; recorded in `enriched.derived.flags`. Recognized flags include:
+  - `include_patch=true|false` (default: `true`) – include diff patches; when `false`, patches are removed
+  - `commit_limit=<n>` (default: `50`) – limit commits fetched for PR/push
+  - `file_limit=<n>` (default: `200`) – limit files per compare list
+- `--use-github`: enable GitHub API enrichment; equivalent to `--flag use_github=true` (requires `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`)
+- `--label KEY=VAL...`: labels to attach
+- `--select PATHS`: comma‑separated dot paths to include in output
+- `--filter EXPR`: filter expression `path[=value]`; if it doesn't pass, exits with code `2`
+>>>>>>> d6864b0 (docs(cli): sync CLI reference and quick-start with implementation)
 
 Examples:
 ```bash
-export A5C_AGENT_GITHUB_TOKEN=...  # preferred if available; otherwise set GITHUB_TOKEN
+export GITHUB_TOKEN=...  # required for GitHub API lookups
 
-events enrich --in samples/pull_request.synchronize.json \
-  --use-github \
-  --flag include_patch=false \
-  | jq '.enriched.github.pr.mergeable_state'
+events enrich --in samples/pull_request.synchronize.json --use-github \
+  --flag include_patch=false --flag commit_limit=30 --out out.json
+jq '.enriched.github.pr.has_conflicts, .enriched.github.pr.mergeable_state' out.json
 ```
 
-## Global / Built-in Flags
+## Global Options
 - `--help`: show command help
 - `--version`: print version
 
@@ -89,12 +122,11 @@ events enrich --in samples/pull_request.synchronize.json \
 - `2`: input/validation error (missing `--in` where required, invalid/parse errors, filter mismatch, missing `GITHUB_EVENT_PATH` when `--source actions`)
 - `3`: provider/network error (only when `--use-github` is requested and API calls fail)
 
-## Notes
-- Token precedence: runtime uses `A5C_AGENT_GITHUB_TOKEN` first, then `GITHUB_TOKEN` (see `src/config.ts`).
-- Redaction: CLI redacts known secret patterns and sensitive keys in output by default (see `src/utils/redact.ts`).
-  - Sensitive keys include: `token`, `secret`, `password`, `passwd`, `pwd`, `api_key`, `apikey`, `key`, `client_secret`, `access_token`, `refresh_token`, `private_key`, `ssh_key`, `authorization`, `auth`, `session`, `cookie`, `webhook_secret`.
-  - Pattern masking includes (non-exhaustive): GitHub PATs (`ghp_`, `gho_`, `ghu_`, `ghs_`, `ghe_`), JWTs, `Bearer ...` headers, AWS `AKIA...`/`ASIA...` keys, Stripe `sk_live_`/`sk_test_`, Slack `xox...` tokens, and URL basic auth (`https://user:pass@host`).
-- Tests: See `test/config.loadConfig.test.ts`, `test/redact.test.ts`, and `test/enrich.redaction.test.ts` for coverage and regression fixtures.
-- Large payloads: JSON is read/written from files/stdin/stdout; providers may add streaming in future.
+## Security and Redaction
+- Secrets: known patterns are redacted in output and logs by default; see `src/utils/redact.ts`.
+- Tokens: set `A5C_AGENT_GITHUB_TOKEN` or `GITHUB_TOKEN` for GitHub enrichment; tokens are never printed. If both are set, `A5C_AGENT_GITHUB_TOKEN` takes precedence.
 
-See also: `docs/specs/README.md`.
+## Cross-References
+- Specs: `docs/specs/README.md`
+- Samples: `samples/`
+- Tests: `tests/mentions.*`, `tests/enrich.basic.test.ts`, plus additional tests under `test/`
