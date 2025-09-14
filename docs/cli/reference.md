@@ -74,7 +74,7 @@ events enrich --in FILE [--out FILE] [--rules FILE] \
 - `--out FILE`: write result JSON (stdout if omitted)
 - `--rules FILE`: YAML/JSON rules file (optional). When provided, matching rules emit `composed[]` with `{ key, reason, targets?, labels?, payload? }`.
 - `--flag KEY=VAL...`: enrichment flags (repeatable); notable flags:
-  - `include_patch=true|false` (default: `true`) – include diff patches; when `false`, patches are removed
+  - `include_patch=true|false` (default: `false`) – include diff patches; when `false`, patches are removed. Defaulting to false avoids leaking secrets via diffs and keeps outputs small; enable only when required.
   - `commit_limit=<n>` (default: `50`) – limit commits fetched for PR/push
   - `file_limit=<n>` (default: `200`) – limit files per compare list
 - `--use-github`: enable GitHub API enrichment; equivalent to `--flag use_github=true` (requires `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`). Without this flag, the CLI performs no network calls and sets `enriched.github = { provider: 'github', skipped: true, reason: 'flag:not_set' }`.
@@ -95,6 +95,8 @@ events enrich --in samples/pull_request.synchronize.json \
 events enrich --in samples/pull_request.synchronize.json \
   --rules samples/rules/conflicts.yml \
   | jq '[.composed[] | {key, reason}]'
+- Token precedence: runtime prefers `A5C_AGENT_GITHUB_TOKEN` over `GITHUB_TOKEN` when both are set (see `src/config.ts`).
+- Redaction: CLI redacts sensitive keys and common secret patterns in output by default (see `src/utils/redact.ts`).
 ```
 
 Without network calls (mentions only):
@@ -139,12 +141,11 @@ Exit codes:
 - `3`: provider/network error (only when `--use-github` is requested and API calls fail)
 
 ## Notes
-- Token precedence: runtime uses `A5C_AGENT_GITHUB_TOKEN` first, then `GITHUB_TOKEN` (see `src/config.ts`).
-- Redaction: CLI redacts known secret patterns and sensitive keys in output by default (see `src/utils/redact.ts`).
-  - Sensitive keys include: `token`, `secret`, `password`, `passwd`, `pwd`, `api_key`, `apikey`, `key`, `client_secret`, `access_token`, `refresh_token`, `private_key`, `ssh_key`, `authorization`, `auth`, `session`, `cookie`, `webhook_secret`.
-  - Pattern masking includes (non-exhaustive): GitHub PATs (`ghp_`, `gho_`, `ghu_`, `ghs_`, `ghe_`), JWTs, `Bearer ...` headers, AWS `AKIA...`/`ASIA...` keys, Stripe `sk_live_`/`sk_test_`, Slack `xox...` tokens, and URL basic auth (`https://user:pass@host`).
+- Secrets: CLI redacts known secret patterns in logs and output by default.
+  - Redacted patterns include GitHub PATs (`ghp_...`), JWTs, `Bearer <token>`, Stripe `sk_*`, Slack `xox*`, AWS keys, and URL basic auth.
+  - Sensitive keys in objects (case-insensitive match on: `token`, `secret`, `password`, `api_key`, `client_secret`, `access_token`, etc.) are masked entirely.
+  - The default mask is `REDACTED`.
+  - Env tokens: `A5C_AGENT_GITHUB_TOKEN` takes precedence over `GITHUB_TOKEN` when both are set.
+- Large payloads: processing is streamed where possible; see performance targets in specs.
 
-- Tests: See `test/config.loadConfig.test.ts`, `test/redact.test.ts`, `test/enrich.redaction.test.ts`, `test/config.precedence.test.ts`, and additional cases under `tests/` for coverage and regression fixtures.
-- Large payloads: JSON is read/written from files/stdin/stdout; providers may add streaming in future.
-
-See also: `docs/specs/README.md`. Technical specs reference for token precedence: `docs/producer/phases/technical-specs/tech-stack.md`.
+See also: `docs/specs/README.md` and `docs/producer/phases/technical-specs/README.md`.
