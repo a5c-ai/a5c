@@ -117,11 +117,14 @@ events enrich --in samples/pull_request.synchronize.json \
 jq '.enriched' enriched.json
 ```
 
+<<<<<<< HEAD
 Redaction:
 - CLI output is redacted to mask common secret patterns and sensitive keys (see `src/utils/redact.ts`).
 Tokens precedence:
 - `A5C_AGENT_GITHUB_TOKEN` is preferred over `GITHUB_TOKEN` (see `src/config.ts`).
 
+=======
+>>>>>>> 36e0bfd (🧹 Docs: README quickstart examples (schema validation + mentions))
 ### Validate against schema
 
 Use the NE JSON Schema at `docs/specs/ne.schema.json` to validate CLI output (example uses ajv-cli):
