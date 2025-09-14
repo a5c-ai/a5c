@@ -14,7 +14,7 @@ Use this list to gate readiness to exit the Specification Phase. Check items onl
 
 4) Provider adapter (GitHub MVP)
 - [x] Mapping scaffolded — [Providers](./system-components/providers.md), [src/providers/github/map.ts](../../../../src/providers/github/map.ts)
-- [ ] Enrichment coverage outlined (owners, conflicts, repo metadata) — [Specs – enrichment](../../../specs/README.md#enrichment)
+- [ ] Enrichment coverage outlined (owners, conflicts, repo metadata) — [Specs – Enrichment Taxonomy](../../../specs/README.md#4-enrichment-taxonomy)
 
 5) Enrichment bounds
 - [x] Commit/file bounds described — [Enrichment Types](./data-models/enrichment-types.md)
