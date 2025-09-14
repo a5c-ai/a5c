@@ -122,7 +122,7 @@ export async function scanCodeCommentsForMentions(params: {
       const content: string = Buffer.from(res.data.content || '', encoding).toString('utf8')
       const mentions = scanContentForMentions(content, path, lang, options)
       out.push(...mentions)
-    } catch {
+    } catch (_) {
       // ignore fetch errors per-file
     }
   }
@@ -201,3 +201,4 @@ function countNewlines(text: string, endExclusive: number): number {
   for (let i = 0; i < endExclusive; i++) if (text.charCodeAt(i) === 10) count++
   return count
 }
+

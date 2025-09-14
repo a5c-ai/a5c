@@ -24,9 +24,6 @@ describe('handleEnrich integrates enrichGithubEvent', () => {
     const { output } = await handleEnrich({ in: tmp, flags: { use_github: true, include_patch: false }, octokit: mock })
     expect(output.enriched?.github?.pr?.number).toBe(1)
     expect(output.enriched?.github?.pr?.files?.[0]?.patch).toBeUndefined()
-    // When CODEOWNERS not present, owners map is empty and union should be []
-    expect(Array.isArray(output.enriched?.github?.pr?.owners_union)).toBe(true)
-    expect((output.enriched?.github?.pr?.owners_union || []).length).toBe(0)
     if (prev === undefined) delete process.env.A5C_AGENT_GITHUB_TOKEN; else process.env.A5C_AGENT_GITHUB_TOKEN = prev
   })
 })

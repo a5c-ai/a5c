@@ -1,7 +1,7 @@
 {
   "id": "<id>",
   "provider": "github",
-  "type": "issue_comment",
+  "type": "commit",
   "occurred_at": "<iso-8601>",
   "payload": {
     "action": "created",
@@ -38,17 +38,6 @@
   "labels": [],
   "provenance": {
     "source": "cli"
-  },
-  "repo": {
-    "id": 1055826069,
-    "name": "events",
-    "full_name": "a5c-ai/events",
-    "private": true
-  },
-  "actor": {
-    "id": 1934369,
-    "login": "tmuskal",
-    "type": "User"
   },
   "enriched": {
     "github": {

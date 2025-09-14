@@ -52,7 +52,6 @@ program
   .option('--in <file>', 'input JSON file path')
   .option('--out <file>', 'output JSON file path')
   .addOption(new Option('--source <name>', 'source name (actions|webhook|cli)').default('cli'))
-  .option('--validate', 'validate output against NE schema')
   .option('--select <paths>', 'comma-separated dot paths to include in output')
   .option('--filter <expr>', 'filter expression path[=value] to gate output')
   .option('--label <key=value...>', 'labels to attach', collectKeyValue, [])
@@ -68,21 +67,6 @@ program
     if (code !== 0 || !output) {
       if (errorMessage) process.stderr.write(errorMessage + '\n')
       return process.exit(code || 1)
-    }
-    // optional schema validation (on full output before select/filter)
-    if (cmdOpts.validate) {
-      try {
-        const { validateNE, formatErrors } = await import('./validate.js')
-        const res = validateNE(output)
-        if (!res.valid) {
-          const lines = formatErrors(res.errors)
-          process.stderr.write('Validation failed (NE schema):\n' + lines.map((l) => ' - ' + l).join('\n') + '\n')
-          return process.exit(2)
-        }
-      } catch (e: any) {
-        process.stderr.write('Validator error: ' + String(e?.message || e) + '\n')
-        return process.exit(2)
-      }
     }
     // filter/select
     const { selectFields, parseFilter, passesFilter } = await import('./utils/selectFilter.js')
@@ -104,13 +88,12 @@ program
 
 program
   .command('enrich')
-  .description('Enrich a normalized event. No network calls unless --use-github (token required).')
+  .description('Enrich a normalized event with metadata and derived info')
   .option('--in <file>', 'input JSON file path')
   .option('--out <file>', 'output JSON file path')
   .option('--rules <file>', 'rules file path (yaml/json)')
   .option('--flag <key=value...>', 'enrichment flags', collectKeyValue, {})
   .option('--use-github', 'enable GitHub API enrichment (requires GITHUB_TOKEN)')
-  .option('--validate', 'validate output against NE schema')
   .option('--select <paths>', 'comma-separated dot paths to include in output')
   .option('--filter <expr>', 'filter expression path[=value] to gate output')
   .option('--label <key=value...>', 'labels to attach', collectKeyValue, [])
@@ -133,21 +116,6 @@ program
     if (!passesFilter(output as any, filterSpec)) {
       return process.exit(2)
     }
-    // optional schema validation (on full output before select/filter)
-    if (cmdOpts.validate) {
-      try {
-        const { validateNE, formatErrors } = await import('./validate.js')
-        const res = validateNE(output)
-        if (!res.valid) {
-          const lines = formatErrors(res.errors)
-          process.stderr.write('Validation failed (NE schema):\n' + lines.map((l) => ' - ' + l).join('\n') + '\n')
-          return process.exit(2)
-        }
-      } catch (e: any) {
-        process.stderr.write('Validator error: ' + String(e?.message || e) + '\n')
-        return process.exit(2)
-      }
-    }
     const selected = cmdOpts.select ? selectFields(output as any, String(cmdOpts.select).split(',').map((s) => s.trim()).filter(Boolean)) : output
     const safe = redactObject(selected)
     try {
@@ -160,28 +128,26 @@ program
     process.exit(0)
   })
 
-// Emit command (single definition)
-  program
-    .command('emit')
-    .description("Emit an event to a sink (stdout or file)")
-    .option('--in <file>', 'input JSON file path (default: stdin)')
-    .option('--out <file>', 'output JSON file path (for file sink)')
-    .option('--sink <name>', 'sink name (stdout|file)', 'stdout')
-    .action(async (cmdOpts: any) => {
-      const { code, output } = await handleEmit({
-        in: cmdOpts.in,
-        out: cmdOpts.out,
-        sink: cmdOpts.sink,
-      })
-      // handleEmit already wrote to sink; also print redacted to stdout if sink=file and no --quiet flag (future)
-      if (cmdOpts.sink !== 'file' && !cmdOpts.out) {
-        const safe = redactObject(output)
-        process.stdout.write(JSON.stringify(safe, null, 2) + '\n')
-      }
-      process.exit(code)
+program
+  .command('emit')
+  .description("Emit an event to a sink (stdout or file)")
+  .option('--in <file>', 'input JSON file path (default: stdin)')
+  .option('--out <file>', 'output JSON file path (for file sink)')
+  .option('--sink <name>', 'sink name (stdout|file)', 'stdout')
+  .action(async (cmdOpts: any) => {
+    const { code, output } = await handleEmit({
+      in: cmdOpts.in,
+      out: cmdOpts.out,
+      sink: cmdOpts.sink,
     })
+    // handleEmit already wrote to sink; also print redacted to stdout if sink=file and no --quiet flag (future)
+    if (cmdOpts.sink !== 'file' && !cmdOpts.out) {
+      const safe = redactObject(output)
+      process.stdout.write(JSON.stringify(safe, null, 2) + '\n')
+    }
+    process.exit(code)
+  })
 
-// Validate command (single definition)
 program
   .command('validate')
   .description('Validate a JSON payload against the NE schema')
@@ -244,8 +210,6 @@ program
       process.exit(1)
     }
   })
-
-// Note: emit and validate are defined exactly once.
 
 program.parseAsync(process.argv)
 
