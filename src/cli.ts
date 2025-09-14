@@ -4,8 +4,8 @@ import fs from 'node:fs'
 import { extractMentions } from './extractor.js'
 import type { ExtractorOptions, MentionSource } from './types.js'
 import { loadConfig, writeJSONFile } from './config.js'
-import { handleNormalize } from './commands/normalize.js'
-import { handleEnrich } from './commands/enrich.js'
+import { cmdNormalize } from './commands/normalize.js'
+import { cmdEnrich } from './commands/enrich.js'
 import { redactObject } from './utils/redact.js'
 
 const program = new Command()
@@ -56,7 +56,7 @@ program
     const cfg = loadConfig()
     void cfg // currently unused but reserved for future needs
     const labels = Object.entries(cmdOpts.label || {}).map(([k, v]) => `${k}=${v}`)
-    const { code, output } = await handleNormalize({
+    const { code, output } = await cmdNormalize({
       in: cmdOpts.in,
       source: cmdOpts.source,
       labels,
@@ -95,7 +95,7 @@ program
     const flags = { ...(cmdOpts.flag || {}) }
     if (cmdOpts.useGithub || cmdOpts['use-github']) flags.use_github = 'true'
     const labels = Object.entries(cmdOpts.label || {}).map(([k, v]) => `${k}=${v}`)
-    const { code, output } = await handleEnrich({
+    const { code, output } = await cmdEnrich({
       in: cmdOpts.in,
       labels,
       rules: cmdOpts.rules,
