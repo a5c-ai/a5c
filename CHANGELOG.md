@@ -1,3 +1,13 @@
+## 1.1.0-a5c-main.10 (2025-09-14)
+
+* ✨ Provider: add issues/check_run mapping + tests (fixes #231) (#235) ([29c3683](https://github.com/a5c-ai/events/commit/29c3683)), closes [#231](https://github.com/a5c-ai/events/issues/231) [#235](https://github.com/a5c-ai/events/issues/235) [#226](https://github.com/a5c-ai/events/issues/226) [#89](https://github.com/a5c-ai/events/issues/89) [#89](https://github.com/a5c-ai/events/issues/89) [#95](https://github.com/a5c-ai/events/issues/95) [#92](https://github.com/a5c-ai/events/issues/92) [#100](https://github.com/a5c-ai/events/issues/100)
+* 🧪 ci(build): pin Node 20 in Build; stabilize enrich tests handling (#275) ([4004d3d](https://github.com/a5c-ai/events/commit/4004d3d)), closes [#275](https://github.com/a5c-ai/events/issues/275)
+* 🧪 Include legacy tests in Vitest coverage (Fixes #251) (#260) ([b02d8db](https://github.com/a5c-ai/events/commit/b02d8db)), closes [#251](https://github.com/a5c-ai/events/issues/251) [#260](https://github.com/a5c-ai/events/issues/260) [#251](https://github.com/a5c-ai/events/issues/251) [#260](https://github.com/a5c-ai/events/issues/260) [#260](https://github.com/a5c-ai/events/issues/260)
+* 🪟 fix: make docs filenames Windows-safe (issue #272) (#274) ([8a031cd](https://github.com/a5c-ai/events/commit/8a031cd)), closes [#272](https://github.com/a5c-ai/events/issues/272) [#274](https://github.com/a5c-ai/events/issues/274) [#272](https://github.com/a5c-ai/events/issues/272) [#274](https://github.com/a5c-ai/events/issues/274)
+* 🚀 add npmjs deployment for @a5c-ai/events (#273) ([8619f38](https://github.com/a5c-ai/events/commit/8619f38)), closes [#273](https://github.com/a5c-ai/events/issues/273) [#271](https://github.com/a5c-ai/events/issues/271) [#271](https://github.com/a5c-ai/events/issues/271) [#273](https://github.com/a5c-ai/events/issues/273)
+* fix(build): stabilize enrich GitHub tests and CLI composed rules\n\n- dedupe vars in enrichGithubEve ([1a1cd74](https://github.com/a5c-ai/events/commit/1a1cd74))
+* test(mentions): add PR title mentions coverage (fixes #250) (#258) ([345684f](https://github.com/a5c-ai/events/commit/345684f)), closes [#250](https://github.com/a5c-ai/events/issues/250) [#258](https://github.com/a5c-ai/events/issues/258)
+
 ## 1.1.0-a5c-main.9 (2025-09-14)
 
 * ✨ feat(cli): --validate for normalize/enrich (Ajv NE schema) (#184) ([8edc581](https://github.com/a5c-ai/events/commit/8edc581)), closes [#184](https://github.com/a5c-ai/events/issues/184) [#184](https://github.com/a5c-ai/events/issues/184) [#168](https://github.com/a5c-ai/events/issues/168)
