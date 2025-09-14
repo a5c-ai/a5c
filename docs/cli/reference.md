@@ -55,7 +55,11 @@ events enrich --in FILE [--out FILE] [--rules FILE] [--flag KEY=VAL...] [--use-g
 
 - `--in FILE`: normalized event input (from `normalize`) or raw provider payload
 - `--out FILE`: write result JSON (stdout if omitted)
-- `--rules FILE`: YAML/JSON rules file (optional). When provided and a rule matches, output includes a top-level `composed[]` array of items `{ type: "composed", key, labels?, targets?, payload? }`.
+<<<<<<< HEAD
+- `--rules FILE`: YAML/JSON rules file (optional). When provided, matching rules emit `composed[]` with `{ key, reason, targets?, labels?, payload? }`.
+=======
+- `--rules FILE`: YAML/JSON rules file (optional). When provided, matching rules emit `composed[]` with `{ key, reason, targets?, labels?, payload? }`.
+>>>>>>> 7eb5c96 (✨ feat: composed events rules in enrich (issue #191) (#202))
 - `--flag KEY=VAL...`: enrichment flags (repeatable); notable flags:
   - `include_patch`: include diff patches in files [default: `false`]
   - `commit_limit`: max commits to include [default: `50`]
@@ -72,10 +76,17 @@ events enrich --in samples/pull_request.synchronize.json \
   --flag include_patch=false \
   | jq '.enriched.github.pr.mergeable_state'
 
-# Evaluate composed event rules (offline)
+<<<<<<< HEAD
+# With rules (composed events)
 events enrich --in samples/pull_request.synchronize.json \
-  --rules tests/fixtures/rules/conflicts.yml \
-  | jq '(.composed // [])[].key'
+  --rules samples/rules/conflicts.yml \
+  | jq '[.composed[] | {key, reason}]'
+=======
+# With rules (composed events)
+events enrich --in samples/pull_request.synchronize.json \
+  --rules samples/rules/conflicts.yml \
+  | jq '[.composed[] | {key, reason}]'
+>>>>>>> 7eb5c96 (✨ feat: composed events rules in enrich (issue #191) (#202))
 ```
 
 ## Global / Built-in Flags

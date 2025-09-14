@@ -19,7 +19,7 @@
   "scripts": {
     "prepare": "npm run build",
     "clean": "rimraf dist .turbo .vitest coverage",
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json && node scripts/build-post.js",
     "build:clean": "rimraf dist && npm run build",
     "pretest": "npm run build",
     "lint": "eslint \"src/**/*.ts\" \"test/**/*.ts\" \"tests/**/*.ts\"",

@@ -258,7 +258,17 @@ export async function handleEnrich(opts: {
         labels: output.labels || [],
       }
       const res = evaluateRulesDetailed(evalObj, rules)
-      if (res?.composed?.length) (output as any).composed = res.composed
+      if (res?.composed?.length) {
+        // Map detailed criteria to a human-readable reason string (join with AND)
+        const composed = res.composed.map((c: any) => ({
+          key: c.key,
+          reason: Array.isArray(c.criteria) && c.criteria.length ? c.criteria.join(' && ') : undefined,
+          targets: c.targets,
+          labels: c.labels,
+          payload: c.payload,
+        }))
+        ;(output as any).composed = composed
+      }
       const meta: any = (output.enriched as any).metadata || {}
       ;(output.enriched as any).metadata = { ...meta, rules_status: res.status }
     }
