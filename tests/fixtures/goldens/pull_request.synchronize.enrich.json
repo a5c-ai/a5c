@@ -56,8 +56,8 @@
   "enriched": {
     "github": {
       "provider": "github",
-      "skipped": true,
-      "reason": "flag:not_set"
+      "partial": true,
+      "reason": "github_enrich_disabled"
     },
     "metadata": {},
     "derived": {
