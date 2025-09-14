@@ -55,3 +55,28 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN || secrets.GITHUB_TOKEN }}
         run: npx semantic-release
+      - name: Setup Node.js for npmjs (main only)
+        if: github.ref == 'refs/heads/main'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: 'https://registry.npmjs.org'
+      - name: Publish to npmjs (main only)
+        if: github.ref == 'refs/heads/main'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          set -euo pipefail
+          # Ensure dist exists (semantic-release should have built during build step)
+          test -d dist || { echo "dist missing"; exit 1; }
+          # Read version from package.json
+          VERSION=$(node -p "require('./package.json').version")
+          NAME=$(node -p "require('./package.json').name")
+          echo "Attempt publish ${NAME}@${VERSION} to registry.npmjs.org"
+          # Check if already published on npmjs
+          if npm view "${NAME}@${VERSION}" version --registry=https://registry.npmjs.org > /dev/null 2>&1; then
+            echo "Version already exists on npmjs, skipping publish."
+            exit 0
+          fi
+          # Publish to npmjs overriding package publishConfig registry
+          npm publish --registry=https://registry.npmjs.org --access public
