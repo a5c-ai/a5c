@@ -11,3 +11,11 @@ Started: 2025-09-14T00:39:45Z
 
 ## Notes
 Baseline tests passing on main before refactor.
+
+## Progress
+- Added `src/commands/{normalize,enrich}.ts` and rewired CLI to use them.
+- Introduced `src/providers/types.ts` with a `Provider` interface and optional `GitHubProvider` adapter in `providers/github/map.ts`.
+- Re-exported command functions and provider types from `src/index.ts` to keep public API consistent and richer.
+- Built and ran tests; all existing tests still pass (21/21).
+
+Next: consider follow-up tests specifically for the CLI command pathways (thin wrappers) if needed.

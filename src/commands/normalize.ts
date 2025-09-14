@@ -11,6 +11,4 @@ export async function handleNormalize(opts: {
   const output = mapToNE(payload, { source: opts.source, labels: opts.labels })
   return { code: 0, output }
 }
-
 export default handleNormalize
-
