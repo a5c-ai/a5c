@@ -42,4 +42,6 @@ export async function runNormalize(opts: { in?: string; source?: string; labels?
 }
 
 // Backward/CLI adapter name expected by src/cli.ts
-// Note: do not alias cmdNormalize to avoid duplicate identifier during build
+// Note: keep runNormalize for programmatic usage via src/normalize.ts.
+// Do not re-export it as cmdNormalize to avoid duplicate identifier.
+// Do not alias cmdNormalize here to avoid TS2300 duplicate identifier errors

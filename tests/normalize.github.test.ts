@@ -17,8 +17,8 @@ describe('GitHub normalization', () => {
     expect(ev.type).toBe('workflow_run');
     expect(ev.provider).toBe('github');
     expect(ev.repo?.full_name).toBe('a5c-ai/events');
-    expect(ev.ref?.name).toBe('a5c/main');
-    expect(ev.provenance?.workflow?.name).toBe('Build');
+    expect((ev.ref as any)?.name).toBe('a5c/main');
+    expect(((ev as any).provenance?.workflow?.name)).toBe('Build');
   });
 
   it('pull_request -> NE fields', async () => {
@@ -29,9 +29,9 @@ describe('GitHub normalization', () => {
     expect(ev.type).toBe('pull_request');
     expect(ev.repo?.full_name).toBe('a5c-ai/events');
     // NE schema enumerates ref.type including 'pr' for pull requests
-    expect(ev.ref?.type).toBe('pr');
-    expect(ev.ref?.head).toBe('feat/samples-fixtures-issue48');
-    expect(ev.ref?.base).toBe('a5c/main');
+    expect((ev.ref as any)?.type).toBe('pr');
+    expect((ev.ref as any)?.head).toBe('feat/samples-fixtures-issue48');
+    expect((ev.ref as any)?.base).toBe('a5c/main');
     expect(ev.actor?.login).toBe('tmuskal');
   });
 
@@ -41,8 +41,8 @@ describe('GitHub normalization', () => {
     fs.writeFileSync(tmp, JSON.stringify(input));
     const { output: ev } = await handleNormalize({ in: tmp, source: 'webhook', labels: ['x=y'] });
     expect(ev.type).toBe('push');
-    expect(ev.ref?.name).toBe('a5c/main');
-    expect(ev.ref?.sha).toBe(input.after);
+    expect((ev.ref as any)?.name).toBe('a5c/main');
+    expect((ev.ref as any)?.sha).toBe(input.after);
     expect(ev.repo?.full_name).toBe('a5c-ai/events');
   });
 

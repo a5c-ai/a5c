@@ -110,10 +110,10 @@ program
   .option('--rules <file>', 'rules file path (yaml/json)')
   .option('--flag <key=value...>', 'enrichment flags', collectKeyValue, {})
   .option('--use-github', 'enable GitHub API enrichment (requires GITHUB_TOKEN)')
+  .option('--validate', 'validate output against NE schema')
   .option('--select <paths>', 'comma-separated dot paths to include in output')
   .option('--filter <expr>', 'filter expression path[=value] to gate output')
   .option('--label <key=value...>', 'labels to attach', collectKeyValue, [])
-  .option('--validate', 'validate output against NE schema')
   .action(async (cmdOpts: any) => {
     const flags = { ...(cmdOpts.flag || {}) }
     if (cmdOpts.useGithub || cmdOpts['use-github']) flags.use_github = 'true'
@@ -160,10 +160,7 @@ program
     process.exit(0)
   })
 
-// (emit command defined once above)
-
-// validate command already defined above; ensure no duplicate definitions
-
+// Emit command (single definition)
 program
   .command('emit')
   .description("Emit an event to a sink (stdout or file)")
@@ -184,6 +181,7 @@ program
     process.exit(code)
   })
 
+// Validate command (single definition)
 program
   .command('validate')
   .description('Validate a JSON payload against the NE schema')
@@ -246,6 +244,8 @@ program
       process.exit(1)
     }
   })
+
+// Note: emit and validate are defined exactly once.
 
 program.parseAsync(process.argv)
 

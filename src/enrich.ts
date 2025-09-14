@@ -5,6 +5,7 @@ import { extractMentions } from './extractor.js'
 import { scanPatchForCodeCommentMentions, isBinaryPatch, scanCodeCommentsForMentions } from './codeComments.js'
 import { scanMentionsInCodeComments } from './utils/commentScanner.js'
 import { evaluateRulesDetailed, loadRules } from './rules.js'
+import { normalizeGithub } from './providers/github/normalize.js'
 
 export async function handleEnrich(opts: {
   in?: string
@@ -33,31 +34,22 @@ export async function handleEnrich(opts: {
   const token = cfg.githubToken
 
   const isNE = input && typeof input === 'object' && input.provider === 'github' && 'payload' in input
-  const baseEvent = isNE ? input.payload : input
+  const baseEvent = isNE ? (input as any).payload : input
 
-  const neShell: NormalizedEvent = isNE
-    ? input
-    : {
-        id: String(baseEvent?.after || baseEvent?.workflow_run?.id || baseEvent?.pull_request?.id || 'temp-' + Math.random().toString(36).slice(2)),
-        provider: 'github',
-        type: baseEvent?.pull_request ? 'pull_request' : baseEvent?.workflow_run ? 'workflow_run' : baseEvent?.ref ? 'push' : 'commit',
-        occurred_at: new Date(
-          baseEvent?.head_commit?.timestamp || baseEvent?.workflow_run?.updated_at || baseEvent?.pull_request?.updated_at || Date.now()
-        ).toISOString(),
-        payload: baseEvent,
-        labels: opts.labels || [],
-        provenance: { source: 'cli' }
-      }
+  // Ensure we operate on a fully normalized NE shape so validation passes
+  const neBase: NormalizedEvent = isNE
+    ? (input as NormalizedEvent)
+    : normalizeGithub(baseEvent, { source: 'cli', labels: opts.labels || [] })
 
   let githubEnrichment: any = {}
   const hasAuth = Boolean(token || opts.octokit)
   if (!(useGithub && hasAuth)) {
-    // Default: no network enrichment unless flag+token provided
-    githubEnrichment = {
-      provider: 'github',
-      skipped: true,
-      reason: !useGithub ? 'flag:not_set' : 'token:missing',
-    }
+    // Unified behavior:
+    // - Offline (no --use-github): partial with github_enrich_disabled
+    // - Requested but unauthenticated: skipped with token:missing
+    githubEnrichment = !useGithub
+      ? { provider: 'github', partial: true, reason: 'github_enrich_disabled' }
+      : { provider: 'github', skipped: true, reason: 'token:missing' }
   } else {
     try {
       const mod: any = await import('./enrichGithubEvent.js')
@@ -178,7 +170,7 @@ export async function handleEnrich(opts: {
       }
 
       const mod: any = await import('./enrichGithubEvent.js')
-      const octokit = opts.octokit || mod.createOctokit?.(token)
+      const octokit = useGithub ? (opts.octokit || mod.createOctokit?.(token)) : undefined
 
       if ((!filesList || !Array.isArray(filesList)) && octokit && owner && repo) {
         // Derive changed files using GitHub API if possible
@@ -237,13 +229,12 @@ export async function handleEnrich(opts: {
   } catch {}
 
   const output: NormalizedEvent = {
-    ...(neShell as any),
+    ...(neBase as any),
     enriched: {
-      ...(neShell.enriched || {}),
-      // Always expose github enrichment; in offline mode it's a partial stub with reason
+      ...(neBase.enriched || {}),
       github: githubEnrichment,
-      metadata: { ...(neShell.enriched?.metadata || {}), rules: opts.rules },
-      derived: { ...(neShell.enriched?.derived || {}), flags: opts.flags || {} },
+      metadata: { ...(neBase.enriched?.metadata || {}), rules: opts.rules },
+      derived: { ...(neBase.enriched?.derived || {}), flags: opts.flags || {} },
       ...(mentions.length ? { mentions } : {})
     }
   }

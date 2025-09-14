@@ -1,5 +1,5 @@
 {
-  "id": "<id>",
+  "id": "62",
   "provider": "github",
   "type": "pull_request",
   "occurred_at": "<iso-8601>",
@@ -53,11 +53,28 @@
   "provenance": {
     "source": "cli"
   },
+  "repo": {
+    "id": 1055826069,
+    "name": "events",
+    "full_name": "a5c-ai/events",
+    "private": true
+  },
+  "ref": {
+    "name": "feat/samples-fixtures-issue48",
+    "type": "pr",
+    "head": "feat/samples-fixtures-issue48",
+    "base": "a5c/main"
+  },
+  "actor": {
+    "id": 1934369,
+    "login": "tmuskal",
+    "type": "User"
+  },
   "enriched": {
     "github": {
       "provider": "github",
-      "skipped": true,
-      "reason": "flag:not_set"
+      "partial": true,
+      "reason": "github_enrich_disabled"
     },
     "metadata": {},
     "derived": {
