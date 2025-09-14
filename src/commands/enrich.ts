@@ -53,10 +53,14 @@ export async function runEnrich(opts: {
   try {
     // Only call provider if explicitly requested via flags.use_github truthy
     const useGithub = toBool((opts.flags as any)?.use_github)
-    const enriched = useGithub
-      ? await githubProvider.enrich(baseEvent, { token, commitLimit, fileLimit, octokit: opts.octokit })
-      : { _enrichment: { provider: 'github', skipped: true } }
-    githubEnrichment = enriched?._enrichment || {}
+    if (!useGithub) {
+      githubEnrichment = { provider: 'github', partial: true, reason: 'github_enrich_disabled' }
+    } else if (!token) {
+      githubEnrichment = { provider: 'github', partial: true, reason: 'github_token_missing', errors: [{ message: 'GitHub token is required for enrichment' }] }
+    } else {
+      const enriched = await githubProvider.enrich(baseEvent, { token, commitLimit, fileLimit, octokit: opts.octokit })
+      githubEnrichment = enriched?._enrichment || {}
+    }
     if (!includePatch) {
       if (githubEnrichment.pr?.files) {
         githubEnrichment.pr.files = githubEnrichment.pr.files.map((f: any) => ({ ...f, patch: undefined }))
