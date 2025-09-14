@@ -65,6 +65,10 @@ jq '.type, .repo.full_name, .provenance.workflow?.name' out.json
   - `--filter <expr>`: filter expression `path[=value]`; if not matching, exits with code 2 and no output
   - `--label <key=value...>`: attach labels to top‑level `labels[]`
 
+Behavior:
+- Offline by default: without `--use-github`, no network calls occur. Output includes `enriched.github` with `partial=true` and `reason="github_enrich_disabled"`.
+- When `--use-github` is set but no token is configured, output is partial with `reason="github_token_missing"` and an error entry. Mentions extraction still runs.
+
 Exit codes: `0` success, non‑zero on errors (invalid input, etc.).
 
 ## Normalized Event Schema (MVP)
@@ -152,6 +156,9 @@ echo "Please route to @developer-agent and @validator-agent" | \
 Environment variables:
 - `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`: enables GitHub API enrichment
 - `DEBUG`: set to `true` to enable debug mode
+=======
+- `A5C_AGENT_GITHUB_TOKEN` or `GITHUB_TOKEN`: required when using `--use-github`
+- Debug flags TBD (`DEBUG=@a5c/events*`)
 
 CLI behavior:
 - Defaults are safe for local runs (no network calls unless `--use-github` is set).
