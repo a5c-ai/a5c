@@ -74,7 +74,12 @@
     "github": {
       "provider": "github",
       "partial": true,
-      "reason": "github_enrich_disabled"
+      "reason": "github_enrich_disabled",
+      "pr": {
+        "number": 62,
+        "draft": true,
+        "mergeable_state": "dirty"
+      }
     },
     "metadata": {},
     "derived": {
