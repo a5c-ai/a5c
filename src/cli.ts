@@ -77,7 +77,7 @@ program
         if (!res.valid) {
           const lines = formatErrors(res.errors)
           process.stderr.write('Validation failed (NE schema):\n' + lines.map((l) => ' - ' + l).join('\n') + '\n')
-          return process.exit(3)
+          return process.exit(2)
         }
       } catch (e: any) {
         process.stderr.write('Validator error: ' + String(e?.message || e) + '\n')
@@ -141,7 +141,7 @@ program
         if (!res.valid) {
           const lines = formatErrors(res.errors)
           process.stderr.write('Validation failed (NE schema):\n' + lines.map((l) => ' - ' + l).join('\n') + '\n')
-          return process.exit(3)
+          return process.exit(2)
         }
       } catch (e: any) {
         process.stderr.write('Validator error: ' + String(e?.message || e) + '\n')
