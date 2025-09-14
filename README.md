@@ -209,6 +209,26 @@ Project structure:
 
 This repository initially used a generic a5c platform README. That content now lives in `docs/producer/platform-template.md`. The top‑level README focuses on the Events SDK/CLI. For the broader platform, visit https://a5c.ai and the docs.
 
+
+
+### Composed + Validate (Walkthrough)
+
+You can enrich with rules to emit composed events, then validate the enriched output against the NE schema by omitting `composed` (since it is not part of the core schema file yet).
+
+```bash
+# Enrich with rules to produce `.composed[]`
+events enrich --in samples/pull_request.synchronize.json   --rules samples/rules/conflicts.yml   --out enriched.json
+
+# Inspect composed events (guard for absence)
+jq '(.composed // []) | map({key, reason})' enriched.json
+
+# Validate the enriched document against the NE schema (drop `.composed`)
+cat enriched.json | jq 'del(.composed)' |   events validate --schema docs/specs/ne.schema.json --quiet
+```
+
+Notes:
+- `.composed` may be absent when no rules match. Use `(.composed // [])` in `jq`.
+- Validation uses the NE schema at `docs/specs/ne.schema.json`. The `composed` field is not included in that schema; remove it before validation as shown above.
 ## Links
 
 - Specs: `docs/specs/README.md`
