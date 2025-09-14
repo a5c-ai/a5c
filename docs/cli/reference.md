@@ -37,8 +37,13 @@ events normalize [--in FILE] [--out FILE] [--source <actions|webhook|cli>] [--la
 
 - `--in FILE`: path to a JSON webhook payload
 - `--out FILE`: write result JSON (stdout if omitted)
+<<<<<<< HEAD
 - `--source <name>`: provenance source (default: `cli`)
 - `--label KEY=VAL...`: attach labels (repeatable as `--label a=1 --label b=2`)
+=======
+- `--source NAME`: provenance (`actions|webhook|cli`) [default: `cli`]
+- `--label KEY=VAL...`: attach labels to top-level `labels[]` (repeatable)
+>>>>>>> d4fe2d0 (docs: align labels top-level (NE))
 
 Examples:
 ```bash
@@ -56,6 +61,7 @@ events enrich --in FILE [--out FILE] [--rules FILE] \
 
 - `--in FILE`: input JSON (normalized event or raw GitHub payload)
 - `--out FILE`: write result JSON (stdout if omitted)
+<<<<<<< HEAD
 - `--rules FILE`: path to rules file (YAML/JSON) recorded in `enriched.metadata.rules`
 - `--flag KEY=VAL...`: enrichment flags map recorded in `enriched.derived.flags`
   - Recognized flags include:
@@ -65,6 +71,15 @@ events enrich --in FILE [--out FILE] [--rules FILE] \
     - `use_github=true|false` – enable GitHub API enrichment (also enabled via `--use-github`)
 - `--use-github`: convenience to set `use_github=true` (requires `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`)
 - `--label KEY=VAL...`: labels to attach
+=======
+- `--rules FILE`: YAML/JSON rules file (optional)
+- `--flag KEY=VAL...`: enrichment flags (repeatable); notable flags:
+  - `include_patch`: include diff patches in files [default: `false`]
+  - `commit_limit`: max commits to include [default: `50`]
+  - `file_limit`: max files to include [default: `200`]
+- `--use-github`: enable GitHub API enrichment (requires `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`)
+- `--label KEY=VAL...`: attach labels to top-level `labels[]`
+>>>>>>> d4fe2d0 (docs: align labels top-level (NE))
 
 Examples:
 ```bash

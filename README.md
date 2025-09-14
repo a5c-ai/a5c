@@ -46,9 +46,7 @@ jq '.type, .repo.full_name, .provenance.workflow?.name' out.json
   - `--in <file>`: input JSON file (raw event)
   - `--out <file>`: write result to file (default: stdout)
   - `--source <name>`: provenance (`actions|webhook|cli`) [default: `cli`]
-  - `--label <key=value...>`: attach labels (repeatable)
-  - `--select <paths>`: comma-separated dot paths to include
-  - `--filter <expr>`: `path[=value]`; non-match exits with code 2
+  - `--label <key=value...>`: attach labels to top‑level `labels[]` (repeatable)
 
 `events enrich`
 - Purpose: Add metadata and correlations to a normalized event.
@@ -60,9 +58,7 @@ jq '.type, .repo.full_name, .provenance.workflow?.name' out.json
   - `--flag commit_limit=<n>`: max commits to include (default: 50)
   - `--flag file_limit=<n>`: max files to include (default: 200)
   - `--use-github`: enable GitHub API enrichment (requires `GITHUB_TOKEN`)
-  - `--label <key=value...>`: attach labels
-  - `--select <paths>`: comma-separated dot paths to include
-  - `--filter <expr>`: `path[=value]`; non-match exits with code 2
+  - `--label <key=value...>`: attach labels to top‑level `labels[]`
 
 Exit codes: `0` success, non‑zero on errors (invalid input, etc.).
 
@@ -78,8 +74,8 @@ Core fields returned by `normalize`:
 - `actor`: event actor
 - `payload`: raw provider payload (verbatim)
 - `enriched`: `{ metadata, derived, correlations }`
-- `labels`: string array for routing
-- `provenance`: `{ source: action|webhook|cli, workflow? }`
+- `labels`: string array for routing (e.g., `env=staging`)
+- `provenance`: `{ source: action|webhook|cli, workflow? }` (no labels here)
 
 See the detailed specs for full schema and roadmap.
 
@@ -93,7 +89,7 @@ GitHub Actions (normalize current run):
       --source actions \
       --in "$GITHUB_EVENT_PATH" \
       --out event.json
-    jq '.type, .repo.full_name, .provenance' event.json
+jq '.type, .repo.full_name, .labels' event.json
 ```
 
 Local payload file:
