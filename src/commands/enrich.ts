@@ -17,7 +17,8 @@ export async function cmdEnrich(opts: {
     const msg = e?.code === 'ENOENT' ? `Input file not found: ${e?.path || opts.in}` : `Invalid JSON or read error: ${e?.message || e}`
     return { code: 2, errorMessage: msg }
   }
-  const includePatch = toBool(opts.flags?.include_patch ?? true)
+  // Default include_patch to false to minimize payload size
+  const includePatch = toBool(opts.flags?.include_patch ?? false)
   const commitLimit = toInt(opts.flags?.commit_limit, 50)
   const fileLimit = toInt(opts.flags?.file_limit, 200)
 
