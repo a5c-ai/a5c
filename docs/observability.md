@@ -24,8 +24,7 @@ When multiple jobs or a matrix run produce per-job artifacts, an aggregate artif
 
 - `metrics.cache.overall`: `hits`, `total`, `hit_ratio`, `bytes_restored_total`
 - `metrics.cache.by_kind[]`: per cache kind rollups with the same fields
-
-Optional validation in CI:
+  Optional validation in CI:
 
 - Composite actions may validate the artifact using `ajv` when `OBS_VALIDATE_SCHEMA=true` is set; failures should log warnings initially (non-blocking) until stability increases.
 

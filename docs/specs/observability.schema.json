@@ -22,16 +22,16 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "id": { "anyOf": [{ "type": "string" }, { "type": "number" }] },
+        "id": { "oneOf": [{ "type": "integer" }, { "type": "string" }] },
         "attempt": { "type": "integer", "minimum": 1 },
-        "sha": { "type": "string", "minLength": 1 },
+        "sha": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
         "ref": { "type": "string", "minLength": 1 },
         "actor": { "type": "string" },
         "event_name": { "type": "string" },
         "conclusion": { "type": "string" },
         "started_at": { "type": "string", "format": "date-time" },
         "completed_at": { "type": "string", "format": "date-time" },
-        "duration_ms": { "type": ["number", "null"] }
+        "duration_ms": { "type": ["number", "null"], "minimum": 0 }
       },
       "required": [
         "id",
@@ -65,7 +65,7 @@
           }
         },
         "cache": {
-          "type": "object",
+          "type": ["object", "null"],
           "additionalProperties": false,
           "properties": {
             "entries": {
