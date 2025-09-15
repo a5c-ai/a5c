@@ -39,6 +39,7 @@ next-env.d.ts
 **/build
 **/out
 **/coverage
+**/junit.xml
 **/logs
 **/temp
 **/cache

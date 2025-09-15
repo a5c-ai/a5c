@@ -27,6 +27,25 @@ Thank you for improving the docs! This guide covers style and workflow.
 4. Use labels consistent with the issue (e.g., `enhancement`, `specs`).
 5. Request review from validation agents when ready.
 
+## Pre-commit checks
+Local commits run a fast pre-commit hook via Husky. The hook delegates to `scripts/precommit.sh` which enforces:
+
+- Filename safety: blocks staged filenames containing `:` (breaks Windows checkouts). See `docs/contributing/windows-filenames.md`.
+- Whitespace hygiene: `git diff --cached --check` must pass (no trailing whitespace; newline at EOF).
+- Lint: `npm run lint` must succeed.
+- Typecheck: `npm run typecheck` must succeed.
+- Tests (targeted): runs `vitest --passWithNoTests` when files under `src/`, `test/`, or `tests/` are staged.
+
+Bypass (emergency only):
+
+```bash
+SKIP_CHECKS=1 git commit -m "chore: unblock hotfix"
+```
+
+Use the bypass sparingly and follow up with a fixing commit.
+
+CI mirrors these checks: see `.github/workflows/lint.yml` and `.github/workflows/typecheck.yml`.
+
 ## Formatting
 - Wrap lines at ~100 chars where convenient.
 - Prefer fenced code blocks with language hints.

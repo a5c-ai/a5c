@@ -1,21 +1,5 @@
 #!/usr/bin/env sh
 set -e
 
-echo "Running pre-commit checks..."
-if command -v npm >/dev/null 2>&1 && [ -f package.json ]; then
-  # Allow skipping via env variable for CI overrides
-  if [ -n "$A5C_SKIP_PRECOMMIT" ] || [ -n "$SKIP_PRECOMMIT" ]; then
-    echo "Skipping pre-commit due to env flag."
-  else
-    npm run -s lint || true
-    npm test --silent || true
-  fi
-fi
-
-# Guard against Windows-invalid filenames (e.g., ':')
-if git diff --cached --name-only | grep -E ':' >/dev/null 2>&1; then
-  echo "\n\033[31mError: staged filenames contain ':' which breaks Windows checkouts.\033[0m"
-  echo "Please rename to use '-' instead."
-  git diff --cached --name-only | grep -E ':' || true
-  exit 1
-fi
+# Delegate to unified script used by local dev and CI
+scripts/precommit.sh

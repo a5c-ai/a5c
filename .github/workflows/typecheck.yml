@@ -9,6 +9,7 @@ jobs:
   typecheck:
     name: TypeScript Typecheck
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     strategy:
       fail-fast: false
       matrix:
@@ -43,4 +44,3 @@ jobs:
         run: |
           echo "## Typecheck on Node ${{ matrix.node }}" >> "$GITHUB_STEP_SUMMARY"
           echo "Result: ${{ steps.tsc.outputs.result || 'unknown' }}" >> "$GITHUB_STEP_SUMMARY"
-

@@ -1,10 +1,5 @@
 import { describe, it, expect } from 'vitest'
 import { handleNormalize } from '../src/normalize.js'
-import fs from 'node:fs'
-
-function read(path: string) {
-  return JSON.parse(fs.readFileSync(path, 'utf8'))
-}
 
 describe('normalize → NE schema shape (smoke)', () => {
   it('workflow_run sample produces required fields', async () => {
