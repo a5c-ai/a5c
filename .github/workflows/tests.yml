@@ -2,7 +2,7 @@ name: Tests
 
 on:
   push:
-    branches: [ a5c/main, main ]
+    branches: [a5c/main, main]
 
 jobs:
   unit:
@@ -18,7 +18,21 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
+          cache: "npm"
+      - name: Parse cache restored bytes (best-effort)
+        if: always()
+        id: cache-bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          BYTES=0
+          KEY=""
+          if [ -f run.log ]; then
+            BYTES=$(awk '/Cache Size:/ { m=match($0, /\(([0-9]+) B\)/, a); if(m){ print a[1]; exit } }' run.log || echo 0)
+            KEY=$(awk -F ': ' '/Cache restored from key:/ { print $2; exit }' run.log || echo "")
+          fi
+          echo "CACHE_NODE_BYTES=${BYTES}" >> "$GITHUB_ENV"
+          echo "CACHE_NODE_KEY=${KEY}" >> "$GITHUB_ENV"
       - name: Install
         run: |
           ./scripts/install.sh
@@ -28,7 +42,7 @@ jobs:
       - name: Test
         run: |
           ./scripts/test.sh
-      - name: CLI smoke: normalize | validate sample
+      - name: "CLI smoke: normalize | validate sample"
         run: |
           # build CLI if not already built by pretest
           npm run build --silent
@@ -40,13 +54,15 @@ jobs:
             --in /tmp/out.validate.json \
             --schema docs/specs/ne.schema.json \
             --quiet
-      - name: Upload coverage artifact
+      - name: Upload coverage artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-lcov
+          name: coverage
           path: |
             coverage/lcov.info
+            coverage/coverage-summary.json
+          if-no-files-found: ignore
       - name: Upload JUnit report
         if: always()
         uses: actions/upload-artifact@v4
@@ -54,6 +70,7 @@ jobs:
           name: vitest-junit
           path: |
             junit.xml
+          if-no-files-found: ignore
       - name: Coverage summary
         if: always()
         run: |
@@ -79,7 +96,7 @@ jobs:
           else
             echo "coverage/coverage-summary.json not found; ensure vitest json-summary reporter is enabled" >> "$GITHUB_STEP_SUMMARY";
           fi
-      - name: PR feedback: coverage thresholds -> comment + labels
+      - name: "PR feedback: coverage thresholds -> comment + labels"
         if: ${{ github.event_name == 'pull_request' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -167,4 +184,7 @@ jobs:
         env:
           OBS_FILE: observability.json
           CACHE_NODE_HIT: ${{ steps.setup-node.outputs.cache-hit }}
+          CACHE_NODE_BYTES: ${{ env.CACHE_NODE_BYTES }}
+          CACHE_NODE_KEY: ${{ env.CACHE_NODE_KEY }}
           CONCLUSION: ${{ job.status }}
+          RUN_STARTED_AT: ${{ github.run_started_at }}
