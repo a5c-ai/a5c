@@ -18,3 +18,8 @@
 
 - Run local install/build to ensure no breakage.
 - CI should pass the release job on a5c/main.
+
+## Results
+
+- Implemented workflow patch to set `HUSKY=0` for semantic-release steps on `a5c/main` and `main`.
+- Opened PR with labels and auto-merge enabled after checks: https://github.com/a5c-ai/events/pull/482
