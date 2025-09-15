@@ -20,3 +20,10 @@ semantic-release step failed with @semantic-release/git attempting to push `HEAD
 ## Notes
 
 - This change preserves release tags and GitHub Releases; it no longer commits CHANGELOG.md/package.json back to the branch during CI (avoids protected-branch push).
+
+## Results
+
+- Removed @semantic-release/git to stop branch pushes
+- Added HUSKY=0 to release steps in workflow to avoid CI hook noise
+- Opened PR to a5c/main with labels (build, bug, showstopper priority)
+- Local tests green; expect Release to publish tags without branch commits
