@@ -1,5 +1,4 @@
 #!/usr/bin/env sh
-. "$(dirname "$0")/_/husky.sh"
 
 set -e
 
@@ -15,4 +14,3 @@ if command -v npm >/dev/null 2>&1; then
   # Try related tests first; fallback handled in script
   npm run --silent prepush || npm run --silent prepush:full
 fi
-
