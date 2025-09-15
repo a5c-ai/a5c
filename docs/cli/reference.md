@@ -219,3 +219,39 @@ Exit codes:
 - Large payloads: JSON is read/written from files/stdin/stdout; providers may add streaming in future.
 
 See also: `docs/specs/README.md`. Technical specs reference for token precedence: `docs/producer/phases/technical-specs/tech-stack.md`.
+
+### `events emit`
+
+Write a JSON payload (typically the result of `normalize` or `enrich`) to a sink.
+
+Usage:
+
+```bash
+events emit --in FILE [--sink <stdout|file>] [--out FILE]
+```
+
+- `--in FILE`: input JSON file (reads from stdin if omitted)
+- `--sink <name>`: sink to write to (`stdout` or `file`) [default: `stdout`]
+- `--out FILE`: required when `--sink file`; path to write output
+
+Examples:
+
+```bash
+# Emit to stdout (default)
+events emit --in out.json
+
+# Emit to file
+events emit --in out.json --sink file --out result.json
+
+# From stdin
+cat out.json | events emit
+```
+
+Exit codes:
+
+- 0: success
+- 1: error (missing `--out` for file sink, parse/IO)
+
+Notes:
+
+- Output is redacted by default using the same redaction util as other commands.
