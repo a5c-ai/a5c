@@ -9,3 +9,4 @@ Usage:
   uses: ./.github/actions/obs-collector
   env:
     OBS_FILE: observability.json
+    CONCLUSION: ${{ job.status }}
