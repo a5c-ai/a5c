@@ -2,6 +2,11 @@ import type { NormalizedEvent, Mention } from "../types.js";
 import { readJSONFile, loadConfig } from "../config.js";
 import { extractMentions } from "../extractor.js";
 import { loadRules, evaluateRulesDetailed } from "../rules.js";
+import {
+  scanPatchForCodeCommentMentions,
+  isBinaryPatch,
+  scanCodeCommentsForMentions,
+} from "../codeComments.js";
 import { mapToNE } from "../providers/github/map.js";
 
 export async function cmdEnrich(opts: {
@@ -107,6 +112,133 @@ export async function cmdEnrich(opts: {
     const commentBody = (baseEvent as any)?.comment?.body;
     if (commentBody)
       mentions.push(...extractMentions(String(commentBody), "issue_comment"));
+  } catch {}
+
+  // Best-effort: scan repository file contents for code comment mentions when possible
+  try {
+    // owner/repo/ref derivation
+    let owner: string | undefined = (githubEnrichment as any)?.owner;
+    let repo: string | undefined = (githubEnrichment as any)?.repo;
+    let filesList: any[] | undefined =
+      ((githubEnrichment as any)?.pr?.files as any[]) ||
+      ((githubEnrichment as any)?.push?.files as any[]) ||
+      undefined;
+    let ref: string | undefined =
+      (baseEvent as any)?.pull_request?.head?.sha ||
+      (baseEvent as any)?.pull_request?.head?.ref ||
+      (baseEvent as any)?.after ||
+      (baseEvent as any)?.head_commit?.id;
+
+    if (!owner || !repo) {
+      const full = (baseEvent as any)?.repository?.full_name;
+      if (typeof full === "string" && full.includes("/")) {
+        const parts = full.split("/");
+        owner = parts[0];
+        repo = parts[1];
+      }
+    }
+
+    const mod: any = await import("../enrichGithubEvent.js");
+    const octokit =
+      opts.octokit || (token ? mod.createOctokit?.(token) : undefined);
+
+    if ((!filesList || !Array.isArray(filesList)) && octokit && owner && repo) {
+      // Derive changed files using GitHub API when enrichment didn't include them
+      if ((baseEvent as any)?.pull_request?.number) {
+        try {
+          const number = (baseEvent as any).pull_request.number;
+          const list = await octokit.paginate(octokit.pulls.listFiles, {
+            owner,
+            repo,
+            pull_number: number,
+            per_page: 100,
+          });
+          filesList = Array.isArray(list) ? list : [];
+        } catch {}
+      } else if ((baseEvent as any)?.before && (baseEvent as any)?.after) {
+        try {
+          const comp = await octokit.repos.compareCommits({
+            owner,
+            repo,
+            base: (baseEvent as any).before,
+            head: (baseEvent as any).after,
+          });
+          filesList = (comp?.data?.files as any[]) || [];
+          ref = (baseEvent as any).after;
+        } catch {}
+      }
+    }
+
+    if (
+      owner &&
+      repo &&
+      Array.isArray(filesList) &&
+      filesList.length &&
+      ref &&
+      octokit
+    ) {
+      const files = filesList.map((f: any) => ({ filename: f.filename }));
+      // Apply sensible defaults (200KB cap; JS/TS/MD) consistent with SDK path
+      const codeMentions = await scanCodeCommentsForMentions({
+        owner,
+        repo,
+        ref,
+        files,
+        octokit,
+        options: {
+          fileSizeCapBytes: 200 * 1024,
+          languageFilters: ["js", "ts", "md"],
+        },
+      });
+      if (codeMentions.length) mentions.push(...codeMentions);
+    }
+  } catch {
+    // ignore failures
+  }
+
+  // Optional: scan changed file patches for code comment mentions based on flags
+  try {
+    const flags = opts.flags || {};
+    const scanChanged = toBool(
+      (flags as any)["mentions.scan.changed_files"] ?? true,
+    );
+    if (scanChanged) {
+      const maxBytes = toInt(
+        (flags as any)["mentions.max_file_bytes"],
+        200 * 1024,
+      );
+      const langAllowRaw = (flags as any)["mentions.languages"] as any;
+      const langAllow = Array.isArray(langAllowRaw)
+        ? (langAllowRaw as string[])
+        : typeof langAllowRaw === "string" && langAllowRaw.length
+          ? String(langAllowRaw)
+              .split(",")
+              .map((s) => s.trim())
+              .filter(Boolean)
+          : undefined;
+
+      const files: any[] =
+        ((githubEnrichment as any)?.pr?.files as any[]) ||
+        ((githubEnrichment as any)?.push?.files as any[]) ||
+        [];
+      for (const f of files) {
+        const filename = f?.filename as string | undefined;
+        const patch = f?.patch as string | undefined;
+        if (!filename || isBinaryPatch(patch)) continue;
+        const size = (patch || "").length;
+        if (size > maxBytes) continue;
+        if (
+          langAllow &&
+          !langAllow.some((ext) => filename.toLowerCase().endsWith(`.${ext}`))
+        )
+          continue;
+        const found = scanPatchForCodeCommentMentions(filename, patch!, {
+          window: 30,
+          knownAgents: [],
+        });
+        if (found.length) mentions.push(...found);
+      }
+    }
   } catch {}
 
   const output: NormalizedEvent = {
