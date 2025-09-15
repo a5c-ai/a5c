@@ -1,9 +1,14 @@
-# Observability Aggregate (composite action)
+Aggregates observability artifacts from jobs into a single JSON and uploads it.
 
-Downloads `observability` artifacts emitted by prior jobs (e.g., via `.github/actions/obs-summary`) and aggregates them into `observability.aggregate.json` at the workspace root.
+Usage (workflow job):
 
-- Inputs: none (auto-discovers artifacts named `observability`)
-- Outputs: uploads `observability-aggregate` artifact and writes `observability.aggregate.json`
-- Aggregation:
-  - Cache: concatenates `metrics.cache.entries` and computes `hits`, `misses`, `total`, and `bytes_restored_total`.
-  - Coverage: preserved per job within `jobs[]` (no cross-job merge).
+  - name: Download & aggregate
+    uses: ./.github/actions/obs-aggregate
+    with:
+      artifact_name: observability
+      output: observability.aggregate.json
+
+Outputs:
+- Uploads an artifact named `observability.aggregate` containing the merged JSON.
+- Appends a brief summary to the step summary (count, cache totals, duration stats).
+

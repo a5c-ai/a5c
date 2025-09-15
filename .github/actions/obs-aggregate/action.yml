@@ -1,97 +1,114 @@
 name: "Obs Aggregate"
-description: "Download 'observability' artifacts from this run, aggregate into a single JSON, write step summary, and upload."
+description: "Download observability artifacts, merge, and upload aggregate JSON"
 author: "a5c.ai"
+inputs:
+  artifact_name:
+    description: "Artifact name to download"
+    required: false
+    default: "observability"
+  output:
+    description: "Output aggregate JSON path"
+    required: false
+    default: "observability.aggregate.json"
 runs:
   using: "composite"
   steps:
     - name: Download observability artifacts
       uses: actions/download-artifact@v4
       with:
-        name: observability
-        path: observability_artifacts
+        name: ${{ inputs.artifact_name }}
+        path: observability-artifacts
         merge-multiple: true
+      continue-on-error: true
 
-    - name: Aggregate observability.json files
+    - name: Merge observability JSON files
+      id: merge
       shell: bash
       run: |
         set -euo pipefail
-        OUT="observability.aggregate.json"
-        files=$(ls -1 observability_artifacts 2>/dev/null || true)
-        if [ -z "$files" ]; then
-          echo "{}" > "$OUT"
-          echo "No observability artifacts found" >> "$GITHUB_STEP_SUMMARY"
-          echo "OUT_FILE=$OUT" >> "$GITHUB_ENV"
+        OUT="${{ inputs.output }}"
+        mkdir -p "$(dirname "$OUT")"
+        files=( $(find observability-artifacts -type f -name '*.json' 2>/dev/null || true) )
+        if [ ${#files[@]} -eq 0 ]; then
+          echo '{}' > "$OUT"
+          echo "No observability JSONs found; wrote empty object to $OUT" >> "$GITHUB_STEP_SUMMARY"
           exit 0
         fi
-        # Aggregate with Node for robustness
         node -e '
           const fs = require("fs");
-          const path = require("path");
-          const dir = "observability_artifacts";
-          const runs = [];
-          for (const f of fs.readdirSync(dir)) {
-            const p = path.join(dir, f);
-            if (!fs.statSync(p).isFile()) continue;
-            if (!/\.json$/i.test(p)) continue;
+          const glob = (p) => { try { return fs.readdirSync(p).map(f=>p+"/"+f); } catch { return []; } };
+          const walk = (p) => {
+            let res = [];
             try {
-              const o = JSON.parse(fs.readFileSync(p, "utf8"));
-              runs.push(o);
+              for (const e of fs.readdirSync(p, { withFileTypes: true })) {
+                const full = p + "/" + e.name;
+                if (e.isDirectory()) res = res.concat(walk(full));
+                else res.push(full);
+              }
             } catch {}
-          }
-          const agg = { runs };
-          // Aggregate cache metrics if available
-          const caches = runs.map(r => r?.metrics?.cache?.summary).filter(Boolean);
-          if (caches.length) {
-            const sum = caches.reduce((a, c) => ({
-              hits: (a.hits||0) + (c.hits||0),
-              misses: (a.misses||0) + (c.misses||0),
-              total: (a.total||0) + (c.total||0),
-              bytes_restored_total: (a.bytes_restored_total||0) + (c.bytes_restored_total||0),
-            }), {});
-            agg.metrics = agg.metrics || {};
-            agg.metrics.cache = sum;
-          }
-          // Aggregate coverage percentages (simple average of present ones)
-          const pct = key => {
-            const vals = [];
-            for (const r of runs) {
-              const t = r?.metrics?.coverage?.total; if (!t) continue;
-              const v = t[key]?.pct; if (typeof v === 'number') vals.push(v);
+            return res;
+          };
+          const outPath = process.env.OUT;
+          const root = "observability-artifacts";
+          const files = walk(root).filter(f => f.endsWith('.json'));
+          const agg = {
+            schema_version: "0.1",
+            contributed: [],
+            metrics: { cache: { summary: { bytes_restored_total: 0, hits: 0, misses: 0, total: 0 }, entries: [] } },
+            runs: [],
+          };
+          let firstCoverage = null;
+          for (const f of files) {
+            let j = null; try { j = JSON.parse(fs.readFileSync(f, 'utf8')); } catch { continue; }
+            agg.contributed.push(f);
+            if (j?.metrics?.coverage && !firstCoverage) firstCoverage = j.metrics.coverage;
+            if (j?.metrics?.cache?.entries?.length) {
+              for (const e of j.metrics.cache.entries) agg.metrics.cache.entries.push(e);
             }
-            if (!vals.length) return undefined;
-            return Number((vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(2));
-          };
-          const cov = {
-            lines_avg_pct: pct("lines"),
-            branches_avg_pct: pct("branches"),
-            functions_avg_pct: pct("functions"),
-            statements_avg_pct: pct("statements"),
-          };
-          if (Object.values(cov).some(v => v != null)) {
-            agg.metrics = agg.metrics || {};
-            agg.metrics.coverage = cov;
+            if (j?.metrics?.cache?.summary) {
+              const s = j.metrics.cache.summary;
+              agg.metrics.cache.summary.bytes_restored_total += Number(s.bytes_restored_total||0);
+              agg.metrics.cache.summary.hits += Number(s.hits||0);
+              agg.metrics.cache.summary.misses += Number(s.misses||0);
+              agg.metrics.cache.summary.total += Number(s.total||0);
+            }
+            if (j?.run) agg.runs.push(j.run);
           }
-          fs.writeFileSync("observability.aggregate.json", JSON.stringify(agg, null, 2));
-        '
-        echo "OUT_FILE=$OUT" >> "$GITHUB_ENV"
-        # Write brief summary
-        echo "## Observability Aggregate" >> "$GITHUB_STEP_SUMMARY"
-        if jq -e '.metrics.cache' "$OUT" >/dev/null 2>&1; then
-          echo "- Cache: $(jq -r '.metrics.cache.hits // 0') hits / $(jq -r '.metrics.cache.total // 0') total, bytes $(jq -r '.metrics.cache.bytes_restored_total // 0')" >> "$GITHUB_STEP_SUMMARY"
-        else
-          echo "- Cache: n/a" >> "$GITHUB_STEP_SUMMARY"
-        fi
-        if jq -e '.metrics.coverage' "$OUT" >/dev/null 2>&1; then
-          echo "- Coverage (avg): lines $(jq -r '.metrics.coverage.lines_avg_pct // "n/a"')% | funcs $(jq -r '.metrics.coverage.functions_avg_pct // "n/a"')% | branches $(jq -r '.metrics.coverage.branches_avg_pct // "n/a"')%" >> "$GITHUB_STEP_SUMMARY"
+          if (firstCoverage) agg.metrics.coverage = firstCoverage;
+          fs.writeFileSync(outPath, JSON.stringify(agg, null, 2));
+        ' 
+      env:
+        OUT: ${{ inputs.output }}
+
+    - name: Summary
+      shell: bash
+      run: |
+        OUT="${{ inputs.output }}"
+        echo "## Aggregate Observability" >> "$GITHUB_STEP_SUMMARY"
+        echo "- Output: ${OUT}" >> "$GITHUB_STEP_SUMMARY"
+        if [ -f "$OUT" ]; then
+          BYTES=$(stat -c%s "$OUT" 2>/dev/null || stat -f%z "$OUT" 2>/dev/null || echo 0)
+          echo "- Size: ${BYTES} bytes" >> "$GITHUB_STEP_SUMMARY"
+          node -e '
+            const fs = require("fs");
+            try {
+              const j = JSON.parse(fs.readFileSync(process.env.OUT,"utf8"));
+              const cnt = Array.isArray(j.contributed) ? j.contributed.length : 0;
+              const s = j?.metrics?.cache?.summary || {};
+              console.log(`- Files: ${cnt}`);
+              console.log(`- Cache: ${s.hits||0}/${s.total||0} hits, bytes ${s.bytes_restored_total||0}`);
+            } catch {}
+          ' OUT="$OUT" >> "$GITHUB_STEP_SUMMARY"
         fi
 
     - name: Upload aggregate
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: observability-aggregate
-        path: ${{ env.OUT_FILE }}
+        name: observability.aggregate
+        path: ${{ inputs.output }}
 
 branding:
   icon: bar-chart-2
   color: blue
+
