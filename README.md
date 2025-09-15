@@ -69,9 +69,13 @@ cat out.json | npx @a5c-ai/events validate --quiet
   - `--in <file>`: normalized event JSON (or raw payload; NE shell will be created)
   - `--out <file>`: write enriched result
   - `--rules <file>`: rules file path (yaml/json)
-  - `--flag include_patch=<true|false>`: include diff patches in files (default: false)
-  - `--flag commit_limit=<n>`: max commits to include (default: 50)
-  - `--flag file_limit=<n>`: max files to include (default: 200)
+- `--flag include_patch=<true|false>`: include diff patches in files (default: false)
+- `--flag commit_limit=<n>`: max commits to include (default: 50)
+- `--flag file_limit=<n>`: max files to include (default: 200)
+- Mentions scanning (code comments in changed files):
+  - `--flag mentions.scan.changed_files=<true|false>` (default: true)
+  - `--flag mentions.max_file_bytes=<bytes>` (default: 200KB)
+  - `--flag mentions.languages=<ext,...>` (optional list such as `ts,tsx,js,jsx,py,go,yaml`)
   - `--use-github`: enable GitHub API enrichment (requires `GITHUB_TOKEN`)
   - `--select <paths>`: comma-separated dot paths to include in output
   - `--filter <expr>`: filter expression `path[=value]`; if not matching, exits with code 2 and no output
@@ -154,6 +158,17 @@ unset GITHUB_TOKEN A5C_AGENT_GITHUB_TOKEN
 events enrich --in samples/pull_request.synchronize.json --use-github || echo $?
 # stderr: GitHub enrichment failed: ...
 # exit code: 3
+
+# Mentions scanning controls for code comments
+# Disable scanning of changed files
+events enrich --in samples/pull_request.synchronize.json \
+  --flag mentions.scan.changed_files=false | jq '.enriched.mentions // [] | length'
+
+# Restrict to selected languages and reduce size cap
+events enrich --in samples/pull_request.synchronize.json \
+  --flag mentions.languages=ts,js \
+  --flag mentions.max_file_bytes=102400 \
+  | jq '.enriched.mentions // [] | map(select(.source=="code_comment")) | length'
 ```
 
 See also: CLI reference for flags and exit codes: `docs/cli/reference.md`.
