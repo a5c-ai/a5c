@@ -70,7 +70,7 @@ Enrich a normalized event (or raw GitHub payload) with repository and provider m
 Behavior:
 
 - No network calls are performed by default. In offline mode, `enriched.github = { provider: 'github', partial: true, reason: 'github_enrich_disabled' }`.
-- Pass `--use-github` to enable GitHub API enrichment. If no token is configured, enrichment is skipped/partial with `reason: 'token:missing'` and the CLI exits with code `3` when an API call is required.
+- Pass `--use-github` to enable GitHub API enrichment. If no token is configured, the CLI exits with code `3` (provider/network error) and prints an error. Programmatic APIs may return a stub `{ provider: 'github', skipped: true, reason: 'token:missing', partial: true }` when an Octokit is injected for tests.
 
 Usage:
 
