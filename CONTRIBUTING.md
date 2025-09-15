@@ -107,3 +107,11 @@ Example snippet:
 4. Run tests: `npm test`
 
 Please keep changes scoped and include tests when adding functionality.
+
+## Node.js Version Policy
+
+We target Node 20 LTS across CI and local development.
+
+- The repository includes an `.nvmrc` pinning Node `20` for local parity.
+- If you use `nvm`, run `nvm use` in the project root to select the correct version.
+- `package.json` declares `"engines": { "node": ">=20" }`; while Node 22 may work, CI validates and ships with Node 20.

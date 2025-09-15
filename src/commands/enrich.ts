@@ -1,8 +1,17 @@
+//
 import type { NormalizedEvent, Mention } from "../types.js";
 import { readJSONFile, loadConfig } from "../config.js";
 import { extractMentions } from "../extractor.js";
 import { loadRules, evaluateRulesDetailed } from "../rules.js";
 import { mapToNE } from "../providers/github/map.js";
+import {
+  scanPatchForCodeCommentMentions,
+  isBinaryPatch,
+} from "../codeComments.js";
+import {
+  scanMentionsInCodeComments,
+  detectLang as detectLangRich,
+} from "../utils/commentScanner.js";
 
 export async function cmdEnrich(opts: {
   in?: string;
@@ -22,19 +31,35 @@ export async function cmdEnrich(opts: {
         : `Invalid JSON or read error: ${e?.message || e}`;
     return { code: 2, errorMessage: msg };
   }
-  // Default include_patch to false to minimize payload size
+  // Defaults
   const includePatch = toBool(opts.flags?.include_patch ?? false);
   const commitLimit = toInt(opts.flags?.commit_limit, 50);
   const fileLimit = toInt(opts.flags?.file_limit, 200);
+  // Code-comment scanning flags
+  const scanChanged = toBool(
+    (opts.flags as any)?.["mentions.scan.changed_files"] ?? true,
+  );
+  const maxFileBytes = toInt(
+    (opts.flags as any)?.["mentions.max_file_bytes"],
+    200 * 1024,
+  );
+  const languagesRaw = (opts.flags as any)?.["mentions.languages"];
+  const languageFilters: string[] | undefined = Array.isArray(languagesRaw)
+    ? languagesRaw
+    : typeof languagesRaw === "string" && languagesRaw.length
+      ? String(languagesRaw)
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean)
+      : undefined;
 
   const cfg = loadConfig();
   const token = cfg.githubToken;
-
   const isNE =
     input &&
     typeof input === "object" &&
-    input.provider === "github" &&
-    "payload" in input;
+    (input as any).provider === "github" &&
+    "payload" in (input as any);
   // If input is already a NormalizedEvent, keep as-is. Otherwise, map raw payload to NE using provider mapping
   const neShell: NormalizedEvent = isNE
     ? (input as NormalizedEvent)
@@ -42,7 +67,6 @@ export async function cmdEnrich(opts: {
 
   // Use the underlying provider payload for enrichment/mentions extraction
   const baseEvent = (neShell as any).payload || input;
-
   let githubEnrichment: any = {};
   try {
     const mod: any = await import("../enrichGithubEvent.js");
@@ -58,6 +82,7 @@ export async function cmdEnrich(opts: {
           commitLimit,
           fileLimit,
           octokit: opts.octokit,
+          includePatch,
         })
       : { _enrichment: { provider: "github", skipped: true } };
     githubEnrichment = enriched?._enrichment || {};
@@ -71,6 +96,23 @@ export async function cmdEnrich(opts: {
       if (githubEnrichment.push?.files) {
         githubEnrichment.push.files = githubEnrichment.push.files.map(
           (f: any) => ({ ...f, patch: undefined }),
+        );
+      }
+    } else {
+      // Ensure a defined patch key when include_patch=true so callers can rely on presence
+      if (githubEnrichment.pr?.files) {
+        githubEnrichment.pr.files = githubEnrichment.pr.files.map((f: any) =>
+          Object.prototype.hasOwnProperty.call(f, "patch")
+            ? f
+            : { ...f, patch: "" },
+        );
+      }
+      if (githubEnrichment.push?.files) {
+        githubEnrichment.push.files = githubEnrichment.push.files.map(
+          (f: any) =>
+            Object.prototype.hasOwnProperty.call(f, "patch")
+              ? f
+              : { ...f, patch: "" },
         );
       }
     }
@@ -109,6 +151,139 @@ export async function cmdEnrich(opts: {
       mentions.push(...extractMentions(String(commentBody), "issue_comment"));
   } catch {}
 
+  // Code-comment mentions wiring
+  try {
+    if (scanChanged) {
+      const files: any[] =
+        (githubEnrichment?.pr?.files as any[]) ||
+        (githubEnrichment?.push?.files as any[]) ||
+        [];
+      const useGithub = toBool((opts.flags as any)?.use_github);
+
+      // Prefer patch-based scanning when include_patch=true and patches present
+      const hasPatch =
+        includePatch &&
+        Array.isArray(files) &&
+        files.some((f: any) => typeof f?.patch === "string" && f.patch.length);
+      if (hasPatch) {
+        for (const f of files) {
+          const filename = f?.filename;
+          const patch = f?.patch as string | undefined;
+          if (!filename || isBinaryPatch(patch)) continue;
+          if (languageFilters && languageFilters.length) {
+            const lang = detectLangRich(filename);
+            if (!lang || !languageFilters.includes(lang)) continue;
+          }
+          const found = scanPatchForCodeCommentMentions(filename, patch!, {
+            window: 30,
+          });
+          if (found.length) {
+            for (const m of found) normalizeLocationObject(m);
+            mentions.push(...found);
+          }
+        }
+      } else if (useGithub) {
+        // Otherwise, when GitHub API is available, fetch file contents and scan
+        try {
+          let owner: string | undefined = (githubEnrichment as any)?.owner;
+          let repo: string | undefined = (githubEnrichment as any)?.repo;
+          if (!owner || !repo) {
+            const full = (baseEvent as any)?.repository?.full_name;
+            if (typeof full === "string" && full.includes("/")) {
+              const parts = full.split("/");
+              owner = parts[0];
+              repo = parts[1];
+            }
+          }
+          // Determine ref
+          let ref: string | undefined =
+            (baseEvent as any)?.pull_request?.head?.sha ||
+            (baseEvent as any)?.after ||
+            (baseEvent as any)?.head_commit?.id;
+          const mod: any = await import("../enrichGithubEvent.js");
+          const octokit =
+            opts.octokit || (token ? mod.createOctokit?.(token) : undefined);
+          let filesList: any[] | undefined = files;
+          if ((!filesList || !filesList.length) && octokit && owner && repo) {
+            if ((baseEvent as any)?.pull_request?.number) {
+              const number = (baseEvent as any).pull_request.number;
+              filesList = await octokit.paginate(octokit.pulls.listFiles, {
+                owner,
+                repo,
+                pull_number: number,
+                per_page: 100,
+              });
+            } else if (
+              (baseEvent as any)?.before &&
+              (baseEvent as any)?.after
+            ) {
+              const comp = await octokit.repos.compareCommits({
+                owner,
+                repo,
+                base: (baseEvent as any).before,
+                head: (baseEvent as any).after,
+              });
+              filesList = (comp?.data?.files as any[]) || [];
+              ref = (baseEvent as any).after;
+            }
+          }
+          if (
+            octokit &&
+            owner &&
+            repo &&
+            ref &&
+            Array.isArray(filesList) &&
+            filesList.length
+          ) {
+            for (const f of filesList) {
+              const filename = f?.filename;
+              if (!filename) continue;
+              const lang = detectLangRich(filename);
+              if (!lang) continue;
+              if (
+                languageFilters &&
+                languageFilters.length &&
+                !languageFilters.includes(lang)
+              )
+                continue;
+              try {
+                const res = await octokit.repos.getContent({
+                  owner,
+                  repo,
+                  path: filename,
+                  ref,
+                });
+                if (Array.isArray(res.data)) continue;
+                const size = res.data.size ?? 0;
+                if (maxFileBytes > 0 && size > maxFileBytes) continue;
+                const encoding = res.data.encoding || "base64";
+                const content: string = Buffer.from(
+                  res.data.content || "",
+                  encoding,
+                ).toString("utf8");
+                const found = scanMentionsInCodeComments({
+                  content,
+                  filename,
+                  maxBytes: maxFileBytes,
+                  languageFilters,
+                  source: "code_comment",
+                });
+                if (found.length) mentions.push(...found);
+              } catch {
+                // ignore per-file errors
+              }
+            }
+          }
+        } catch {
+          // best-effort: ignore failures
+        }
+      }
+    }
+  } catch {
+    // swallow scanning errors; enrichment should not fail due to scanning
+  }
+  //
+
   const output: NormalizedEvent = {
     ...(neShell as any),
     enriched: {
@@ -122,7 +297,9 @@ export async function cmdEnrich(opts: {
         ...(neShell.enriched?.derived || {}),
         flags: opts.flags || {},
       },
-      ...(mentions.length ? { mentions } : {}),
+      ...(mentions.length
+        ? { mentions: dedupeMentionsWithLocation(mentions) }
+        : {}),
     },
   };
   // Evaluate composed event rules when --rules provided
@@ -171,4 +348,47 @@ function toBool(v: any): boolean {
 function toInt(v: any, def = 0): number {
   const n = Number.parseInt(String(v ?? ""), 10);
   return Number.isFinite(n) ? n : def;
+}
+
+// Normalize legacy string location ("path:line") to object form { file, line }
+function normalizeLocationObject(m: Mention): void {
+  const loc = (m as any).location;
+  if (loc && typeof loc === "string") {
+    const s = String(loc);
+    const idx = s.lastIndexOf(":");
+    if (idx > 0) {
+      const file = s.slice(0, idx);
+      const lineNum = Number.parseInt(s.slice(idx + 1), 10);
+      (m as any).location = {
+        file,
+        ...(Number.isFinite(lineNum) ? { line: lineNum } : {}),
+      };
+    } else {
+      (m as any).location = { file: s };
+    }
+  }
+}
+
+function dedupeMentionsWithLocation(items: Mention[]): Mention[] {
+  const seen = new Set<string>();
+  const out: Mention[] = [];
+  for (const m of items) {
+    const loc = (m as any).location;
+    let file = "";
+    let line: number | string | undefined;
+    if (loc && typeof loc === "object") {
+      file = (loc as any).file || "";
+      line = (loc as any).line;
+    } else if (typeof loc === "string") {
+      const idx = loc.lastIndexOf(":");
+      file = idx > 0 ? loc.slice(0, idx) : loc;
+      line = idx > 0 ? loc.slice(idx + 1) : undefined;
+    }
+    const key = `${m.source}|${m.normalized_target}|${file}:${line ?? ""}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      out.push(m);
+    }
+  }
+  return out;
 }
