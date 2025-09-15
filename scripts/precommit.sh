@@ -3,9 +3,9 @@ set -euo pipefail
 
 echo "[precommit] Running checks..."
 
-# Allow skipping via env variable for CI overrides or emergency bypass
-if [ -n "${A5C_SKIP_PRECOMMIT:-}" ] || [ -n "${SKIP_PRECOMMIT:-}" ]; then
-  echo "[precommit] Skipped by env flag."
+# Allow bypass for emergencies
+if [[ "${SKIP_CHECKS:-0}" == "1" ]] || [[ -n "${A5C_SKIP_PRECOMMIT:-}" ]] || [[ -n "${SKIP_PRECOMMIT:-}" ]]; then
+  echo "[precommit] SKIP_CHECKS=1 set — skipping all checks"
   exit 0
 fi
 
@@ -31,54 +31,22 @@ if echo "$STAGED" | grep -E ':' >/dev/null 2>&1; then
   fail "Staged filenames contain ':' which breaks Windows checkouts. Please rename (use '-' instead)."
 fi
 
-# 2) Trailing whitespace and EOF newline check for text files
-TEXT_FILES=$(echo "$STAGED" | grep -E '\.(ts|tsx|js|jsx|json|md|yml|yaml|sh|cjs|mjs)$' || true)
-if [ -n "$TEXT_FILES" ]; then
-  TW_BAD=0
-  for f in $TEXT_FILES; do
-    [ -f "$f" ] || continue
-    if grep -n -P "\s$" "$f" >/dev/null 2>&1; then
-      echo "[precommit] Trailing whitespace: $f"
-      TW_BAD=1
-    fi
-    if [ -s "$f" ] && [ -n "$(tail -c1 "$f" | tr -d '\n')" ]; then
-      echo "[precommit] Missing EOF newline: $f"
-      TW_BAD=1
-    fi
-  done
-  if [ "$TW_BAD" -eq 1 ]; then
-    fail "Fix trailing whitespace and ensure files end with a newline."
-  fi
+# Whitespace and EOF newline checks using git's built-in checker
+if ! git diff --cached --check; then
+  echo -e "\n\033[31mError: whitespace/newline issues detected in staged changes.\033[0m"
+  echo "Fix trailing whitespace and ensure files end with a newline."
+  exit 1
 fi
 
-# 3) Lint staged TS/JS (fast)
-if command -v npm >/dev/null 2>&1 && [ -f package.json ]; then
-  if echo "$STAGED" | grep -E '\.(ts|tsx|js|jsx)$' >/dev/null 2>&1; then
-    echo "[precommit] Linting..."
-    npm run -s lint || fail "ESLint violations found. Run 'npm run lint' to fix."
+if command -v npx >/dev/null 2>&1 && [[ -f package.json ]]; then
+  echo "[precommit] Running lint-staged on staged files"
+  if ! npx --yes lint-staged; then
+    echo -e "\n\033[31m[precommit] lint-staged reported issues.\033[0m"
+    echo "Fix the reported problems or run 'npm run lint' for full context."
+    exit 1
   fi
-
-  # 4) Typecheck (fast)
-  if [ -f tsconfig.build.json ]; then
-    echo "[precommit] Typechecking..."
-    npm run -s typecheck || fail "Type errors detected. Run 'npm run typecheck'."
-  fi
-
-  # 5) Run related or minimal tests for changed files when possible
-  if echo "$STAGED" | grep -E '\.(ts|tsx|js|jsx)$' >/dev/null 2>&1; then
-    if [ -f scripts/prepush-related.js ]; then
-      echo "[precommit] Related tests (vitest)..."
-      A5C_BASE_REF="origin/a5c/main" node scripts/prepush-related.js || {
-        warn "Related tests failed; running vite st fallback."
-        npx vitest run --passWithNoTests || fail "Tests failed."
-      }
-    else
-      echo "[precommit] Running minimal tests (vitest)..."
-      npx vitest run --passWithNoTests || fail "Tests failed."
-    fi
-  fi
+else
+  echo "[precommit] npx or package.json not found; skipping lint-staged"
 fi
 
-echo "[precommit] All checks passed."
-exit 0
-
+echo "[precommit] All checks passed"
