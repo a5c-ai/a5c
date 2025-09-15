@@ -47,11 +47,14 @@ jobs:
           path: |
             coverage/lcov.info
             coverage/coverage-summary.json
-      - name: Upload coverage to Codecov (optional)
+      - name: Upload to Codecov (optional)
+        # Upload to Codecov only when CODECOV_TOKEN is configured
         if: env.CODECOV_TOKEN != ''
         uses: codecov/codecov-action@v4
         with:
-          files: coverage/lcov.info
-          token: ${{ secrets.CODECOV_TOKEN }}
+          token: ${{ env.CODECOV_TOKEN }}
+          files: |
+            coverage/lcov.info
           flags: pr
           fail_ci_if_error: false
+          verbose: true
