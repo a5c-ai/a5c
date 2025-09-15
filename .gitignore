@@ -50,14 +50,11 @@ next-env.d.ts
 # local tmp files produced by tests/dev runs
 # a5c temp artifacts
 .a5c-tmp/
+# temporary enrich outputs (including e2e sample artifacts)
+tmp-enrich-*.json
+**/tmp-enrich-*.json
 # local generated helper files (should not be committed)
 .check_env
 .pr_comment.md
 # CLI outputs
 /out.json
-<<<<<<< HEAD
-# temporary enrich outputs
-**/tmp-enrich-*.json
-=======
-tmp-enrich-*.json
->>>>>>> 9c08a27 (chore: cleanup tmp enrich JSON artifacts and add ignore)
