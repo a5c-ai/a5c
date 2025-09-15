@@ -55,12 +55,11 @@ export async function cmdEnrich(opts: {
 
   const cfg = loadConfig();
   const token = cfg.githubToken;
-
   const isNE =
     input &&
     typeof input === "object" &&
-    input.provider === "github" &&
-    "payload" in input;
+    (input as any).provider === "github" &&
+    "payload" in (input as any);
   // If input is already a NormalizedEvent, keep as-is. Otherwise, map raw payload to NE using provider mapping
   const neShell: NormalizedEvent = isNE
     ? (input as NormalizedEvent)
@@ -68,7 +67,6 @@ export async function cmdEnrich(opts: {
 
   // Use the underlying provider payload for enrichment/mentions extraction
   const baseEvent = (neShell as any).payload || input;
-
   let githubEnrichment: any = {};
   try {
     const mod: any = await import("../enrichGithubEvent.js");
@@ -284,6 +282,182 @@ export async function cmdEnrich(opts: {
   } catch {
     // swallow scanning errors; enrichment should not fail due to scanning
   }
+          if (!owner || !repo) {
+            const full = (baseEvent as any)?.repository?.full_name;
+            if (typeof full === "string" && full.includes("/")) {
+              const parts = full.split("/");
+              owner = parts[0];
+              repo = parts[1];
+            }
+          }
+<<<<<<< HEAD
+          // Determine ref
+          let ref: string | undefined =
+            (baseEvent as any)?.pull_request?.head?.sha ||
+            (baseEvent as any)?.after ||
+            (baseEvent as any)?.head_commit?.id;
+          const mod: any = await import("../enrichGithubEvent.js");
+          const octokit =
+            opts.octokit || (token ? mod.createOctokit?.(token) : undefined);
+          let filesList: any[] | undefined = files;
+          if ((!filesList || !filesList.length) && octokit && owner && repo) {
+            if ((baseEvent as any)?.pull_request?.number) {
+              const number = (baseEvent as any).pull_request.number;
+              filesList = await octokit.paginate(octokit.pulls.listFiles, {
+                owner,
+                repo,
+                pull_number: number,
+                per_page: 100,
+              });
+            } else if (
+              (baseEvent as any)?.before &&
+              (baseEvent as any)?.after
+            ) {
+              const comp = await octokit.repos.compareCommits({
+                owner,
+                repo,
+                base: (baseEvent as any).before,
+                head: (baseEvent as any).after,
+              });
+              filesList = (comp?.data?.files as any[]) || [];
+              ref = (baseEvent as any).after;
+            }
+          }
+          if (
+            octokit &&
+            owner &&
+            repo &&
+            ref &&
+            Array.isArray(filesList) &&
+            filesList.length
+          ) {
+            for (const f of filesList) {
+              const filename = f?.filename;
+              if (!filename) continue;
+              const lang = detectLangRich(filename);
+              if (!lang) continue;
+              if (
+                languageFilters &&
+                languageFilters.length &&
+                !languageFilters.includes(lang)
+              )
+                continue;
+              try {
+                const res = await octokit.repos.getContent({
+                  owner,
+                  repo,
+                  path: filename,
+                  ref,
+                });
+                if (Array.isArray(res.data)) continue;
+                const size = res.data.size ?? 0;
+                if (maxFileBytes > 0 && size > maxFileBytes) continue;
+                const encoding = res.data.encoding || "base64";
+                const content: string = Buffer.from(
+                  res.data.content || "",
+                  encoding,
+                ).toString("utf8");
+                const found = scanMentionsInCodeComments({
+                  content,
+                  filename,
+                  maxBytes: maxFileBytes,
+                  languageFilters,
+                  source: "code_comment",
+                });
+                if (found.length) mentions.push(...found);
+              } catch {
+                // ignore per-file errors
+              }
+            }
+          }
+        } catch {
+          // best-effort: ignore failures
+        }
+      }
+    }
+  } catch {
+    // swallow scanning errors; enrichment should not fail due to scanning
+  }
+=======
+          const ref: string | undefined =
+            (baseEvent as any)?.pull_request?.head?.sha ||
+            (baseEvent as any)?.after ||
+            (baseEvent as any)?.head_commit?.id;
+          if (owner && repo && ref) {
+            try {
+              const mod: any = await import("../enrichGithubEvent.js");
+              const octokit =
+                opts.octokit ||
+                (token ? mod.createOctokit?.(token) : undefined);
+              let changed: { filename: string }[] = [];
+              if (Array.isArray(filesList) && filesList.length) {
+                changed = filesList.map((f: any) => ({ filename: f.filename }));
+              } else if (octokit) {
+                if ((baseEvent as any)?.pull_request?.number) {
+                  const number = (baseEvent as any).pull_request.number;
+                  const list = await octokit.paginate(octokit.pulls.listFiles, {
+                    owner,
+                    repo,
+                    pull_number: number,
+                    per_page: 100,
+                  });
+                  changed = Array.isArray(list)
+                    ? list.map((f: any) => ({ filename: f.filename }))
+                    : [];
+                } else if (
+                  (baseEvent as any)?.before &&
+                  (baseEvent as any)?.after
+                ) {
+                  const comp = await octokit.repos.compareCommits({
+                    owner,
+                    repo,
+                    base: (baseEvent as any).before,
+                    head: (baseEvent as any).after,
+                  });
+                  const list = (comp?.data?.files as any[]) || [];
+                  changed = list.map((f: any) => ({ filename: f.filename }));
+                }
+              }
+              if (octokit && Array.isArray(changed) && changed.length) {
+                for (const f of changed) {
+                  const filename = f.filename;
+                  if (!isAllowedLang(filename)) continue;
+                  try {
+                    const res = await octokit.repos.getContent({
+                      owner,
+                      repo,
+                      path: filename,
+                      ref,
+                    });
+                    if (Array.isArray(res.data)) continue;
+                    const size = res.data.size ?? 0;
+                    if (maxBytes > 0 && size > maxBytes) continue;
+                    const encoding = res.data.encoding || "base64";
+                    const content: string = Buffer.from(
+                      res.data.content || "",
+                      encoding,
+                    ).toString("utf8");
+                    const found = scanMentionsInCodeComments({
+                      content,
+                      filename,
+                      maxBytes,
+                      languageFilters,
+                      source: "code_comment",
+                    });
+                    if (found?.length) mentions.push(...found);
+                  } catch {}
+                }
+              }
+            } catch {}
+          }
+        }
+      }
+    }
+  } catch {}
+
+  // Dedupe mentions across sources
+  const allMentions = dedupeMentions(mentions);
+>>>>>>> 8a370dd144ec975db7c6b9b2e5aceae07d9ebe86
 
   const output: NormalizedEvent = {
     ...(neShell as any),
