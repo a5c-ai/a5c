@@ -67,11 +67,25 @@
 
 Configuration:
 
-- `mentions.scan.changed_files`: `true|false` (default true)
+- `mentions.scan.changed_files`: `true|false` (default true) — scan changed files for `@...` in code comments.
 - `mentions.scan.commit_messages`: `true|false` (default true)
 - `mentions.scan.issue_comments`: `true|false` (default true)
 - `mentions.max_file_bytes`: bytes cap per file (default 200KB)
 - `mentions.languages`: opt-in list for code-comment scanning; default detects via filename.
+
+Example mention from a code comment:
+
+```
+{
+  "target": "@developer-agent",
+  "normalized_target": "developer-agent",
+  "kind": "agent",
+  "source": "code_comment",
+  "location": { "file": "src/feature.ts", "line": 42 },
+  "context": "// @developer-agent please review the edge case handling",
+  "confidence": 0.85
+}
+```
 
 ## 5) Configuration
 
