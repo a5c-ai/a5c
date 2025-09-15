@@ -25,8 +25,21 @@
       }
     },
     "cache": {
-      "entries": [{ "kind": "node", "hit": true }],
-      "summary": { "hits": 1, "misses": 0, "total": 1 }
+      "entries": [
+        {
+          "kind": "node",
+          "hit": true,
+          "key": "node-cache-Linux-x64-npm-...",
+          "bytes": 36778138
+        }
+      ],
+      "summary": {
+        "hits": 1,
+        "misses": 0,
+        "total": 1,
+        "hit_ratio": 1.0,
+        "bytes_restored_total": 36778138
+      }
     }
   }
 }

@@ -30,7 +30,7 @@ const hits = cacheEntries.filter(e => e.hit).length;
 const total = cacheEntries.length;
 const bytes_total = cacheEntries.reduce((a, e) => a + (typeof e.bytes === 'number' ? e.bytes : 0), 0);
 const cache = total
-  ? { entries: cacheEntries, summary: { hits, misses: total - hits, total, bytes_restored_total: bytes_total } }
+  ? { entries: cacheEntries, summary: { hits, misses: total - hits, total, hit_ratio: total ? hits / total : null, bytes_restored_total: bytes_total } }
   : null;
 
 const end = new Date();
