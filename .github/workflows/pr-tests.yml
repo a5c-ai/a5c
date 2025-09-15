@@ -26,17 +26,17 @@ jobs:
           cache: npm
       - name: Install
         run: npm ci
-      - name: Test (vitest, no coverage thresholds)
-        run: npm run -s test
+      - name: Test (vitest, coverage)
+        run: npm run -s test:ci
       - name: Upload coverage artifact
-        if: failure()
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: pr-coverage-lcov
           path: |
             coverage/lcov.info
             coverage/coverage-summary.json
-      - name: Upload to Codecov (optional)
+      - name: Upload coverage to Codecov (optional)
         if: env.CODECOV_TOKEN != ''
         uses: codecov/codecov-action@v4
         with:
