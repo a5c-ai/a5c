@@ -18,6 +18,7 @@ See docs/routing/ownership-and-routing.md for how CODEOWNERS drives routing and 
 Prerequisites:
 
 - Node.js 20+ (LTS recommended). The repo includes an `.nvmrc` pinning Node 20 for local parity with CI.
+- Node.js 20+ (LTS recommended). See `.nvmrc` for the canonical version used in CI.
 
 Install:
 
@@ -245,6 +246,16 @@ See `docs/specs/README.md` for examples and behavior-driven test outlines. Add y
   - Local pre-commit enforces whitespace/newline hygiene, lint, and typecheck; see `docs/contributing/README.md#pre-commit-checks`.
 - Minimal Node types + commander; TypeScript configured in `tsconfig.json`
 
+### Node.js Version Policy
+
+This project targets Node 20 LTS by default:
+
+- Engines: `"node": ">=20"` in `package.json`
+- Local: `.nvmrc` pins Node 20
+- CI: workflows use `actions/setup-node@v4` with `node-version-file: .nvmrc`
+
+Typecheck CI runs a matrix on Node 20 and 22 to catch version-specific type issues, but build/tests default to Node 20.
+
 ### Commit conventions
 
 We follow Conventional Commits. Local commit messages are validated with Husky + commitlint, and PRs run a commitlint check. See `docs/contributing/git-commits.md`.
@@ -268,23 +279,28 @@ This repository initially used a generic a5c platform README. That content now l
 
 ### Composed + Validate (Walkthrough)
 
-You can enrich with rules to emit composed events, then validate the enriched output against the NE schema by omitting `composed` (since it is not part of the core schema file yet).
+You can enrich with rules to emit composed events, then validate the enriched output against the NE schema. The NE schema includes an optional top‑level `composed` array; enriched outputs validate as‑is. If you want to validate only the normalized core (without composed), you may optionally strip `composed` for that purpose.
 
 ```bash
 # Enrich with rules to produce `.composed[]`
-events enrich --in samples/pull_request.synchronize.json   --rules samples/rules/conflicts.yml   --out enriched.json
+events enrich --in samples/pull_request.synchronize.json \
+  --rules samples/rules/conflicts.yml \
+  --out enriched.json
 
 # Inspect composed events (guard for absence)
 jq '(.composed // []) | map({key, reason})' enriched.json
 
-# Validate the enriched document against the NE schema (drop `.composed`)
-cat enriched.json | jq 'del(.composed)' |   events validate --schema docs/specs/ne.schema.json --quiet
+# Validate the enriched document against the NE schema (no need to drop `.composed`)
+events validate --in enriched.json --schema docs/specs/ne.schema.json --quiet
+
+# Optional: validate the normalized-only subset by removing `.composed`
+jq 'del(.composed)' enriched.json | events validate --schema docs/specs/ne.schema.json --quiet
 ```
 
 Notes:
 
 - `.composed` may be absent when no rules match. Use `(.composed // [])` in `jq`.
-- Validation uses the NE schema at `docs/specs/ne.schema.json`. The `composed` field is not included in that schema; remove it before validation as shown above.
+- NE schema: `docs/specs/ne.schema.json` includes optional top‑level `composed`. `composed[].payload` may be `object | array | null`.
 
 ## Links
 
