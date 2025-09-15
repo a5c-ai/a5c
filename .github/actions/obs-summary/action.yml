@@ -1,0 +1,95 @@
+name: "Obs Summary & Artifact"
+description: "Aggregate job metrics, write step summary, and upload observability.json"
+author: "a5c.ai"
+runs:
+  using: "composite"
+  steps:
+    - name: Collect metrics and write summary + file
+      id: collect
+      shell: bash
+      run: |
+        set -euo pipefail
+        OBS_FILE="${OBS_FILE:-observability.json}"
+        JOB_NAME="${JOB_NAME:-${GITHUB_JOB:-}}"
+        WORKFLOW_NAME="${WORKFLOW_NAME:-${GITHUB_WORKFLOW:-}}"
+        RUN_ID="${RUN_ID:-${GITHUB_RUN_ID:-}}"
+        RUN_ATTEMPT="${RUN_ATTEMPT:-${GITHUB_RUN_ATTEMPT:-1}}"
+        REPO="${REPO:-${GITHUB_REPOSITORY:-}}"
+        SHA="${SHA:-${GITHUB_SHA:-}}"
+        BRANCH_REF="${BRANCH_REF:-${GITHUB_REF:-}}"
+        CONCLUSION="${CONCLUSION:-}"
+
+        echo "OBS_FILE=${OBS_FILE}" >> "$GITHUB_ENV"
+
+        node -e '
+          const fs = require("fs");
+          const env = process.env;
+          const get = (k, d = "") => env[k] ?? d;
+          let cov = null;
+          try { cov = JSON.parse(fs.readFileSync("coverage/coverage-summary.json", "utf8")); } catch {}
+          // Collect cache entries from env keys like CACHE_<KIND>_HIT=true/false
+          const cacheEntries = [];
+          for (const [k, v] of Object.entries(env)) {
+            const m = /^CACHE_([A-Z0-9]+)_HIT$/.exec(k);
+            if (!m) continue;
+            const kind = m[1].toLowerCase();
+            const hit = String(v).toLowerCase() === "true" || String(v) === "1";
+            cacheEntries.push({ kind, hit });
+          }
+          const hits = cacheEntries.filter(e => e.hit).length;
+          const misses = cacheEntries.filter(e => !e.hit).length;
+          const total = cacheEntries.length;
+          const cache = total ? { entries: cacheEntries, summary: { hits, misses, total } } : null;
+          const obs = {
+            repo: get("GITHUB_REPOSITORY") || get("REPO"),
+            workflow: get("GITHUB_WORKFLOW") || get("WORKFLOW_NAME"),
+            job: get("JOB_NAME") || get("GITHUB_JOB"),
+            run: {
+              id: get("GITHUB_RUN_ID") || get("RUN_ID"),
+              attempt: Number(get("GITHUB_RUN_ATTEMPT") || get("RUN_ATTEMPT") || "1"),
+              sha: get("GITHUB_SHA") || get("SHA"),
+              ref: get("GITHUB_REF") || get("BRANCH_REF"),
+              actor: get("GITHUB_ACTOR", ""),
+              event_name: get("GITHUB_EVENT_NAME", ""),
+              conclusion: get("CONCLUSION", ""),
+              started_at: null,
+              completed_at: new Date().toISOString(),
+            },
+            metrics: { coverage: cov, cache },
+          };
+          fs.writeFileSync(process.env.OBS_FILE || "observability.json", JSON.stringify(obs, null, 2));
+          // Append to step summary
+          const summaryFile = process.env.GITHUB_STEP_SUMMARY;
+          if (summaryFile) {
+            const lines = [];
+            lines.push("## Observability");
+            lines.push(`- Repo: ${obs.repo}`);
+            lines.push(`- Workflow: ${obs.workflow}`);
+            lines.push(`- Job: ${obs.job}`);
+            lines.push(`- Run: ${obs.run.id} (attempt ${obs.run.attempt})`);
+            if (obs.run.conclusion) {
+              lines.push(`- Conclusion: ${obs.run.conclusion}`);
+            }
+            if (cov && cov.total) {
+              const t = cov.total;
+              const pct = (x) => (typeof x?.pct === 'number' ? x.pct.toFixed(2) : '0.00');
+              lines.push(`- Coverage: lines ${pct(t.lines)}% | funcs ${pct(t.functions)}% | branches ${pct(t.branches)}%`);
+            }
+            if (cache) {
+              const kinds = cache.entries.map(e => `${e.kind}: ${e.hit ? 'hit' : 'miss'}`).join(', ');
+              lines.push(`- Cache: ${cache.summary.hits}/${cache.summary.total} hits (${kinds})`);
+            }
+            fs.appendFileSync(summaryFile, lines.join("\n") + "\n");
+          }
+        '
+
+    - name: Upload observability.json
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: observability
+        path: ${{ env.OBS_FILE }}
+
+branding:
+  icon: bar-chart-2
+  color: green

@@ -16,7 +16,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - id: setup-node
+        uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'npm'
@@ -155,10 +156,10 @@ jobs:
           else
             gh pr comment "$PR_NUMBER" --repo "$REPO_FULL" -F /tmp/pr-comment.md >/dev/null
           fi
-
-      - name: Observability collector
+      - name: Observability summary
         if: always()
-        uses: ./.github/actions/obs-collector
+        uses: ./.github/actions/obs-summary
         env:
           OBS_FILE: observability.json
+          CACHE_NODE_HIT: ${{ steps.setup-node.outputs.cache-hit }}
           CONCLUSION: ${{ job.status }}
