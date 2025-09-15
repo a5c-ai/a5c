@@ -33,6 +33,7 @@ runs:
           node -e '
             try {
               const fs = require("fs");
+              // Use Ajv 2020 to support Draft 2020-12 meta-schema referenced by our schema
               const Ajv2020 = require("ajv/dist/2020");
               const addFormats = require("ajv-formats");
               const schema = JSON.parse(fs.readFileSync("docs/specs/observability.schema.json", "utf8"));
