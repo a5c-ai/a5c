@@ -376,6 +376,8 @@ jobs:
     runs-on: ubuntu-latest
     if: always()
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
       - name: Download & aggregate
         uses: ./.github/actions/obs-aggregate
       - name: Show aggregate
