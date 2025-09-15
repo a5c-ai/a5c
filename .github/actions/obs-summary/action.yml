@@ -28,6 +28,7 @@ runs:
         node -e '
           const fs = require("fs");
           const env = (k, d = "") => process.env[k] ?? d;
+          const HIT = "HIT", BYTES = "BYTES", KEY = "KEY";
           const startedAtEnv = env("RUN_STARTED_AT") || env("GITHUB_RUN_STARTED_AT") || "";
           const startedAt = startedAtEnv || new Date().toISOString();
           let cov = null;
@@ -44,11 +45,11 @@ runs:
             const kind = m[1].toLowerCase();
             const field = m[2];
             const rec = byKind.get(kind) || { kind };
-            if (field === 'HIT') rec.hit = String(v).toLowerCase() === 'true' || String(v) === '1';
-            else if (field === 'BYTES') {
+            if (field === HIT) rec.hit = String(v).toLowerCase() === 'true' || String(v) === '1';
+            else if (field === BYTES) {
               const n = Number(v);
               if (!Number.isNaN(n)) rec.bytes = n;
-            } else if (field === 'KEY') rec.key = String(v);
+            } else if (field === KEY) rec.key = String(v);
             byKind.set(kind, rec);
           }
           const cacheEntries = Array.from(byKind.values());
