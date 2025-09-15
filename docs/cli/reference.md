@@ -5,48 +5,9 @@ description: Commands, flags, and examples for the Events CLI (`mentions`, `norm
 
 # CLI Reference
 
-The CLI transforms provider payloads into a Normalized Event (NE), extracts mentions, enriches with repository context, emits to sinks, and validates against schema. Implemented with `commander` (see `src/cli.ts`).
+The CLI transforms provider payloads into a Normalized Event (NE), extracts mentions, and can enrich with repository context. Implemented with `commander` (see `src/cli.ts`).
 
 ## Commands
-
-### `events emit`
-
-Emit a JSON event to a sink with built‑in redaction.
-
-Usage:
-
-```bash
-events emit [--in FILE | < stdin ] [--sink <stdout|file>] [--out FILE]
-```
-
-- `--in FILE`: input JSON file (reads from stdin if omitted)
-- `--sink <name>`: sink name (`stdout` or `file`) [default: `stdout`; when `--out` is provided, defaults to `file`]
-- `--out FILE`: output JSON path (required when `--sink file`)
-
-Behavior:
-
-- Redacts sensitive fields and patterns before writing, using `src/utils/redact.ts` via `redactObject`.
-- When `--sink stdout` (default), prints redacted JSON to stdout.
-- When `--sink file`, requires `--out` and writes redacted JSON to that file.
-- Exit code `0` on success; `1` on errors (I/O, parse, missing `--out` for file sink).
-
-Examples:
-
-```bash
-# Emit from stdin to stdout (redacted)
-cat samples/push.json | events emit
-
-# Emit from file to stdout (redacted)
-events emit --in samples/push.json
-
-# Emit to a file sink (redacted written to out.json)
-events emit --in samples/push.json --sink file --out out.json
-```
-
-Notes:
-
-- Redaction defaults: see `src/utils/redact.ts` for sensitive keys and token patterns; default mask is `REDACTED`.
-- If both `--sink` and `--out` are omitted, behavior is equivalent to `--sink stdout`.
 
 ### `events mentions`
 
@@ -108,8 +69,8 @@ Enrich a normalized event (or raw GitHub payload) with repository and provider m
 
 Behavior:
 
-- No network calls are performed by default. In offline mode, `enriched.github = { provider: 'github', partial: true, reason: 'github_enrich_disabled' }`.
-- Pass `--use-github` to enable GitHub API enrichment. If no token is configured, enrichment is skipped/partial with `reason: 'token:missing'` and the CLI exits with code `3` when an API call is required.
+- No network calls are performed by default.
+- Pass `--use-github` to enable GitHub API enrichment. A `GITHUB_TOKEN` (or `A5C_AGENT_GITHUB_TOKEN`) must be present; otherwise enrichment is skipped and marked as partial.
 
 Usage:
 
@@ -126,7 +87,7 @@ events enrich --in FILE [--out FILE] [--rules FILE] \
   - `include_patch=true|false` (default: `false`) – include diff patches; when `false`, patches are removed. Defaulting to false avoids leaking secrets via diffs and keeps outputs small; enable only when required.
   - `commit_limit=<n>` (default: `50`) – limit commits fetched for PR/push
   - `file_limit=<n>` (default: `200`) – limit files per compare list
-- `--use-github`: enable GitHub API enrichment; equivalent to `--flag use_github=true` (requires `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`). Without this flag, the CLI performs no network calls and sets `enriched.github = { provider: 'github', partial: true, reason: 'github_enrich_disabled' }`.
+- `--use-github`: enable GitHub API enrichment; equivalent to `--flag use_github=true` (requires `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`). Without this flag, the CLI performs no network calls and sets `enriched.github = { provider: 'github', skipped: true, reason: 'flag:not_set' }`.
 - `--label KEY=VAL...`: labels to attach
 - `--select PATHS`: comma-separated dot paths to include in output
 - `--filter EXPR`: filter expression `path[=value]`; if it doesn't pass, exits with code `2`
@@ -153,32 +114,6 @@ Note:
 - Redaction: CLI redacts sensitive keys and common secret patterns in output by default (see `src/utils/redact.ts`).
 ```
 
-Code-comment mentions scanning flags:
-
-- `--flag mentions.scan.changed_files=true|false` (default: `true`) – scan changed files for `@mentions` inside code comments.
-- `--flag mentions.max_file_bytes=<n>` (default: `204800`) – skip scanning a file if its size (patch or downloaded content) exceeds this many bytes.
-- `--flag mentions.languages="js,ts,py,..."` – optional allowlist of languages by extension to scan. When omitted, language is auto-detected from filename; supported: js, ts, py, go, java, c, cpp, sh, yaml.
-
-Examples (code comments):
-
-```bash
-# Patch-based scanning (no network). include_patch must be true to carry patches.
-events enrich --in samples/pull_request.synchronize.json \
-  --flag include_patch=true \
-  --flag "mentions.scan.changed_files=true" \
-  --flag "mentions.max_file_bytes=204800" \
-  --flag "mentions.languages=js,ts" \
-  | jq '.enriched.mentions | map(select(.source=="code_comment"))'
-
-# File-fetch path (requires --use-github and token). Works even if include_patch=false.
-export GITHUB_TOKEN=...
-events enrich --in samples/pull_request.synchronize.json \
-  --use-github \
-  --flag include_patch=false \
-  --flag "mentions.scan.changed_files=true" \
-  | jq '.enriched.mentions | map(select(.source=="code_comment"))'
-```
- 
 Outputs:
 
 - When enriching a PR with `--use-github`, the CLI exposes per-file owners under `enriched.github.pr.owners` and the deduplicated, sorted union of all CODEOWNERS across changed files under `enriched.github.pr.owners_union`.
@@ -190,11 +125,49 @@ events enrich --in samples/push.json --out out.json
 jq '.enriched.mentions' out.json
 ```
 
+### `events emit`
+
+Emit a JSON event to a sink (stdout or file). The payload is redacted before being written.
+
+Usage:
+
+```bash
+events emit [--in FILE] [--sink <stdout|file>] [--out FILE]
 ```
+
+- `--in FILE`: input JSON file (reads from stdin if omitted)
+- `--sink <name>`: sink name; `stdout` (default) or `file`
+- `--out FILE`: output file path (required when `--sink file`)
+
+Behavior:
+
+- Redaction: payload is masked using the same rules as other commands (see `src/utils/redact.ts`). Sensitive keys and common secret patterns are redacted before emission.
+- Defaults: when `--sink` is omitted, `stdout` is used. When `--sink file` is set, `--out` is required; otherwise the command exits with code `1` and writes an error to stderr.
+
+Examples:
+
+```bash
+# From file to stdout (default)
+events emit --in samples/push.json
+
+# From stdin to stdout
+cat samples/push.json | events emit
+
+# To a file sink
+events emit --in samples/push.json --sink file --out out.json
+```
+
+Exit codes:
+
+- `0`: success
+- `1`: error (I/O, JSON parse, or missing `--out` for file sink)
+
 ### `events validate`
+
 Validate a JSON document against the NE JSON Schema.
 
 Usage:
+
 ```bash
 events validate [--in FILE | < stdin ] [--schema FILE] [--quiet]
 ```
