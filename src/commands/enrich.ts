@@ -1,7 +1,9 @@
+//
 import type { NormalizedEvent, Mention } from "../types.js";
 import { readJSONFile, loadConfig } from "../config.js";
 import { extractMentions } from "../extractor.js";
 import { loadRules, evaluateRulesDetailed } from "../rules.js";
+import { mapToNE } from "../providers/github/map.js";
 import {
   scanPatchForCodeCommentMentions,
   isBinaryPatch,
@@ -29,7 +31,7 @@ export async function cmdEnrich(opts: {
         : `Invalid JSON or read error: ${e?.message || e}`;
     return { code: 2, errorMessage: msg };
   }
-  // Default include_patch to false to minimize payload size
+  // Defaults
   const includePatch = toBool(opts.flags?.include_patch ?? false);
   const commitLimit = toInt(opts.flags?.commit_limit, 50);
   const fileLimit = toInt(opts.flags?.file_limit, 200);
@@ -59,35 +61,13 @@ export async function cmdEnrich(opts: {
     typeof input === "object" &&
     input.provider === "github" &&
     "payload" in input;
-  const baseEvent = isNE ? input.payload : input;
-
+  // If input is already a NormalizedEvent, keep as-is. Otherwise, map raw payload to NE using provider mapping
   const neShell: NormalizedEvent = isNE
-    ? input
-    : {
-        id: String(
-          baseEvent?.after ||
-            baseEvent?.workflow_run?.id ||
-            baseEvent?.pull_request?.id ||
-            "temp-" + Math.random().toString(36).slice(2),
-        ),
-        provider: "github",
-        type: baseEvent?.pull_request
-          ? "pull_request"
-          : baseEvent?.workflow_run
-            ? "workflow_run"
-            : baseEvent?.ref
-              ? "push"
-              : "commit",
-        occurred_at: new Date(
-          baseEvent?.head_commit?.timestamp ||
-            baseEvent?.workflow_run?.updated_at ||
-            baseEvent?.pull_request?.updated_at ||
-            Date.now(),
-        ).toISOString(),
-        payload: baseEvent,
-        labels: opts.labels || [],
-        provenance: { source: "cli" },
-      };
+    ? (input as NormalizedEvent)
+    : mapToNE(input, { source: "cli", labels: opts.labels });
+
+  // Use the underlying provider payload for enrichment/mentions extraction
+  const baseEvent = (neShell as any).payload || input;
 
   let githubEnrichment: any = {};
   try {

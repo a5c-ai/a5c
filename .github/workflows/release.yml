@@ -27,9 +27,9 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
-          cache: 'npm'
-          registry-url: 'https://npm.pkg.github.com'
+          node-version-file: .nvmrc
+          cache: "npm"
+          registry-url: "https://npm.pkg.github.com"
       - name: Install
         run: |
           if [ -f package-lock.json ]; then 
@@ -47,20 +47,22 @@ jobs:
         if: github.ref == 'refs/heads/a5c/main'
         env:
           GITHUB_TOKEN: ${{ secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN || secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+          HUSKY: 0
         run: npx semantic-release
       - name: Release (main stable)
         if: github.ref == 'refs/heads/main'
         env:
           GITHUB_TOKEN: ${{ secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN || secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+          HUSKY: 0
         run: npx semantic-release
       - name: Setup Node.js for npmjs (main only)
         if: github.ref == 'refs/heads/main'
         uses: actions/setup-node@v4
         with:
-          node-version: 22
-          registry-url: 'https://registry.npmjs.org'
+          node-version-file: .nvmrc
+          registry-url: "https://registry.npmjs.org"
       - name: Publish to npmjs (main only)
         if: github.ref == 'refs/heads/main'
         env:

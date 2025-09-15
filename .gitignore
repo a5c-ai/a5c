@@ -40,6 +40,7 @@ next-env.d.ts
 **/out
 **/coverage
 **/junit.xml
+**/vitest-results.json
 **/logs
 **/temp
 **/cache

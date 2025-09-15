@@ -1,0 +1,58 @@
+name: "Step Hotspots"
+description: "Annotate long-running steps and summarize p95 duration"
+author: "a5c.ai"
+
+inputs:
+  warn_ms:
+    description: "Warn when a step exceeds this duration (ms)"
+    default: "300000" # 5 minutes
+    required: false
+  error_ms:
+    description: "Error when a step exceeds this duration (ms)"
+    default: "900000" # 15 minutes
+    required: false
+  p95_warn_ms:
+    description: "Warn if p95 duration exceeds this (ms)"
+    default: "420000" # 7 minutes
+    required: false
+  p95_error_ms:
+    description: "Error if p95 duration exceeds this (ms)"
+    default: "1200000" # 20 minutes
+    required: false
+  top_n:
+    description: "How many top slow steps to include in summary"
+    default: "10"
+    required: false
+  token:
+    description: "GitHub token (defaults to github.token)"
+    required: false
+  # Back-compat inputs used by existing workflows (ignored by script)
+  upload_artifact:
+    description: "No-op: retained for back-compat"
+    required: false
+    default: "false"
+  summary_title:
+    description: "No-op: retained for back-compat"
+    required: false
+    default: "Step Hotspots"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Analyze step durations and annotate
+      shell: bash
+      env:
+        INPUT_WARN_MS: ${{ inputs.warn_ms }}
+        INPUT_ERROR_MS: ${{ inputs.error_ms }}
+        INPUT_P95_WARN_MS: ${{ inputs.p95_warn_ms }}
+        INPUT_P95_ERROR_MS: ${{ inputs.p95_error_ms }}
+        INPUT_TOP_N: ${{ inputs.top_n }}
+        # Prefer explicit input token, otherwise fall back to provided github.token
+        GH_TOKEN: ${{ inputs.token || github.token }}
+      run: |
+        set -euo pipefail
+        node scripts/ci-step-hotspots.cjs
+
+branding:
+  icon: activity
+  color: orange
