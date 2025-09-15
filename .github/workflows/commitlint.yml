@@ -1,0 +1,36 @@
+name: Commitlint
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+    branches: [a5c/main]
+
+jobs:
+  commitlint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install commitlint
+        run: |
+          npm i -D @commitlint/cli @commitlint/config-conventional
+      - name: Validate commit messages in PR
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          BASE_SHA=$(gh api repos/${{ github.repository }}/pulls/$PR_NUMBER --jq .base.sha)
+          HEAD_SHA=$(gh api repos/${{ github.repository }}/pulls/$PR_NUMBER --jq .head.sha)
+          echo "Range: $BASE_SHA..$HEAD_SHA"
+          git rev-list --no-merges $BASE_SHA..$HEAD_SHA | while read sha; do
+            echo "Checking $sha"
+            git show -s --format=%B "$sha" | npx commitlint
+          done
+

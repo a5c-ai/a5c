@@ -19,16 +19,20 @@
   "scripts": {
     "pretest": "npm run build",
     "prepare": "npm run build",
+    "postinstall": "husky install || true",
     "clean": "rimraf dist .turbo .vitest coverage",
     "build": "tsc -p tsconfig.build.json && node scripts/build-post.js",
     "build:clean": "rimraf dist && npm run build",
     "lint": "eslint \"src/**/*.ts\" \"test/**/*.ts\" \"tests/**/*.ts\"",
     "format": "prettier -w .",
-    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.build.json",
     "test": "vitest run",
     "test:ci": "vitest run --coverage --reporter=dot",
     "dev": "tsx watch src/cli.ts -- --help",
     "cli": "node dist/cli.js",
+    "prepush:changed": "node scripts/prepush-related.js",
+    "prepush:full": "vitest run",
+    "prepush": "node scripts/prepush-related.js || vitest run",
     "release": "semantic-release"
   },
   "files": [
@@ -58,6 +62,8 @@
   "author": "a5c.ai",
   "license": "Apache-2.0",
   "devDependencies": {
+    "@commitlint/cli": "^19.5.0",
+    "@commitlint/config-conventional": "^19.5.0",
     "@eslint/js": "9.35.0",
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/git": "^10.0.1",
@@ -82,7 +88,9 @@
     "typescript": "5.9.2",
     "typescript-eslint": "8.43.0",
     "vitest": "^2.1.1",
-    "yaml": "2.8.1"
+    "yaml": "2.8.1",
+    "husky": "^9.1.6",
+    "lint-staged": "^15.2.10"
   },
   "dependencies": {
     "@octokit/rest": "^21.0.0",

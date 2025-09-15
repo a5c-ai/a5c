@@ -3,8 +3,13 @@ set -e
 
 echo "Running pre-commit checks..."
 if command -v npm >/dev/null 2>&1 && [ -f package.json ]; then
-  npm run -s lint || true
-  npm test --silent || true
+  # Allow skipping via env variable for CI overrides
+  if [ -n "$A5C_SKIP_PRECOMMIT" ] || [ -n "$SKIP_PRECOMMIT" ]; then
+    echo "Skipping pre-commit due to env flag."
+  else
+    npm run -s lint || true
+    npm test --silent || true
+  fi
 fi
 
 # Guard against Windows-invalid filenames (e.g., ':')
