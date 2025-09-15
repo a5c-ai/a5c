@@ -32,13 +32,13 @@ jobs:
           registry-url: "https://npm.pkg.github.com"
       - name: Install
         run: |
-          if [ -f package-lock.json ]; then 
+          if [ -f package-lock.json ]; then
             echo "Attempting clean install via npm ci..."
             if ! npm ci; then
               echo "npm ci failed (likely lockfile mismatch). Falling back to npm install to update lockfile..."
               npm install
             fi
-          else 
+          else
             npm install
           fi
       - name: Build

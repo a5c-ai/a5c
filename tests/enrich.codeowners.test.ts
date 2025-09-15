@@ -226,4 +226,3 @@ describe("CODEOWNERS enrichment (owners and owners_union)", () => {
     expect(out._enrichment.pr.owners_union).toEqual(["@alice", "@team-a"]);
   });
 });
-

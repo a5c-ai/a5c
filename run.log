@@ -85,41 +85,41 @@ build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7879562Z   DEBUG: pw:webs
 build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7880048Z   CI: true
 build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7880574Z   VERCEL_TOKEN: ***
 build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7881120Z   VERCEL_ORG_ID: team_08scWIMUiz59bFpkE0odinUT
-build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7881761Z   VERCEL_PROJECT_ID: 
+build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7881761Z   VERCEL_PROJECT_ID:
 build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7882436Z   SUPABASE_ACCESS_TOKEN: ***
 build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7883024Z   SUPABASE_ORG_ID: elyrlazfpakctdlgywlj
-build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7883643Z   SUPABASE_PROJECT_REF: 
-build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7884190Z   SUPABASE_PROJECT_URL: 
+build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7883643Z   SUPABASE_PROJECT_REF:
+build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7884190Z   SUPABASE_PROJECT_URL:
 build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7884764Z   SUPABASE_DB_PASSWORD: ***
-build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7885323Z   SLACK_BOT_TOKEN: 
-build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7885817Z   SLACK_SIGNING_SECRET: 
-build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7886335Z   SLACK_APP_TOKEN: 
+build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7885323Z   SLACK_BOT_TOKEN:
+build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7885817Z   SLACK_SIGNING_SECRET:
+build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7886335Z   SLACK_APP_TOKEN:
 build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7887162Z   DISCORD_TOKEN: ***
 build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7887693Z   DISCORD_GUILD_ID: 1393846540115640320
-build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7888394Z   STRIPE_SECRET_KEY: 
-build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7888909Z   STRIPE_PUBLISHABLE_KEY: 
-build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7889455Z   STRIPE_WEBHOOK_SECRET: 
-build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7889980Z   STRIPE_WEBHOOK_URL: 
-build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7890485Z   STRIPE_WEBHOOK_ID: 
-build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7890991Z   AWS_ACCESS_KEY_ID: 
-build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7891498Z   AWS_SECRET_ACCESS_KEY: 
-build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7892004Z   AWS_REGION: 
-build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7892568Z   GOOGLE_APPLICATION_CREDENTIALS: 
-build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7893142Z   AZURE_CLIENT_ID: 
-build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7893627Z   AZURE_CLIENT_SECRET: 
-build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7894129Z   AZURE_TENANT_ID: 
-build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7894640Z   AZURE_SUBSCRIPTION_ID: 
-build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7895166Z   GOOGLE_CLIENT_ID: 
-build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7895670Z   GOOGLE_CLIENT_SECRET: 
+build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7888394Z   STRIPE_SECRET_KEY:
+build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7888909Z   STRIPE_PUBLISHABLE_KEY:
+build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7889455Z   STRIPE_WEBHOOK_SECRET:
+build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7889980Z   STRIPE_WEBHOOK_URL:
+build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7890485Z   STRIPE_WEBHOOK_ID:
+build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7890991Z   AWS_ACCESS_KEY_ID:
+build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7891498Z   AWS_SECRET_ACCESS_KEY:
+build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7892004Z   AWS_REGION:
+build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7892568Z   GOOGLE_APPLICATION_CREDENTIALS:
+build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7893142Z   AZURE_CLIENT_ID:
+build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7893627Z   AZURE_CLIENT_SECRET:
+build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7894129Z   AZURE_TENANT_ID:
+build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7894640Z   AZURE_SUBSCRIPTION_ID:
+build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7895166Z   GOOGLE_CLIENT_ID:
+build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7895670Z   GOOGLE_CLIENT_SECRET:
 build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7896254Z   AUTH_GITHUB_CLIENT_ID: ***
 build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7896973Z   AUTH_GITHUB_CLIENT_SECRET: ***
-build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7897533Z   AUTH_GITHUB_ORG_ID: 
-build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7898560Z   AUTH_GITHUB_ORG_NAME: 
-build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7899113Z   AUTH_GITHUB_ORG_DESCRIPTION: 
-build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7899670Z   HEROKU_API_KEY: 
-build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7900153Z   HEROKU_APP_NAME: 
-build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7900638Z   HEROKU_APP_ID: 
-build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7901119Z   HEROKU_APP_URL: 
+build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7897533Z   AUTH_GITHUB_ORG_ID:
+build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7898560Z   AUTH_GITHUB_ORG_NAME:
+build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7899113Z   AUTH_GITHUB_ORG_DESCRIPTION:
+build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7899670Z   HEROKU_API_KEY:
+build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7900153Z   HEROKU_APP_NAME:
+build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7900638Z   HEROKU_APP_ID:
+build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7901119Z   HEROKU_APP_URL:
 build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.7901592Z ##[endgroup]
 build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.9981432Z Syncing repository: a5c-ai/events
 build (22)	Run actions/checkout@v4	2025-09-14T18:08:06.9984188Z ##[group]Getting Git version info
@@ -211,41 +211,41 @@ build (22)	Setup Node.js	2025-09-14T18:08:07.7671760Z   DEBUG: pw:webserver
 build (22)	Setup Node.js	2025-09-14T18:08:07.7672634Z   CI: true
 build (22)	Setup Node.js	2025-09-14T18:08:07.7673534Z   VERCEL_TOKEN: ***
 build (22)	Setup Node.js	2025-09-14T18:08:07.7674527Z   VERCEL_ORG_ID: team_08scWIMUiz59bFpkE0odinUT
-build (22)	Setup Node.js	2025-09-14T18:08:07.7675776Z   VERCEL_PROJECT_ID: 
+build (22)	Setup Node.js	2025-09-14T18:08:07.7675776Z   VERCEL_PROJECT_ID:
 build (22)	Setup Node.js	2025-09-14T18:08:07.7677075Z   SUPABASE_ACCESS_TOKEN: ***
 build (22)	Setup Node.js	2025-09-14T18:08:07.7678282Z   SUPABASE_ORG_ID: elyrlazfpakctdlgywlj
-build (22)	Setup Node.js	2025-09-14T18:08:07.7679464Z   SUPABASE_PROJECT_REF: 
-build (22)	Setup Node.js	2025-09-14T18:08:07.7680443Z   SUPABASE_PROJECT_URL: 
+build (22)	Setup Node.js	2025-09-14T18:08:07.7679464Z   SUPABASE_PROJECT_REF:
+build (22)	Setup Node.js	2025-09-14T18:08:07.7680443Z   SUPABASE_PROJECT_URL:
 build (22)	Setup Node.js	2025-09-14T18:08:07.7681520Z   SUPABASE_DB_PASSWORD: ***
-build (22)	Setup Node.js	2025-09-14T18:08:07.7682492Z   SLACK_BOT_TOKEN: 
-build (22)	Setup Node.js	2025-09-14T18:08:07.7683366Z   SLACK_SIGNING_SECRET: 
-build (22)	Setup Node.js	2025-09-14T18:08:07.7684303Z   SLACK_APP_TOKEN: 
+build (22)	Setup Node.js	2025-09-14T18:08:07.7682492Z   SLACK_BOT_TOKEN:
+build (22)	Setup Node.js	2025-09-14T18:08:07.7683366Z   SLACK_SIGNING_SECRET:
+build (22)	Setup Node.js	2025-09-14T18:08:07.7684303Z   SLACK_APP_TOKEN:
 build (22)	Setup Node.js	2025-09-14T18:08:07.7686051Z   DISCORD_TOKEN: ***
 build (22)	Setup Node.js	2025-09-14T18:08:07.7686978Z   DISCORD_GUILD_ID: 1393846540115640320
-build (22)	Setup Node.js	2025-09-14T18:08:07.7688189Z   STRIPE_SECRET_KEY: 
-build (22)	Setup Node.js	2025-09-14T18:08:07.7689116Z   STRIPE_PUBLISHABLE_KEY: 
-build (22)	Setup Node.js	2025-09-14T18:08:07.7690124Z   STRIPE_WEBHOOK_SECRET: 
-build (22)	Setup Node.js	2025-09-14T18:08:07.7691094Z   STRIPE_WEBHOOK_URL: 
-build (22)	Setup Node.js	2025-09-14T18:08:07.7692031Z   STRIPE_WEBHOOK_ID: 
-build (22)	Setup Node.js	2025-09-14T18:08:07.7692942Z   AWS_ACCESS_KEY_ID: 
-build (22)	Setup Node.js	2025-09-14T18:08:07.7693872Z   AWS_SECRET_ACCESS_KEY: 
-build (22)	Setup Node.js	2025-09-14T18:08:07.7694826Z   AWS_REGION: 
-build (22)	Setup Node.js	2025-09-14T18:08:07.7695730Z   GOOGLE_APPLICATION_CREDENTIALS: 
-build (22)	Setup Node.js	2025-09-14T18:08:07.7696819Z   AZURE_CLIENT_ID: 
-build (22)	Setup Node.js	2025-09-14T18:08:07.7697704Z   AZURE_CLIENT_SECRET: 
-build (22)	Setup Node.js	2025-09-14T18:08:07.7698709Z   AZURE_TENANT_ID: 
-build (22)	Setup Node.js	2025-09-14T18:08:07.7699600Z   AZURE_SUBSCRIPTION_ID: 
-build (22)	Setup Node.js	2025-09-14T18:08:07.7700573Z   GOOGLE_CLIENT_ID: 
-build (22)	Setup Node.js	2025-09-14T18:08:07.7701487Z   GOOGLE_CLIENT_SECRET: 
+build (22)	Setup Node.js	2025-09-14T18:08:07.7688189Z   STRIPE_SECRET_KEY:
+build (22)	Setup Node.js	2025-09-14T18:08:07.7689116Z   STRIPE_PUBLISHABLE_KEY:
+build (22)	Setup Node.js	2025-09-14T18:08:07.7690124Z   STRIPE_WEBHOOK_SECRET:
+build (22)	Setup Node.js	2025-09-14T18:08:07.7691094Z   STRIPE_WEBHOOK_URL:
+build (22)	Setup Node.js	2025-09-14T18:08:07.7692031Z   STRIPE_WEBHOOK_ID:
+build (22)	Setup Node.js	2025-09-14T18:08:07.7692942Z   AWS_ACCESS_KEY_ID:
+build (22)	Setup Node.js	2025-09-14T18:08:07.7693872Z   AWS_SECRET_ACCESS_KEY:
+build (22)	Setup Node.js	2025-09-14T18:08:07.7694826Z   AWS_REGION:
+build (22)	Setup Node.js	2025-09-14T18:08:07.7695730Z   GOOGLE_APPLICATION_CREDENTIALS:
+build (22)	Setup Node.js	2025-09-14T18:08:07.7696819Z   AZURE_CLIENT_ID:
+build (22)	Setup Node.js	2025-09-14T18:08:07.7697704Z   AZURE_CLIENT_SECRET:
+build (22)	Setup Node.js	2025-09-14T18:08:07.7698709Z   AZURE_TENANT_ID:
+build (22)	Setup Node.js	2025-09-14T18:08:07.7699600Z   AZURE_SUBSCRIPTION_ID:
+build (22)	Setup Node.js	2025-09-14T18:08:07.7700573Z   GOOGLE_CLIENT_ID:
+build (22)	Setup Node.js	2025-09-14T18:08:07.7701487Z   GOOGLE_CLIENT_SECRET:
 build (22)	Setup Node.js	2025-09-14T18:08:07.7702554Z   AUTH_GITHUB_CLIENT_ID: ***
 build (22)	Setup Node.js	2025-09-14T18:08:07.7703977Z   AUTH_GITHUB_CLIENT_SECRET: ***
-build (22)	Setup Node.js	2025-09-14T18:08:07.7705049Z   AUTH_GITHUB_ORG_ID: 
-build (22)	Setup Node.js	2025-09-14T18:08:07.7705978Z   AUTH_GITHUB_ORG_NAME: 
-build (22)	Setup Node.js	2025-09-14T18:08:07.7706964Z   AUTH_GITHUB_ORG_DESCRIPTION: 
-build (22)	Setup Node.js	2025-09-14T18:08:07.7708236Z   HEROKU_API_KEY: 
-build (22)	Setup Node.js	2025-09-14T18:08:07.7709138Z   HEROKU_APP_NAME: 
-build (22)	Setup Node.js	2025-09-14T18:08:07.7710032Z   HEROKU_APP_ID: 
-build (22)	Setup Node.js	2025-09-14T18:08:07.7710883Z   HEROKU_APP_URL: 
+build (22)	Setup Node.js	2025-09-14T18:08:07.7705049Z   AUTH_GITHUB_ORG_ID:
+build (22)	Setup Node.js	2025-09-14T18:08:07.7705978Z   AUTH_GITHUB_ORG_NAME:
+build (22)	Setup Node.js	2025-09-14T18:08:07.7706964Z   AUTH_GITHUB_ORG_DESCRIPTION:
+build (22)	Setup Node.js	2025-09-14T18:08:07.7708236Z   HEROKU_API_KEY:
+build (22)	Setup Node.js	2025-09-14T18:08:07.7709138Z   HEROKU_APP_NAME:
+build (22)	Setup Node.js	2025-09-14T18:08:07.7710032Z   HEROKU_APP_ID:
+build (22)	Setup Node.js	2025-09-14T18:08:07.7710883Z   HEROKU_APP_URL:
 build (22)	Setup Node.js	2025-09-14T18:08:07.7711718Z ##[endgroup]
 build (22)	Setup Node.js	2025-09-14T18:08:07.9539739Z Attempt to resolve the latest version from manifest...
 build (22)	Setup Node.js	2025-09-14T18:08:08.7644099Z Resolved as '20.19.5'
@@ -297,52 +297,52 @@ build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3253112Z   DEBUG: pw:webse
 build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3253347Z   CI: true
 build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3253599Z   VERCEL_TOKEN: ***
 build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3253869Z   VERCEL_ORG_ID: team_08scWIMUiz59bFpkE0odinUT
-build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3254187Z   VERCEL_PROJECT_ID: 
+build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3254187Z   VERCEL_PROJECT_ID:
 build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3254539Z   SUPABASE_ACCESS_TOKEN: ***
 build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3254834Z   SUPABASE_ORG_ID: elyrlazfpakctdlgywlj
-build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3255142Z   SUPABASE_PROJECT_REF: 
-build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3255403Z   SUPABASE_PROJECT_URL: 
+build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3255142Z   SUPABASE_PROJECT_REF:
+build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3255403Z   SUPABASE_PROJECT_URL:
 build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3255695Z   SUPABASE_DB_PASSWORD: ***
-build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3255957Z   SLACK_BOT_TOKEN: 
-build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3256194Z   SLACK_SIGNING_SECRET: 
-build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3256443Z   SLACK_APP_TOKEN: 
+build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3255957Z   SLACK_BOT_TOKEN:
+build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3256194Z   SLACK_SIGNING_SECRET:
+build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3256443Z   SLACK_APP_TOKEN:
 build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3256881Z   DISCORD_TOKEN: ***
 build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3257132Z   DISCORD_GUILD_ID: 1393846540115640320
-build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3257408Z   STRIPE_SECRET_KEY: 
-build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3257634Z   STRIPE_PUBLISHABLE_KEY: 
-build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3257989Z   STRIPE_WEBHOOK_SECRET: 
-build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3258222Z   STRIPE_WEBHOOK_URL: 
-build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3258447Z   STRIPE_WEBHOOK_ID: 
-build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3258669Z   AWS_ACCESS_KEY_ID: 
-build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3258883Z   AWS_SECRET_ACCESS_KEY: 
-build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3259104Z   AWS_REGION: 
-build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3259323Z   GOOGLE_APPLICATION_CREDENTIALS: 
-build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3259582Z   AZURE_CLIENT_ID: 
-build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3259803Z   AZURE_CLIENT_SECRET: 
-build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3260019Z   AZURE_TENANT_ID: 
-build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3260230Z   AZURE_SUBSCRIPTION_ID: 
-build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3260457Z   GOOGLE_CLIENT_ID: 
-build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3260677Z   GOOGLE_CLIENT_SECRET: 
+build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3257408Z   STRIPE_SECRET_KEY:
+build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3257634Z   STRIPE_PUBLISHABLE_KEY:
+build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3257989Z   STRIPE_WEBHOOK_SECRET:
+build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3258222Z   STRIPE_WEBHOOK_URL:
+build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3258447Z   STRIPE_WEBHOOK_ID:
+build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3258669Z   AWS_ACCESS_KEY_ID:
+build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3258883Z   AWS_SECRET_ACCESS_KEY:
+build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3259104Z   AWS_REGION:
+build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3259323Z   GOOGLE_APPLICATION_CREDENTIALS:
+build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3259582Z   AZURE_CLIENT_ID:
+build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3259803Z   AZURE_CLIENT_SECRET:
+build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3260019Z   AZURE_TENANT_ID:
+build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3260230Z   AZURE_SUBSCRIPTION_ID:
+build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3260457Z   GOOGLE_CLIENT_ID:
+build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3260677Z   GOOGLE_CLIENT_SECRET:
 build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3260950Z   AUTH_GITHUB_CLIENT_ID: ***
 build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3261286Z   AUTH_GITHUB_CLIENT_SECRET: ***
-build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3261545Z   AUTH_GITHUB_ORG_ID: 
-build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3261768Z   AUTH_GITHUB_ORG_NAME: 
-build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3262011Z   AUTH_GITHUB_ORG_DESCRIPTION: 
-build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3262258Z   HEROKU_API_KEY: 
-build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3262682Z   HEROKU_APP_NAME: 
-build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3262893Z   HEROKU_APP_ID: 
-build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3263101Z   HEROKU_APP_URL: 
+build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3261545Z   AUTH_GITHUB_ORG_ID:
+build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3261768Z   AUTH_GITHUB_ORG_NAME:
+build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3262011Z   AUTH_GITHUB_ORG_DESCRIPTION:
+build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3262258Z   HEROKU_API_KEY:
+build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3262682Z   HEROKU_APP_NAME:
+build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3262893Z   HEROKU_APP_ID:
+build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3263101Z   HEROKU_APP_URL:
 build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3263314Z ##[endgroup]
 build (22)	Run ./scripts/build.sh	2025-09-14T18:08:13.3403080Z [install] Node dependencies
-build (22)	Run ./scripts/build.sh	2025-09-14T18:08:23.1708942Z 
+build (22)	Run ./scripts/build.sh	2025-09-14T18:08:23.1708942Z
 build (22)	Run ./scripts/build.sh	2025-09-14T18:08:23.1710961Z > @a5c-ai/events@1.1.0-a5c-main.9 prepare
 build (22)	Run ./scripts/build.sh	2025-09-14T18:08:23.1712521Z > npm run build
-build (22)	Run ./scripts/build.sh	2025-09-14T18:08:23.1713727Z 
-build (22)	Run ./scripts/build.sh	2025-09-14T18:08:23.3363238Z 
+build (22)	Run ./scripts/build.sh	2025-09-14T18:08:23.1713727Z
+build (22)	Run ./scripts/build.sh	2025-09-14T18:08:23.3363238Z
 build (22)	Run ./scripts/build.sh	2025-09-14T18:08:23.3364247Z > @a5c-ai/events@1.1.0-a5c-main.9 build
 build (22)	Run ./scripts/build.sh	2025-09-14T18:08:23.3365206Z > tsc -p tsconfig.build.json && node scripts/build-post.js
-build (22)	Run ./scripts/build.sh	2025-09-14T18:08:23.3365770Z 
-build (22)	Run ./scripts/build.sh	2025-09-14T18:08:27.2582425Z 
+build (22)	Run ./scripts/build.sh	2025-09-14T18:08:23.3365770Z
+build (22)	Run ./scripts/build.sh	2025-09-14T18:08:27.2582425Z
 build (22)	Run ./scripts/build.sh	2025-09-14T18:08:27.2583250Z added 661 packages in 14s
 build (22)	Run ./scripts/build.sh	2025-09-14T18:08:27.3002989Z [install] Done.
 build (22)	Run ./scripts/build.sh	2025-09-14T18:08:27.3012355Z [build] Running npm run build
@@ -445,41 +445,41 @@ test	Run actions/checkout@v4	2025-09-14T18:08:37.1087594Z   DEBUG: pw:webserver
 test	Run actions/checkout@v4	2025-09-14T18:08:37.1088074Z   CI: true
 test	Run actions/checkout@v4	2025-09-14T18:08:37.1088575Z   VERCEL_TOKEN: ***
 test	Run actions/checkout@v4	2025-09-14T18:08:37.1089098Z   VERCEL_ORG_ID: team_08scWIMUiz59bFpkE0odinUT
-test	Run actions/checkout@v4	2025-09-14T18:08:37.1089710Z   VERCEL_PROJECT_ID: 
+test	Run actions/checkout@v4	2025-09-14T18:08:37.1089710Z   VERCEL_PROJECT_ID:
 test	Run actions/checkout@v4	2025-09-14T18:08:37.1090370Z   SUPABASE_ACCESS_TOKEN: ***
 test	Run actions/checkout@v4	2025-09-14T18:08:37.1090924Z   SUPABASE_ORG_ID: elyrlazfpakctdlgywlj
-test	Run actions/checkout@v4	2025-09-14T18:08:37.1091507Z   SUPABASE_PROJECT_REF: 
-test	Run actions/checkout@v4	2025-09-14T18:08:37.1092030Z   SUPABASE_PROJECT_URL: 
+test	Run actions/checkout@v4	2025-09-14T18:08:37.1091507Z   SUPABASE_PROJECT_REF:
+test	Run actions/checkout@v4	2025-09-14T18:08:37.1092030Z   SUPABASE_PROJECT_URL:
 test	Run actions/checkout@v4	2025-09-14T18:08:37.1092569Z   SUPABASE_DB_PASSWORD: ***
-test	Run actions/checkout@v4	2025-09-14T18:08:37.1093083Z   SLACK_BOT_TOKEN: 
-test	Run actions/checkout@v4	2025-09-14T18:08:37.1093566Z   SLACK_SIGNING_SECRET: 
-test	Run actions/checkout@v4	2025-09-14T18:08:37.1094057Z   SLACK_APP_TOKEN: 
+test	Run actions/checkout@v4	2025-09-14T18:08:37.1093083Z   SLACK_BOT_TOKEN:
+test	Run actions/checkout@v4	2025-09-14T18:08:37.1093566Z   SLACK_SIGNING_SECRET:
+test	Run actions/checkout@v4	2025-09-14T18:08:37.1094057Z   SLACK_APP_TOKEN:
 test	Run actions/checkout@v4	2025-09-14T18:08:37.1094872Z   DISCORD_TOKEN: ***
 test	Run actions/checkout@v4	2025-09-14T18:08:37.1095372Z   DISCORD_GUILD_ID: 1393846540115640320
-test	Run actions/checkout@v4	2025-09-14T18:08:37.1095940Z   STRIPE_SECRET_KEY: 
-test	Run actions/checkout@v4	2025-09-14T18:08:37.1096436Z   STRIPE_PUBLISHABLE_KEY: 
-test	Run actions/checkout@v4	2025-09-14T18:08:37.1096961Z   STRIPE_WEBHOOK_SECRET: 
-test	Run actions/checkout@v4	2025-09-14T18:08:37.1097570Z   STRIPE_WEBHOOK_URL: 
-test	Run actions/checkout@v4	2025-09-14T18:08:37.1098061Z   STRIPE_WEBHOOK_ID: 
-test	Run actions/checkout@v4	2025-09-14T18:08:37.1098534Z   AWS_ACCESS_KEY_ID: 
-test	Run actions/checkout@v4	2025-09-14T18:08:37.1099011Z   AWS_SECRET_ACCESS_KEY: 
-test	Run actions/checkout@v4	2025-09-14T18:08:37.1099505Z   AWS_REGION: 
-test	Run actions/checkout@v4	2025-09-14T18:08:37.1100037Z   GOOGLE_APPLICATION_CREDENTIALS: 
-test	Run actions/checkout@v4	2025-09-14T18:08:37.1100591Z   AZURE_CLIENT_ID: 
-test	Run actions/checkout@v4	2025-09-14T18:08:37.1101059Z   AZURE_CLIENT_SECRET: 
-test	Run actions/checkout@v4	2025-09-14T18:08:37.1101538Z   AZURE_TENANT_ID: 
-test	Run actions/checkout@v4	2025-09-14T18:08:37.1102012Z   AZURE_SUBSCRIPTION_ID: 
-test	Run actions/checkout@v4	2025-09-14T18:08:37.1102529Z   GOOGLE_CLIENT_ID: 
-test	Run actions/checkout@v4	2025-09-14T18:08:37.1103011Z   GOOGLE_CLIENT_SECRET: 
+test	Run actions/checkout@v4	2025-09-14T18:08:37.1095940Z   STRIPE_SECRET_KEY:
+test	Run actions/checkout@v4	2025-09-14T18:08:37.1096436Z   STRIPE_PUBLISHABLE_KEY:
+test	Run actions/checkout@v4	2025-09-14T18:08:37.1096961Z   STRIPE_WEBHOOK_SECRET:
+test	Run actions/checkout@v4	2025-09-14T18:08:37.1097570Z   STRIPE_WEBHOOK_URL:
+test	Run actions/checkout@v4	2025-09-14T18:08:37.1098061Z   STRIPE_WEBHOOK_ID:
+test	Run actions/checkout@v4	2025-09-14T18:08:37.1098534Z   AWS_ACCESS_KEY_ID:
+test	Run actions/checkout@v4	2025-09-14T18:08:37.1099011Z   AWS_SECRET_ACCESS_KEY:
+test	Run actions/checkout@v4	2025-09-14T18:08:37.1099505Z   AWS_REGION:
+test	Run actions/checkout@v4	2025-09-14T18:08:37.1100037Z   GOOGLE_APPLICATION_CREDENTIALS:
+test	Run actions/checkout@v4	2025-09-14T18:08:37.1100591Z   AZURE_CLIENT_ID:
+test	Run actions/checkout@v4	2025-09-14T18:08:37.1101059Z   AZURE_CLIENT_SECRET:
+test	Run actions/checkout@v4	2025-09-14T18:08:37.1101538Z   AZURE_TENANT_ID:
+test	Run actions/checkout@v4	2025-09-14T18:08:37.1102012Z   AZURE_SUBSCRIPTION_ID:
+test	Run actions/checkout@v4	2025-09-14T18:08:37.1102529Z   GOOGLE_CLIENT_ID:
+test	Run actions/checkout@v4	2025-09-14T18:08:37.1103011Z   GOOGLE_CLIENT_SECRET:
 test	Run actions/checkout@v4	2025-09-14T18:08:37.1103589Z   AUTH_GITHUB_CLIENT_ID: ***
 test	Run actions/checkout@v4	2025-09-14T18:08:37.1104288Z   AUTH_GITHUB_CLIENT_SECRET: ***
-test	Run actions/checkout@v4	2025-09-14T18:08:37.1104824Z   AUTH_GITHUB_ORG_ID: 
-test	Run actions/checkout@v4	2025-09-14T18:08:37.1105499Z   AUTH_GITHUB_ORG_NAME: 
-test	Run actions/checkout@v4	2025-09-14T18:08:37.1106021Z   AUTH_GITHUB_ORG_DESCRIPTION: 
-test	Run actions/checkout@v4	2025-09-14T18:08:37.1106552Z   HEROKU_API_KEY: 
-test	Run actions/checkout@v4	2025-09-14T18:08:37.1107017Z   HEROKU_APP_NAME: 
-test	Run actions/checkout@v4	2025-09-14T18:08:37.1107653Z   HEROKU_APP_ID: 
-test	Run actions/checkout@v4	2025-09-14T18:08:37.1108126Z   HEROKU_APP_URL: 
+test	Run actions/checkout@v4	2025-09-14T18:08:37.1104824Z   AUTH_GITHUB_ORG_ID:
+test	Run actions/checkout@v4	2025-09-14T18:08:37.1105499Z   AUTH_GITHUB_ORG_NAME:
+test	Run actions/checkout@v4	2025-09-14T18:08:37.1106021Z   AUTH_GITHUB_ORG_DESCRIPTION:
+test	Run actions/checkout@v4	2025-09-14T18:08:37.1106552Z   HEROKU_API_KEY:
+test	Run actions/checkout@v4	2025-09-14T18:08:37.1107017Z   HEROKU_APP_NAME:
+test	Run actions/checkout@v4	2025-09-14T18:08:37.1107653Z   HEROKU_APP_ID:
+test	Run actions/checkout@v4	2025-09-14T18:08:37.1108126Z   HEROKU_APP_URL:
 test	Run actions/checkout@v4	2025-09-14T18:08:37.1108587Z ##[endgroup]
 test	Run actions/checkout@v4	2025-09-14T18:08:37.2163000Z Syncing repository: a5c-ai/events
 test	Run actions/checkout@v4	2025-09-14T18:08:37.2165490Z ##[group]Getting Git version info
@@ -571,41 +571,41 @@ test	Setup Node.js	2025-09-14T18:08:37.9521004Z   DEBUG: pw:webserver
 test	Setup Node.js	2025-09-14T18:08:37.9521957Z   CI: true
 test	Setup Node.js	2025-09-14T18:08:37.9522938Z   VERCEL_TOKEN: ***
 test	Setup Node.js	2025-09-14T18:08:37.9524021Z   VERCEL_ORG_ID: team_08scWIMUiz59bFpkE0odinUT
-test	Setup Node.js	2025-09-14T18:08:37.9525356Z   VERCEL_PROJECT_ID: 
+test	Setup Node.js	2025-09-14T18:08:37.9525356Z   VERCEL_PROJECT_ID:
 test	Setup Node.js	2025-09-14T18:08:37.9526728Z   SUPABASE_ACCESS_TOKEN: ***
 test	Setup Node.js	2025-09-14T18:08:37.9528136Z   SUPABASE_ORG_ID: elyrlazfpakctdlgywlj
-test	Setup Node.js	2025-09-14T18:08:37.9529401Z   SUPABASE_PROJECT_REF: 
-test	Setup Node.js	2025-09-14T18:08:37.9530467Z   SUPABASE_PROJECT_URL: 
+test	Setup Node.js	2025-09-14T18:08:37.9529401Z   SUPABASE_PROJECT_REF:
+test	Setup Node.js	2025-09-14T18:08:37.9530467Z   SUPABASE_PROJECT_URL:
 test	Setup Node.js	2025-09-14T18:08:37.9531621Z   SUPABASE_DB_PASSWORD: ***
-test	Setup Node.js	2025-09-14T18:08:37.9532684Z   SLACK_BOT_TOKEN: 
-test	Setup Node.js	2025-09-14T18:08:37.9533648Z   SLACK_SIGNING_SECRET: 
-test	Setup Node.js	2025-09-14T18:08:37.9534674Z   SLACK_APP_TOKEN: 
+test	Setup Node.js	2025-09-14T18:08:37.9532684Z   SLACK_BOT_TOKEN:
+test	Setup Node.js	2025-09-14T18:08:37.9533648Z   SLACK_SIGNING_SECRET:
+test	Setup Node.js	2025-09-14T18:08:37.9534674Z   SLACK_APP_TOKEN:
 test	Setup Node.js	2025-09-14T18:08:37.9536422Z   DISCORD_TOKEN: ***
 test	Setup Node.js	2025-09-14T18:08:37.9537617Z   DISCORD_GUILD_ID: 1393846540115640320
-test	Setup Node.js	2025-09-14T18:08:37.9538815Z   STRIPE_SECRET_KEY: 
-test	Setup Node.js	2025-09-14T18:08:37.9539817Z   STRIPE_PUBLISHABLE_KEY: 
-test	Setup Node.js	2025-09-14T18:08:37.9540893Z   STRIPE_WEBHOOK_SECRET: 
-test	Setup Node.js	2025-09-14T18:08:37.9541930Z   STRIPE_WEBHOOK_URL: 
-test	Setup Node.js	2025-09-14T18:08:37.9542932Z   STRIPE_WEBHOOK_ID: 
-test	Setup Node.js	2025-09-14T18:08:37.9543908Z   AWS_ACCESS_KEY_ID: 
-test	Setup Node.js	2025-09-14T18:08:37.9544892Z   AWS_SECRET_ACCESS_KEY: 
-test	Setup Node.js	2025-09-14T18:08:37.9545920Z   AWS_REGION: 
-test	Setup Node.js	2025-09-14T18:08:37.9546874Z   GOOGLE_APPLICATION_CREDENTIALS: 
-test	Setup Node.js	2025-09-14T18:08:37.9548231Z   AZURE_CLIENT_ID: 
-test	Setup Node.js	2025-09-14T18:08:37.9549198Z   AZURE_CLIENT_SECRET: 
-test	Setup Node.js	2025-09-14T18:08:37.9550213Z   AZURE_TENANT_ID: 
-test	Setup Node.js	2025-09-14T18:08:37.9551167Z   AZURE_SUBSCRIPTION_ID: 
-test	Setup Node.js	2025-09-14T18:08:37.9552204Z   GOOGLE_CLIENT_ID: 
-test	Setup Node.js	2025-09-14T18:08:37.9553178Z   GOOGLE_CLIENT_SECRET: 
+test	Setup Node.js	2025-09-14T18:08:37.9538815Z   STRIPE_SECRET_KEY:
+test	Setup Node.js	2025-09-14T18:08:37.9539817Z   STRIPE_PUBLISHABLE_KEY:
+test	Setup Node.js	2025-09-14T18:08:37.9540893Z   STRIPE_WEBHOOK_SECRET:
+test	Setup Node.js	2025-09-14T18:08:37.9541930Z   STRIPE_WEBHOOK_URL:
+test	Setup Node.js	2025-09-14T18:08:37.9542932Z   STRIPE_WEBHOOK_ID:
+test	Setup Node.js	2025-09-14T18:08:37.9543908Z   AWS_ACCESS_KEY_ID:
+test	Setup Node.js	2025-09-14T18:08:37.9544892Z   AWS_SECRET_ACCESS_KEY:
+test	Setup Node.js	2025-09-14T18:08:37.9545920Z   AWS_REGION:
+test	Setup Node.js	2025-09-14T18:08:37.9546874Z   GOOGLE_APPLICATION_CREDENTIALS:
+test	Setup Node.js	2025-09-14T18:08:37.9548231Z   AZURE_CLIENT_ID:
+test	Setup Node.js	2025-09-14T18:08:37.9549198Z   AZURE_CLIENT_SECRET:
+test	Setup Node.js	2025-09-14T18:08:37.9550213Z   AZURE_TENANT_ID:
+test	Setup Node.js	2025-09-14T18:08:37.9551167Z   AZURE_SUBSCRIPTION_ID:
+test	Setup Node.js	2025-09-14T18:08:37.9552204Z   GOOGLE_CLIENT_ID:
+test	Setup Node.js	2025-09-14T18:08:37.9553178Z   GOOGLE_CLIENT_SECRET:
 test	Setup Node.js	2025-09-14T18:08:37.9554328Z   AUTH_GITHUB_CLIENT_ID: ***
 test	Setup Node.js	2025-09-14T18:08:37.9555792Z   AUTH_GITHUB_CLIENT_SECRET: ***
-test	Setup Node.js	2025-09-14T18:08:37.9556917Z   AUTH_GITHUB_ORG_ID: 
-test	Setup Node.js	2025-09-14T18:08:37.9558094Z   AUTH_GITHUB_ORG_NAME: 
-test	Setup Node.js	2025-09-14T18:08:37.9559161Z   AUTH_GITHUB_ORG_DESCRIPTION: 
-test	Setup Node.js	2025-09-14T18:08:37.9560255Z   HEROKU_API_KEY: 
-test	Setup Node.js	2025-09-14T18:08:37.9561183Z   HEROKU_APP_NAME: 
-test	Setup Node.js	2025-09-14T18:08:37.9562117Z   HEROKU_APP_ID: 
-test	Setup Node.js	2025-09-14T18:08:37.9624997Z   HEROKU_APP_URL: 
+test	Setup Node.js	2025-09-14T18:08:37.9556917Z   AUTH_GITHUB_ORG_ID:
+test	Setup Node.js	2025-09-14T18:08:37.9558094Z   AUTH_GITHUB_ORG_NAME:
+test	Setup Node.js	2025-09-14T18:08:37.9559161Z   AUTH_GITHUB_ORG_DESCRIPTION:
+test	Setup Node.js	2025-09-14T18:08:37.9560255Z   HEROKU_API_KEY:
+test	Setup Node.js	2025-09-14T18:08:37.9561183Z   HEROKU_APP_NAME:
+test	Setup Node.js	2025-09-14T18:08:37.9562117Z   HEROKU_APP_ID:
+test	Setup Node.js	2025-09-14T18:08:37.9624997Z   HEROKU_APP_URL:
 test	Setup Node.js	2025-09-14T18:08:37.9626184Z ##[endgroup]
 test	Setup Node.js	2025-09-14T18:08:38.1290441Z Attempt to resolve the latest version from manifest...
 test	Setup Node.js	2025-09-14T18:08:38.7524648Z Resolved as '20.19.5'
@@ -657,60 +657,60 @@ test	Run ./scripts/test.sh	2025-09-14T18:08:40.9586313Z   DEBUG: pw:webserver
 test	Run ./scripts/test.sh	2025-09-14T18:08:40.9586537Z   CI: true
 test	Run ./scripts/test.sh	2025-09-14T18:08:40.9586772Z   VERCEL_TOKEN: ***
 test	Run ./scripts/test.sh	2025-09-14T18:08:40.9587023Z   VERCEL_ORG_ID: team_08scWIMUiz59bFpkE0odinUT
-test	Run ./scripts/test.sh	2025-09-14T18:08:40.9587309Z   VERCEL_PROJECT_ID: 
+test	Run ./scripts/test.sh	2025-09-14T18:08:40.9587309Z   VERCEL_PROJECT_ID:
 test	Run ./scripts/test.sh	2025-09-14T18:08:40.9587811Z   SUPABASE_ACCESS_TOKEN: ***
 test	Run ./scripts/test.sh	2025-09-14T18:08:40.9588098Z   SUPABASE_ORG_ID: elyrlazfpakctdlgywlj
-test	Run ./scripts/test.sh	2025-09-14T18:08:40.9588389Z   SUPABASE_PROJECT_REF: 
-test	Run ./scripts/test.sh	2025-09-14T18:08:40.9588633Z   SUPABASE_PROJECT_URL: 
+test	Run ./scripts/test.sh	2025-09-14T18:08:40.9588389Z   SUPABASE_PROJECT_REF:
+test	Run ./scripts/test.sh	2025-09-14T18:08:40.9588633Z   SUPABASE_PROJECT_URL:
 test	Run ./scripts/test.sh	2025-09-14T18:08:40.9588899Z   SUPABASE_DB_PASSWORD: ***
-test	Run ./scripts/test.sh	2025-09-14T18:08:40.9589142Z   SLACK_BOT_TOKEN: 
-test	Run ./scripts/test.sh	2025-09-14T18:08:40.9589366Z   SLACK_SIGNING_SECRET: 
-test	Run ./scripts/test.sh	2025-09-14T18:08:40.9589601Z   SLACK_APP_TOKEN: 
+test	Run ./scripts/test.sh	2025-09-14T18:08:40.9589142Z   SLACK_BOT_TOKEN:
+test	Run ./scripts/test.sh	2025-09-14T18:08:40.9589366Z   SLACK_SIGNING_SECRET:
+test	Run ./scripts/test.sh	2025-09-14T18:08:40.9589601Z   SLACK_APP_TOKEN:
 test	Run ./scripts/test.sh	2025-09-14T18:08:40.9590004Z   DISCORD_TOKEN: ***
 test	Run ./scripts/test.sh	2025-09-14T18:08:40.9590237Z   DISCORD_GUILD_ID: 1393846540115640320
-test	Run ./scripts/test.sh	2025-09-14T18:08:40.9590505Z   STRIPE_SECRET_KEY: 
-test	Run ./scripts/test.sh	2025-09-14T18:08:40.9590736Z   STRIPE_PUBLISHABLE_KEY: 
-test	Run ./scripts/test.sh	2025-09-14T18:08:40.9590989Z   STRIPE_WEBHOOK_SECRET: 
-test	Run ./scripts/test.sh	2025-09-14T18:08:40.9591226Z   STRIPE_WEBHOOK_URL: 
-test	Run ./scripts/test.sh	2025-09-14T18:08:40.9591452Z   STRIPE_WEBHOOK_ID: 
-test	Run ./scripts/test.sh	2025-09-14T18:08:40.9591684Z   AWS_ACCESS_KEY_ID: 
-test	Run ./scripts/test.sh	2025-09-14T18:08:40.9591906Z   AWS_SECRET_ACCESS_KEY: 
-test	Run ./scripts/test.sh	2025-09-14T18:08:40.9592141Z   AWS_REGION: 
-test	Run ./scripts/test.sh	2025-09-14T18:08:40.9592372Z   GOOGLE_APPLICATION_CREDENTIALS: 
-test	Run ./scripts/test.sh	2025-09-14T18:08:40.9592637Z   AZURE_CLIENT_ID: 
-test	Run ./scripts/test.sh	2025-09-14T18:08:40.9592867Z   AZURE_CLIENT_SECRET: 
-test	Run ./scripts/test.sh	2025-09-14T18:08:40.9593090Z   AZURE_TENANT_ID: 
-test	Run ./scripts/test.sh	2025-09-14T18:08:40.9593326Z   AZURE_SUBSCRIPTION_ID: 
-test	Run ./scripts/test.sh	2025-09-14T18:08:40.9593560Z   GOOGLE_CLIENT_ID: 
-test	Run ./scripts/test.sh	2025-09-14T18:08:40.9593787Z   GOOGLE_CLIENT_SECRET: 
+test	Run ./scripts/test.sh	2025-09-14T18:08:40.9590505Z   STRIPE_SECRET_KEY:
+test	Run ./scripts/test.sh	2025-09-14T18:08:40.9590736Z   STRIPE_PUBLISHABLE_KEY:
+test	Run ./scripts/test.sh	2025-09-14T18:08:40.9590989Z   STRIPE_WEBHOOK_SECRET:
+test	Run ./scripts/test.sh	2025-09-14T18:08:40.9591226Z   STRIPE_WEBHOOK_URL:
+test	Run ./scripts/test.sh	2025-09-14T18:08:40.9591452Z   STRIPE_WEBHOOK_ID:
+test	Run ./scripts/test.sh	2025-09-14T18:08:40.9591684Z   AWS_ACCESS_KEY_ID:
+test	Run ./scripts/test.sh	2025-09-14T18:08:40.9591906Z   AWS_SECRET_ACCESS_KEY:
+test	Run ./scripts/test.sh	2025-09-14T18:08:40.9592141Z   AWS_REGION:
+test	Run ./scripts/test.sh	2025-09-14T18:08:40.9592372Z   GOOGLE_APPLICATION_CREDENTIALS:
+test	Run ./scripts/test.sh	2025-09-14T18:08:40.9592637Z   AZURE_CLIENT_ID:
+test	Run ./scripts/test.sh	2025-09-14T18:08:40.9592867Z   AZURE_CLIENT_SECRET:
+test	Run ./scripts/test.sh	2025-09-14T18:08:40.9593090Z   AZURE_TENANT_ID:
+test	Run ./scripts/test.sh	2025-09-14T18:08:40.9593326Z   AZURE_SUBSCRIPTION_ID:
+test	Run ./scripts/test.sh	2025-09-14T18:08:40.9593560Z   GOOGLE_CLIENT_ID:
+test	Run ./scripts/test.sh	2025-09-14T18:08:40.9593787Z   GOOGLE_CLIENT_SECRET:
 test	Run ./scripts/test.sh	2025-09-14T18:08:40.9594056Z   AUTH_GITHUB_CLIENT_ID: ***
 test	Run ./scripts/test.sh	2025-09-14T18:08:40.9594400Z   AUTH_GITHUB_CLIENT_SECRET: ***
-test	Run ./scripts/test.sh	2025-09-14T18:08:40.9594652Z   AUTH_GITHUB_ORG_ID: 
-test	Run ./scripts/test.sh	2025-09-14T18:08:40.9594880Z   AUTH_GITHUB_ORG_NAME: 
-test	Run ./scripts/test.sh	2025-09-14T18:08:40.9595247Z   AUTH_GITHUB_ORG_DESCRIPTION: 
-test	Run ./scripts/test.sh	2025-09-14T18:08:40.9595623Z   HEROKU_API_KEY: 
-test	Run ./scripts/test.sh	2025-09-14T18:08:40.9595854Z   HEROKU_APP_NAME: 
-test	Run ./scripts/test.sh	2025-09-14T18:08:40.9596076Z   HEROKU_APP_ID: 
-test	Run ./scripts/test.sh	2025-09-14T18:08:40.9596287Z   HEROKU_APP_URL: 
+test	Run ./scripts/test.sh	2025-09-14T18:08:40.9594652Z   AUTH_GITHUB_ORG_ID:
+test	Run ./scripts/test.sh	2025-09-14T18:08:40.9594880Z   AUTH_GITHUB_ORG_NAME:
+test	Run ./scripts/test.sh	2025-09-14T18:08:40.9595247Z   AUTH_GITHUB_ORG_DESCRIPTION:
+test	Run ./scripts/test.sh	2025-09-14T18:08:40.9595623Z   HEROKU_API_KEY:
+test	Run ./scripts/test.sh	2025-09-14T18:08:40.9595854Z   HEROKU_APP_NAME:
+test	Run ./scripts/test.sh	2025-09-14T18:08:40.9596076Z   HEROKU_APP_ID:
+test	Run ./scripts/test.sh	2025-09-14T18:08:40.9596287Z   HEROKU_APP_URL:
 test	Run ./scripts/test.sh	2025-09-14T18:08:40.9596716Z ##[endgroup]
 test	Run ./scripts/test.sh	2025-09-14T18:08:40.9766355Z [install] Node dependencies
-test	Run ./scripts/test.sh	2025-09-14T18:08:45.1979814Z 
+test	Run ./scripts/test.sh	2025-09-14T18:08:45.1979814Z
 test	Run ./scripts/test.sh	2025-09-14T18:08:45.1980674Z > @a5c-ai/events@1.1.0-a5c-main.9 prepare
 test	Run ./scripts/test.sh	2025-09-14T18:08:45.1981299Z > npm run build
-test	Run ./scripts/test.sh	2025-09-14T18:08:45.1981560Z 
-test	Run ./scripts/test.sh	2025-09-14T18:08:45.3090920Z 
+test	Run ./scripts/test.sh	2025-09-14T18:08:45.1981560Z
+test	Run ./scripts/test.sh	2025-09-14T18:08:45.3090920Z
 test	Run ./scripts/test.sh	2025-09-14T18:08:45.3091768Z > @a5c-ai/events@1.1.0-a5c-main.9 build
 test	Run ./scripts/test.sh	2025-09-14T18:08:45.3092669Z > tsc -p tsconfig.build.json && node scripts/build-post.js
-test	Run ./scripts/test.sh	2025-09-14T18:08:45.3093161Z 
-test	Run ./scripts/test.sh	2025-09-14T18:08:46.9171642Z 
+test	Run ./scripts/test.sh	2025-09-14T18:08:45.3093161Z
+test	Run ./scripts/test.sh	2025-09-14T18:08:46.9171642Z
 test	Run ./scripts/test.sh	2025-09-14T18:08:46.9172380Z added 661 packages in 6s
 test	Run ./scripts/test.sh	2025-09-14T18:08:46.9489961Z [install] Done.
 test	Run ./scripts/test.sh	2025-09-14T18:08:46.9493090Z [build] Running npm run build
 test	Run ./scripts/test.sh	2025-09-14T18:08:48.6431409Z [test] Running test:ci (vitest)
-test	Run ./scripts/test.sh	2025-09-14T18:08:49.2204059Z 
+test	Run ./scripts/test.sh	2025-09-14T18:08:49.2204059Z
 test	Run ./scripts/test.sh	2025-09-14T18:08:49.2205774Z [1m[7m[36m RUN [39m[27m[22m [36mv2.1.9 [39m[90m/home/runner/work/events/events[39m
 test	Run ./scripts/test.sh	2025-09-14T18:08:49.2206905Z       [2mCoverage enabled with [22m[33mv8[39m
-test	Run ./scripts/test.sh	2025-09-14T18:08:49.2207243Z 
+test	Run ./scripts/test.sh	2025-09-14T18:08:49.2207243Z
 test	Run ./scripts/test.sh	2025-09-14T18:08:49.6125468Z  [31m❯[39m tests/enrichGithubEvent.test.ts [2m([22m[2m0 test[22m[2m)[22m
 test	Run ./scripts/test.sh	2025-09-14T18:08:49.6680333Z  [32m✓[39m tests/normalize.github.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 9[2mms[22m[39m
 test	Run ./scripts/test.sh	2025-09-14T18:08:49.6683297Z  [32m✓[39m tests/mentions.code-comments.test.ts [2m([22m[2m8 tests[22m[2m)[22m[90m 12[2mms[22m[39m
@@ -807,9 +807,9 @@ test	Run ./scripts/test.sh	2025-09-14T18:08:52.5954864Z    [33m[2m✓[22m[39
 test	Run ./scripts/test.sh	2025-09-14T18:08:52.5955808Z    [33m[2m✓[22m[39m CLI exit codes[2m > [22mnormalize: exits 2 on invalid JSON input [33m565[2mms[22m[39m
 test	Run ./scripts/test.sh	2025-09-14T18:08:52.5956843Z    [33m[2m✓[22m[39m CLI exit codes[2m > [22menrich: exits 3 when --use-github is set but no token (provider failure) [33m580[2mms[22m[39m
 test	Run ./scripts/test.sh	2025-09-14T18:08:52.5958176Z    [33m[2m✓[22m[39m CLI exit codes[2m > [22menrich: exits 0 without --use-github even when no token [33m374[2mms[22m[39m
-test	Run ./scripts/test.sh	2025-09-14T18:08:52.8191700Z 
+test	Run ./scripts/test.sh	2025-09-14T18:08:52.8191700Z
 test	Run ./scripts/test.sh	2025-09-14T18:08:52.8201470Z [31m⎯⎯⎯⎯⎯⎯[1m[7m Failed Suites 1 [27m[22m⎯⎯⎯⎯⎯⎯⎯[39m
-test	Run ./scripts/test.sh	2025-09-14T18:08:52.8201944Z 
+test	Run ./scripts/test.sh	2025-09-14T18:08:52.8201944Z
 test	Run ./scripts/test.sh	2025-09-14T18:08:52.8203620Z [31m[1m[7m FAIL [27m[22m[39m tests/enrichGithubEvent.test.ts[2m [ tests/enrichGithubEvent.test.ts ][22m
 test	Run ./scripts/test.sh	2025-09-14T18:08:52.8220833Z [31m[1mSyntaxError[22m: Identifier 'mergeableState' has already been declared[39m
 test	Run ./scripts/test.sh	2025-09-14T18:08:52.8222011Z [36m [2m❯[22m tests/enrichGithubEvent.test.ts:[2m2:31[22m[39m
@@ -818,20 +818,20 @@ test	Run ./scripts/test.sh	2025-09-14T18:08:52.8666905Z     [90m  2| [39m[35m
 test	Run ./scripts/test.sh	2025-09-14T18:08:52.8668112Z     [90m   | [39m                              [31m^[39m
 test	Run ./scripts/test.sh	2025-09-14T18:08:52.8668594Z     [90m  3| [39m
 test	Run ./scripts/test.sh	2025-09-14T18:08:52.8669680Z     [90m  4| [39m[35mfunction[39m [34mmakeMockOctokit[39m({ pr[33m,[39m prFiles[33m,[39m prCommits[33m,[39m compare[33m,[39m codeowners…
-test	Run ./scripts/test.sh	2025-09-14T18:08:52.8670759Z 
+test	Run ./scripts/test.sh	2025-09-14T18:08:52.8670759Z
 test	Run ./scripts/test.sh	2025-09-14T18:08:52.8671330Z [31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯[22m[39m
-test	Run ./scripts/test.sh	2025-09-14T18:08:52.8671778Z 
+test	Run ./scripts/test.sh	2025-09-14T18:08:52.8671778Z
 test	Run ./scripts/test.sh	2025-09-14T18:08:52.8672164Z [31m⎯⎯⎯⎯⎯⎯⎯[1m[7m Failed Tests 2 [27m[22m⎯⎯⎯⎯⎯⎯⎯[39m
-test	Run ./scripts/test.sh	2025-09-14T18:08:52.8672498Z 
+test	Run ./scripts/test.sh	2025-09-14T18:08:52.8672498Z
 test	Run ./scripts/test.sh	2025-09-14T18:08:52.8673511Z [31m[1m[7m FAIL [27m[22m[39m tests/cli.rules-composed.test.ts[2m > [22mCLI enrich with --rules emits composed events[2m > [22mproduces composed[].key from YAML rules
 test	Run ./scripts/test.sh	2025-09-14T18:08:52.8674610Z [31m[1mAssertionError[22m: expected false to be true // Object.is equality[39m
-test	Run ./scripts/test.sh	2025-09-14T18:08:52.8674990Z 
+test	Run ./scripts/test.sh	2025-09-14T18:08:52.8674990Z
 test	Run ./scripts/test.sh	2025-09-14T18:08:52.8675140Z [32m- Expected[39m
 test	Run ./scripts/test.sh	2025-09-14T18:08:52.8675811Z [31m+ Received[39m
-test	Run ./scripts/test.sh	2025-09-14T18:08:52.8675967Z 
+test	Run ./scripts/test.sh	2025-09-14T18:08:52.8675967Z
 test	Run ./scripts/test.sh	2025-09-14T18:08:52.8676097Z [32m- true[39m
 test	Run ./scripts/test.sh	2025-09-14T18:08:52.8676382Z [31m+ false[39m
-test	Run ./scripts/test.sh	2025-09-14T18:08:52.8676532Z 
+test	Run ./scripts/test.sh	2025-09-14T18:08:52.8676532Z
 test	Run ./scripts/test.sh	2025-09-14T18:08:52.8676906Z [36m [2m❯[22m tests/cli.rules-composed.test.ts:[2m38:25[22m[39m
 test	Run ./scripts/test.sh	2025-09-14T18:08:52.8685126Z     [90m 36| [39m    [35mconst[39m keys [33m=[39m composed[33m.[39m[34mmap[39m((c[33m:[39m any) [33m=>[39m c[33m.[39mkey)
 test	Run ./scripts/test.sh	2025-09-14T18:08:52.8686194Z     [90m 37| [39m    [35mconst[39m hasExpected [33m=[39m keys[33m.[39m[34mincludes[39m([32m'conflict_in_pr_with_low_priorit[39m…
@@ -839,18 +839,18 @@ test	Run ./scripts/test.sh	2025-09-14T18:08:52.8687630Z     [90m 38| [39m    
 test	Run ./scripts/test.sh	2025-09-14T18:08:52.8688226Z     [90m   | [39m                        [31m^[39m
 test	Run ./scripts/test.sh	2025-09-14T18:08:52.8688560Z     [90m 39| [39m  })
 test	Run ./scripts/test.sh	2025-09-14T18:08:52.8688816Z     [90m 40| [39m})
-test	Run ./scripts/test.sh	2025-09-14T18:08:52.8688961Z 
+test	Run ./scripts/test.sh	2025-09-14T18:08:52.8688961Z
 test	Run ./scripts/test.sh	2025-09-14T18:08:52.8689214Z [31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯[22m[39m
-test	Run ./scripts/test.sh	2025-09-14T18:08:52.8689417Z 
+test	Run ./scripts/test.sh	2025-09-14T18:08:52.8689417Z
 test	Run ./scripts/test.sh	2025-09-14T18:08:52.8690047Z [31m[1m[7m FAIL [27m[22m[39m tests/enrich.basic.test.ts[2m > [22mhandleEnrich[2m > [22madds code_comment mentions when enrichment contains files
 test	Run ./scripts/test.sh	2025-09-14T18:08:52.8690879Z [31m[1mAssertionError[22m: expected false to be true // Object.is equality[39m
-test	Run ./scripts/test.sh	2025-09-14T18:08:52.8691193Z 
+test	Run ./scripts/test.sh	2025-09-14T18:08:52.8691193Z
 test	Run ./scripts/test.sh	2025-09-14T18:08:52.8691327Z [32m- Expected[39m
 test	Run ./scripts/test.sh	2025-09-14T18:08:52.8691585Z [31m+ Received[39m
-test	Run ./scripts/test.sh	2025-09-14T18:08:52.8691718Z 
+test	Run ./scripts/test.sh	2025-09-14T18:08:52.8691718Z
 test	Run ./scripts/test.sh	2025-09-14T18:08:52.8691824Z [32m- true[39m
 test	Run ./scripts/test.sh	2025-09-14T18:08:52.8692073Z [31m+ false[39m
-test	Run ./scripts/test.sh	2025-09-14T18:08:52.8692201Z 
+test	Run ./scripts/test.sh	2025-09-14T18:08:52.8692201Z
 test	Run ./scripts/test.sh	2025-09-14T18:08:52.8692485Z [36m [2m❯[22m tests/enrich.basic.test.ts:[2m89:68[22m[39m
 test	Run ./scripts/test.sh	2025-09-14T18:08:52.8727818Z     [90m 87| [39m    [35mconst[39m res [33m=[39m [35mawait[39m [34mhandleEnrich[39m({ [35min[39m[33m:[39m [32m'samples/pull_request.synchro[39m…
 test	Run ./scripts/test.sh	2025-09-14T18:08:52.8729211Z     [90m 88| [39m    [35mconst[39m mentions [33m=[39m (res[33m.[39moutput[33m.[39menriched [35mas[39m any)[33m.[39mmentions [33m||[39m [][33m;[39m
@@ -858,14 +858,14 @@ test	Run ./scripts/test.sh	2025-09-14T18:08:52.8730538Z     [90m 89| [39m    
 test	Run ./scripts/test.sh	2025-09-14T18:08:52.8731451Z     [90m   | [39m                                                                   [31m^[39m
 test	Run ./scripts/test.sh	2025-09-14T18:08:52.8731930Z     [90m 90| [39m  })[33m;[39m
 test	Run ./scripts/test.sh	2025-09-14T18:08:52.8732277Z     [90m 91| [39m
-test	Run ./scripts/test.sh	2025-09-14T18:08:52.8732443Z 
+test	Run ./scripts/test.sh	2025-09-14T18:08:52.8732443Z
 test	Run ./scripts/test.sh	2025-09-14T18:08:52.8732745Z [31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯[22m[39m
-test	Run ./scripts/test.sh	2025-09-14T18:08:52.8732999Z 
+test	Run ./scripts/test.sh	2025-09-14T18:08:52.8732999Z
 test	Run ./scripts/test.sh	2025-09-14T18:08:52.8734533Z [2m Test Files [22m [1m[31m3 failed[39m[22m[2m | [22m[1m[32m36 passed[39m[22m[90m (39)[39m
 test	Run ./scripts/test.sh	2025-09-14T18:08:52.8735793Z [2m      Tests [22m [1m[31m2 failed[39m[22m[2m | [22m[1m[32m101 passed[39m[22m[90m (103)[39m
 test	Run ./scripts/test.sh	2025-09-14T18:08:52.8736424Z [2m   Start at [22m 18:08:49
 test	Run ./scripts/test.sh	2025-09-14T18:08:52.8741225Z [2m   Duration [22m 3.60s[2m (transform 842ms, setup 0ms, collect 3.05s, tests 6.62s, environment 13ms, prepare 4.49s)[22m
-test	Run ./scripts/test.sh	2025-09-14T18:08:52.8741694Z 
+test	Run ./scripts/test.sh	2025-09-14T18:08:52.8741694Z
 test	Run ./scripts/test.sh	2025-09-14T18:08:52.9169432Z ##[error]Process completed with exit code 1.
 test	Post Run actions/checkout@v4	﻿2025-09-14T18:08:52.9270731Z Post job cleanup.
 test	Post Run actions/checkout@v4	2025-09-14T18:08:53.0202434Z [command]/usr/bin/git version
