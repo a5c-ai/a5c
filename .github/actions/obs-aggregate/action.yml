@@ -1,49 +1,82 @@
 name: "Observability Aggregate"
-description: "Download observability artifacts from prior jobs and summarize"
+description: "Download observability artifacts from prior jobs and aggregate cache/metrics into a single JSON file"
 author: "a5c.ai"
-
 inputs:
   artifact_name:
-    description: "Name of the artifact to download"
+    description: "Artifact name to download (leave empty to download all)"
     required: false
-    default: "observability"
-  path:
-    description: "Directory to download artifacts into"
+    default: ""
+  output_file:
+    description: "Output JSON file path"
     required: false
-    default: "aggregated-observability"
-
+    default: "observability.aggregate.json"
 runs:
   using: "composite"
   steps:
-    - name: Download observability artifact(s)
+    - name: Download artifacts
       uses: actions/download-artifact@v4
       with:
         name: ${{ inputs.artifact_name }}
-        path: ${{ inputs.path }}
+        path: observability-download
         merge-multiple: true
-
-    - name: Summarize observability files
+    - name: Aggregate observability files
+      id: aggregate
       shell: bash
       run: |
         set -euo pipefail
-        DIR="${{ inputs.path }}"
-        echo "## Aggregated Observability" >> "$GITHUB_STEP_SUMMARY"
-        if [ ! -d "$DIR" ]; then
-          echo "No directory $DIR after download; nothing to summarize." >> "$GITHUB_STEP_SUMMARY"
+        OUT="${{ inputs.output_file }}"
+        mkdir -p "$(dirname "$OUT")"
+        # Find all observability.json files under the downloaded artifacts
+        mapfile -t files < <(find observability-download -type f -name 'observability.json' 2>/dev/null | sort)
+        if [ ${#files[@]} -eq 0 ]; then
+          echo "No observability.json files found in artifacts. Writing empty aggregate." >&2
+          echo '{}' > "$OUT"
           exit 0
         fi
-        count=$(find "$DIR" -type f -name '*.json' | wc -l | awk '{print $1}')
-        echo "- Downloaded JSON files: ${count}" >> "$GITHUB_STEP_SUMMARY"
-        # Print first few files for quick visibility
-        i=0
-        while IFS= read -r f; do
-          i=$((i+1))
-          echo "\n<details><summary>${f}</summary>" >> "$GITHUB_STEP_SUMMARY"
-          head -c 4000 "$f" | sed 's/$/  /' >> "$GITHUB_STEP_SUMMARY" || true
-          echo "\n</details>" >> "$GITHUB_STEP_SUMMARY"
-          [ "$i" -ge 3 ] && break || true
-        done < <(find "$DIR" -type f -name '*.json' | sort)
-
+        node -e '
+          const fs = require("fs");
+          const path = require("path");
+          const out = process.env.OUT;
+          const files = (process.env.FILES || "").split("\n").filter(Boolean);
+          const items = [];
+          for (const f of files) {
+            try { items.push(JSON.parse(fs.readFileSync(f, "utf8"))); } catch {}
+          }
+          const agg = { items };
+          // Aggregate cache metrics if present
+          const caches = items.map(i => i?.metrics?.cache).filter(Boolean);
+          if (caches.length) {
+            const entries = [];
+            let hits = 0, total = 0, bytes = 0;
+            for (const c of caches) {
+              if (Array.isArray(c.entries)) {
+                for (const e of c.entries) {
+                  entries.push(e);
+                  total += 1;
+                  if (e?.hit) hits += 1;
+                  if (typeof e?.bytes === 'number') bytes += e.bytes;
+                }
+              } else if (c.summary) {
+                total += Number(c.summary.total||0);
+                hits += Number(c.summary.hits||0);
+                bytes += Number(c.summary.bytes_restored_total||0);
+              }
+            }
+            agg.metrics = agg.metrics || {};
+            agg.metrics.cache = { entries, summary: { hits, misses: Math.max(0,total-hits), total, bytes_restored_total: bytes } };
+          }
+          fs.writeFileSync(out, JSON.stringify(agg, null, 2));
+        '
+      env:
+        OUT: ${{ inputs.output_file }}
+        FILES: ${{ steps.find_files.outputs.files || '' }}
+      continue-on-error: false
+    - name: Upload aggregate artifact
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: observability-aggregate
+        path: ${{ inputs.output_file }}
 branding:
   icon: bar-chart-2
   color: blue
