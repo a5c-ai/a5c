@@ -41,6 +41,42 @@ try {
   if (!isNaN(s.getTime())) durationMs = end.getTime() - s.getTime();
 } catch {}
 
+// Optionally parse Vitest JSON to include tests (retries, slowest)
+let tests = null;
+try {
+  const vitest = JSON.parse(fs.readFileSync('vitest-results.json', 'utf8'));
+  if (vitest && Array.isArray(vitest.testResults)) {
+    const all = [];
+    for (const tr of vitest.testResults) {
+      for (const a of (tr.assertionResults || [])) {
+        const meta = a.meta || {};
+        const attempts = Number(meta.retryCount || meta.retries || 0);
+        const duration = a.duration ?? null;
+        all.push({
+          fullName: a.fullName || a.title || '',
+          status: a.status,
+          duration_ms: typeof duration === 'number' ? duration : null,
+          retries: attempts,
+        });
+      }
+    }
+    const slowest = all
+      .filter(t => typeof t.duration_ms === 'number')
+      .sort((a, b) => (b.duration_ms || 0) - (a.duration_ms || 0))
+      .slice(0, 10);
+    const flaky = all.filter(t => (t.retries || 0) > 0);
+    tests = {
+      totals: {
+        total: all.length,
+        flaky: flaky.length,
+        slow_count: slowest.length,
+      },
+      slowest,
+      flaky,
+    };
+  }
+} catch {}
+
 const obs = {
   repo: env('GITHUB_REPOSITORY') || env('REPO'),
   workflow: env('GITHUB_WORKFLOW') || env('WORKFLOW_NAME'),
@@ -58,6 +94,7 @@ const obs = {
     duration_ms: durationMs,
   },
   metrics: { coverage: cov, cache },
+  tests,
 };
 
 process.stdout.write(JSON.stringify(obs, null, 2));

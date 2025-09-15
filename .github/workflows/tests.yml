@@ -128,6 +128,14 @@ jobs:
               }
             }
           '
+      - name: Upload Vitest JSON
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vitest-json
+          path: |
+            vitest-results.json
+          if-no-files-found: ignore
       - name: Coverage summary
         if: always()
         run: |
