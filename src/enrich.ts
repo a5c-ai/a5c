@@ -34,6 +34,23 @@ export async function handleEnrich(opts: {
   const commitLimit = toInt(opts.flags?.commit_limit, 50);
   const fileLimit = toInt(opts.flags?.file_limit, 200);
   const useGithub = toBool(opts.flags?.use_github);
+  // Mentions scanning flags used by both patch and content scanning paths
+  const scanChangedFilesFlag = toBool(
+    (opts.flags as any)?.["mentions.scan.changed_files"] ?? true,
+  );
+  const maxFileBytesFlag = toInt(
+    (opts.flags as any)?.["mentions.max_file_bytes"],
+    200 * 1024,
+  );
+  const langFilterRawFlag = (opts.flags as any)?.["mentions.languages"] as any;
+  const languageFiltersFlag = Array.isArray(langFilterRawFlag)
+    ? (langFilterRawFlag as string[])
+    : typeof langFilterRawFlag === "string" && langFilterRawFlag.length
+      ? String(langFilterRawFlag)
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean)
+      : undefined;
 
   const cfg = loadConfig();
   const token = cfg.githubToken;
@@ -218,6 +235,7 @@ export async function handleEnrich(opts: {
         : undefined;
 
     if (scanChangedFiles) {
+    if (scanChangedFilesFlag) {
       const files: {
         filename: string;
         patch?: string;
@@ -275,6 +293,11 @@ export async function handleEnrich(opts: {
           source: "code_comment",
         });
         mentions.push(...found.map(normalizeCodeCommentLocation));
+          maxBytes: maxFileBytesFlag,
+          languageFilters: languageFiltersFlag,
+          source: "code_comment",
+        });
+        mentions.push(...found);
       }
     }
   } catch {
@@ -301,8 +324,29 @@ export async function handleEnrich(opts: {
         const parts = full.split("/");
         owner = parts[0];
         repo = parts[1];
+  // Mentions from code comments in changed files (PR/push) via file content
+  // Gate on both mentions flag and explicit --use-github to keep offline-by-default behavior
+  if (useGithub && scanChangedFilesFlag) {
+    try {
+      const gh = (githubEnrichment || {}) as any;
+      let owner: string | undefined = gh.owner;
+      let repo: string | undefined = gh.repo;
+      let filesList: any[] | undefined = gh?.pr?.files || gh?.push?.files;
+      let ref: string | undefined =
+        (baseEvent as any)?.pull_request?.head?.sha ||
+        (baseEvent as any)?.pull_request?.head?.ref ||
+        (baseEvent as any)?.after ||
+        (baseEvent as any)?.head_commit?.id;
+
+      // Fallback to payload if enrichment missing
+      if (!owner || !repo) {
+        const full = (baseEvent as any)?.repository?.full_name;
+        if (typeof full === "string" && full.includes("/")) {
+          const parts = full.split("/");
+          owner = parts[0];
+          repo = parts[1];
+        }
       }
-    }
 
     const mod: any = await import("./enrichGithubEvent.js");
     const octokit =
@@ -332,8 +376,42 @@ export async function handleEnrich(opts: {
           filesList = (comp?.data?.files as any[]) || [];
           ref = (baseEvent as any).after;
         } catch {}
+      // Only construct Octokit if gated
+      const mod: any = await import("./enrichGithubEvent.js");
+      const octokit =
+        opts.octokit || (token ? mod.createOctokit?.(token) : undefined);
+
+      if (
+        (!filesList || !Array.isArray(filesList)) &&
+        octokit &&
+        owner &&
+        repo
+      ) {
+        // Derive changed files using GitHub API if possible
+        if ((baseEvent as any)?.pull_request?.number) {
+          try {
+            const number = (baseEvent as any).pull_request.number;
+            const list = await octokit.paginate(octokit.pulls.listFiles, {
+              owner,
+              repo,
+              pull_number: number,
+              per_page: 100,
+            });
+            filesList = Array.isArray(list) ? list : [];
+          } catch {}
+        } else if ((baseEvent as any)?.before && (baseEvent as any)?.after) {
+          try {
+            const comp = await octokit.repos.compareCommits({
+              owner,
+              repo,
+              base: (baseEvent as any).before,
+              head: (baseEvent as any).after,
+            });
+            filesList = (comp?.data?.files as any[]) || [];
+            ref = (baseEvent as any).after;
+          } catch {}
+        }
       }
-    }
 
     if (
       owner &&
@@ -357,12 +435,34 @@ export async function handleEnrich(opts: {
       });
       if (codeMentions.length)
         mentions.push(...codeMentions.map(normalizeCodeCommentLocation));
+      if (
+        owner &&
+        repo &&
+        Array.isArray(filesList) &&
+        filesList.length &&
+        ref &&
+        octokit
+      ) {
+        const files = filesList.map((f: any) => ({ filename: f.filename }));
+        const codeMentions = await scanCodeCommentsForMentions({
+          owner,
+          repo,
+          ref,
+          files,
+          octokit,
+          options: {
+            fileSizeCapBytes: maxFileBytesFlag,
+            languageFilters: languageFiltersFlag,
+          },
+        });
+        if (codeMentions.length) mentions.push(...codeMentions);
+      }
+    } catch {
+      // ignore code comment scanning failures; treated as best-effort enrichment
     }
-  } catch {
-    // ignore code comment scanning failures; treated as best-effort enrichment
   }
 
-  // Optional: scan changed files for code comment mentions
+  // Optional: scan changed files for code comment mentions (patch-only, offline)
   try {
     const flags = opts.flags || {};
     const scanChanged = toBool(
@@ -383,6 +483,7 @@ export async function handleEnrich(opts: {
               .filter(Boolean)
           : undefined;
 
+    if (scanChangedFilesFlag) {
       const files: any[] =
         (githubEnrichment?.pr?.files as any[]) ||
         (githubEnrichment?.push?.files as any[]) ||
@@ -396,6 +497,12 @@ export async function handleEnrich(opts: {
         if (
           langAllow &&
           !langAllow.some((ext) => filename.toLowerCase().endsWith(`.${ext}`))
+        if (size > maxFileBytesFlag) continue;
+        if (
+          languageFiltersFlag &&
+          !languageFiltersFlag.some((ext) =>
+            filename.toLowerCase().endsWith(`.${ext}`),
+          )
         )
           continue;
         const found = scanPatchForCodeCommentMentions(filename, patch!, {
@@ -403,6 +510,7 @@ export async function handleEnrich(opts: {
         });
         if (found.length)
           mentions.push(...found.map(normalizeCodeCommentLocation));
+        if (found.length) mentions.push(...found);
       }
     }
   } catch {}

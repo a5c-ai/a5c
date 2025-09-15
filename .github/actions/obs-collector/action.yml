@@ -1,9 +1,18 @@
 name: "Observability Collector"
 description: "Collect workflow/job metadata and coverage, write summary, emit JSON, upload artifact"
 author: "a5c.ai"
+inputs:
+  node-version:
+    description: "Node.js version to setup"
+    required: false
+    default: "20"
 runs:
   using: "composite"
   steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
     - name: Collect metrics and write summary + file
       id: collect
       shell: bash
@@ -27,6 +36,7 @@ runs:
           let cov = null;
           try { cov = JSON.parse(fs.readFileSync("coverage/coverage-summary.json", "utf8")); } catch {}
           const obs = {
+            schema_version: "0.1",
             repo: env("GITHUB_REPOSITORY") || env("REPO"),
             workflow: env("GITHUB_WORKFLOW") || env("WORKFLOW_NAME"),
             job: env("JOB_NAME") || env("GITHUB_JOB"),

@@ -1,4 +1,4 @@
-[![99% built by agents](https://img.shields.io/badge/99%25-built%20by%20agents-blue.svg)](https://a5c.ai)
+[![99% built by agents](https://img.shields.io/badge/99%25-built%20by%20agents-blue.svg)](https://a5c.ai) [![codecov](https://codecov.io/gh/a5c-ai/events/branch/a5c/main/graph/badge.svg)](https://codecov.io/gh/a5c-ai/events)
 
 # @a5c-ai/events – Events SDK & CLI
 
@@ -69,9 +69,13 @@ cat out.json | npx @a5c-ai/events validate --quiet
   - `--in <file>`: normalized event JSON (or raw payload; NE shell will be created)
   - `--out <file>`: write enriched result
   - `--rules <file>`: rules file path (yaml/json)
-  - `--flag include_patch=<true|false>`: include diff patches in files (default: false)
-  - `--flag commit_limit=<n>`: max commits to include (default: 50)
-  - `--flag file_limit=<n>`: max files to include (default: 200)
+- `--flag include_patch=<true|false>`: include diff patches in files (default: false)
+- `--flag commit_limit=<n>`: max commits to include (default: 50)
+- `--flag file_limit=<n>`: max files to include (default: 200)
+- Mentions scanning (code comments in changed files):
+  - `--flag mentions.scan.changed_files=<true|false>` (default: true)
+  - `--flag mentions.max_file_bytes=<bytes>` (default: 200KB)
+  - `--flag mentions.languages=<ext,...>` (optional list such as `ts,tsx,js,jsx,py,go,yaml`)
   - `--use-github`: enable GitHub API enrichment (requires `GITHUB_TOKEN`)
   - `--select <paths>`: comma-separated dot paths to include in output
   - `--filter <expr>`: filter expression `path[=value]`; if not matching, exits with code 2 and no output
@@ -95,7 +99,7 @@ Core fields returned by `normalize`:
 - `repo`: minimal repository info
 - `ref`: branch/ref context
 - `actor`: event actor
-- `payload`: raw provider payload (verbatim)
+- `payload`: raw provider payload (object | array; verbatim)
 - `enriched`: `{ metadata, derived, correlations }`
 - `labels`: string array for routing (e.g., `env=staging`)
 - `provenance`: `{ source: action|webhook|cli, workflow? }` (no labels here)
@@ -134,6 +138,15 @@ events enrich --in samples/pull_request.synchronize.json \
 jq '.enriched' enriched.json
 ```
 
+With rules (composed events):
+
+```bash
+events enrich --in samples/pull_request.synchronize.json \
+  --rules samples/rules/conflicts.yml \
+  | jq '(.composed // []) | map({key, reason})'
+  # note: `reason` may be omitted depending on rule configuration
+```
+
 ### Auth tokens: precedence & redaction
 
 - Token precedence: runtime prefers `A5C_AGENT_GITHUB_TOKEN` over `GITHUB_TOKEN` when both are set (see `src/config.ts`).
@@ -154,6 +167,17 @@ unset GITHUB_TOKEN A5C_AGENT_GITHUB_TOKEN
 events enrich --in samples/pull_request.synchronize.json --use-github || echo $?
 # stderr: GitHub enrichment failed: ...
 # exit code: 3
+
+# Mentions scanning controls for code comments
+# Disable scanning of changed files
+events enrich --in samples/pull_request.synchronize.json \
+  --flag mentions.scan.changed_files=false | jq '.enriched.mentions // [] | length'
+
+# Restrict to selected languages and reduce size cap
+events enrich --in samples/pull_request.synchronize.json \
+  --flag mentions.languages=ts,js \
+  --flag mentions.max_file_bytes=102400 \
+  | jq '.enriched.mentions // [] | map(select(.source=="code_comment")) | length'
 ```
 
 See also: CLI reference for flags and exit codes: `docs/cli/reference.md`.
@@ -161,6 +185,8 @@ See also: CLI reference for flags and exit codes: `docs/cli/reference.md`.
 ### Validate against schema
 
 Use the NE JSON Schema at `docs/specs/ne.schema.json` to validate CLI output.
+
+Note: outputs that include `composed` are enriched; `composed` is optional and defined in the NE schema (`docs/specs/ne.schema.json`), so it does not need to be removed for validation. If you want to validate the normalized-only subset, validate before enrichment or strip it with `jq 'del(.composed)'`. When present, `composed[].payload` may be object | array | null.
 
 ```bash
 # Normalize a sample workflow_run payload
@@ -214,7 +240,7 @@ See `docs/specs/README.md` for examples and behavior-driven test outlines. Add y
 - Build: `npm run build`
 - Dev CLI: `npm run dev` (runs `src/cli.ts` via tsx)
 - Lint/Typecheck/Format: `npm run lint` / `npm run typecheck` / `npm run format`
-  - CI Observability: see `.github/actions/obs-summary` composite action which writes a job summary and uploads `observability.json`. Example usage lives in `.github/workflows/tests.yml`.
+  - CI Observability: see `.github/actions/obs-summary` composite action which writes a job summary and uploads `observability.json`. The composite sets up Node (`actions/setup-node@v4`) with default Node 20; override with `with.node-version` if needed. Example usage lives in `.github/workflows/tests.yml`.
   - CI runs lint and typecheck on PRs; see `.github/workflows/lint.yml` and `.github/workflows/typecheck.yml`.
   - Local pre-commit enforces whitespace/newline hygiene, lint, and typecheck; see `docs/contributing/README.md#pre-commit-checks`.
 - Minimal Node types + commander; TypeScript configured in `tsconfig.json`

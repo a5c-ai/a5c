@@ -4,7 +4,7 @@ This discovery doc proposes a minimal, pragmatic observability plan for consumer
 
 ## Artifact schema
 
-The CI workflows emit an `observability.json` artifact. Schema is experimental (`schema_version: 0.1`) and may evolve additively. A formal JSON Schema lives at `docs/specs/observability.schema.json`.
+The CI workflows emit an `observability.json` artifact. Schema is experimental (`schema_version: 0.1`) and may evolve additively. A formal JSON Schema lives at `docs/schemas/observability.schema.json`.
 
 Versioning policy:
 
@@ -24,8 +24,7 @@ When multiple jobs or a matrix run produce per-job artifacts, an aggregate artif
 
 - `metrics.cache.overall`: `hits`, `total`, `hit_ratio`, `bytes_restored_total`
 - `metrics.cache.by_kind[]`: per cache kind rollups with the same fields
-
-Optional validation in CI:
+  Optional validation in CI:
 
 - Composite actions may validate the artifact using `ajv` when `OBS_VALIDATE_SCHEMA=true` is set; failures should log warnings initially (non-blocking) until stability increases.
 
@@ -168,3 +167,10 @@ export function withCorr(logger: LoggerLike, corr: string): LoggerLike {
 2. Wire optional OTEL spans guarded by a dynamic import/try-catch.
 3. Add CLI flags `--log-format`, `--log-level` mirroring env toggles.
 4. Cookbook examples in `docs/recipes/*.md` for pino, loglevel, Sentry, OTEL.
+
+## Dashboard wiring
+
+- Store `observability.json` as a workflow artifact (already configured).
+- Optionally publish to a long-lived sink (e.g., S3, GCS) via a follow-up workflow for dashboards.
+- Minimal GitHub-native option: use step summaries and repository insights with CSV/JSON exports.
+- For matrices, aggregate per-job artifacts into `observability.aggregate.json` for charting (p95 durations, cache hit ratios).
