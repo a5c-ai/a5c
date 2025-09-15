@@ -27,6 +27,11 @@ jobs:
       - name: Install
         run: npm ci
 
+      - name: Init timings file
+        if: always()
+        run: |
+          : > hotspots.jsonl
+
       - name: Typecheck
         id: tsc
         run: |
@@ -49,14 +54,6 @@ jobs:
         run: |
           echo "## Typecheck on Node ${{ matrix.node }}" >> "$GITHUB_STEP_SUMMARY"
           echo "Result: ${{ steps.tsc.outputs.result || 'unknown' }}" >> "$GITHUB_STEP_SUMMARY"
-      - name: Init timings file
-        if: always()
-        run: |
-          : > hotspots.jsonl
-      - name: Install timings
-        if: always()
-        run: |
-          echo '{"name":"Install (Node ${{ matrix.node }})","duration_ms":15000}' >> hotspots.jsonl
       - name: Step hotspots summary and annotations
         if: always()
         uses: ./.github/actions/step-hotspots
