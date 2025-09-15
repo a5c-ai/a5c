@@ -162,7 +162,7 @@ See also: CLI reference for flags and exit codes: `docs/cli/reference.md`.
 
 Use the NE JSON Schema at `docs/specs/ne.schema.json` to validate CLI output.
 
-Note: outputs that include `composed` are enriched; remove `composed` prior to validation as it is not part of the NE schema. When present, `composed[].payload` may be object | array | null.
+Note: outputs that include `composed` are enriched; `composed` is optional and defined in the NE schema (`docs/specs/ne.schema.json`), so it does not need to be removed for validation. If you want to validate the normalized-only subset, validate before enrichment or strip it with `jq 'del(.composed)'`. When present, `composed[].payload` may be object | array | null.
 
 ```bash
 # Normalize a sample workflow_run payload
