@@ -19,6 +19,7 @@
   "scripts": {
     "pretest": "npm run build",
     "prepare": "npm run build",
+    "postinstall": "husky install || true",
     "clean": "rimraf dist .turbo .vitest coverage",
     "build": "tsc -p tsconfig.build.json && node scripts/build-post.js",
     "build:clean": "rimraf dist && npm run build",
@@ -29,6 +30,9 @@
     "test:ci": "vitest run --coverage --reporter=dot",
     "dev": "tsx watch src/cli.ts -- --help",
     "cli": "node dist/cli.js",
+    "prepush:changed": "node scripts/prepush-related.js",
+    "prepush:full": "vitest run",
+    "prepush": "node scripts/prepush-related.js || vitest run",
     "release": "semantic-release"
   },
   "files": [
@@ -82,7 +86,9 @@
     "typescript": "5.9.2",
     "typescript-eslint": "8.43.0",
     "vitest": "^2.1.1",
-    "yaml": "2.8.1"
+    "yaml": "2.8.1",
+    "husky": "^9.1.6",
+    "lint-staged": "^15.2.10"
   },
   "dependencies": {
     "@octokit/rest": "^21.0.0",
@@ -91,5 +97,18 @@
     "minimatch": "^9.0.5",
     "yaml": "^2.8.1",
     "zod": "^3.23.8"
+  },
+  "lint-staged": {
+    "src/**/*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier -w"
+    ],
+    "{test,tests}/**/*.{ts,tsx,js}": [
+      "eslint --fix --max-warnings=0",
+      "prettier -w"
+    ],
+    "**/*.{md,json,yml,yaml}": [
+      "prettier -w"
+    ]
   }
 }

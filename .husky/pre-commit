@@ -1,10 +1,14 @@
 #!/usr/bin/env sh
 set -e
 
-echo "Running pre-commit checks..."
-if command -v npm >/dev/null 2>&1 && [ -f package.json ]; then
-  npm run -s lint || true
-  npm test --silent || true
+echo "Running pre-commit checks (lint-staged)..."
+if command -v npx >/dev/null 2>&1 && [ -f package.json ]; then
+  # Allow skipping via env variable
+  if [ -n "$A5C_SKIP_PRECOMMIT" ] || [ -n "$SKIP_PRECOMMIT" ]; then
+    echo "Skipping pre-commit due to env flag."
+  else
+    npx --no-install lint-staged || npx lint-staged || true
+  fi
 fi
 
 # Guard against Windows-invalid filenames (e.g., ':')
