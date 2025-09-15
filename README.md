@@ -58,7 +58,7 @@ events enrich --in ... --flag 'mentions.max_file_bytes=65536'
 events enrich --in ... --flag "mentions.languages=ts,js,md"
 ```
 
-See: docs/specs/README.md#4.2-mentions-schema for full details.
+See: docs/specs/README.md#42-mentions-schema for full details.
 
 `events mentions`
 
