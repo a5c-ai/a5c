@@ -24,8 +24,35 @@ runs:
 
         echo "OBS_FILE=${OBS_FILE}" >> "$GITHUB_ENV"
 
-        # Compose JSON (includes coverage, optional cache metrics, started_at/duration)
+        # Compose JSON (includes coverage, cache metrics, started_at/duration, and vitest tests)
         node "${GITHUB_ACTION_PATH:-.github/actions/obs-summary}/compose.cjs" > "$OBS_FILE"
+
+        # Optional schema validation (warn-only)
+        if [ "${OBS_VALIDATE_SCHEMA:-false}" = "true" ]; then
+          echo "Validating $OBS_FILE against docs/specs/observability.schema.json (warn-only)" >> "$GITHUB_STEP_SUMMARY"
+          node -e '
+            try {
+              const fs = require("fs");
+              const Ajv = require("ajv");
+              const addFormats = require("ajv-formats");
+              const schema = JSON.parse(fs.readFileSync("docs/specs/observability.schema.json", "utf8"));
+              const data = JSON.parse(fs.readFileSync(process.env.OBS_FILE, "utf8"));
+              const ajv = new Ajv({ strict: true, allErrors: true });
+              addFormats(ajv);
+              const validate = ajv.compile(schema);
+              const ok = validate(data);
+              if (!ok) {
+                console.log("Schema validation warnings:", validate.errors);
+                process.exitCode = 0;
+              } else {
+                console.log("Schema validation passed.");
+              }
+            } catch (e) {
+              console.log("Schema validation encountered an error (ignored):", e && e.message);
+              process.exitCode = 0;
+            }
+          '
+        fi
 
         echo "## Observability" >> "$GITHUB_STEP_SUMMARY"
         echo "- Repo: ${REPO}" >> "$GITHUB_STEP_SUMMARY"
@@ -45,6 +72,31 @@ runs:
         DUR=$(node -e "try{const o=JSON.parse(require('fs').readFileSync(process.env.OBS_FILE,'utf8')); if(o?.run?.duration_ms!=null){ console.log(o.run.duration_ms) }}catch{}") || true
         if [ -n "${DUR}" ]; then
           echo "- Duration: ${DUR} ms" >> "$GITHUB_STEP_SUMMARY"
+        fi
+        # If vitest JSON exists, append flaky/slow summary
+        if [ -f vitest-results.json ]; then
+          node -e '
+            const fs = require("fs");
+            const s = fs.readFileSync("vitest-results.json","utf8");
+            const v = JSON.parse(s);
+            const all = [];
+            for (const tr of (v.testResults||[])) {
+              for (const a of (tr.assertionResults||[])) {
+                const meta = a.meta || {};
+                const attempts = Number(meta.retryCount || meta.retries || 0);
+                all.push({ n: a.fullName || a.title || "", d: a.duration ?? null, r: attempts });
+              }
+            }
+            const flaky = all.filter(t => (t.r||0) > 0).length;
+            const slowest = all.filter(t => typeof t.d === "number").sort((a,b)=> (b.d||0)-(a.d||0)).slice(0,5);
+            let out = "\n### Tests (from vitest JSON)\n";
+            out += `- Flaky suspects (retries>0): ${flaky}\n`;
+            if (slowest.length) {
+              out += "- Slowest tests:\n";
+              for (const t of slowest) out += `  - ${t.n} — ${t.d} ms\n`;
+            }
+            fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, out);
+          ';
         fi
         # Cache summary if envs provided
         kinds=$(env | awk -F= '/^CACHE_[A-Z0-9]+_HIT=/{print $1}' | sed -E 's/^CACHE_([A-Z0-9]+)_HIT.*/\1/; s/.*/\L&/')

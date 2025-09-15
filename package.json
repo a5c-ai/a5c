@@ -27,7 +27,7 @@
     "format": "prettier -w .",
     "typecheck": "tsc --noEmit -p tsconfig.build.json",
     "test": "vitest run",
-    "test:ci": "vitest run --coverage --reporter=dot --reporter=junit --outputFile=junit.xml",
+    "test:ci": "vitest run --coverage",
     "dev": "tsx watch src/cli.ts -- --help",
     "cli": "node dist/cli.js",
     "prepush:changed": "node scripts/prepush-related.js",

@@ -11,6 +11,8 @@ export default defineConfig({
     reporters: [
       'dot',
       ['junit', { outputFile: 'junit.xml' }],
+      // JSON reporter to enable post-processing of retries/slow tests in CI
+      ['json', { outputFile: 'vitest-results.json' }],
     ],
     coverage: {
       reporter: ['text', 'lcov', 'json-summary'],
