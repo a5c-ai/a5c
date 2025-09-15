@@ -166,8 +166,21 @@ export async function cmdEnrich(opts: {
             const lang = detectLangRich(filename);
             if (!lang || !languageFilters.includes(lang)) continue;
           }
-          const found = scanPatchForCodeCommentMentions(filename, patch!, {
-            window: 30,
+          // Approximate content from patch and scan with comment scanner
+          const lines = String(patch || '').split(/\r?\n/);
+          const approx: string[] = [];
+          for (const l of lines) {
+            if (l.startsWith('+++') || l.startsWith('---') || l.startsWith('@@')) { approx.push(''); continue; }
+            if (l.startsWith('+') || l.startsWith(' ') || l.startsWith('-')) approx.push(l.slice(1));
+            else approx.push(l);
+          }
+          const content = approx.join('\n');
+          const found = scanMentionsInCodeComments({
+            content,
+            filename,
+            maxBytes: maxFileBytes,
+            languageFilters,
+            source: 'code_comment',
           });
           if (found.length) {
             for (const m of found) normalizeLocationObject(m);
