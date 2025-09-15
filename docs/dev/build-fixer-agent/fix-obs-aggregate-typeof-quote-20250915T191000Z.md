@@ -15,3 +15,6 @@
 ## Changes (initial placeholder)
 
 - Pending.
+  \n## Changes
+- Switch Node inline exec from `node -e '...'` to a here-doc `node - <<'NODE'` to prevent shell quote interpolation, ensuring `typeof v === 'number'` remains correct.
+- No behavior change except fixing aggregation failure in CI job.
