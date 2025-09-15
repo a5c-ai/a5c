@@ -125,6 +125,7 @@ runs:
         DUR=$(node -e "try{const o=JSON.parse(require('fs').readFileSync(process.env.OBS_FILE,'utf8')); if(o?.run?.duration_ms!=null){ console.log(o.run.duration_ms) }}catch{}") || true
         if [ -n "${DUR}" ]; then
           echo "- Duration: ${DUR} ms" >> "$GITHUB_STEP_SUMMARY"
+        fi
         # If vitest JSON exists, append flaky/slow summary
         if [ -f vitest-results.json ]; then
           node -e '
