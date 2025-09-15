@@ -99,7 +99,12 @@ runs:
           ';
         fi
         # Cache summary if envs provided
-        kinds=$(env | awk -F= '/^CACHE_[A-Z0-9]+_HIT=/{print $1}' | sed -E 's/^CACHE_([A-Z0-9]+)_HIT.*/\1/; s/.*/\L&/')
+        # Extract cache kinds from env in a portable way (avoid sed -E quirks)
+        # Example envs:
+        #   CACHE_NODE_HIT=true
+        #   CACHE_NODE_BYTES=36778138
+        #   CACHE_NODE_KEY=primary-key
+        kinds=$(env | awk -F'[=_]' '/^CACHE_[A-Z0-9]+_HIT=/{print tolower($2)}')
         if [ -n "${kinds}" ]; then
           hits=0; total=0; bytes_total=0; line_parts=""
           for k in $kinds; do

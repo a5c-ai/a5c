@@ -1,10 +1,6 @@
-# <<<<<<< HEAD
-
 ---
-
 title: CLI Reference
 description: Commands, flags, and examples for the Events CLI (`mentions`, `normalize`, `enrich`, `emit`, `validate`).
-
 ---
 
 # CLI Reference
