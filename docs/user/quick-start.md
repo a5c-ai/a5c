@@ -67,8 +67,6 @@ events enrich --in samples/pull_request.synchronize.json --out out.json --use-gi
 jq '.enriched.github.pr.has_conflicts, .enriched.github.pr.mergeable_state' out.json
 ```
 
- 
-
 ## Use in GitHub Actions
 
 ```yaml
@@ -89,6 +87,7 @@ jobs:
 ```
 
 ## Emit results
+
 After enrichment, you can emit the final NE to stdout or a file:
 
 ```bash

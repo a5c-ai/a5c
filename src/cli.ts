@@ -123,6 +123,23 @@ program
   .action(async (cmdOpts: any) => {
     const flags = { ...(cmdOpts.flag || {}) };
     if (cmdOpts.useGithub || cmdOpts["use-github"]) flags.use_github = "true";
+    // Guard: if --use-github is requested but no token available, exit 3 with a clear message
+    try {
+      const cfg = loadConfig();
+      const token = cfg.githubToken;
+      if (
+        (flags.use_github === true ||
+          String(flags.use_github).toLowerCase() === "true") &&
+        !token
+      ) {
+        process.stderr.write(
+          "GitHub enrichment failed: token is required when --use-github is set\n",
+        );
+        return process.exit(3);
+      }
+    } catch (_) {
+      // If config loading fails, proceed and let downstream logic handle errors
+    }
     const labels = Object.entries(cmdOpts.label || {}).map(
       ([k, v]) => `${k}=${v}`,
     );

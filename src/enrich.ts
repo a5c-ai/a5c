@@ -19,22 +19,17 @@ export async function handleEnrich(opts: {
   code: number;
   output: NormalizedEvent | Record<string, unknown>;
 }> {
-  // Require --in for enrich
-  if (!opts.in) {
-    return { code: 2, output: { error: "enrich: missing --in" } };
-  }
+  if (!opts.in) return { code: 2, output: { error: "enrich: missing --in" } };
   let input: any;
   try {
     input = readJSONFile<any>(opts.in) || {};
   } catch (e: any) {
     return { code: 2, output: { error: String(e?.message || e) } };
   }
-  // Default to false to avoid large payloads and potential secret leakage
   const includePatch = toBool(opts.flags?.include_patch ?? false);
   const commitLimit = toInt(opts.flags?.commit_limit, 50);
   const fileLimit = toInt(opts.flags?.file_limit, 200);
   const useGithub = toBool(opts.flags?.use_github);
-  // Mentions scanning flags used by both patch and content scanning paths
   const scanChangedFilesFlag = toBool(
     (opts.flags as any)?.["mentions.scan.changed_files"] ?? true,
   );
@@ -92,14 +87,12 @@ export async function handleEnrich(opts: {
 
   let githubEnrichment: any = {};
   if (!useGithub) {
-    // Offline/default mode: do not perform network enrichment
     githubEnrichment = {
       provider: "github",
       partial: true,
       reason: "github_enrich_disabled",
     };
   } else if (!token && !opts.octokit) {
-    // Enabled but missing token and no injected Octokit: mark skipped/partial
     githubEnrichment = {
       provider: "github",
       skipped: true,
@@ -122,37 +115,31 @@ export async function handleEnrich(opts: {
       });
       githubEnrichment = enriched?._enrichment || {};
       if (!includePatch) {
-        if (githubEnrichment.pr?.files) {
+        if (githubEnrichment.pr?.files)
           githubEnrichment.pr.files = githubEnrichment.pr.files.map(
             (f: any) => ({ ...f, patch: undefined }),
           );
-        }
-        if (githubEnrichment.push?.files) {
+        if (githubEnrichment.push?.files)
           githubEnrichment.push.files = githubEnrichment.push.files.map(
             (f: any) => ({ ...f, patch: undefined }),
           );
-        }
       } else {
-        // Ensure a defined patch key when include_patch=true so callers can rely on presence
-        if (githubEnrichment.pr?.files) {
+        if (githubEnrichment.pr?.files)
           githubEnrichment.pr.files = githubEnrichment.pr.files.map((f: any) =>
             Object.prototype.hasOwnProperty.call(f, "patch")
               ? f
               : { ...f, patch: "" },
           );
-        }
-        if (githubEnrichment.push?.files) {
+        if (githubEnrichment.push?.files)
           githubEnrichment.push.files = githubEnrichment.push.files.map(
             (f: any) =>
               Object.prototype.hasOwnProperty.call(f, "patch")
                 ? f
                 : { ...f, patch: "" },
           );
-        }
       }
     } catch (e: any) {
       const errMessage = String(e?.message || e);
-      // If a custom octokit was provided (tests/injection), treat as partial and continue
       if (opts.octokit) {
         githubEnrichment = {
           provider: "github",
@@ -160,7 +147,6 @@ export async function handleEnrich(opts: {
           errors: [{ message: errMessage }],
         };
       } else {
-        // When explicit GitHub enrichment is requested and it fails, surface as code 3
         return {
           code: 3,
           output: { error: `github enrichment failed: ${errMessage}` },
@@ -169,7 +155,6 @@ export async function handleEnrich(opts: {
     }
   }
 
-  // Fallback projection of basic PR fields when use_github=true but enrichment is partial/mocked
   try {
     if (useGithub) {
       const prPayload = (baseEvent as any)?.pull_request;
@@ -193,7 +178,6 @@ export async function handleEnrich(opts: {
     }
   } catch {}
 
-  // Mentions from common text locations
   const mentions: Mention[] = [];
   try {
     const pr = (baseEvent as any)?.pull_request;
@@ -211,80 +195,9 @@ export async function handleEnrich(opts: {
     const commentBody = (baseEvent as any)?.comment?.body;
     if (commentBody)
       mentions.push(...extractMentions(String(commentBody), "issue_comment"));
-  } catch {
-    // ignore mention extraction errors from optional/text fields
-    void 0;
-  }
+  } catch {}
 
-  // Mentions from changed files (code comments)
-  try {
-    if (scanChangedFilesFlag) {
-      const files: {
-        filename: string;
-        patch?: string;
-        raw_url?: string;
-        blob_url?: string;
-      }[] = [];
-      const gh = githubEnrichment || {};
-      const prFiles = gh?.pr?.files || [];
-      const pushFiles = gh?.push?.files || [];
-      for (const f of prFiles)
-        files.push({
-          filename: f.filename,
-          patch: f.patch,
-          raw_url: f.raw_url,
-          blob_url: f.blob_url,
-        });
-      for (const f of pushFiles)
-        files.push({
-          filename: f.filename,
-          patch: f.patch,
-          raw_url: f.raw_url,
-          blob_url: f.blob_url,
-        });
-
-      // If patch available, synthesize per-line content context; otherwise attempt to fetch raw if token provided
-      for (const f of files) {
-        // Prefer patch text if present, as it is already constrained in size
-        const patch = typeof f.patch === "string" ? f.patch : "";
-        if (!patch) continue;
-        // Build a lightweight pseudo-file content from patch lines starting with '+' or ' ' to approximate context
-        const lines = patch.split(/\r?\n/);
-        const approxFile: string[] = [];
-        for (const l of lines) {
-          if (
-            l.startsWith("+++") ||
-            l.startsWith("---") ||
-            l.startsWith("@@")
-          ) {
-            approxFile.push("");
-            continue;
-          }
-          if (l.startsWith("+") || l.startsWith(" ") || l.startsWith("-")) {
-            // include all lines to keep positions consistent; deletions still matter for mentions in comments
-            approxFile.push(l.slice(1));
-          } else {
-            approxFile.push(l);
-          }
-        }
-        const content = approxFile.join("\n");
-        const found = scanMentionsInCodeComments({
-          content,
-          filename: f.filename,
-          maxBytes: maxFileBytesFlag,
-          languageFilters: languageFiltersFlag,
-          source: "code_comment",
-        });
-        mentions.push(...found);
-      }
-    }
-  } catch {
-    // ignore scanning errors; do not block enrichment
-    void 0;
-  }
-
-  // Mentions from code comments in changed files (PR/push) via file content
-  // Gate on both mentions flag and explicit --use-github to keep offline-by-default behavior
+  // GitHub content-based scanning when enabled
   if (useGithub && scanChangedFilesFlag) {
     try {
       const gh = (githubEnrichment || {}) as any;
@@ -296,8 +209,6 @@ export async function handleEnrich(opts: {
         (baseEvent as any)?.pull_request?.head?.ref ||
         (baseEvent as any)?.after ||
         (baseEvent as any)?.head_commit?.id;
-
-      // Fallback to payload if enrichment missing
       if (!owner || !repo) {
         const full = (baseEvent as any)?.repository?.full_name;
         if (typeof full === "string" && full.includes("/")) {
@@ -306,19 +217,15 @@ export async function handleEnrich(opts: {
           repo = parts[1];
         }
       }
-
-      // Only construct Octokit if gated
       const mod: any = await import("./enrichGithubEvent.js");
       const octokit =
         opts.octokit || (token ? mod.createOctokit?.(token) : undefined);
-
       if (
         (!filesList || !Array.isArray(filesList)) &&
         octokit &&
         owner &&
         repo
       ) {
-        // Derive changed files using GitHub API if possible
         if ((baseEvent as any)?.pull_request?.number) {
           try {
             const number = (baseEvent as any).pull_request.number;
@@ -343,7 +250,6 @@ export async function handleEnrich(opts: {
           } catch {}
         }
       }
-
       if (
         owner &&
         repo &&
@@ -364,20 +270,19 @@ export async function handleEnrich(opts: {
             languageFilters: languageFiltersFlag,
           },
         });
-        if (codeMentions.length) mentions.push(...codeMentions);
+        if (codeMentions.length)
+          mentions.push(...codeMentions.map(normalizeCodeCommentLocation));
       }
-    } catch {
-      // ignore code comment scanning failures; treated as best-effort enrichment
-    }
+    } catch {}
   }
 
-  // Optional: scan changed files for code comment mentions (patch-only, offline)
+  // Patch-based scanning (offline)
   try {
     if (scanChangedFilesFlag) {
-      const files: any[] =
-        (githubEnrichment?.pr?.files as any[]) ||
-        (githubEnrichment?.push?.files as any[]) ||
-        [];
+      const gh = githubEnrichment || {};
+      const prFiles = gh?.pr?.files || [];
+      const pushFiles = gh?.push?.files || [];
+      const files: any[] = [...prFiles, ...pushFiles];
       for (const f of files) {
         const filename = f?.filename;
         const patch = f?.patch as string | undefined;
@@ -394,7 +299,8 @@ export async function handleEnrich(opts: {
         const found = scanPatchForCodeCommentMentions(filename, patch!, {
           window: 30,
         });
-        if (found.length) mentions.push(...found);
+        if (found.length)
+          mentions.push(...found.map(normalizeCodeCommentLocation));
       }
     }
   } catch {}
@@ -412,7 +318,7 @@ export async function handleEnrich(opts: {
       ...(mentions.length ? { mentions } : {}),
     },
   };
-  // Evaluate composed event rules (if provided)
+
   try {
     const rules = loadRules(opts.rules);
     if (rules.length) {
@@ -423,7 +329,6 @@ export async function handleEnrich(opts: {
       };
       const res = evaluateRulesDetailed(evalObj, rules);
       if (res?.composed?.length) {
-        // Map detailed criteria to a human-readable reason string (join with AND)
         const composed = res.composed.map((c: any) => ({
           key: c.key,
           reason:
@@ -440,7 +345,6 @@ export async function handleEnrich(opts: {
       (output.enriched as any).metadata = { ...meta, rules_status: res.status };
     }
   } catch (e) {
-    // do not fail enrichment on rules errors; record under enriched.metadata
     const meta: any = (output.enriched as any).metadata || {};
     (output.enriched as any).metadata = {
       ...meta,
@@ -460,4 +364,25 @@ function toBool(v: any): boolean {
 function toInt(v: any, d = 0): number {
   const n = Number(v);
   return Number.isFinite(n) ? n : d;
+}
+
+function normalizeCodeCommentLocation(m: Mention): Mention {
+  if (
+    m &&
+    m.source === "code_comment" &&
+    typeof (m as any).location === "string"
+  ) {
+    const loc = String((m as any).location);
+    const idx = loc.lastIndexOf(":");
+    if (idx > 0) {
+      const file = loc.slice(0, idx);
+      const lineStr = loc.slice(idx + 1);
+      const line = Number.parseInt(lineStr, 10);
+      return {
+        ...m,
+        location: { file, line: Number.isFinite(line) ? line : undefined },
+      } as Mention;
+    }
+  }
+  return m;
 }
