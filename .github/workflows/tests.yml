@@ -226,7 +226,7 @@ jobs:
           echo "- Jobs parsed: ${count}" >> "$GITHUB_STEP_SUMMARY"
           echo "- Hit ratio: ${HITS}/${TOTAL} (${RATIO})" >> "$GITHUB_STEP_SUMMARY"
           # Emit combined observability JSON focusing on cache summary
-          node -e '
+          HITS="$HITS" TOTAL="$TOTAL" node -e '
             const fs=require("fs");
             const entries=JSON.parse(fs.readFileSync("/tmp/entries.json","utf8"));
             const hits=Number(process.env.HITS||0);
