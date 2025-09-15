@@ -1,0 +1,69 @@
+name: "Observability Collector"
+description: "Collect workflow/job metadata and coverage, write summary, emit JSON, upload artifact"
+author: "a5c.ai"
+runs:
+  using: "composite"
+  steps:
+    - name: Collect metrics and write summary + file
+      id: collect
+      shell: bash
+      run: |
+        set -euo pipefail
+        OBS_FILE="${OBS_FILE:-observability.json}"
+        JOB_NAME="${JOB_NAME:-${GITHUB_JOB:-}}"
+        WORKFLOW_NAME="${WORKFLOW_NAME:-${GITHUB_WORKFLOW:-}}"
+        RUN_ID="${RUN_ID:-${GITHUB_RUN_ID:-}}"
+        RUN_ATTEMPT="${RUN_ATTEMPT:-${GITHUB_RUN_ATTEMPT:-1}}"
+        REPO="${REPO:-${GITHUB_REPOSITORY:-}}"
+        SHA="${SHA:-${GITHUB_SHA:-}}"
+        BRANCH_REF="${BRANCH_REF:-${GITHUB_REF:-}}"
+        CONCLUSION="${CONCLUSION:-}"
+
+        echo "OBS_FILE=${OBS_FILE}" >> "$GITHUB_ENV"
+
+        node -e '
+          const fs = require("fs");
+          const env = (k, d = "") => process.env[k] ?? d;
+          let cov = null;
+          try { cov = JSON.parse(fs.readFileSync("coverage/coverage-summary.json", "utf8")); } catch {}
+          const obs = {
+            repo: env("GITHUB_REPOSITORY") || env("REPO"),
+            workflow: env("GITHUB_WORKFLOW") || env("WORKFLOW_NAME"),
+            job: env("JOB_NAME") || env("GITHUB_JOB"),
+            run: {
+              id: env("GITHUB_RUN_ID") || env("RUN_ID"),
+              attempt: Number(env("GITHUB_RUN_ATTEMPT") || env("RUN_ATTEMPT") || "1"),
+              sha: env("GITHUB_SHA") || env("SHA"),
+              ref: env("GITHUB_REF") || env("BRANCH_REF"),
+              actor: env("GITHUB_ACTOR", ""),
+              event_name: env("GITHUB_EVENT_NAME", ""),
+              conclusion: env("CONCLUSION", ""),
+              started_at: null,
+              completed_at: new Date().toISOString(),
+            },
+            metrics: { coverage: cov },
+          };
+          process.stdout.write(JSON.stringify(obs, null, 2));
+        ' > "$OBS_FILE"
+
+        echo "## Observability" >> "$GITHUB_STEP_SUMMARY"
+        echo "- Repo: ${REPO}" >> "$GITHUB_STEP_SUMMARY"
+        echo "- Workflow: ${WORKFLOW_NAME}" >> "$GITHUB_STEP_SUMMARY"
+        echo "- Job: ${JOB_NAME}" >> "$GITHUB_STEP_SUMMARY"
+        echo "- Run: ${RUN_ID} (attempt ${RUN_ATTEMPT})" >> "$GITHUB_STEP_SUMMARY"
+        if [ -f coverage/coverage-summary.json ]; then
+          LINES=$(node -e "const s=require('fs').readFileSync('coverage/coverage-summary.json','utf8'); const t=JSON.parse(s).total||{}; console.log((t.lines?.pct??0).toFixed(2))")
+          FUNCS=$(node -e "const s=require('fs').readFileSync('coverage/coverage-summary.json','utf8'); const t=JSON.parse(s).total||{}; console.log((t.functions?.pct??0).toFixed(2))")
+          BRANCHES=$(node -e "const s=require('fs').readFileSync('coverage/coverage-summary.json','utf8'); const t=JSON.parse(s).total||{}; console.log((t.branches?.pct??0).toFixed(2))")
+          echo "- Coverage: lines ${LINES}% | funcs ${FUNCS}% | branches ${BRANCHES}%" >> "$GITHUB_STEP_SUMMARY"
+        fi
+
+    - name: Upload observability.json
+      uses: actions/upload-artifact@v4
+      with:
+        name: observability
+        path: ${{ env.OBS_FILE }}
+
+branding:
+  icon: bar-chart-2
+  color: green
