@@ -15,3 +15,10 @@ Issue: #364 – Annotate long-running CI steps with annotations and p95 summary.
 
 - Uses `gh api --paginate` and the run/job/steps timing metadata.
 - Thresholds configurable via inputs; defaults conservative.
+
+## Results
+
+- New composite action: `.github/actions/step-hotspots`
+- Script: `scripts/ci-step-hotspots.js`
+- Wired into workflows: `.github/workflows/tests.yml`, `.github/workflows/main.yml`
+- Opened PR: #379
