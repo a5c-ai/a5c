@@ -7,6 +7,8 @@ Usage:
 - name: Observability collector
   if: always()
   uses: ./.github/actions/obs-collector
+  with:
+  node-version: 20 # optional, default 20
   env:
-    OBS_FILE: observability.json
-    CONCLUSION: ${{ job.status }}
+  OBS_FILE: observability.json
+  CONCLUSION: ${{ job.status }}
