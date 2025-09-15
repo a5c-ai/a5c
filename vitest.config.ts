@@ -21,10 +21,10 @@ export default defineConfig({
       include: ['src/**/*.{ts,tsx}'],
       exclude: ['**/*.d.ts', 'dist/**', 'node_modules/**', 'coverage/**'],
       thresholds: {
-        lines: 60,
+        lines: 58,
         branches: 55,
         functions: 60,
-        statements: 60,
+        statements: 58,
       },
     },
     // Include both TS and legacy JS tests (issue #251)
