@@ -140,16 +140,15 @@ events enrich --in samples/push.json --out out.json
 jq '.enriched.mentions' out.json
 ```
 
-| jq '[.composed[] | {key, reason}]'
-
-````
 ### `events validate`
+
 Validate a JSON document against the NE JSON Schema.
 
 Usage:
+
 ```bash
 events validate [--in FILE | < stdin ] [--schema FILE] [--quiet]
-````
+```
 
 - `--in FILE`: JSON input file (reads from stdin if omitted)
 - `--schema FILE`: schema path (defaults to `docs/specs/ne.schema.json`)
