@@ -20,6 +20,11 @@ Versioning policy:
 
 Example: see `docs/examples/observability.json`. The example is intended to validate against the JSON Schema.
 
+### Dashboard and Export Options
+
+- Artifact is uploaded as `observability` in Actions run artifacts. It can be consumed by external dashboards or GH Insights.
+- For programmatic sinks, a follow-up can aggregate per-job artifacts into an `observability.aggregate.json` and publish via `actions/upload-artifact` or repository-level releases.
+
 When multiple jobs or a matrix run produce per-job artifacts, an aggregate artifact `observability.aggregate.json` may be produced with:
 
 - `metrics.cache.overall`: `hits`, `total`, `hit_ratio`, `bytes_restored_total`
