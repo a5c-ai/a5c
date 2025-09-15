@@ -182,7 +182,8 @@ Exit codes:
 <<<<<<< HEAD
 =======
 
-### `events emit`
+<<<<<<< HEAD
+<!-- duplicate section removed during rebase: already documented above -->
 
 Emit a JSON event to a sink (stdout or file). The payload is redacted before being written.
 
@@ -220,6 +221,8 @@ Exit codes:
 - `1`: error (I/O, JSON parse, or missing `--out` for file sink)
 
 >>>>>>> f9d71dc (📝 docs: Quick Start 'emit' snippet and CLI reference (#489))
+=======
+>>>>>>> 9f0baba (🧹 Deduplicate CLI "events emit" section (fixes #492) (#501))
 ### `events validate`
 
 Validate a JSON document against the NE JSON Schema.
