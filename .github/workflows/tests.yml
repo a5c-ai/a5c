@@ -105,60 +105,7 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           flags: unit
           fail_ci_if_error: false
-      - name: Flaky tests detection
-        if: always()
-        shell: bash
-        continue-on-error: true
-        run: |
-          set -euo pipefail
-          # Generate summary JSON (best-effort)
-          node scripts/flaky-detector.cjs 1>/tmp/flaky.json 2>/dev/null || true
-          # For PRs only: upsert a comment and label (non-blocking)
-          if [ "${GITHUB_EVENT_NAME:-}" = "pull_request" ]; then
-            node -e '
-              const fs = require("fs");
-              const { execSync } = require("child_process");
-              let res = { found: false, flakies: [] };
-              try { res = JSON.parse(fs.readFileSync("/tmp/flaky.json","utf8")); } catch {}
-              if (!res || !res.flakies) res = { found: false, flakies: [] };
-              const lines = [];
-              lines.push("<!-- a5c:flaky-detector -->");
-              lines.push("## 🧪 Flaky Tests Summary");
-              if (!res.found) {
-                lines.push("No flaky tests detected (no mixed pass/fail across retries).");
-              } else {
-                lines.push("The following tests appear flaky (failures followed by passes within the run):\n");
-                lines.push("| Test | File/Class | Attempts | Failed | Passed |");
-                lines.push("|---|---|---:|---:|---:|");
-                for (const f of res.flakies) {
-                  const loc = f.file || f.classname || "";
-                  const esc = s => String(s??'').replaceAll('|','\\|');
-                  lines.push(`| ${esc(f.name)} | ${esc(loc)} | ${f.attempts} | ${f.failed_runs} | ${f.passed_runs} |`);
-                }
-              }
-              fs.writeFileSync('/tmp/flaky.md', lines.join('\n'));
-              try {
-                const pr = JSON.parse(fs.readFileSync(process.env.GITHUB_EVENT_PATH,'utf8')).pull_request.number;
-                const repo = process.env.GITHUB_REPOSITORY;
-                const label = "flaky-test";
-                try { execSync(`gh label view \"${label}\" --repo ${repo}`, { stdio: 'ignore' }); }
-                catch { try { execSync(`gh label create \"${label}\" --color f9d0c4 --description \"Tests detected as flaky in CI\" --repo ${repo}`); } catch {}
-                }
-                if (res.found) {
-                  try { execSync(`gh pr edit ${pr} --repo ${repo} --add-label \"${label}\"`, { stdio: 'ignore' }); } catch {}
-                }
-                // Upsert comment by marker
-                try {
-                  const out = execSync(`gh api repos/${repo}/issues/${pr}/comments --jq '.[] | select(.body | contains(\"a5c:flaky-detector\")) | .id'`).toString().trim();
-                  if (out) {
-                    execSync(`gh api -X PATCH -H \"Accept: application/vnd.github+json\" repos/${repo}/issues/comments/${out} -f body@/tmp/flaky.md`, { stdio: 'inherit' });
-                  } else {
-                    execSync(`gh pr comment ${pr} --repo ${repo} -F /tmp/flaky.md`, { stdio: 'inherit' });
-                  }
-                } catch {}
-              } catch {}
-            ' || true
-          fi
+      # Flaky tests detection (PR-only comment + label)
       - name: Flaky tests detection
         if: always()
         env:
@@ -212,63 +159,6 @@ jobs:
                   execSync(`gh pr comment ${pr} --repo ${repo} -F /tmp/flaky.md`);
                 }
               } catch {}
-            }
-          '
-      - name: Flaky tests detection
-        if: always()
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -euo pipefail
-          # Generate summary JSON and PR markdown
-          node scripts/flaky-detector.cjs \
-            1>/tmp/flaky.json \
-            2>/dev/null || true
-          node -e '
-            const fs = require("fs");
-            const { execSync } = require("child_process");
-            let res = { found: false, flakies: [] };
-            try { res = JSON.parse(fs.readFileSync("/tmp/flaky.json","utf8")); } catch {}
-            if (!res || !res.flakies) res = { found: false, flakies: [] };
-            const isPR = process.env.GITHUB_EVENT_NAME === "pull_request";
-            if (isPR) {
-              const lines = [];
-              lines.push("<!-- a5c:flaky-detector -->");
-              lines.push("## 🧪 Flaky Tests Summary");
-              if (!res.found) {
-                lines.push("No flaky tests detected (no mixed pass/fail across retries).");
-              } else {
-                lines.push("The following tests appear flaky (failures followed by passes within the run):\n");
-                lines.push("| Test | File/Class | Attempts | Failed | Passed |");
-                lines.push("|---|---|---:|---:|---:|");
-                for (const f of res.flakies) {
-                  const loc = f.file || f.classname || "";
-                  const esc = s => String(s??'').replaceAll('|','\\|');
-                  lines.push(`| ${esc(f.name)} | ${esc(loc)} | ${f.attempts} | ${f.failed_runs} | ${f.passed_runs} |`);
-                }
-              }
-              fs.writeFileSync('/tmp/flaky.md', lines.join('\n'));
-              const pr = JSON.parse(fs.readFileSync(process.env.GITHUB_EVENT_PATH,'utf8')).pull_request.number;
-              const repo = process.env.GITHUB_REPOSITORY;
-              // Ensure label exists and apply when flakies found
-              const label = "flaky-test";
-              try { execSync(`gh label view \"${label}\" --repo ${repo}`, { stdio: 'ignore' }); }
-              catch { try { execSync(`gh label create \"${label}\" --color f9d0c4 --description \"Tests detected as flaky in CI\" --repo ${repo}`); } catch {}
-              }
-              try {
-                if (res.found) execSync(`gh pr edit ${pr} --repo ${repo} --add-label \"${label}\"`, { stdio: 'ignore' });
-              } catch {}
-              // Upsert comment with stable marker
-              try {
-                const existing = execSync(`gh api repos/${repo}/issues/${pr}/comments --jq \".[] | select(.body | contains('a5c:flaky-detector')) | .id\"`).toString().trim();
-                if (existing) {
-                  execSync(`gh api -X PATCH -H 'Accept: application/vnd.github+json' repos/${repo}/issues/comments/${existing} -f body@/tmp/flaky.md`);
-                } else {
-                  execSync(`gh pr comment ${pr} --repo ${repo} -F /tmp/flaky.md`);
-                }
-              } catch (e) {
-                // best-effort; continue
-              }
             }
           '
       - name: Upload Vitest JSON
