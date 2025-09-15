@@ -56,6 +56,9 @@ next-env.d.ts
 **/pnpm-error.log*
 **/pnpm-lock.yaml
 
+# local tmp files produced by tests/dev runs
+tmp-enrich-*.json
+
 # local generated helper files (should not be committed)
 .check_env
 .pr_comment.md
