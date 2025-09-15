@@ -196,7 +196,9 @@ See `docs/specs/README.md` for examples and behavior-driven test outlines. Add y
 
 - Build: `npm run build`
 - Dev CLI: `npm run dev` (runs `src/cli.ts` via tsx)
-- Lint/format: `npm run lint` / `npm run format`
+- Lint/Typecheck/Format: `npm run lint` / `npm run typecheck` / `npm run format`
+  - CI runs lint and typecheck on PRs; see `.github/workflows/lint.yml` and `.github/workflows/typecheck.yml`.
+  - Local pre-commit enforces whitespace/newline hygiene, lint, and typecheck; see `docs/contributing/README.md#pre-commit-checks`.
 - Minimal Node types + commander; TypeScript configured in `tsconfig.json`
 
 ### Commit conventions

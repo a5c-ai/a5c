@@ -11,7 +11,7 @@ export async function runNormalize(opts: { in?: string; source?: string; labels?
     const payload = readJSONFile<any>(opts.in) || {}
     const output = mapToNE(payload, { source: opts.source, labels: opts.labels })
     return { code: 0, output }
-  } catch (e: any) {
+  } catch {
     return { code: 2, output: { id: 'error', provider: 'github', type: 'error', occurred_at: new Date().toISOString(), payload: {}, labels: opts.labels, provenance: { source: opts.source } } as any }
   }
 }

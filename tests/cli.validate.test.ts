@@ -1,5 +1,4 @@
 import { describe, it, expect } from 'vitest'
-import { readFileSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
 
 function run(args: string[], input?: string): { stdout: string; status: number } {
@@ -19,7 +18,6 @@ function run(args: string[], input?: string): { stdout: string; status: number }
 
 describe('events validate (CLI)', () => {
   it('validates a normalized sample and returns valid: true', () => {
-    const sample = JSON.parse(readFileSync('samples/workflow_run.completed.json', 'utf8'))
     // Ensure sample is normalized first: use normalize handler output shape via script entry
     const normalized = JSON.parse(
       execFileSync('node', ['dist/cli.js', 'normalize', '--in', 'samples/workflow_run.completed.json'], { encoding: 'utf8' })
