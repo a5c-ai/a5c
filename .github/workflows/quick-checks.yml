@@ -2,7 +2,7 @@ name: Quick Checks
 
 on:
   pull_request:
-    branches: [ a5c/main, main ]
+    branches: [a5c/main, main]
     types: [opened, synchronize, reopened, ready_for_review]
 
 concurrency:
@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   pr-fast:
-    name: Lint, Typecheck, Unit Tests
+    name: Lint, Typecheck, Unit Tests, Filenames
     runs-on: ubuntu-latest
     timeout-minutes: 7
     steps:
@@ -28,6 +28,8 @@ jobs:
           if [ -f package-lock.json ]; then npm ci; else npm install; fi
       - name: Lint (eslint)
         run: npm run -s lint
+      - name: Lint (filenames)
+        run: npm run -s lint:filenames
       - name: Typecheck (tsc --noEmit)
         run: npm run -s typecheck
       - name: Unit tests (vitest)
@@ -66,4 +68,3 @@ jobs:
           else
             echo "coverage/coverage-summary.json not found; ensure vitest json-summary reporter is enabled" >> "$GITHUB_STEP_SUMMARY";
           fi
-

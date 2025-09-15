@@ -33,7 +33,8 @@
     "prepush:changed": "node scripts/prepush-related.js",
     "prepush:full": "vitest run",
     "prepush": "node scripts/prepush-related.js || vitest run",
-    "release": "semantic-release"
+    "release": "semantic-release",
+    "lint:filenames": "node scripts/lint-filenames.cjs"
   },
   "files": [
     "dist",
