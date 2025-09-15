@@ -92,13 +92,6 @@
     "husky": "^9.1.6",
     "lint-staged": "^15.2.10"
   },
-  "lint-staged": {
-    "*.{ts,tsx,js,cjs,mjs}": [
-      "eslint --fix",
-      "prettier -w"
-    ],
-    "*.{json,md,yml,yaml}": "prettier -w"
-  },
   "dependencies": {
     "@octokit/rest": "^21.0.0",
     "commander": "^12.1.0",
