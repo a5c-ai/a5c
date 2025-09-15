@@ -70,7 +70,7 @@ Enrich a normalized event (or raw GitHub payload) with repository and provider m
 Behavior:
 
 - No network calls are performed by default. In offline mode, `enriched.github = { provider: 'github', partial: true, reason: 'github_enrich_disabled' }`.
-- Pass `--use-github` to enable GitHub API enrichment. If no token is configured, enrichment is skipped/partial with `reason: 'token:missing'` and the CLI exits with code `3` when an API call is required.
+- Pass `--use-github` to enable GitHub API enrichment. If no token is configured, the CLI exits with code `3` (provider/network error) and prints an error. Programmatic APIs may return a stub `{ provider: 'github', skipped: true, reason: 'token:missing', partial: true }` when an Octokit is injected for tests.
 
 Usage:
 
@@ -179,50 +179,7 @@ Exit codes:
 
 - `0`: success
 - `1`: error (I/O, JSON parse, or missing `--out` for file sink)
-<<<<<<< HEAD
-=======
 
-<<<<<<< HEAD
-<!-- duplicate section removed during rebase: already documented above -->
-
-Emit a JSON event to a sink (stdout or file). The payload is redacted before being written.
-
-Usage:
-
-```bash
-events emit [--in FILE] [--sink <stdout|file>] [--out FILE]
-```
-
-- `--in FILE`: input JSON file (reads from stdin if omitted)
-- `--sink <name>`: sink name; `stdout` (default) or `file`
-- `--out FILE`: output file path (required when `--sink file`)
-
-Behavior:
-
-- Redaction: payload is masked using the same rules as other commands (see `src/utils/redact.ts`). Sensitive keys and common secret patterns are redacted before emission.
-- Defaults: when `--sink` is omitted, `stdout` is used. When `--sink file` is set, `--out` is required; otherwise the command exits with code `1` and writes an error to stderr.
-
-Examples:
-
-```bash
-# From file to stdout (default)
-events emit --in samples/push.json
-
-# From stdin to stdout
-cat samples/push.json | events emit
-
-# To a file sink
-events emit --in samples/push.json --sink file --out out.json
-```
-
-Exit codes:
-
-- `0`: success
-- `1`: error (I/O, JSON parse, or missing `--out` for file sink)
-
->>>>>>> f9d71dc (📝 docs: Quick Start 'emit' snippet and CLI reference (#489))
-=======
->>>>>>> 9f0baba (🧹 Deduplicate CLI "events emit" section (fixes #492) (#501))
 ### `events validate`
 
 Validate a JSON document against the NE JSON Schema.

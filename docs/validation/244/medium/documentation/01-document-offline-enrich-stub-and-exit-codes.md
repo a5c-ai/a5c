@@ -7,8 +7,8 @@ PR #244 standardized offline enrichment behavior and CLI exit codes.
 ## Gaps
 
 - README/CLI docs do not explicitly document:
-  - Offline stub shape: `enriched.github = { provider: 'github', skipped: true, reason: 'flag:not_set' }`
-  - `--use-github` without token: `{ skipped: true, reason: 'token:missing' }`
+  - Offline stub shape: `enriched.github = { provider: 'github', partial: true, reason: 'github_enrich_disabled' }`
+  - `--use-github` without token: CLI exits with code `3` (provider/network error); programmatic path may stub `{ skipped: true, reason: 'token:missing', partial: true }` when Octokit is injected for tests.
   - Exit codes: normalize missing `--in` (2), enrich token-missing (3), offline success (0), etc.
 
 ## Proposal

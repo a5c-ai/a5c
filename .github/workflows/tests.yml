@@ -7,7 +7,8 @@ on:
 jobs:
   unit:
     env:
-      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN || '' }}
+      # Optional Codecov token; when empty, upload step is skipped
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN || vars.CODECOV_TOKEN || '' }}
     permissions:
       contents: read
       actions: read
@@ -86,15 +87,15 @@ jobs:
             coverage/coverage-summary.json
           if-no-files-found: ignore
       - name: Upload coverage to Codecov (optional)
-        if: ${{ env.CODECOV_TOKEN != '' }}
+        if: env.CODECOV_TOKEN != ''
         uses: codecov/codecov-action@v4
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN || '' }}
         with:
-          files: coverage/lcov.info
+          token: ${{ env.CODECOV_TOKEN }}
+          files: |
+            coverage/lcov.info
           flags: push
           fail_ci_if_error: false
-          verbose: false
+          verbose: true
       - name: Upload JUnit report
         if: always()
         uses: actions/upload-artifact@v4
@@ -107,14 +108,7 @@ jobs:
         if: always()
         run: |
           node scripts/validate-observability.mjs
-      - name: Upload to Codecov (optional)
-        if: env.CODECOV_TOKEN != ''
-        uses: codecov/codecov-action@v4
-        with:
-          files: coverage/lcov.info
-          token: ${{ secrets.CODECOV_TOKEN }}
-          flags: unit
-          fail_ci_if_error: false
+      # Removed duplicate Codecov upload step to avoid double uploads
       # Flaky tests detection (PR-only comment + label)
       - name: Flaky tests detection
         if: always()

@@ -85,7 +85,7 @@ cat out.json | npx @a5c-ai/events validate --quiet
 Behavior:
 
 - Offline by default: without `--use-github`, no network calls occur. Output includes `enriched.github` with `partial=true` and `reason="github_enrich_disabled"`.
-- When `--use-github` is set but no token is configured, enrichment is skipped/partial with `reason="token:missing"` in `enriched.github` and the CLI exits with code `3` (provider/network error). Mentions extraction still runs.
+- When `--use-github` is set but no token is configured, the CLI exits with code `3` (provider/network error) and prints an error. Use programmatic APIs with an injected Octokit for partial/offline testing if needed.
 
 Exit codes: `0` success, non‑zero on errors (invalid input, etc.).
 
@@ -147,6 +147,19 @@ events enrich --in samples/pull_request.synchronize.json \
   | jq '(.composed // []) | map({key, reason})'
   # note: `reason` may be omitted depending on rule configuration
 ```
+
+## Coverage (Optional)
+
+CI can upload coverage to Codecov and show a badge in this README. Uploads are disabled by default and only run when a token is configured.
+
+- Add a repo Secret or Variable named `CODECOV_TOKEN`.
+- When present, the following workflows upload `coverage/lcov.info` using `codecov/codecov-action@v4`:
+  - `.github/workflows/tests.yml` (push on `a5c/main` and `main`)
+  - `.github/workflows/quick-checks.yml` (PRs)
+  - `.github/workflows/pr-tests.yml` (PRs)
+- If the token is absent, the Codecov step is skipped and CI remains green.
+
+Badge note: If your Codecov project is public, the badge works without a token parameter. For private projects, configure the Codecov badge as appropriate for your org and visibility.
 
 ### Auth tokens: precedence & redaction
 
