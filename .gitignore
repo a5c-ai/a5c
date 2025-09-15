@@ -56,4 +56,5 @@ next-env.d.ts
 # CLI outputs
 /out.json
 # temporary enrich outputs
+tmp-enrich-*.json
 **/tmp-enrich-*.json
