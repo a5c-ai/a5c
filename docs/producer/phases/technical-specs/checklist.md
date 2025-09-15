@@ -7,7 +7,7 @@ Track readiness of the Technical Specifications phase. Check items when complete
 - [x] Provider adapter (GitHub) mapping MVP implemented — see src/providers/github/map.ts and docs/producer/phases/technical-specs/events/input-mapping.md
 - [x] Enrichment flags and bounds set (commit/file limits; patch toggle) — see src/enrich.ts
 - [x] CLI commands documented with parity to code (normalize, enrich, mentions) — see docs/producer/phases/technical-specs/apis/cli-commands.md and src/cli.ts
-- [ ] Emit command designed/spec’d (not yet implemented) — see docs/producer/phases/technical-specs/apis/cli-commands.md
+- [x] Emit command designed/spec’d — implemented in src/emit.ts; documented in CLI Reference; tests in tests/emit.basic.test.ts
 - [x] CI workflows present and green on a5c/main (lint, tests) — see .github/workflows/*.yml
 - [x] Release workflow configured (semantic-release) and publishing targets set — see package.json and .github/workflows/release.yml
 - [x] Cross-links from specs overview to technical-specs index — see docs/specs/README.md and docs/producer/phases/technical-specs/README.md
