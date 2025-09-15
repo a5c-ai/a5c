@@ -45,6 +45,16 @@ jobs:
             coverage/lcov.info
             coverage/coverage-summary.json
           if-no-files-found: ignore
+      - name: Upload coverage to Codecov (optional)
+        if: ${{ env.CODECOV_TOKEN != '' }}
+        uses: codecov/codecov-action@v4
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN || '' }}
+        with:
+          files: coverage/lcov.info
+          flags: pr
+          fail_ci_if_error: false
+          verbose: false
       - name: Coverage summary
         if: always()
         run: |
