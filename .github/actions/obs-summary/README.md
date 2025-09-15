@@ -45,13 +45,20 @@ JSON shape excerpt:
 ```jsonc
 {
   "metrics": {
-    "coverage": { /* existing */ },
+    "coverage": {
+      /* existing */
+    },
     "cache": {
-      "kinds": {
-        "node": { "hit": true, "key": "npm-cache-..." }
+      "entries": [{ "kind": "node", "hit": true, "key": "npm-cache-..." }],
+      "summary": {
+        "hits": 1,
+        "misses": 0,
+        "total": 1,
+        "bytes_restored_total": 123456,
       },
-      "totals": { "total_hits": 1, "total_misses": 0 }
-    }
-  }
+    },
+  },
 }
 ```
+
+Additional supported boolean-like values for cache flags: "true", "1", "yes", "y".

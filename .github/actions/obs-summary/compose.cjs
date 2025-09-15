@@ -4,6 +4,11 @@ const fs = require('fs');
 const env = (k, d = '') => process.env[k] ?? d;
 const schemaVersion = env('SCHEMA_VERSION', '0.1');
 const HIT = 'HIT', BYTES = 'BYTES', KEY = 'KEY';
+// Normalize boolean-like inputs (supports true/1/yes/y)
+const toBool = (v) => {
+  const s = String(v).trim().toLowerCase();
+  return s === 'true' || s === '1' || s === 'yes' || s === 'y';
+};
 
 const startedAtEnv = env('RUN_STARTED_AT') || env('GITHUB_RUN_STARTED_AT') || '';
 const startedAt = startedAtEnv || new Date().toISOString();
@@ -18,7 +23,7 @@ for (const [k, v] of Object.entries(process.env)) {
   const kind = m[1].toLowerCase();
   const field = m[2];
   const rec = byKind.get(kind) || { kind };
-  if (field === HIT) rec.hit = String(v).toLowerCase() === 'true' || String(v) === '1';
+  if (field === HIT) rec.hit = toBool(v);
   else if (field === BYTES) {
     const n = Number(v);
     if (!Number.isNaN(n)) rec.bytes = n;
