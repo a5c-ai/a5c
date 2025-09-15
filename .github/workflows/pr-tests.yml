@@ -1,0 +1,36 @@
+name: PR Quick Tests
+
+on:
+  pull_request:
+    branches: [a5c/main, main]
+    types: [opened, synchronize, reopened, ready_for_review]
+
+concurrency:
+  group: pr-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  vitest:
+    name: Unit Tests (PR)
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Test (vitest, coverage)
+        run: npm run -s test:ci
+      - name: Upload coverage artifact
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-coverage-lcov
+          path: |
+            coverage/lcov.info
+            coverage/coverage-summary.json

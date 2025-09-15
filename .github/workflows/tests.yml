@@ -47,6 +47,13 @@ jobs:
           name: coverage-lcov
           path: |
             coverage/lcov.info
+      - name: Upload JUnit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vitest-junit
+          path: |
+            junit.xml
       - name: Coverage summary
         if: always()
         run: |
