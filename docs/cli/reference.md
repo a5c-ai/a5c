@@ -1,13 +1,52 @@
 ---
 title: CLI Reference
-description: Commands, flags, and examples for the Events CLI (`mentions`, `normalize`, `enrich`).
+description: Commands, flags, and examples for the Events CLI (`mentions`, `normalize`, `enrich`, `emit`, `validate`).
 ---
 
 # CLI Reference
 
-The CLI transforms provider payloads into a Normalized Event (NE), extracts mentions, and can enrich with repository context. Implemented with `commander` (see `src/cli.ts`).
+The CLI transforms provider payloads into a Normalized Event (NE), extracts mentions, enriches with repository context, emits to sinks, and validates against schema. Implemented with `commander` (see `src/cli.ts`).
 
 ## Commands
+
+### `events emit`
+
+Emit a JSON event to a sink with built‑in redaction.
+
+Usage:
+
+```bash
+events emit [--in FILE | < stdin ] [--sink <stdout|file>] [--out FILE]
+```
+
+- `--in FILE`: input JSON file (reads from stdin if omitted)
+- `--sink <name>`: sink name (`stdout` or `file`) [default: `stdout`; when `--out` is provided, defaults to `file`]
+- `--out FILE`: output JSON path (required when `--sink file`)
+
+Behavior:
+
+- Redacts sensitive fields and patterns before writing, using `src/utils/redact.ts` via `redactObject`.
+- When `--sink stdout` (default), prints redacted JSON to stdout.
+- When `--sink file`, requires `--out` and writes redacted JSON to that file.
+- Exit code `0` on success; `1` on errors (I/O, parse, missing `--out` for file sink).
+
+Examples:
+
+```bash
+# Emit from stdin to stdout (redacted)
+cat samples/push.json | events emit
+
+# Emit from file to stdout (redacted)
+events emit --in samples/push.json
+
+# Emit to a file sink (redacted written to out.json)
+events emit --in samples/push.json --sink file --out out.json
+```
+
+Notes:
+
+- Redaction defaults: see `src/utils/redact.ts` for sensitive keys and token patterns; default mask is `REDACTED`.
+- If both `--sink` and `--out` are omitted, behavior is equivalent to `--sink stdout`.
 
 ### `events mentions`
 
@@ -151,14 +190,14 @@ events enrich --in samples/push.json --out out.json
 jq '.enriched.mentions' out.json
 ```
 
-````
+```
 ### `events validate`
 Validate a JSON document against the NE JSON Schema.
 
 Usage:
 ```bash
 events validate [--in FILE | < stdin ] [--schema FILE] [--quiet]
-````
+```
 
 - `--in FILE`: JSON input file (reads from stdin if omitted)
 - `--schema FILE`: schema path (defaults to `docs/specs/ne.schema.json`)
