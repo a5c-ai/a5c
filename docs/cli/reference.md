@@ -190,11 +190,12 @@ events enrich --in samples/push.json --out out.json
 jq '.enriched.mentions' out.json
 ```
 
-```
 ### `events validate`
+
 Validate a JSON document against the NE JSON Schema.
 
 Usage:
+
 ```bash
 events validate [--in FILE | < stdin ] [--schema FILE] [--quiet]
 ```
