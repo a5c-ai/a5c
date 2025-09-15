@@ -19,6 +19,20 @@ jobs:
         with:
           node-version: 20
           cache: "npm"
+      - name: Parse cache restored bytes (best-effort)
+        if: always()
+        id: cache-bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          BYTES=0
+          KEY=""
+          if [ -f run.log ]; then
+            BYTES=$(awk '/Cache Size:/ { m=match($0, /\(([0-9]+) B\)/, a); if(m){ print a[1]; exit } }' run.log || echo 0)
+            KEY=$(awk -F ': ' '/Cache restored from key:/ { print $2; exit }' run.log || echo "")
+          fi
+          echo "CACHE_NODE_BYTES=${BYTES}" >> "$GITHUB_ENV"
+          echo "CACHE_NODE_KEY=${KEY}" >> "$GITHUB_ENV"
       - name: Install
         run: |
           ./scripts/install.sh
@@ -170,5 +184,7 @@ jobs:
         env:
           OBS_FILE: observability.json
           CACHE_NODE_HIT: ${{ steps.setup-node.outputs.cache-hit }}
+          CACHE_NODE_BYTES: ${{ env.CACHE_NODE_BYTES }}
+          CACHE_NODE_KEY: ${{ env.CACHE_NODE_KEY }}
           CONCLUSION: ${{ job.status }}
           RUN_STARTED_AT: ${{ github.run_started_at }}

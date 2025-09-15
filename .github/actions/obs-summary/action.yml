@@ -33,18 +33,29 @@ runs:
           let cov = null;
           try { cov = JSON.parse(fs.readFileSync("coverage/coverage-summary.json", "utf8")); } catch {}
           // Cache summary from envs
-          // Collect cache entries from env keys like CACHE_<KIND>_HIT=true/false
-          const cacheEntries = [];
+          // Collect cache entries from env keys:
+          //   CACHE_<KIND>_HIT=true/false
+          //   CACHE_<KIND>_BYTES=36778138
+          //   CACHE_<KIND>_KEY=primary-key
+          const byKind = new Map();
           for (const [k, v] of Object.entries(process.env)) {
-            const m = /^CACHE_([A-Z0-9]+)_HIT$/.exec(k);
+            const m = /^CACHE_([A-Z0-9]+)_(HIT|BYTES|KEY)$/.exec(k);
             if (!m) continue;
             const kind = m[1].toLowerCase();
-            const hit = String(v).toLowerCase() === "true" || String(v) === "1";
-            cacheEntries.push({ kind, hit });
+            const field = m[2];
+            const rec = byKind.get(kind) || { kind };
+            if (field === 'HIT') rec.hit = String(v).toLowerCase() === 'true' || String(v) === '1';
+            else if (field === 'BYTES') {
+              const n = Number(v);
+              if (!Number.isNaN(n)) rec.bytes = n;
+            } else if (field === 'KEY') rec.key = String(v);
+            byKind.set(kind, rec);
           }
+          const cacheEntries = Array.from(byKind.values());
           const hits = cacheEntries.filter(e => e.hit).length;
           const total = cacheEntries.length;
-          const cache = total ? { entries: cacheEntries, summary: { hits, misses: total - hits, total } } : null;
+          const bytes_total = cacheEntries.reduce((a, e) => a + (typeof e.bytes === 'number' ? e.bytes : 0), 0);
+          const cache = total ? { entries: cacheEntries, summary: { hits, misses: total - hits, total, bytes_restored_total: bytes_total } } : null;
           const end = new Date();
           const endIso = end.toISOString();
           let durationMs = null;
@@ -98,13 +109,21 @@ runs:
           hits=0; total=0; line_parts=""
           for k in $kinds; do
             v=$(eval echo "\$CACHE_${k^^}_HIT")
+            bytes=$(eval echo "\${CACHE_${k^^}_BYTES-}")
             total=$((total+1))
             if [ "$v" = "true" ] || [ "$v" = "1" ]; then
               hits=$((hits+1)); state=hit
             else
               state=miss
             fi
-            if [ -z "$line_parts" ]; then line_parts="${k}: ${state}"; else line_parts="${line_parts}, ${k}: ${state}"; fi
+            # Append size if bytes are provided
+            size_part=""
+            if [ -n "${bytes}" ] && [ "${bytes}" -gt 0 ] 2>/dev/null; then
+              mb=$(awk -v b="${bytes}" 'BEGIN{ printf "%.2f", b/1000000 }')
+              size_part=", size ~${mb} MB"
+            fi
+            entry="${k}: ${state}${size_part}"
+            if [ -z "$line_parts" ]; then line_parts="$entry"; else line_parts="${line_parts}, $entry"; fi
           done
           echo "- Cache: ${hits}/${total} hits (${line_parts})" >> "$GITHUB_STEP_SUMMARY"
         fi
