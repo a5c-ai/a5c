@@ -323,6 +323,8 @@ Typecheck CI runs a matrix on Node 20 and 22 to catch version-specific type issu
 
 We follow Conventional Commits. Local commit messages are validated with Husky + commitlint, and PRs run a commitlint check. See `docs/contributing/git-commits.md`.
 
+For local hooks and skip flags, see `docs/dev/precommit-hooks.md` and the pre-commit section in `CONTRIBUTING.md`.
+
 To use the commit message template locally:
 
 ```

@@ -15,13 +15,14 @@ Types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert.
 Scope: kebab-case module or area (optional). Subject: imperative, no period.
 
 Examples:
+
 - `feat(cli): add validate command`
 - `fix(enrich): handle missing files edge case`
 - `docs: update README quick start`
 
 ## Validation
 
-- Local: Husky `commit-msg` hook runs commitlint.
+- Local: Husky `commit-msg` hook runs commitlint via `npx commitlint --edit "$1"` (see `.husky/commit-msg`). Rules live in `commitlint.config.cjs` and extend `@commitlint/config-conventional`.
 - CI: PR check validates all commit messages.
 
 ## Template
@@ -41,4 +42,3 @@ feat(api): remove deprecated normalize flags
 
 BREAKING CHANGE: --select requires comma-separated values
 ```
-
