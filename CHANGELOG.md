@@ -1,3 +1,9 @@
+## 1.1.0-a5c-main.19 (2025-09-15)
+
+* fix(cli): report version from package.json at runtime (#391) (#410) ([02a6685](https://github.com/a5c-ai/events/commit/02a6685)), closes [#391](https://github.com/a5c-ai/events/issues/391) [#410](https://github.com/a5c-ai/events/issues/410)
+* 🎯 chore(ci): switch Husky to prepare, drop deprecated postinstall (#406) ([f285c98](https://github.com/a5c-ai/events/commit/f285c98)), closes [#406](https://github.com/a5c-ai/events/issues/406) [#382](https://github.com/a5c-ai/events/issues/382) [#382](https://github.com/a5c-ai/events/issues/382)
+* 📝 Docs: Code-comment mentions in enrich (fixes #387) (#408) ([9fb157d](https://github.com/a5c-ai/events/commit/9fb157d)), closes [#387](https://github.com/a5c-ai/events/issues/387) [#408](https://github.com/a5c-ai/events/issues/408) [#387](https://github.com/a5c-ai/events/issues/387)
+
 ## 1.1.0-a5c-main.18 (2025-09-15)
 
 * ⏱️ CI step hotspots and p95 summary (fixes #364) (#396) ([3fa7103](https://github.com/a5c-ai/events/commit/3fa7103)), closes [#364](https://github.com/a5c-ai/events/issues/364) [#396](https://github.com/a5c-ai/events/issues/396) [#364](https://github.com/a5c-ai/events/issues/364) [#364](https://github.com/a5c-ai/events/issues/364) [#378](https://github.com/a5c-ai/events/issues/378) [#363](https://github.com/a5c-ai/events/issues/363) [#363](https://github.com/a5c-ai/events/issues/363) [#363](https://github.com/a5c-ai/events/issues/363) [#375](https://github.com/a5c-ai/events/issues/375) [#376](https://github.com/a5c-ai/events/issues/376) [#366](https://github.com/a5c-ai/events/issues/366) [#365](https://github.com/a5c-ai/events/issues/365) [#380](https://github.com/a5c-ai/events/issues/380) [#378](https://github.com/a5c-ai/events/issues/378) [#378](https://github.com/a5c-ai/events/issues/378)
