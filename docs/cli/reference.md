@@ -1,6 +1,10 @@
+# <<<<<<< HEAD
+
 ---
+
 title: CLI Reference
-description: Commands, flags, and examples for the Events CLI (`mentions`, `normalize`, `enrich`).
+description: Commands, flags, and examples for the Events CLI (`mentions`, `normalize`, `enrich`, `emit`, `validate`).
+
 ---
 
 # CLI Reference
@@ -10,9 +14,11 @@ The CLI transforms provider payloads into a Normalized Event (NE), extracts ment
 ## Commands
 
 ### `events mentions`
+
 Extract `@mentions` from text.
 
 Usage:
+
 ```bash
 events mentions [--file FILE] [--source <kind>] [--window N] [--known-agent NAME...]
 ```
@@ -23,14 +29,17 @@ events mentions [--file FILE] [--source <kind>] [--window N] [--known-agent NAME
 - `--known-agent NAME...`: known agent names to boost confidence
 
 Example:
+
 ```bash
 events mentions --file README.md --source pr_body --known-agent developer-agent validator-agent
 ```
 
 ### `events normalize`
+
 Normalize a raw provider payload into the NE schema.
 
 Usage:
+
 ```bash
 events normalize [--in FILE] [--out FILE] [--source <actions|webhook|cli>] \
   [--label KEY=VAL...] [--select PATHS] [--filter EXPR]
@@ -44,6 +53,7 @@ events normalize [--in FILE] [--out FILE] [--source <actions|webhook|cli>] \
 - `--filter EXPR`: filter expression `path[=value]`; if it doesn't pass, exits with code `2`
 
 Examples:
+
 ```bash
 # Select a few fields
 events normalize --in samples/workflow_run.completed.json \
@@ -54,16 +64,20 @@ events normalize --in samples/workflow_run.completed.json --filter 'type=workflo
 ```
 
 Notes:
+
 - `--select` and `--filter` are implemented and applied after normalization.
 
 ### `events enrich`
+
 Enrich a normalized event (or raw GitHub payload) with repository and provider metadata.
 
 Behavior:
+
 - No network calls are performed by default.
 - Pass `--use-github` to enable GitHub API enrichment. A `GITHUB_TOKEN` (or `A5C_AGENT_GITHUB_TOKEN`) must be present; otherwise enrichment is skipped and marked as partial.
 
 Usage:
+
 ```bash
 events enrich --in FILE [--out FILE] [--rules FILE] \
   [--flag KEY=VAL...] [--use-github] [--label KEY=VAL...] \
@@ -83,6 +97,7 @@ events enrich --in FILE [--out FILE] [--rules FILE] \
 - `--filter EXPR`: filter expression `path[=value]`; if it doesn't pass, exits with code `2`
 
 Examples:
+
 ```bash
 export GITHUB_TOKEN=...  # required for GitHub API lookups
 
@@ -104,19 +119,59 @@ Note:
 ```
 
 Outputs:
+
 - When enriching a PR with `--use-github`, the CLI exposes per-file owners under `enriched.github.pr.owners` and the deduplicated, sorted union of all CODEOWNERS across changed files under `enriched.github.pr.owners_union`.
 
 Without network calls (mentions only):
+
 ```bash
 events enrich --in samples/push.json --out out.json
 jq '.enriched.mentions' out.json
 ```
-  | jq '[.composed[] | {key, reason}]'
+
+### `events emit`
+
+Emit a JSON event to a sink (stdout or file). The payload is redacted before being written.
+
+Usage:
+
+```bash
+events emit [--in FILE] [--sink <stdout|file>] [--out FILE]
 ```
+
+- `--in FILE`: input JSON file (reads from stdin if omitted)
+- `--sink <name>`: sink name; `stdout` (default) or `file`
+- `--out FILE`: output file path (required when `--sink file`)
+
+Behavior:
+
+- Redaction: payload is masked using the same rules as other commands (see `src/utils/redact.ts`). Sensitive keys and common secret patterns are redacted before emission.
+- Defaults: when `--sink` is omitted, `stdout` is used. When `--sink file` is set, `--out` is required; otherwise the command exits with code `1` and writes an error to stderr.
+
+Examples:
+
+```bash
+# From file to stdout (default)
+events emit --in samples/push.json
+
+# From stdin to stdout
+cat samples/push.json | events emit
+
+# To a file sink
+events emit --in samples/push.json --sink file --out out.json
+```
+
+Exit codes:
+
+- `0`: success
+- `1`: error (I/O, JSON parse, or missing `--out` for file sink)
+
 ### `events validate`
+
 Validate a JSON document against the NE JSON Schema.
 
 Usage:
+
 ```bash
 events validate [--in FILE | < stdin ] [--schema FILE] [--quiet]
 ```
@@ -126,6 +181,7 @@ events validate [--in FILE | < stdin ] [--schema FILE] [--quiet]
 - `--quiet`: print nothing on success; still exits with code 0
 
 Examples:
+
 ```bash
 # Validate normalized output from a sample
 events normalize --in samples/push.json | events validate --quiet
@@ -135,21 +191,25 @@ events validate --in out.json --schema docs/specs/ne.schema.json
 ```
 
 Exit codes:
+
 - 0: valid
 - 2: schema validation failed (invalid)
 - 1: other error (I/O, JSON parse)
 
 ## Global Options
+
 - `--help`: show command help
 - `--version`: print version
 
 ## Exit Codes
+
 - `0`: success
 - `1`: generic error (unexpected failure writing output, etc.)
 - `2`: input/validation error (missing `--in` where required, invalid/parse errors, filter mismatch, missing `GITHUB_EVENT_PATH` when `--source actions`)
 - `3`: provider/network error (only when `--use-github` is requested and API calls fail)
 
 ## Notes
+
 - Token precedence: runtime prefers `A5C_AGENT_GITHUB_TOKEN` over `GITHUB_TOKEN` when both are set (see `src/config.ts`).
 - Redaction: CLI redacts sensitive keys and common secret patterns in output by default (see `src/utils/redact.ts`).
   - Sensitive keys include: `token`, `secret`, `password`, `passwd`, `pwd`, `api_key`, `apikey`, `key`, `client_secret`, `access_token`, `refresh_token`, `private_key`, `ssh_key`, `authorization`, `auth`, `session`, `cookie`, `webhook_secret`.
