@@ -11,6 +11,9 @@ Aggregates basic job metadata with optional coverage and cache metrics, writes a
     OBS_FILE: observability.json # optional
     # Optional cache inputs (example: setup-node cache hit)
     CACHE_NODE_HIT: ${{ steps.setup-node.outputs["cache-hit"] }}
+    # Optional size and key (best-effort; parse logs and set these)
+    CACHE_NODE_BYTES: ${{ env.CACHE_NODE_BYTES }}
+    CACHE_NODE_KEY: ${{ env.CACHE_NODE_KEY }}
     # Optional job conclusion (e.g., pass through from job.status)
     CONCLUSION: ${{ job.status }}
     # Optional job name override
@@ -28,4 +31,5 @@ Notes:
 
 - The action reads `coverage/coverage-summary.json` if present to include coverage metrics.
 - If cache envs are provided (any `CACHE_<KIND>_HIT`), `observability.json` will include a `metrics.cache` section and the step summary will include a cache line.
+- If `CACHE_<KIND>_BYTES` is provided, per-entry `bytes` and a `bytes_restored_total` summary are included.
 - When `RUN_STARTED_AT` is provided, `observability.json` will include `run.started_at` and compute `run.duration_ms` from start to completion; otherwise the action will use its own start time as a fallback.

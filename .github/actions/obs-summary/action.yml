@@ -24,88 +24,8 @@ runs:
 
         echo "OBS_FILE=${OBS_FILE}" >> "$GITHUB_ENV"
 
-        # Compose JSON (includes coverage, optional cache metrics, started_at/duration)
-        node -e '
-          const fs = require("fs");
-          const env = (k, d = "") => process.env[k] ?? d;
-          const startedAtEnv = env("RUN_STARTED_AT") || env("GITHUB_RUN_STARTED_AT") || "";
-          const startedAt = startedAtEnv || new Date().toISOString();
-          let cov = null;
-          try { cov = JSON.parse(fs.readFileSync("coverage/coverage-summary.json", "utf8")); } catch {}
-          // Parse Vitest JSON for retries and slow tests if available
-          let vitest = null;
-          try { vitest = JSON.parse(fs.readFileSync("vitest-results.json", "utf8")); } catch {}
-          let tests = null;
-          if (vitest && vitest.testResults) {
-            const all = [];
-            for (const tr of vitest.testResults) {
-              for (const a of (tr.assertionResults || [])) {
-                const meta = a.meta || {};
-                const attempts = Number(meta.retryCount || meta.retries || 0);
-                const duration = a.duration ?? null;
-                all.push({
-                  fullName: a.fullName || a.title || "",
-                  status: a.status,
-                  duration_ms: typeof duration === 'number' ? duration : null,
-                  retries: attempts,
-                });
-              }
-            }
-            const slowest = [...all]
-              .filter(t => typeof t.duration_ms === 'number')
-              .sort((a,b) => (b.duration_ms||0) - (a.duration_ms||0))
-              .slice(0, 10);
-            const flaky = all.filter(t => (t.retries||0) > 0);
-            tests = {
-              totals: {
-                total: all.length,
-                flaky: flaky.length,
-                slow_count: slowest.length,
-              },
-              slowest,
-              flaky,
-            };
-          }
-          // Collect cache entries from env keys like CACHE_<KIND>_HIT=true/false
-          const cacheEntries = [];
-          for (const [k, v] of Object.entries(process.env)) {
-            const m = /^CACHE_([A-Z0-9]+)_HIT$/.exec(k);
-            if (!m) continue;
-            const kind = m[1].toLowerCase();
-            const hit = String(v).toLowerCase() === "true" || String(v) === "1";
-            cacheEntries.push({ kind, hit });
-          }
-          const hits = cacheEntries.filter(e => e.hit).length;
-          const total = cacheEntries.length;
-          const cache = total ? { entries: cacheEntries, summary: { hits, misses: total - hits, total } } : null;
-          const end = new Date();
-          const endIso = end.toISOString();
-          let durationMs = null;
-          try {
-            const s = new Date(startedAt);
-            if (!isNaN(s.getTime())) durationMs = end.getTime() - s.getTime();
-          } catch {}
-          const obs = {
-            repo: env("GITHUB_REPOSITORY") || env("REPO"),
-            workflow: env("GITHUB_WORKFLOW") || env("WORKFLOW_NAME"),
-            job: env("JOB_NAME") || env("GITHUB_JOB"),
-            run: {
-              id: env("GITHUB_RUN_ID") || env("RUN_ID"),
-              attempt: Number(env("GITHUB_RUN_ATTEMPT") || env("RUN_ATTEMPT") || "1"),
-              sha: env("GITHUB_SHA") || env("SHA"),
-              ref: env("GITHUB_REF") || env("BRANCH_REF"),
-              actor: env("GITHUB_ACTOR", ""),
-              event_name: env("GITHUB_EVENT_NAME", ""),
-              conclusion: env("CONCLUSION", ""),
-              started_at: startedAt,
-              completed_at: endIso,
-              duration_ms: durationMs,
-            },
-            metrics: { coverage: cov, cache },
-            tests,
-          };
-          process.stdout.write(JSON.stringify(obs, null, 2));
-        ' > "$OBS_FILE"
+        # Compose JSON (includes coverage, cache metrics, started_at/duration, and vitest tests)
+        node "${GITHUB_ACTION_PATH:-.github/actions/obs-summary}/compose.cjs" > "$OBS_FILE"
 
         echo "## Observability" >> "$GITHUB_STEP_SUMMARY"
         echo "- Repo: ${REPO}" >> "$GITHUB_STEP_SUMMARY"
@@ -157,13 +77,21 @@ runs:
           hits=0; total=0; line_parts=""
           for k in $kinds; do
             v=$(eval echo "\$CACHE_${k^^}_HIT")
+            bytes=$(eval echo "\${CACHE_${k^^}_BYTES-}")
             total=$((total+1))
             if [ "$v" = "true" ] || [ "$v" = "1" ]; then
               hits=$((hits+1)); state=hit
             else
               state=miss
             fi
-            if [ -z "$line_parts" ]; then line_parts="${k}: ${state}"; else line_parts="${line_parts}, ${k}: ${state}"; fi
+            # Append size if bytes are provided
+            size_part=""
+            if [ -n "${bytes}" ] && [ "${bytes}" -gt 0 ] 2>/dev/null; then
+              mb=$(awk -v b="${bytes}" 'BEGIN{ printf "%.2f", b/1000000 }')
+              size_part=", size ~${mb} MB"
+            fi
+            entry="${k}: ${state}${size_part}"
+            if [ -z "$line_parts" ]; then line_parts="$entry"; else line_parts="${line_parts}, $entry"; fi
           done
           echo "- Cache: ${hits}/${total} hits (${line_parts})" >> "$GITHUB_STEP_SUMMARY"
         fi

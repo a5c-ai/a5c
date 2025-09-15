@@ -1,6 +1,6 @@
 {
   "name": "@a5c-ai/events",
-  "version": "1.1.0-a5c-main.11",
+  "version": "1.1.0-a5c-main.17",
   "description": "Events SDK and CLI for normalizing and enriching repo/CI events for agentic workflows",
   "type": "module",
   "private": false,
@@ -33,7 +33,8 @@
     "prepush:changed": "node scripts/prepush-related.js",
     "prepush:full": "vitest run",
     "prepush": "node scripts/prepush-related.js || vitest run",
-    "release": "semantic-release"
+    "release": "semantic-release",
+    "lint:filenames": "node scripts/lint-filenames.cjs"
   },
   "files": [
     "dist",
