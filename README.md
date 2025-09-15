@@ -95,7 +95,7 @@ Core fields returned by `normalize`:
 - `repo`: minimal repository info
 - `ref`: branch/ref context
 - `actor`: event actor
-- `payload`: raw provider payload (verbatim)
+- `payload`: raw provider payload (object | array; verbatim)
 - `enriched`: `{ metadata, derived, correlations }`
 - `labels`: string array for routing (e.g., `env=staging`)
 - `provenance`: `{ source: action|webhook|cli, workflow? }` (no labels here)
@@ -161,6 +161,8 @@ See also: CLI reference for flags and exit codes: `docs/cli/reference.md`.
 ### Validate against schema
 
 Use the NE JSON Schema at `docs/specs/ne.schema.json` to validate CLI output.
+
+Note: outputs that include `composed` are enriched; `composed` is optional and defined in the NE schema (`docs/specs/ne.schema.json`), so it does not need to be removed for validation. If you want to validate the normalized-only subset, validate before enrichment or strip it with `jq 'del(.composed)'`. When present, `composed[].payload` may be object | array | null.
 
 ```bash
 # Normalize a sample workflow_run payload
