@@ -198,7 +198,7 @@ function scanJsLike(
       );
       const absIdx = relIdx >= 0 ? startIdx + relIdx : startIdx;
       const lineNo = 1 + countNewlines(content, absIdx);
-      out.push({ ...mm, location: `${path}:${lineNo}` });
+      out.push({ ...mm, location: { file: path, line: lineNo } });
     }
   }
 
