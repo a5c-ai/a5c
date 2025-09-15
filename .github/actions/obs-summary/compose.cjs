@@ -4,6 +4,11 @@ const fs = require('fs');
 const env = (k, d = '') => process.env[k] ?? d;
 const schemaVersion = env('SCHEMA_VERSION', '0.1');
 const HIT = 'HIT', BYTES = 'BYTES', KEY = 'KEY';
+// Normalize boolean-like inputs (supports true/1/yes/y)
+const toBool = (v) => {
+  const s = String(v).trim().toLowerCase();
+  return s === 'true' || s === '1' || s === 'yes' || s === 'y';
+};
 
 const startedAtEnv = env('RUN_STARTED_AT') || env('GITHUB_RUN_STARTED_AT') || '';
 const startedAt = startedAtEnv || new Date().toISOString();
@@ -11,6 +16,7 @@ const startedAt = startedAtEnv || new Date().toISOString();
 let cov = null;
 try { cov = JSON.parse(fs.readFileSync('coverage/coverage-summary.json', 'utf8')); } catch {}
 
+// Collect cache info from envs. We normalize to entries[] with allowed fields per schema.
 const byKind = new Map();
 for (const [k, v] of Object.entries(process.env)) {
   const m = /^CACHE_([A-Z0-9]+)_(HIT|BYTES|KEY)$/.exec(k);
@@ -18,7 +24,7 @@ for (const [k, v] of Object.entries(process.env)) {
   const kind = m[1].toLowerCase();
   const field = m[2];
   const rec = byKind.get(kind) || { kind };
-  if (field === HIT) rec.hit = String(v).toLowerCase() === 'true' || String(v) === '1';
+  if (field === HIT) rec.hit = toBool(v);
   else if (field === BYTES) {
     const n = Number(v);
     if (!Number.isNaN(n)) rec.bytes = n;
@@ -26,8 +32,14 @@ for (const [k, v] of Object.entries(process.env)) {
   byKind.set(kind, rec);
 }
 
-const cacheEntries = Array.from(byKind.values());
-const hits = cacheEntries.filter(e => e.hit).length;
+// Sanitize entries to schema-allowed fields only
+const cacheEntries = Array.from(byKind.values()).map((r) => {
+  const out = { kind: r.kind, hit: !!r.hit };
+  if (typeof r.bytes === 'number') out.bytes = r.bytes;
+  if (typeof r.key === 'string' && r.key) out.key = r.key;
+  return out;
+});
+const hits = cacheEntries.filter(e => e.hit === true).length;
 const total = cacheEntries.length;
 const bytes_total = cacheEntries.reduce((a, e) => a + (typeof e.bytes === 'number' ? e.bytes : 0), 0);
 const cache = total

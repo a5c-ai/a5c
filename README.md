@@ -18,6 +18,7 @@ See docs/routing/ownership-and-routing.md for how CODEOWNERS drives routing and 
 Prerequisites:
 
 - Node.js 20+ (LTS recommended). The repo includes an `.nvmrc` pinning Node 20 for local parity with CI.
+- Node.js 20+ (LTS recommended). See `.nvmrc` for the canonical version used in CI.
 
 Install:
 
@@ -244,6 +245,16 @@ See `docs/specs/README.md` for examples and behavior-driven test outlines. Add y
   - CI runs lint and typecheck on PRs; see `.github/workflows/lint.yml` and `.github/workflows/typecheck.yml`.
   - Local pre-commit enforces whitespace/newline hygiene, lint, and typecheck; see `docs/contributing/README.md#pre-commit-checks`.
 - Minimal Node types + commander; TypeScript configured in `tsconfig.json`
+
+### Node.js Version Policy
+
+This project targets Node 20 LTS by default:
+
+- Engines: `"node": ">=20"` in `package.json`
+- Local: `.nvmrc` pins Node 20
+- CI: workflows use `actions/setup-node@v4` with `node-version-file: .nvmrc`
+
+Typecheck CI runs a matrix on Node 20 and 22 to catch version-specific type issues, but build/tests default to Node 20.
 
 ### Commit conventions
 

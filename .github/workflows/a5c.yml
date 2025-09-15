@@ -8,13 +8,13 @@ env:
   ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
   AZURE_OPENAI_PROJECT_NAME: ${{ vars.AZURE_OPENAI_PROJECT_NAME || '' }}
   AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY || '' }}
-  OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY || '' }}  
+  OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY || '' }}
   DEBUG: ${{ github.event.inputs.debug || 'false' }}
   GITHUB_TOKEN: ${{ secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
   DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
   DISCORD_GUILD_ID: ${{ vars.DISCORD_GUILD_ID }}
   A5C_CLI_TOOL: ${{ vars.A5C_CLI_TOOL }}
-  SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN || '' }}         
+  SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN || '' }}
   SLACK_SIGNING_SECRET: ${{ secrets.SLACK_SIGNING_SECRET || '' }}
   SLACK_APP_TOKEN: ${{ secrets.SLACK_APP_TOKEN || '' }}
   VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN || '' }}
@@ -23,7 +23,7 @@ env:
   SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN || '' }}
   SUPABASE_ORG_ID: ${{ vars.SUPABASE_ORG_ID || '' }}
   SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF || '' }}
-  SUPABASE_PROJECT_URL:  ${{ vars.SUPABASE_PROJECT_URL || '' }}
+  SUPABASE_PROJECT_URL: ${{ vars.SUPABASE_PROJECT_URL || '' }}
   SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD || '' }}
   STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY || '' }}
   STRIPE_PUBLISHABLE_KEY: ${{ secrets.STRIPE_PUBLISHABLE_KEY || '' }}
@@ -50,7 +50,7 @@ env:
   AUTH_GITHUB_ORG_ID: ${{ vars.AUTH_GITHUB_ORG_ID || '' }}
   AUTH_GITHUB_ORG_NAME: ${{ vars.AUTH_GITHUB_ORG_NAME || '' }}
   AUTH_GITHUB_ORG_DESCRIPTION: ${{ vars.AUTH_GITHUB_ORG_DESCRIPTION || '' }}
-  
+
   # other credentials
   HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY || '' }}
   HEROKU_APP_NAME: ${{ vars.HEROKU_APP_NAME || '' }}
@@ -78,21 +78,32 @@ on:
   # Scheduled Events
   schedule:
     # Every 30 minutes
-    - cron: '*/30 * * * *'
+    - cron: "*/30 * * * *"
     # twice a day at 9
-    - cron: '0 9,21 * * *'
+    - cron: "0 9,21 * * *"
   workflow_run:
     types: [completed]
-    workflows: [Build, Deploy, Packages Npx Test, Lint, Tests, Quick Checks, Typecheck, Commit Hygiene, Release]
+    workflows:
+      [
+        Build,
+        Deploy,
+        Packages Npx Test,
+        Lint,
+        Tests,
+        Quick Checks,
+        Typecheck,
+        Commit Hygiene,
+        Release,
+      ]
 
   # Manual Triggers
   workflow_dispatch:
     inputs:
       agent_uri:
-        description: 'Specific agent to run (optional - leave empty for auto-routing)'
+        description: "Specific agent to run (optional - leave empty for auto-routing)"
         required: false
       debug:
-        description: 'Enable debug mode'
+        description: "Enable debug mode"
         required: false
         default: false
         type: boolean
@@ -125,21 +136,45 @@ jobs:
         run: |
           echo "skip=true" >> "$GITHUB_OUTPUT"
           exit 0
+      - name: "Guard: require a failed job in referenced run"
+        id: guard-failed-job
+        if: steps.filter-self.outputs.skip != 'true' && github.event_name == 'workflow_run'
+        env:
+          GH_TOKEN: ${{ secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          RUN_ID="${{ github.event.workflow_run.id }}"
+          REPO="${{ github.repository }}"
+          # Fetch jobs and detect failures
+          tmp=$(mktemp)
+          gh run view "$RUN_ID" --repo "$REPO" --json jobs > "$tmp"
+          failed=$(jq '[.jobs[] | select(.conclusion=="failure")] | length' "$tmp")
+          echo "failed_jobs=${failed}" >> "$GITHUB_OUTPUT"
+          if [ "${failed}" -eq 0 ]; then
+            echo "No failed jobs in referenced workflow_run; skipping." >&2
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Filter Self Workflow-run
+        id: filter-self-2
+        if: steps.filter-self.outputs.skip != 'true' && steps.guard-failed-job.outputs.skip == 'true'
+        run: |
+          echo "skip=true" >> "$GITHUB_OUTPUT"
+          exit 0
       - name: a5c token
         id: a5c-token
         continue-on-error: true
-        if: steps.filter-self.outputs.skip != 'true'
+        if: steps.filter-self.outputs.skip != 'true' && steps.filter-self-2.outputs.skip != 'true'
         uses: a5c-ai/generate-token-action@main
       - name: Checkout Repository
-        uses: actions/checkout@v4        
-        if: steps.filter-self.outputs.skip != 'true'
+        uses: actions/checkout@v4
+        if: steps.filter-self.outputs.skip != 'true' && steps.filter-self-2.outputs.skip != 'true'
         with:
           fetch-depth: 0
           token: ${{ steps.a5c-token.outputs.a5c_token || secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
       - name: Run A5C
         id: agents
         uses: a5c-ai/action@main
-        if: steps.filter-self.outputs.skip != 'true'
+        if: steps.filter-self.outputs.skip != 'true' && steps.filter-self-2.outputs.skip != 'true'
         with:
           # Auto-routing by default, unless specific agent is requested
           agent_uri: ${{ github.event.inputs.agent_uri || '' }}
@@ -147,7 +182,7 @@ jobs:
       - name: Upload artifacts
         id: upload-artifacts
         uses: actions/upload-artifact@v4
-        if: steps.filter-self.outputs.skip != 'true'
+        if: steps.filter-self.outputs.skip != 'true' && steps.filter-self-2.outputs.skip != 'true'
         with:
           name: a5c-artifacts
           path: |

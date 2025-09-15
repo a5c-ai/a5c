@@ -69,8 +69,8 @@ Enrich a normalized event (or raw GitHub payload) with repository and provider m
 
 Behavior:
 
-- No network calls are performed by default.
-- Pass `--use-github` to enable GitHub API enrichment. A `GITHUB_TOKEN` (or `A5C_AGENT_GITHUB_TOKEN`) must be present; otherwise enrichment is skipped and marked as partial.
+- No network calls are performed by default. In offline mode, `enriched.github = { provider: 'github', partial: true, reason: 'github_enrich_disabled' }`.
+- Pass `--use-github` to enable GitHub API enrichment. If no token is configured, enrichment is skipped/partial with `reason: 'token:missing'` and the CLI exits with code `3` when an API call is required.
 
 Usage:
 
@@ -91,7 +91,7 @@ events enrich --in FILE [--out FILE] [--rules FILE] \
     - `mentions.scan.changed_files=true|false` (default: `true`) – enable/disable scanning code comments in changed files for `@mentions`
     - `mentions.max_file_bytes=<bytes>` (default: `204800`) – skip files larger than this many bytes when scanning
     - `mentions.languages=<ext,...>` – optional allowlist of file extensions to scan (e.g., `ts,tsx,js,jsx,py,go,yaml`). When omitted, language/extension detection is used.
-- `--use-github`: enable GitHub API enrichment; equivalent to `--flag use_github=true` (requires `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`). Without this flag, the CLI performs no network calls and sets `enriched.github = { provider: 'github', skipped: true, reason: 'flag:not_set' }`.
+- `--use-github`: enable GitHub API enrichment; equivalent to `--flag use_github=true` (requires `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`). Without this flag, the CLI performs no network calls and sets `enriched.github = { provider: 'github', partial: true, reason: 'github_enrich_disabled' }`.
 - `--label KEY=VAL...`: labels to attach
 - `--select PATHS`: comma-separated dot paths to include in output
 - `--filter EXPR`: filter expression `path[=value]`; if it doesn't pass, exits with code `2`

@@ -50,10 +50,9 @@ export function dedupeMentions(items: Mention[]): Mention[] {
   const seen = new Set<string>();
   const out: Mention[] = [];
   for (const m of items) {
-    // Include precise location details in key when available to avoid
-    // over-deduping mentions that occur at different places in code.
+    // Include precise location details in key when available to avoid over-deduping
     let locKey = "";
-    const loc = m.location as any;
+    const loc = (m as any).location;
     if (loc && typeof loc === "object") {
       const file = loc.file || "";
       const line = loc.line != null ? String(loc.line) : "";
