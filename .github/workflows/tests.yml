@@ -162,3 +162,4 @@ jobs:
         env:
           OBS_FILE: observability.json
           CACHE_NODE_HIT: ${{ steps.setup-node.outputs.cache-hit }}
+          CONCLUSION: ${{ job.status }}
