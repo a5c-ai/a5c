@@ -138,6 +138,15 @@ events enrich --in samples/pull_request.synchronize.json \
 jq '.enriched' enriched.json
 ```
 
+With rules (composed events):
+
+```bash
+events enrich --in samples/pull_request.synchronize.json \
+  --rules samples/rules/conflicts.yml \
+  | jq '(.composed // []) | map({key, reason})'
+  # note: `reason` may be omitted depending on rule configuration
+```
+
 ### Auth tokens: precedence & redaction
 
 - Token precedence: runtime prefers `A5C_AGENT_GITHUB_TOKEN` over `GITHUB_TOKEN` when both are set (see `src/config.ts`).
