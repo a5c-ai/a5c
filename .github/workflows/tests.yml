@@ -1,8 +1,6 @@
 name: Tests
 
 on:
-  pull_request:
-    branches: [ a5c/main ]
   push:
     branches: [ a5c/main ]
 

@@ -1,0 +1,69 @@
+name: Quick Checks
+
+on:
+  pull_request:
+    branches: [ a5c/main, main ]
+    types: [opened, synchronize, reopened, ready_for_review]
+
+concurrency:
+  group: quick-checks-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  pr-fast:
+    name: Lint, Typecheck, Unit Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install
+        run: |
+          if [ -f package-lock.json ]; then npm ci; else npm install; fi
+      - name: Lint (eslint)
+        run: npm run -s lint
+      - name: Typecheck (tsc --noEmit)
+        run: npm run -s typecheck
+      - name: Unit tests (vitest)
+        run: npm run -s test:ci
+      - name: Upload coverage artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-lcov
+          path: |
+            coverage/lcov.info
+            coverage/coverage-summary.json
+          if-no-files-found: ignore
+      - name: Coverage summary
+        if: always()
+        run: |
+          if [ -f coverage/coverage-summary.json ]; then
+            node -e '
+              const fs = require("fs");
+              const sum = JSON.parse(fs.readFileSync("coverage/coverage-summary.json","utf8"));
+              const t = sum.total || {};
+              const row = (k) => `| ${k} | ${((t[k]?.pct ?? 0)).toFixed(2)}% | ${t[k]?.covered ?? 0}/${t[k]?.total ?? 0} |`;
+              const out = [
+                "## Coverage Summary",
+                "",
+                "| Metric | Percent | Covered/Total |",
+                "|---|---:|---:|",
+                row("lines"),
+                row("statements"),
+                row("functions"),
+                row("branches"),
+                "",
+              ].join("\n");
+              fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, out);
+            ';
+          else
+            echo "coverage/coverage-summary.json not found; ensure vitest json-summary reporter is enabled" >> "$GITHUB_STEP_SUMMARY";
+          fi
+
