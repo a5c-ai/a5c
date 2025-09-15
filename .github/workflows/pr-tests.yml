@@ -26,6 +26,14 @@ jobs:
         run: npm ci
       - name: Test (vitest, coverage)
         run: npm run -s test:ci
+      - name: Upload JUnit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vitest-junit
+          path: |
+            junit.xml
+          if-no-files-found: ignore
       - name: Upload coverage artifact
         if: failure()
         uses: actions/upload-artifact@v4

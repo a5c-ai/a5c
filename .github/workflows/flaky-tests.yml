@@ -1,0 +1,210 @@
+name: Flaky Tests
+
+on:
+  workflow_run:
+    types: [completed]
+    workflows: [Tests, PR Quick Tests]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  detect:
+    name: Detect Flaky Tests
+    runs-on: ubuntu-latest
+    if: >-
+      ${{ github.event.workflow_run.conclusion == 'success' || github.event.workflow_run.conclusion == 'failure' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Determine context (PR/branch)
+        id: ctx
+        shell: bash
+        run: |
+          set -euo pipefail
+          PR_NUMBER=$(jq -r '(.workflow_run.pull_requests[0].number // "")' "$GITHUB_EVENT_PATH")
+          HEAD_BRANCH=$(jq -r '.workflow_run.head_branch' "$GITHUB_EVENT_PATH")
+          RUN_ID=$(jq -r '.workflow_run.id' "$GITHUB_EVENT_PATH")
+          REPO_FULL=${GITHUB_REPOSITORY}
+          echo "pr=${PR_NUMBER}" >> "$GITHUB_OUTPUT"
+          echo "branch=${HEAD_BRANCH}" >> "$GITHUB_OUTPUT"
+          echo "run_id=${RUN_ID}" >> "$GITHUB_OUTPUT"
+          echo "repo=${REPO_FULL}" >> "$GITHUB_OUTPUT"
+      - name: Download junit artifact for this run
+        id: dl
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          RID="${{ steps.ctx.outputs.run_id }}"
+          REPO="${{ steps.ctx.outputs.repo }}"
+          mkdir -p /tmp/junit/current
+          # Find artifact id named vitest-junit
+          ART_ID=$(gh api repos/${REPO}/actions/runs/${RID}/artifacts --jq '.artifacts[] | select(.name=="vitest-junit") | .id' || true)
+          if [ -z "$ART_ID" ]; then
+            echo "no_artifact=1" >> "$GITHUB_OUTPUT"
+            echo "No vitest-junit artifact on run ${RID}; skipping aggregation" >&2
+          else
+            gh api -H "Accept: application/vnd.github+json" \
+              repos/${REPO}/actions/artifacts/${ART_ID}/zip > /tmp/junit_current.zip
+            bsdtar -xf /tmp/junit_current.zip -C /tmp/junit/current || true
+            echo "no_artifact=0" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Aggregate last N runs (including current)
+        if: steps.dl.outputs.no_artifact == '0'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          REPO="${{ steps.ctx.outputs.repo }}"
+          BR="${{ steps.ctx.outputs.branch }}"
+          N=${WINDOW_SIZE:-5}
+          mkdir -p /tmp/junit/history
+          WF_ID=$(jq -r '.workflow_run.workflow_id' "$GITHUB_EVENT_PATH")
+          # List recent workflow runs on same branch
+          gh api \
+            repos/${REPO}/actions/workflows/${WF_ID}/runs \
+            -F branch="$BR" -F per_page=10 \
+            --jq '[.workflow_runs[] | {id: .id, head_sha: .head_sha, status: .status, conclusion: .conclusion}]' > /tmp/runs.json
+          # Iterate and fetch artifacts for up to N runs
+          idx=0
+          for RID in $(jq -r '.[].id' /tmp/runs.json | head -n "$N"); do
+            ART_ID=$(gh api repos/${REPO}/actions/runs/${RID}/artifacts --jq '.artifacts[] | select(.name=="vitest-junit") | .id' || true)
+            if [ -z "$ART_ID" ]; then continue; fi
+            OUT="/tmp/junit/history/${idx}.zip"; idx=$((idx+1))
+            gh api -H "Accept: application/vnd.github+json" repos/${REPO}/actions/artifacts/${ART_ID}/zip > "$OUT" || true
+            mkdir -p "/tmp/junit/history/${RID}" || true
+            bsdtar -xf "$OUT" -C "/tmp/junit/history/${RID}" || true
+          done
+      - name: Compute flakiness
+        if: steps.dl.outputs.no_artifact == '0'
+        id: flaky
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY' | tee /tmp/flaky.json
+          import os, json, xml.etree.ElementTree as ET
+
+          def parse_junit(path):
+              res = []
+              try:
+                  tree = ET.parse(path)
+                  root = tree.getroot()
+                  for tc in root.iter('testcase'):
+                      name = tc.get('name') or ''
+                      cls = tc.get('classname') or ''
+                      failed = tc.find('failure') is not None or tc.find('error') is not None
+                      res.append({ 'key': f"{cls}::{name}", 'name': name, 'class': cls, 'failed': failed })
+              except Exception:
+                  pass
+              return res
+
+          def scan_dir(d):
+              out=[]
+              for root,_,files in os.walk(d):
+                  for f in files:
+                      if f.endswith('.xml') and 'junit' in f:
+                          out.extend(parse_junit(os.path.join(root,f)))
+                      elif f == 'junit.xml':
+                          out.extend(parse_junit(os.path.join(root,f)))
+              return out
+
+          history_base = '/tmp/junit/history'
+          series = {}
+          if os.path.isdir(history_base):
+              for rid in os.listdir(history_base):
+                  d = os.path.join(history_base, rid)
+                  if not os.path.isdir(d):
+                      continue
+                  tests = scan_dir(d)
+                  status = {}
+                  for t in tests:
+                      status[t['key']] = (not t['failed'])
+                  for k,v in status.items():
+                      arr = series.get(k, [])
+                      arr.append(v)
+                      series[k] = arr
+
+          curr = '/tmp/junit/current'
+          if os.path.isdir(curr):
+              tests = scan_dir(curr)
+              status = {}
+              for t in tests:
+                  status[t['key']] = (not t['failed'])
+              for k,v in status.items():
+                  arr = series.get(k, [])
+                  arr.append(v)
+                  series[k] = arr
+
+          flaky = []
+          for k, arr in series.items():
+              if len(arr) < 2:
+                  continue
+              has_pass = any(arr)
+              has_fail = any(not x for x in arr)
+              if has_pass and has_fail:
+                  cls, name = k.split('::',1)
+                  fails = sum(1 for x in arr if not x)
+                  passes = sum(1 for x in arr if x)
+                  flaky.append({ 'key': k, 'class': cls, 'name': name, 'passes': passes, 'fails': fails, 'runs': len(arr) })
+
+          flaky.sort(key=lambda x: (-x['fails'], -x['runs']))
+          out = { 'count': len(flaky), 'tests': flaky[:50] }
+          print(json.dumps(out))
+          PY
+          echo "json=/tmp/flaky.json" >> "$GITHUB_OUTPUT"
+      - name: Comment on PR with flakiness
+        if: steps.flaky.outputs.json && steps.ctx.outputs.pr != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          PR=${{ steps.ctx.outputs.pr }}
+          REPO=${{ steps.ctx.outputs.repo }}
+          flaky_count=$(jq -r '.count' /tmp/flaky.json)
+          {
+            echo "<!-- a5c:flaky-tests -->"
+            echo "## 🔁 Flaky Tests Summary"
+            echo "Count: ${flaky_count}"
+            echo ""
+            echo "| Test | Pass | Fail | Runs |"
+            echo "|---|---:|---:|---:|"
+            jq -r '.tests[] | "| \(.class)::\(.name) | \(.passes) | \(.fails) | \(.runs) |"' /tmp/flaky.json || true
+            echo ""
+            echo "_Automated flakiness detector (JUnit)._"
+          } > /tmp/pr-flaky.md
+          # Ensure label exists and apply/remove
+          LABEL="flaky-test"
+          if [ "$flaky_count" -gt 0 ]; then
+            if ! gh label view "$LABEL" --repo "$REPO" >/dev/null 2>&1; then
+              gh label create "$LABEL" --repo "$REPO" --color FFA500 --description "Test is flaky across recent runs" || true
+            fi
+            gh pr edit "$PR" --repo "$REPO" --add-label "$LABEL" 2>/dev/null || true
+          else
+            gh pr edit "$PR" --repo "$REPO" --remove-label "$LABEL" 2>/dev/null || true
+          fi
+          # Update or create comment
+          existing_id=$(gh api repos/${REPO}/issues/${PR}/comments --jq '.[] | select(.body | contains("a5c:flaky-tests")) | .id' || true)
+          if [ -n "$existing_id" ]; then
+            gh api -X PATCH -H "Accept: application/vnd.github+json" \
+              repos/${REPO}/issues/comments/${existing_id} -f body@/tmp/pr-flaky.md >/dev/null
+          else
+            gh pr comment "$PR" --repo "$REPO" -F /tmp/pr-flaky.md >/dev/null
+          fi
+      - name: Upload flaky details
+        if: steps.flaky.outputs.json
+        uses: actions/upload-artifact@v4
+        with:
+          name: flaky-tests
+          path: /tmp/flaky.json
