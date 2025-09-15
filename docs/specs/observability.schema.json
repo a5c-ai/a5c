@@ -37,7 +37,7 @@
         "conclusion": { "type": "string" },
         "started_at": { "type": "string", "format": "date-time" },
         "completed_at": { "type": "string", "format": "date-time" },
-        "duration_ms": { "type": "integer", "minimum": 0 }
+        "duration_ms": { "type": ["integer", "null"], "minimum": 0 }
       }
     },
     "metrics": {
@@ -61,7 +61,7 @@
           }
         },
         "cache": {
-          "type": "object",
+          "type": ["object", "null"],
           "additionalProperties": false,
           "properties": {
             "entries": {

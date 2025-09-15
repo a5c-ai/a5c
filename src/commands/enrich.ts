@@ -1,13 +1,17 @@
+//
 import type { NormalizedEvent, Mention } from "../types.js";
 import { readJSONFile, loadConfig } from "../config.js";
-import { extractMentions, dedupeMentions } from "../extractor.js";
+import { extractMentions } from "../extractor.js";
 import { loadRules, evaluateRulesDetailed } from "../rules.js";
 import { mapToNE } from "../providers/github/map.js";
 import {
+  scanPatchForCodeCommentMentions,
+  isBinaryPatch,
+} from "../codeComments.js";
+import {
   scanMentionsInCodeComments,
-  detectLang,
+  detectLang as detectLangRich,
 } from "../utils/commentScanner.js";
-import { isBinaryPatch } from "../codeComments.js";
 
 export async function cmdEnrich(opts: {
   in?: string;
@@ -27,10 +31,27 @@ export async function cmdEnrich(opts: {
         : `Invalid JSON or read error: ${e?.message || e}`;
     return { code: 2, errorMessage: msg };
   }
-  // Default include_patch to false to minimize payload size
+  // Defaults
   const includePatch = toBool(opts.flags?.include_patch ?? false);
   const commitLimit = toInt(opts.flags?.commit_limit, 50);
   const fileLimit = toInt(opts.flags?.file_limit, 200);
+  // Code-comment scanning flags
+  const scanChanged = toBool(
+    (opts.flags as any)?.["mentions.scan.changed_files"] ?? true,
+  );
+  const maxFileBytes = toInt(
+    (opts.flags as any)?.["mentions.max_file_bytes"],
+    200 * 1024,
+  );
+  const languagesRaw = (opts.flags as any)?.["mentions.languages"];
+  const languageFilters: string[] | undefined = Array.isArray(languagesRaw)
+    ? languagesRaw
+    : typeof languagesRaw === "string" && languagesRaw.length
+      ? String(languagesRaw)
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean)
+      : undefined;
 
   const cfg = loadConfig();
   const token = cfg.githubToken;
@@ -77,6 +98,23 @@ export async function cmdEnrich(opts: {
           (f: any) => ({ ...f, patch: undefined }),
         );
       }
+    } else {
+      // Ensure a defined patch key when include_patch=true so callers can rely on presence
+      if (githubEnrichment.pr?.files) {
+        githubEnrichment.pr.files = githubEnrichment.pr.files.map((f: any) =>
+          Object.prototype.hasOwnProperty.call(f, "patch")
+            ? f
+            : { ...f, patch: "" },
+        );
+      }
+      if (githubEnrichment.push?.files) {
+        githubEnrichment.push.files = githubEnrichment.push.files.map(
+          (f: any) =>
+            Object.prototype.hasOwnProperty.call(f, "patch")
+              ? f
+              : { ...f, patch: "" },
+        );
+      }
     }
   } catch (e: any) {
     // If provider was requested but failed, return provider error code 3
@@ -113,84 +151,42 @@ export async function cmdEnrich(opts: {
       mentions.push(...extractMentions(String(commentBody), "issue_comment"));
   } catch {}
 
-  // Code comment mentions: prefer patch when include_patch=true and patches present, otherwise fetch files via GitHub
+  // Code-comment mentions wiring
   try {
-    const flags = opts.flags || {};
-    const scanChanged = toBool(
-      (flags as any)["mentions.scan.changed_files"] ?? true,
-    );
     if (scanChanged) {
-      const maxBytes = toInt(
-        (flags as any)["mentions.max_file_bytes"],
-        200 * 1024,
-      );
-      const langAllowRaw = (flags as any)["mentions.languages"];
-      const languageFilters = Array.isArray(langAllowRaw)
-        ? (langAllowRaw as string[])
-            .map((s) => String(s).trim())
-            .filter(Boolean)
-        : typeof langAllowRaw === "string" && langAllowRaw.length
-          ? String(langAllowRaw)
-              .split(",")
-              .map((s) => s.trim())
-              .filter(Boolean)
-          : undefined;
+      const files: any[] =
+        (githubEnrichment?.pr?.files as any[]) ||
+        (githubEnrichment?.push?.files as any[]) ||
+        [];
+      const useGithub = toBool((opts.flags as any)?.use_github);
 
-      const prFiles: any[] = (githubEnrichment?.pr?.files as any[]) || [];
-      const pushFiles: any[] = (githubEnrichment?.push?.files as any[]) || [];
-      const filesList: any[] = prFiles.length ? prFiles : pushFiles;
-
-      const preferPatch =
+      // Prefer patch-based scanning when include_patch=true and patches present
+      const hasPatch =
         includePatch &&
-        Array.isArray(filesList) &&
-        filesList.some((f) => typeof f?.patch === "string" && f.patch.length);
-
-      // Helper to check allowed languages for a filename
-      const isAllowedLang = (filename: string): boolean => {
-        if (!languageFilters || !languageFilters.length) return true;
-        const lang = detectLang(filename);
-        return !!lang && languageFilters.includes(lang);
-      };
-
-      if (preferPatch) {
-        for (const f of filesList) {
+        Array.isArray(files) &&
+        files.some((f: any) => typeof f?.patch === "string" && f.patch.length);
+      if (hasPatch) {
+        for (const f of files) {
           const filename = f?.filename;
           const patch = f?.patch as string | undefined;
-          if (!filename || !patch) continue;
-          if (isBinaryPatch(patch)) continue;
-          if (!isAllowedLang(filename)) continue;
-          // Approximate file content from patch to run generic comment scanner
-          const lines = patch.split(/\r?\n/);
-          const approxFile: string[] = [];
-          for (const l of lines) {
-            if (
-              l.startsWith("+++") ||
-              l.startsWith("---") ||
-              l.startsWith("@@")
-            ) {
-              approxFile.push("");
-              continue;
-            }
-            if (l.startsWith("+") || l.startsWith(" ") || l.startsWith("-"))
-              approxFile.push(l.slice(1));
-            else approxFile.push(l);
+          if (!filename || isBinaryPatch(patch)) continue;
+          if (languageFilters && languageFilters.length) {
+            const lang = detectLangRich(filename);
+            if (!lang || !languageFilters.includes(lang)) continue;
           }
-          const content = approxFile.join("\n");
-          const found = scanMentionsInCodeComments({
-            content,
-            filename,
-            maxBytes,
-            languageFilters,
-            source: "code_comment",
+          const found = scanPatchForCodeCommentMentions(filename, patch!, {
+            window: 30,
           });
-          if (found?.length) mentions.push(...found);
+          if (found.length) {
+            for (const m of found) normalizeLocationObject(m);
+            mentions.push(...found);
+          }
         }
-      } else {
-        // Fallback: fetch file contents via GitHub API and scan
-        const useGithub = toBool((opts.flags as any)?.use_github);
-        if (useGithub) {
-          let owner: string | undefined = githubEnrichment?.owner;
-          let repo: string | undefined = githubEnrichment?.repo;
+      } else if (useGithub) {
+        // Otherwise, when GitHub API is available, fetch file contents and scan
+        try {
+          let owner: string | undefined = (githubEnrichment as any)?.owner;
+          let repo: string | undefined = (githubEnrichment as any)?.repo;
           if (!owner || !repo) {
             const full = (baseEvent as any)?.repository?.full_name;
             if (typeof full === "string" && full.includes("/")) {
@@ -199,84 +195,94 @@ export async function cmdEnrich(opts: {
               repo = parts[1];
             }
           }
-          const ref: string | undefined =
+          // Determine ref
+          let ref: string | undefined =
             (baseEvent as any)?.pull_request?.head?.sha ||
             (baseEvent as any)?.after ||
             (baseEvent as any)?.head_commit?.id;
-          if (owner && repo && ref) {
-            try {
-              const mod: any = await import("../enrichGithubEvent.js");
-              const octokit =
-                opts.octokit ||
-                (token ? mod.createOctokit?.(token) : undefined);
-              let changed: { filename: string }[] = [];
-              if (Array.isArray(filesList) && filesList.length) {
-                changed = filesList.map((f: any) => ({ filename: f.filename }));
-              } else if (octokit) {
-                if ((baseEvent as any)?.pull_request?.number) {
-                  const number = (baseEvent as any).pull_request.number;
-                  const list = await octokit.paginate(octokit.pulls.listFiles, {
-                    owner,
-                    repo,
-                    pull_number: number,
-                    per_page: 100,
-                  });
-                  changed = Array.isArray(list)
-                    ? list.map((f: any) => ({ filename: f.filename }))
-                    : [];
-                } else if (
-                  (baseEvent as any)?.before &&
-                  (baseEvent as any)?.after
-                ) {
-                  const comp = await octokit.repos.compareCommits({
-                    owner,
-                    repo,
-                    base: (baseEvent as any).before,
-                    head: (baseEvent as any).after,
-                  });
-                  const list = (comp?.data?.files as any[]) || [];
-                  changed = list.map((f: any) => ({ filename: f.filename }));
-                }
-              }
-              if (octokit && Array.isArray(changed) && changed.length) {
-                for (const f of changed) {
-                  const filename = f.filename;
-                  if (!isAllowedLang(filename)) continue;
-                  try {
-                    const res = await octokit.repos.getContent({
-                      owner,
-                      repo,
-                      path: filename,
-                      ref,
-                    });
-                    if (Array.isArray(res.data)) continue;
-                    const size = res.data.size ?? 0;
-                    if (maxBytes > 0 && size > maxBytes) continue;
-                    const encoding = res.data.encoding || "base64";
-                    const content: string = Buffer.from(
-                      res.data.content || "",
-                      encoding,
-                    ).toString("utf8");
-                    const found = scanMentionsInCodeComments({
-                      content,
-                      filename,
-                      maxBytes,
-                      languageFilters,
-                      source: "code_comment",
-                    });
-                    if (found?.length) mentions.push(...found);
-                  } catch {}
-                }
-              }
-            } catch {}
+          const mod: any = await import("../enrichGithubEvent.js");
+          const octokit =
+            opts.octokit || (token ? mod.createOctokit?.(token) : undefined);
+          let filesList: any[] | undefined = files;
+          if ((!filesList || !filesList.length) && octokit && owner && repo) {
+            if ((baseEvent as any)?.pull_request?.number) {
+              const number = (baseEvent as any).pull_request.number;
+              filesList = await octokit.paginate(octokit.pulls.listFiles, {
+                owner,
+                repo,
+                pull_number: number,
+                per_page: 100,
+              });
+            } else if (
+              (baseEvent as any)?.before &&
+              (baseEvent as any)?.after
+            ) {
+              const comp = await octokit.repos.compareCommits({
+                owner,
+                repo,
+                base: (baseEvent as any).before,
+                head: (baseEvent as any).after,
+              });
+              filesList = (comp?.data?.files as any[]) || [];
+              ref = (baseEvent as any).after;
+            }
           }
+          if (
+            octokit &&
+            owner &&
+            repo &&
+            ref &&
+            Array.isArray(filesList) &&
+            filesList.length
+          ) {
+            for (const f of filesList) {
+              const filename = f?.filename;
+              if (!filename) continue;
+              const lang = detectLangRich(filename);
+              if (!lang) continue;
+              if (
+                languageFilters &&
+                languageFilters.length &&
+                !languageFilters.includes(lang)
+              )
+                continue;
+              try {
+                const res = await octokit.repos.getContent({
+                  owner,
+                  repo,
+                  path: filename,
+                  ref,
+                });
+                if (Array.isArray(res.data)) continue;
+                const size = res.data.size ?? 0;
+                if (maxFileBytes > 0 && size > maxFileBytes) continue;
+                const encoding = res.data.encoding || "base64";
+                const content: string = Buffer.from(
+                  res.data.content || "",
+                  encoding,
+                ).toString("utf8");
+                const found = scanMentionsInCodeComments({
+                  content,
+                  filename,
+                  maxBytes: maxFileBytes,
+                  languageFilters,
+                  source: "code_comment",
+                });
+                if (found.length) mentions.push(...found);
+              } catch {
+                // ignore per-file errors
+              }
+            }
+          }
+        } catch {
+          // best-effort: ignore failures
         }
       }
     }
-  } catch {}
-
-  // Dedupe mentions across sources
-  const allMentions = dedupeMentions(mentions);
+  } catch {
+    // swallow scanning errors; enrichment should not fail due to scanning
+  }
+  //
 
   const output: NormalizedEvent = {
     ...(neShell as any),
@@ -291,7 +297,9 @@ export async function cmdEnrich(opts: {
         ...(neShell.enriched?.derived || {}),
         flags: opts.flags || {},
       },
-      ...(allMentions.length ? { mentions: allMentions } : {}),
+      ...(mentions.length
+        ? { mentions: dedupeMentionsWithLocation(mentions) }
+        : {}),
     },
   };
   // Evaluate composed event rules when --rules provided
@@ -340,4 +348,47 @@ function toBool(v: any): boolean {
 function toInt(v: any, def = 0): number {
   const n = Number.parseInt(String(v ?? ""), 10);
   return Number.isFinite(n) ? n : def;
+}
+
+// Normalize legacy string location ("path:line") to object form { file, line }
+function normalizeLocationObject(m: Mention): void {
+  const loc = (m as any).location;
+  if (loc && typeof loc === "string") {
+    const s = String(loc);
+    const idx = s.lastIndexOf(":");
+    if (idx > 0) {
+      const file = s.slice(0, idx);
+      const lineNum = Number.parseInt(s.slice(idx + 1), 10);
+      (m as any).location = {
+        file,
+        ...(Number.isFinite(lineNum) ? { line: lineNum } : {}),
+      };
+    } else {
+      (m as any).location = { file: s };
+    }
+  }
+}
+
+function dedupeMentionsWithLocation(items: Mention[]): Mention[] {
+  const seen = new Set<string>();
+  const out: Mention[] = [];
+  for (const m of items) {
+    const loc = (m as any).location;
+    let file = "";
+    let line: number | string | undefined;
+    if (loc && typeof loc === "object") {
+      file = (loc as any).file || "";
+      line = (loc as any).line;
+    } else if (typeof loc === "string") {
+      const idx = loc.lastIndexOf(":");
+      file = idx > 0 ? loc.slice(0, idx) : loc;
+      line = idx > 0 ? loc.slice(idx + 1) : undefined;
+    }
+    const key = `${m.source}|${m.normalized_target}|${file}:${line ?? ""}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      out.push(m);
+    }
+  }
+  return out;
 }

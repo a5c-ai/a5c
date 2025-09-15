@@ -1,8 +1,6 @@
 ---
-
 title: CLI Reference
 description: Commands, flags, and examples for the Events CLI (`mentions`, `normalize`, `enrich`, `emit`, `validate`).
-
 ---
 
 # CLI Reference
@@ -178,6 +176,7 @@ Exit codes:
 
 - `0`: success
 - `1`: error (I/O, JSON parse, or missing `--out` for file sink)
+
 ### `events validate`
 
 Validate a JSON document against the NE JSON Schema.

@@ -12,7 +12,6 @@ runs:
         merge-multiple: true
 
     - name: Aggregate observability.json files
-    
       shell: bash
       run: |
         set -euo pipefail
@@ -96,4 +95,3 @@ runs:
 branding:
   icon: bar-chart-2
   color: blue
-
