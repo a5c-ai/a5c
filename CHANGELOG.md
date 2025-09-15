@@ -1,3 +1,15 @@
+## 1.1.0-a5c-main.16 (2025-09-15)
+
+* Merge pull request #308 from a5c-ai/feat/commit-hygiene-issue-282 ([b879035](https://github.com/a5c-ai/events/commit/b879035)), closes [#308](https://github.com/a5c-ai/events/issues/308)
+* ci: commit hygiene workflow avoid dev install of tsx ([dac2f69](https://github.com/a5c-ai/events/commit/dac2f69))
+* ci(commit-hygiene): add Conventional Commits validation script, hook, and CI; docs: add CONTRIBUTING ([844ab4e](https://github.com/a5c-ai/events/commit/844ab4e))
+* ci(commit-hygiene): resolve a5c.yml conflict; add husky prepare; use tsx shebang ([961b52f](https://github.com/a5c-ai/events/commit/961b52f))
+* docs: start issue #282 plan and progress doc ([11d2747](https://github.com/a5c-ai/events/commit/11d2747)), closes [#282](https://github.com/a5c-ai/events/issues/282)
+* docs(validation): add CI and portability follow-ups for PR #308 ([a0eb12e](https://github.com/a5c-ai/events/commit/a0eb12e)), closes [#308](https://github.com/a5c-ai/events/issues/308)
+* docs(validation): add PR #308 follow-ups for husky and tsx shebang ([2ebfaf3](https://github.com/a5c-ai/events/commit/2ebfaf3)), closes [#308](https://github.com/a5c-ai/events/issues/308)
+* fix(ci): improve commit hygiene validation ([7122458](https://github.com/a5c-ai/events/commit/7122458))
+* chore(husky): make commit-msg hook standalone (no _/husky.sh) ([f23b761](https://github.com/a5c-ai/events/commit/f23b761))
+
 ## 1.1.0-a5c-main.15 (2025-09-14)
 
 * 📝 Clarify token precedence + redaction in docs (Auth UX) (#317) ([d30aa0b](https://github.com/a5c-ai/events/commit/d30aa0b)), closes [#317](https://github.com/a5c-ai/events/issues/317) [#294](https://github.com/a5c-ai/events/issues/294)
