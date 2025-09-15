@@ -84,7 +84,13 @@ export async function cmdEnrich(opts: {
           octokit: opts.octokit,
           includePatch,
         })
-      : { _enrichment: { provider: "github", skipped: true } };
+      : {
+          _enrichment: {
+            provider: "github",
+            partial: true,
+            reason: "flag:not_set",
+          },
+        };
     githubEnrichment = enriched?._enrichment || {};
     if (!includePatch) {
       if (githubEnrichment.pr?.files) {

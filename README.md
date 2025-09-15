@@ -79,8 +79,8 @@ cat out.json | npx @a5c-ai/events validate --quiet
 
 Behavior:
 
-- Offline by default: without `--use-github`, no network calls occur. Output includes `enriched.github` with `partial=true` and `reason="github_enrich_disabled"`.
-- When `--use-github` is set but no token is configured, enrichment is skipped/partial with `reason="token:missing"` in `enriched.github` and the CLI exits with code `3` (provider/network error). Mentions extraction still runs.
+- Offline by default: without `--use-github`, no network calls occur. Output always includes `enriched.github` stub `{ provider: 'github', partial: true, reason: 'flag:not_set' }`.
+- When `--use-github` is set but no token is configured, enrichment attaches `{ provider: 'github', partial: true, reason: 'token:missing' }` under `enriched.github` and the CLI exits with code `3` (provider/network error). Mentions extraction still runs.
 
 Exit codes: `0` success, non‑zero on errors (invalid input, etc.).
 
