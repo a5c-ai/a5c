@@ -155,3 +155,9 @@ jobs:
           else
             gh pr comment "$PR_NUMBER" --repo "$REPO_FULL" -F /tmp/pr-comment.md >/dev/null
           fi
+
+      - name: Observability collector
+        if: always()
+        uses: ./.github/actions/obs-collector
+        env:
+          OBS_FILE: observability.json
