@@ -2,9 +2,18 @@
 
 Aggregates basic job metadata with optional coverage and cache metrics, writes a human-readable step summary, and outputs `observability.json` that is uploaded as an artifact.
 
+> Prerequisite: This composite executes Node.js inline scripts (via `node -e`). Ensure Node is available in the job. We recommend `actions/setup-node@v4` with Node 20.
+
 ## Usage
 
 ```yaml
+# Ensure Node is available (required for this composite)
+- name: Setup Node.js
+  id: setup-node
+  uses: actions/setup-node@v4
+  with:
+    node-version: 20
+
 - name: Observability summary
   uses: ./.github/actions/obs-summary
   env:
