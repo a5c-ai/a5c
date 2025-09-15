@@ -1,90 +1,97 @@
-name: "Observability Aggregate"
-description: "Download all artifacts, summarize coverage/JUnit across jobs, write summary and aggregated JSON, upload artifact"
+name: "Obs Aggregate"
+description: "Download 'observability' artifacts from this run, aggregate into a single JSON, write step summary, and upload."
 author: "a5c.ai"
 runs:
   using: "composite"
   steps:
-    - name: Download all artifacts
+    - name: Download observability artifacts
       uses: actions/download-artifact@v4
       with:
-        path: artifacts
+        name: observability
+        path: observability_artifacts
+        merge-multiple: true
 
-    - name: Aggregate coverage and JUnit
+    - name: Aggregate observability.json files
       shell: bash
       run: |
         set -euo pipefail
-        OUT_JSON="${OUT_JSON:-observability.aggregate.json}"
-        mkdir -p artifacts || true
-        # Find coverage summaries and junit reports
-        mapfile -t COVS < <(find artifacts -type f -name 'coverage-summary.json' 2>/dev/null || true)
-        mapfile -t JUNIT < <(find artifacts -type f -name '*.xml' -maxdepth 3 -printf '%p\n' 2>/dev/null | grep -E '/junit\.xml$' || true)
-        printf "%s\n" "${COVS[@]:-}" > /tmp/obs_covs.txt || true
-        printf "%s\n" "${JUNIT[@]:-}" > /tmp/obs_junit.txt || true
-        LINES=0 FUNCS=0 BRANCHES=0 COUNT=0
-        if [ ${#COVS[@]} -gt 0 ]; then
-          for f in "${COVS[@]}"; do
-            l=$(node -e "const t=require('fs').existsSync(process.argv[1])?JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')).total||{}:{}; console.log(Number((t.lines?.pct??0)))" "$f")
-            fn=$(node -e "const t=require('fs').existsSync(process.argv[1])?JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')).total||{}:{}; console.log(Number((t.functions?.pct??0)))" "$f")
-            br=$(node -e "const t=require('fs').existsSync(process.argv[1])?JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')).total||{}:{}; console.log(Number((t.branches?.pct??0)))" "$f")
-            LINES=$(awk -v a="$LINES" -v b="$l" 'BEGIN{print a+b}')
-            FUNCS=$(awk -v a="$FUNCS" -v b="$fn" 'BEGIN{print a+b}')
-            BRANCHES=$(awk -v a="$BRANCHES" -v b="$br" 'BEGIN{print a+b}')
-            COUNT=$((COUNT+1))
-          done
+        OUT="observability.aggregate.json"
+        files=$(ls -1 observability_artifacts 2>/dev/null || true)
+        if [ -z "$files" ]; then
+          echo "{}" > "$OUT"
+          echo "No observability artifacts found" >> "$GITHUB_STEP_SUMMARY"
+          echo "OUT_FILE=$OUT" >> "$GITHUB_ENV"
+          exit 0
         fi
-        avg() { if [ "$2" -gt 0 ]; then awk -v s="$1" -v n="$2" 'BEGIN{printf "%.2f", s/n}'; else echo 0; fi; }
-        LINES_A=$(avg "$LINES" "$COUNT")
-        FUNCS_A=$(avg "$FUNCS" "$COUNT")
-        BRANCHES_A=$(avg "$BRANCHES" "$COUNT")
+        # Aggregate with Node for robustness
         node -e '
           const fs = require("fs");
-          const OUT = process.env.OUT_JSON || "observability.aggregate.json";
-          const readList = (p) => {
-            try { return fs.readFileSync(p, "utf8").split(/\r?\n/).filter(Boolean); } catch { return []; }
-          };
-          const cov_files = readList("/tmp/obs_covs.txt");
-          const junit_files = readList("/tmp/obs_junit.txt");
-          const num = (k) => Number(process.env[k] || 0);
-          const agg = {
-            artifacts_root: "artifacts",
-            found: {
-              coverage_summaries: cov_files,
-              junit_reports: junit_files,
-            },
-            metrics: {
-              coverage_avg: {
-                lines_pct: num("LINES_A"),
-                functions_pct: num("FUNCS_A"),
-                branches_pct: num("BRANCHES_A"),
-                files_count: num("COUNT"),
-              },
-              cache: {}
+          const path = require("path");
+          const dir = "observability_artifacts";
+          const runs = [];
+          for (const f of fs.readdirSync(dir)) {
+            const p = path.join(dir, f);
+            if (!fs.statSync(p).isFile()) continue;
+            if (!/\.json$/i.test(p)) continue;
+            try {
+              const o = JSON.parse(fs.readFileSync(p, "utf8"));
+              runs.push(o);
+            } catch {}
+          }
+          const agg = { runs };
+          // Aggregate cache metrics if available
+          const caches = runs.map(r => r?.metrics?.cache?.summary).filter(Boolean);
+          if (caches.length) {
+            const sum = caches.reduce((a, c) => ({
+              hits: (a.hits||0) + (c.hits||0),
+              misses: (a.misses||0) + (c.misses||0),
+              total: (a.total||0) + (c.total||0),
+              bytes_restored_total: (a.bytes_restored_total||0) + (c.bytes_restored_total||0),
+            }), {});
+            agg.metrics = agg.metrics || {};
+            agg.metrics.cache = sum;
+          }
+          // Aggregate coverage percentages (simple average of present ones)
+          const pct = key => {
+            const vals = [];
+            for (const r of runs) {
+              const t = r?.metrics?.coverage?.total; if (!t) continue;
+              const v = t[key]?.pct; if (typeof v === 'number') vals.push(v);
             }
+            if (!vals.length) return undefined;
+            return Number((vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(2));
           };
-          fs.writeFileSync(OUT, JSON.stringify(agg, null, 2));
-          console.log(`Wrote ${OUT}`);
+          const cov = {
+            lines_avg_pct: pct("lines"),
+            branches_avg_pct: pct("branches"),
+            functions_avg_pct: pct("functions"),
+            statements_avg_pct: pct("statements"),
+          };
+          if (Object.values(cov).some(v => v != null)) {
+            agg.metrics = agg.metrics || {};
+            agg.metrics.coverage = cov;
+          }
+          fs.writeFileSync("observability.aggregate.json", JSON.stringify(agg, null, 2));
         '
-
-    - name: Step summary
-      shell: bash
-      run: |
-        set -euo pipefail
-        OUT_JSON="${OUT_JSON:-observability.aggregate.json}"
-        echo "## Aggregate Observability" >> "$GITHUB_STEP_SUMMARY"
-        if [ -f "$OUT_JSON" ]; then
-          echo '\n```json' >> "$GITHUB_STEP_SUMMARY"
-          head -c 5000 "$OUT_JSON" >> "$GITHUB_STEP_SUMMARY" || true
-          echo '\n```' >> "$GITHUB_STEP_SUMMARY"
+        echo "OUT_FILE=$OUT" >> "$GITHUB_ENV"
+        # Write brief summary
+        echo "## Observability Aggregate" >> "$GITHUB_STEP_SUMMARY"
+        if jq -e '.metrics.cache' "$OUT" >/dev/null 2>&1; then
+          echo "- Cache: $(jq -r '.metrics.cache.hits // 0') hits / $(jq -r '.metrics.cache.total // 0') total, bytes $(jq -r '.metrics.cache.bytes_restored_total // 0')" >> "$GITHUB_STEP_SUMMARY"
         else
-          echo "No aggregate JSON produced." >> "$GITHUB_STEP_SUMMARY"
+          echo "- Cache: n/a" >> "$GITHUB_STEP_SUMMARY"
+        fi
+        if jq -e '.metrics.coverage' "$OUT" >/dev/null 2>&1; then
+          echo "- Coverage (avg): lines $(jq -r '.metrics.coverage.lines_avg_pct // "n/a"')% | funcs $(jq -r '.metrics.coverage.functions_avg_pct // "n/a"')% | branches $(jq -r '.metrics.coverage.branches_avg_pct // "n/a"')%" >> "$GITHUB_STEP_SUMMARY"
         fi
 
     - name: Upload aggregate
+      if: always()
       uses: actions/upload-artifact@v4
       with:
         name: observability-aggregate
-        path: observability.aggregate.json
+        path: ${{ env.OUT_FILE }}
 
 branding:
-  icon: bar-chart
-  color: purple
+  icon: bar-chart-2
+  color: blue
