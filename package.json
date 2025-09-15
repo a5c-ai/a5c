@@ -1,6 +1,6 @@
 {
   "name": "@a5c-ai/events",
-  "version": "1.1.0-a5c-main.16",
+  "version": "1.1.0-a5c-main.11",
   "description": "Events SDK and CLI for normalizing and enriching repo/CI events for agentic workflows",
   "type": "module",
   "private": false,
@@ -18,18 +18,21 @@
   },
   "scripts": {
     "pretest": "npm run build",
-    "prepare": "husky install || true",
+    "prepare": "npm run build",
+    "postinstall": "husky install || true",
     "clean": "rimraf dist .turbo .vitest coverage",
     "build": "tsc -p tsconfig.build.json && node scripts/build-post.js",
     "build:clean": "rimraf dist && npm run build",
     "lint": "eslint \"src/**/*.ts\" \"test/**/*.ts\" \"tests/**/*.ts\"",
     "format": "prettier -w .",
-    "typecheck": "tsc --noEmit -p tsconfig.typecheck.json",
-    "typecheck:tests": "tsc --noEmit -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.build.json",
     "test": "vitest run",
     "test:ci": "vitest run --coverage --reporter=dot",
     "dev": "tsx watch src/cli.ts -- --help",
     "cli": "node dist/cli.js",
+    "prepush:changed": "node scripts/prepush-related.js",
+    "prepush:full": "vitest run",
+    "prepush": "node scripts/prepush-related.js || vitest run",
     "release": "semantic-release"
   },
   "files": [
@@ -81,12 +84,13 @@
     "prettier": "^3.3.3",
     "rimraf": "^5.0.5",
     "semantic-release": "^24.2.0",
-    "husky": "^9.1.6",
     "tsx": "^4.19.1",
     "typescript": "5.9.2",
     "typescript-eslint": "8.43.0",
     "vitest": "^2.1.1",
-    "yaml": "2.8.1"
+    "yaml": "2.8.1",
+    "husky": "^9.1.6",
+    "lint-staged": "^15.2.10"
   },
   "dependencies": {
     "@octokit/rest": "^21.0.0",
@@ -94,6 +98,19 @@
     "dotenv": "^16.4.5",
     "minimatch": "^9.0.5",
     "yaml": "^2.8.1",
-    "zod": "3.25.76"
+    "zod": "^3.23.8"
+  },
+  "lint-staged": {
+    "src/**/*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier -w"
+    ],
+    "{test,tests}/**/*.{ts,tsx,js}": [
+      "eslint --fix --max-warnings=0",
+      "prettier -w"
+    ],
+    "**/*.{md,json,yml,yaml}": [
+      "prettier -w"
+    ]
   }
 }

@@ -121,7 +121,6 @@ export async function enrichGithubEvent(event, opts) {
     const ownersUnion = Array.from(ownersUnionSet).sort();
     const mergeableState = prCheck.data.mergeable_state;
     const hasConflicts = mergeableState === "dirty" || mergeableState === "blocked";
-
     // Labels and review requests
     const prLabels = Array.isArray(prData.labels) ? prData.labels.map((l) => l?.name).filter(Boolean) : [];
     const requestedReviewers = Array.isArray(prData.requested_reviewers)
