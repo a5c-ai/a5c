@@ -5,7 +5,7 @@ inputs:
   obs_file:
     description: "Output JSON file path"
     required: false
-    default: "observability-aggregated.json"
+    default: "observability.aggregate.json"
 runs:
   using: "composite"
   steps:
