@@ -91,6 +91,10 @@ events enrich --in FILE [--out FILE] [--rules FILE] \
   - `include_patch=true|false` (default: `false`) – include diff patches; when `false`, patches are removed. Defaulting to false avoids leaking secrets via diffs and keeps outputs small; enable only when required.
   - `commit_limit=<n>` (default: `50`) – limit commits fetched for PR/push
   - `file_limit=<n>` (default: `200`) – limit files per compare list
+  - Mentions scanning flags (code comments in changed files):
+    - `mentions.scan.changed_files=true|false` (default: `true`) – enable/disable scanning code comments in changed files for `@mentions`
+    - `mentions.max_file_bytes=<bytes>` (default: `204800`) – skip files larger than this many bytes when scanning
+    - `mentions.languages=<ext,...>` – optional allowlist of file extensions to scan (e.g., `ts,tsx,js,jsx,py,go,yaml`). When omitted, language/extension detection is used.
 - `--use-github`: enable GitHub API enrichment; equivalent to `--flag use_github=true` (requires `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`). Without this flag, the CLI performs no network calls and sets `enriched.github = { provider: 'github', skipped: true, reason: 'flag:not_set' }`.
 - `--label KEY=VAL...`: labels to attach
 - `--select PATHS`: comma-separated dot paths to include in output
@@ -105,6 +109,17 @@ events enrich --in samples/pull_request.synchronize.json \
   --use-github \
   --flag include_patch=false \
   | jq '.enriched.github.pr.mergeable_state'
+
+# Mentions scanning controls (code comments in changed files)
+# Disable scanning entirely
+events enrich --in samples/pull_request.synchronize.json \
+  --flag mentions.scan.changed_files=false | jq '.enriched.mentions // [] | length'
+
+# Restrict by file types and cap bytes
+events enrich --in samples/pull_request.synchronize.json \
+  --flag mentions.languages=ts,tsx,js \
+  --flag mentions.max_file_bytes=102400 \
+  | jq '.enriched.mentions // [] | map(select(.source=="code_comment")) | length'
 
 # With rules (composed events)
 events enrich --in samples/pull_request.synchronize.json \
@@ -165,7 +180,6 @@ Exit codes:
 
 - `0`: success
 - `1`: error (I/O, JSON parse, or missing `--out` for file sink)
-
 ### `events validate`
 
 Validate a JSON document against the NE JSON Schema.
@@ -174,7 +188,7 @@ Usage:
 
 ```bash
 events validate [--in FILE | < stdin ] [--schema FILE] [--quiet]
-```
+````
 
 - `--in FILE`: JSON input file (reads from stdin if omitted)
 - `--schema FILE`: schema path (defaults to `docs/specs/ne.schema.json`)
