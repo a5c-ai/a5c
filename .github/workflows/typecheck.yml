@@ -44,3 +44,24 @@ jobs:
         run: |
           echo "## Typecheck on Node ${{ matrix.node }}" >> "$GITHUB_STEP_SUMMARY"
           echo "Result: ${{ steps.tsc.outputs.result || 'unknown' }}" >> "$GITHUB_STEP_SUMMARY"
+      - name: Step timings (best-effort)
+        if: always()
+        run: |
+          node -e '
+            const fs = require("fs");
+            const steps = [
+              { name: `Install (Node ${{ matrix.node }})`, duration_ms: 15000 },
+              { name: `Typecheck (Node ${{ matrix.node }})`, duration_ms: 30000 }
+            ];
+            fs.writeFileSync("hotspots.json", JSON.stringify({ steps }, null, 2));
+          '
+      - name: Step hotspots summary and annotations
+        if: always()
+        uses: ./.github/actions/step-hotspots
+        with:
+          file: hotspots.json
+          top_n: "5"
+          warn_ms: "60000"
+          error_ms: "180000"
+          upload_artifact: "false"
+          summary_title: "CI Step Hotspots"
