@@ -55,5 +55,9 @@ next-env.d.ts
 .pr_comment.md
 # CLI outputs
 /out.json
+<<<<<<< HEAD
 # temporary enrich outputs
 **/tmp-enrich-*.json
+=======
+tmp-enrich-*.json
+>>>>>>> 9c08a27 (chore: cleanup tmp enrich JSON artifacts and add ignore)
