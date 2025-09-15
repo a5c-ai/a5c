@@ -3,6 +3,7 @@
 Started addressing validator follow-ups: dedupe key and location shape.
 
 Plan:
+
 - Align location object shape for block comments
 - Update dedupe to include file+line for object locations
 - Adjust docs if code/docs mismatch
