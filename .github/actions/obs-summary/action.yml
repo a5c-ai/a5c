@@ -45,7 +45,7 @@ runs:
             const kind = m[1].toLowerCase();
             const field = m[2];
             const rec = byKind.get(kind) || { kind };
-            if (field === HIT) rec.hit = String(v).toLowerCase() === 'true' || String(v) === '1';
+            if (field === HIT) rec.hit = String(v).toLowerCase() === "true" || String(v) === "1";
             else if (field === BYTES) {
               const n = Number(v);
               if (!Number.isNaN(n)) rec.bytes = n;
@@ -55,7 +55,7 @@ runs:
           const cacheEntries = Array.from(byKind.values());
           const hits = cacheEntries.filter(e => e.hit).length;
           const total = cacheEntries.length;
-          const bytes_total = cacheEntries.reduce((a, e) => a + (typeof e.bytes === 'number' ? e.bytes : 0), 0);
+          const bytes_total = cacheEntries.reduce((a, e) => a + (typeof e.bytes === "number" ? e.bytes : 0), 0);
           const cache = total ? { entries: cacheEntries, summary: { hits, misses: total - hits, total, bytes_restored_total: bytes_total } } : null;
           const end = new Date();
           const endIso = end.toISOString();
