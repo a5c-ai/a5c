@@ -126,7 +126,9 @@ runs:
             v=$(eval echo "\$CACHE_${k^^}_HIT")
             bytes=$(eval echo "\${CACHE_${k^^}_BYTES-}")
             total=$((total+1))
-            if [ "$v" = "true" ] || [ "$v" = "1" ]; then
+            # Normalize boolean-like values per docs: true|1|yes|y
+            lv=$(printf '%s' "$v" | tr '[:upper:]' '[:lower:]')
+            if [ "$lv" = "true" ] || [ "$lv" = "1" ] || [ "$lv" = "yes" ] || [ "$lv" = "y" ]; then
               hits=$((hits+1)); state=hit
             else
               state=miss
