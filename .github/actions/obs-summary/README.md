@@ -9,7 +9,8 @@ Usage:
         OBS_FILE: observability.json # optional
         # Optional cache inputs (example: setup-node cache hit)
         CACHE_NODE_HIT: ${{ steps.setup-node.outputs.cache-hit }}
-        CACHE_NODE_KIND: node
+        # Optional job conclusion (e.g., pass through from job.status)
+        CONCLUSION: ${{ job.status }}
 ```
 
 Notes:
