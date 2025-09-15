@@ -140,6 +140,7 @@ With rules (composed events):
 events enrich --in samples/pull_request.synchronize.json \
   --rules samples/rules/conflicts.yml \
   | jq '(.composed // []) | map({key, reason})'
+  # note: `reason` may be omitted depending on rule configuration
 ```
 
 ### Auth tokens: precedence & redaction
