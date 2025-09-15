@@ -1,9 +1,17 @@
-# Observability Aggregate (composite action)
+# obs-aggregate (composite action)
 
-Downloads `observability` artifacts emitted by prior jobs (e.g., via `.github/actions/obs-summary`) and aggregates them into `observability.aggregate.json` at the workspace root.
+Aggregates artifacts from the current workflow run and emits a step summary plus a JSON file with lightweight metrics. Designed to be resilient (no-op when artifacts are missing).
 
-- Inputs: none (auto-discovers artifacts named `observability`)
-- Outputs: uploads `observability-aggregate` artifact and writes `observability.aggregate.json`
-- Aggregation:
-  - Cache: concatenates `metrics.cache.entries` and computes `hits`, `misses`, `total`, and `bytes_restored_total`.
-  - Coverage: preserved per job within `jobs[]` (no cross-job merge).
+## Inputs
+- `obs_file` (default: `observability-aggregated.json`) — output JSON file path
+
+## Outputs
+None.
+
+## Example
+```yaml
+- name: Aggregate Observability
+  uses: ./.github/actions/obs-aggregate
+  with:
+    obs_file: observability.json
+```
