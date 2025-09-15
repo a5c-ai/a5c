@@ -37,7 +37,8 @@ runs:
         node "${GITHUB_ACTION_PATH:-.github/actions/obs-summary}/compose.cjs" > "$OBS_FILE"
 
         # Optional schema validation (warn-only)
-        if [ "${OBS_VALIDATE_SCHEMA:-false}" = "true" ]; then
+        # Accept both VALIDATE_OBS_SCHEMA (preferred) and OBS_VALIDATE_SCHEMA (legacy/doc)
+        if [ "${VALIDATE_OBS_SCHEMA:-${OBS_VALIDATE_SCHEMA:-false}}" = "true" ]; then
           echo "Validating $OBS_FILE against docs/specs/observability.schema.json (warn-only)" >> "$GITHUB_STEP_SUMMARY"
           node -e '
             try {
@@ -146,6 +147,24 @@ runs:
       with:
         name: observability
         path: ${{ env.OBS_FILE }}
+
+    - name: Validate observability schema (optional)
+      if: env.VALIDATE_OBS_SCHEMA == 'true' || env.OBS_VALIDATE_SCHEMA == 'true'
+      shell: bash
+      run: |
+        set -euo pipefail
+        # Prefer local schema and ajv when repo checked out; fallback to npx
+        SCHEMA="docs/specs/observability.schema.json"
+        FILE="${OBS_FILE:-observability.json}"
+        if [ -f "$SCHEMA" ]; then
+          echo "Validating $FILE against $SCHEMA (Draft 2020-12)"
+          npx --yes ajv -s "$SCHEMA" -d "$FILE" --spec=draft2020 -c ajv-formats || {
+            echo "Schema validation failed (warn-only)." >&2
+            exit 0
+          }
+        else
+          echo "Schema file not found; skipping validation (warn-only)"
+        fi
 
 branding:
   icon: bar-chart-2
