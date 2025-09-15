@@ -56,7 +56,8 @@ runs:
             const vals = [];
             for (const r of runs) {
               const t = r?.metrics?.coverage?.total; if (!t) continue;
-              const v = t[key]?.pct; if (typeof v === 'number') vals.push(v);
+              const v = t[key]?.pct;
+              if (Number.isFinite(v)) vals.push(Number(v));
             }
             if (!vals.length) return undefined;
             return Number((vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(2));
