@@ -2,7 +2,7 @@ name: Tests
 
 on:
   push:
-    branches: [ a5c/main ]
+    branches: [ a5c/main, main ]
 
 jobs:
   unit:
