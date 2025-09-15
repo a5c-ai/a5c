@@ -28,7 +28,8 @@ runs:
         node "${GITHUB_ACTION_PATH:-.github/actions/obs-summary}/compose.cjs" > "$OBS_FILE"
 
         # Optional schema validation (warn-only)
-        if [ "${OBS_VALIDATE_SCHEMA:-false}" = "true" ]; then
+        # Use VALIDATE_OBS_SCHEMA for consistency with the separate validation step below
+        if [ "${VALIDATE_OBS_SCHEMA:-false}" = "true" ]; then
           echo "Validating $OBS_FILE against docs/specs/observability.schema.json (warn-only)" >> "$GITHUB_STEP_SUMMARY"
           node -e '
             try {

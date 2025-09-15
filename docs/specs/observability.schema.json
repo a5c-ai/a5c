@@ -99,6 +99,50 @@
         }
       },
       "required": []
+    },
+    "tests": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "totals": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "total": { "type": "number" },
+            "flaky": { "type": "number" },
+            "slow_count": { "type": "number" }
+          },
+          "required": ["total", "flaky", "slow_count"]
+        },
+        "slowest": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "fullName": { "type": "string" },
+              "status": { "type": "string" },
+              "duration_ms": { "type": ["number", "null"] },
+              "retries": { "type": "number" }
+            },
+            "required": ["fullName"]
+          }
+        },
+        "flaky": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "fullName": { "type": "string" },
+              "status": { "type": "string" },
+              "duration_ms": { "type": ["number", "null"] },
+              "retries": { "type": "number" }
+            },
+            "required": ["fullName"]
+          }
+        }
+      }
     }
   },
   "required": ["schema_version", "repo", "workflow", "job", "run"],
