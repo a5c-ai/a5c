@@ -16,7 +16,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: 20
       - name: Install commitlint
         run: |
           npm i -D @commitlint/cli @commitlint/config-conventional
@@ -33,4 +33,3 @@ jobs:
             echo "Checking $sha"
             git show -s --format=%B "$sha" | npx commitlint
           done
-

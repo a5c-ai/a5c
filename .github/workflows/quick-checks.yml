@@ -17,11 +17,13 @@ jobs:
     name: Lint, Typecheck, Unit Tests, Filenames
     runs-on: ubuntu-latest
     timeout-minutes: 7
+    env:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN || '' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version-file: .nvmrc
           cache: npm
       - name: Install
         run: |
@@ -43,6 +45,16 @@ jobs:
             coverage/lcov.info
             coverage/coverage-summary.json
           if-no-files-found: ignore
+      - name: Upload coverage to Codecov (optional)
+        if: ${{ env.CODECOV_TOKEN != '' }}
+        uses: codecov/codecov-action@v4
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN || '' }}
+        with:
+          files: coverage/lcov.info
+          flags: pr
+          fail_ci_if_error: false
+          verbose: false
       - name: Coverage summary
         if: always()
         run: |
@@ -68,3 +80,11 @@ jobs:
           else
             echo "coverage/coverage-summary.json not found; ensure vitest json-summary reporter is enabled" >> "$GITHUB_STEP_SUMMARY";
           fi
+      - name: Upload to Codecov (optional)
+        if: env.CODECOV_TOKEN != ''
+        uses: codecov/codecov-action@v4
+        with:
+          files: coverage/lcov.info
+          token: ${{ secrets.CODECOV_TOKEN }}
+          flags: pr
+          fail_ci_if_error: false

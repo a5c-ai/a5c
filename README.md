@@ -17,7 +17,7 @@ See docs/routing/ownership-and-routing.md for how CODEOWNERS drives routing and 
 
 Prerequisites:
 
-- Node.js 20+ (LTS recommended)
+- Node.js 20+ (LTS recommended). The repo includes an `.nvmrc` pinning Node 20 for local parity with CI.
 
 Install:
 
