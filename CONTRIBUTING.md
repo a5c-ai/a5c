@@ -7,14 +7,17 @@ Thanks for contributing to @a5c-ai/events! This project follows Conventional Com
 Format: `type(scope)?: subject`
 
 Allowed types:
+
 - build, chore, ci, docs, feat, fix, perf, refactor, revert, style, test
 
 Examples:
+
 - `feat(cli): add validate command`
 - `fix(parser)!: handle null inputs`
 - `docs: update README quickstart`
 
 Notes:
+
 - Use `!` for breaking changes after the type/scope, and describe the change in the body.
 - Keep the first line under ~72 chars when possible.
 
@@ -33,6 +36,22 @@ We enforce fast pre-commit checks to keep `main` and `a5c/main` healthy:
 - Tests: runs Vitest. If possible, runs related tests for changed files via `scripts/prepush-related.js`; otherwise runs `vitest run --passWithNoTests`.
 
 The hook is implemented in `scripts/precommit.sh` and invoked from `.husky/pre-commit`.
+
+### Husky setup (prepare-based)
+
+We use Husky v9 with a `prepare` script so hooks are set up only for contributors (not package consumers):
+
+```
+"scripts": {
+  "prepare": "husky && npm run build"
+}
+```
+
+Notes:
+
+- `prepare` runs on local `npm install` and during development; CI can call `npm ci` which also runs `prepare`.
+- We chain `npm run build` to keep the existing behavior of building on install.
+- We intentionally removed the deprecated `postinstall: \"husky install\"` to eliminate CI noise.
 
 ### Bypass in Emergencies
 
