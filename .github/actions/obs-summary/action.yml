@@ -60,6 +60,7 @@ runs:
         echo "- Workflow: ${WORKFLOW_NAME}" >> "$GITHUB_STEP_SUMMARY"
         echo "- Job: ${JOB_NAME}" >> "$GITHUB_STEP_SUMMARY"
         echo "- Run: ${RUN_ID} (attempt ${RUN_ATTEMPT})" >> "$GITHUB_STEP_SUMMARY"
+        # Optional conclusion line
         if [ -n "${CONCLUSION}" ]; then
           echo "- Conclusion: ${CONCLUSION}" >> "$GITHUB_STEP_SUMMARY"
         fi
