@@ -28,8 +28,8 @@ runs:
         node "${GITHUB_ACTION_PATH:-.github/actions/obs-summary}/compose.cjs" > "$OBS_FILE"
 
         # Optional schema validation (warn-only)
-        # Use VALIDATE_OBS_SCHEMA for consistency with the separate validation step below
-        if [ "${VALIDATE_OBS_SCHEMA:-false}" = "true" ]; then
+        # Accept both VALIDATE_OBS_SCHEMA (preferred) and OBS_VALIDATE_SCHEMA (legacy/doc)
+        if [ "${VALIDATE_OBS_SCHEMA:-${OBS_VALIDATE_SCHEMA:-false}}" = "true" ]; then
           echo "Validating $OBS_FILE against docs/specs/observability.schema.json (warn-only)" >> "$GITHUB_STEP_SUMMARY"
           node -e '
             try {
@@ -140,7 +140,7 @@ runs:
         path: ${{ env.OBS_FILE }}
 
     - name: Validate observability schema (optional)
-      if: env.VALIDATE_OBS_SCHEMA == 'true'
+      if: env.VALIDATE_OBS_SCHEMA == 'true' || env.OBS_VALIDATE_SCHEMA == 'true'
       shell: bash
       run: |
         set -euo pipefail
