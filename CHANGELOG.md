@@ -1,3 +1,7 @@
+## 1.1.0-a5c-main.20 (2025-09-15)
+
+* fix(github): emit type "issue" (singular) for Issues payloads to match NE schema; add tests for norm ([7049aed](https://github.com/a5c-ai/events/commit/7049aed)), closes [#388](https://github.com/a5c-ai/events/issues/388) [#415](https://github.com/a5c-ai/events/issues/415)
+
 ## 1.1.0-a5c-main.19 (2025-09-15)
 
 * fix(cli): report version from package.json at runtime (#391) (#410) ([02a6685](https://github.com/a5c-ai/events/commit/02a6685)), closes [#391](https://github.com/a5c-ai/events/issues/391) [#410](https://github.com/a5c-ai/events/issues/410)
