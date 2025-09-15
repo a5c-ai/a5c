@@ -175,11 +175,6 @@ program
       out: cmdOpts.out,
       sink: cmdOpts.sink,
     });
-    // handleEmit already wrote to sink; also print redacted to stdout if sink=file and no --quiet flag (future)
-    if (cmdOpts.sink !== "file" && !cmdOpts.out) {
-      const safe = redactObject(output);
-      process.stdout.write(JSON.stringify(safe, null, 2) + "\n");
-    }
     process.exit(code);
   });
 
