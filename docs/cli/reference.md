@@ -1,8 +1,10 @@
-<<<<<<< HEAD
-=======
+# <<<<<<< HEAD
+
 ---
+
 title: CLI Reference
 description: Commands, flags, and examples for the Events CLI (`mentions`, `normalize`, `enrich`, `emit`, `validate`).
+
 ---
 
 # CLI Reference
@@ -127,13 +129,12 @@ events enrich --in samples/push.json --out out.json
 jq '.enriched.mentions' out.json
 ```
 
-| jq '[.composed[] | {key, reason}]'
-
-```
 ### `events emit`
+
 Emit a JSON event to a sink (stdout or file). The payload is redacted before being written.
 
 Usage:
+
 ```bash
 events emit [--in FILE] [--sink <stdout|file>] [--out FILE]
 ```
@@ -164,6 +165,7 @@ Exit codes:
 
 - `0`: success
 - `1`: error (I/O, JSON parse, or missing `--out` for file sink)
+
 ### `events validate`
 
 Validate a JSON document against the NE JSON Schema.
