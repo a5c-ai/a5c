@@ -32,7 +32,7 @@ Aggregates basic job metadata with optional coverage and cache metrics, writes a
 Notes:
 
 - The action reads `coverage/coverage-summary.json` if present to include coverage metrics.
-- The action sets up Node.js using `actions/setup-node@v4` with a default version of `20`. Override via `with.node-version` if needed.
+- Node setup is performed inside the composite using `actions/setup-node@v4` with a default version of `20` and npm cache. Override via `with.node-version` if needed, or run your own setup-node before this action.
 - If cache envs are provided (any `CACHE_<KIND>_HIT`), `observability.json` will include a `metrics.cache` section and the step summary will include a cache line.
 - Supported cache env name patterns (current implementation):
   - `CACHE_<KIND>_HIT`: boolean ("true"/"1"/"yes"/"y")
