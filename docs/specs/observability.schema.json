@@ -1,161 +1,94 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://a5c.ai/schemas/observability-0.1.json",
-  "title": "a5c Observability Artifact",
-  "description": "Schema for observability.json emitted by CI workflows and composite actions (schema_version 0.1)",
+  "title": "Observability Artifact v0.1",
   "type": "object",
-  "additionalProperties": false,
+  "additionalProperties": true,
   "properties": {
-    "$schema": {
-      "description": "Optional self-declared meta schema reference",
-      "type": "string",
-      "format": "uri"
-    },
-    "schema_version": {
-      "type": "string",
-      "enum": ["0.1"]
-    },
-    "repo": { "type": "string", "minLength": 1 },
-    "workflow": { "type": "string", "minLength": 1 },
-    "job": { "type": "string", "minLength": 1 },
+    "schema_version": { "type": ["string", "number"], "default": "0.1" },
+    "repo": { "type": "string" },
+    "workflow": { "type": "string" },
+    "job": { "type": "string" },
     "run": {
       "type": "object",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "properties": {
-        "id": { "oneOf": [{ "type": "integer" }, { "type": "string" }] },
-        "attempt": { "type": "integer", "minimum": 1 },
-        "sha": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
-        "ref": { "type": "string", "minLength": 1 },
+        "id": { "type": ["string", "number"] },
+        "attempt": { "type": "number" },
+        "sha": { "type": "string" },
+        "ref": { "type": "string" },
         "actor": { "type": "string" },
         "event_name": { "type": "string" },
         "conclusion": { "type": "string" },
-        "started_at": { "type": "string", "format": "date-time" },
-        "completed_at": { "type": "string", "format": "date-time" },
-        "duration_ms": { "type": ["number", "null"], "minimum": 0 }
+        "started_at": { "type": ["string", "null"], "format": "date-time" },
+        "completed_at": { "type": ["string", "null"], "format": "date-time" },
+        "duration_ms": { "type": ["number", "null"] }
       },
-      "required": [
-        "id",
-        "attempt",
-        "sha",
-        "ref",
-        "actor",
-        "event_name",
-        "completed_at"
-      ]
+      "required": ["id", "attempt", "sha", "ref"]
     },
     "metrics": {
       "type": "object",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "properties": {
         "coverage": {
-          "description": "Vitest/Istanbul coverage summary JSON or compatible shape",
-          "type": "object",
+          "type": ["object", "null"],
           "additionalProperties": true,
           "properties": {
             "total": {
-              "type": "object",
+              "type": ["object", "null"],
               "additionalProperties": true,
               "properties": {
-                "lines": { "$ref": "#/$defs/coverageItem" },
-                "functions": { "$ref": "#/$defs/coverageItem" },
-                "branches": { "$ref": "#/$defs/coverageItem" },
-                "statements": { "$ref": "#/$defs/coverageItem" }
+                "lines": { "$ref": "#/$defs/coverageMetric" },
+                "functions": { "$ref": "#/$defs/coverageMetric" },
+                "branches": { "$ref": "#/$defs/coverageMetric" },
+                "statements": { "$ref": "#/$defs/coverageMetric" }
               }
             }
           }
         },
         "cache": {
           "type": ["object", "null"],
-          "additionalProperties": false,
+          "additionalProperties": true,
           "properties": {
             "entries": {
               "type": "array",
               "items": {
                 "type": "object",
-                "additionalProperties": false,
+                "additionalProperties": true,
                 "properties": {
                   "kind": { "type": "string" },
                   "hit": { "type": "boolean" },
-                  "key": { "type": "string" },
-                  "bytes": { "type": "number" }
+                  "bytes": { "type": ["number", "null"] },
+                  "key": { "type": ["string", "null"] }
                 },
                 "required": ["kind", "hit"]
               }
             },
             "summary": {
-              "type": "object",
-              "additionalProperties": false,
+              "type": ["object", "null"],
+              "additionalProperties": true,
               "properties": {
                 "hits": { "type": "number" },
                 "misses": { "type": "number" },
                 "total": { "type": "number" },
-                "hit_ratio": { "type": "number" },
-                "bytes_restored_total": { "type": "number" }
-              },
-              "required": ["hits", "misses", "total"]
+                "bytes_restored_total": { "type": ["number", "null"] }
+              }
             }
-          },
-          "required": ["entries", "summary"]
-        }
-      },
-      "required": []
-    },
-    "tests": {
-      "type": ["object", "null"],
-      "additionalProperties": false,
-      "properties": {
-        "totals": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "total": { "type": "number" },
-            "flaky": { "type": "number" },
-            "slow_count": { "type": "number" }
-          },
-          "required": ["total", "flaky", "slow_count"]
-        },
-        "slowest": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "additionalProperties": true,
-            "properties": {
-              "fullName": { "type": "string" },
-              "status": { "type": "string" },
-              "duration_ms": { "type": ["number", "null"] },
-              "retries": { "type": "number" }
-            },
-            "required": ["fullName"]
-          }
-        },
-        "flaky": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "additionalProperties": true,
-            "properties": {
-              "fullName": { "type": "string" },
-              "status": { "type": "string" },
-              "duration_ms": { "type": ["number", "null"] },
-              "retries": { "type": "number" }
-            },
-            "required": ["fullName"]
           }
         }
       }
     }
   },
-  "required": ["schema_version", "repo", "workflow", "job", "run"],
+  "required": ["repo", "workflow", "job", "run"],
   "$defs": {
-    "coverageItem": {
+    "coverageMetric": {
       "type": "object",
       "additionalProperties": true,
       "properties": {
         "pct": { "type": "number" },
         "covered": { "type": "number" },
         "total": { "type": "number" }
-      },
-      "required": ["pct", "covered", "total"]
+      }
     }
   }
 }

@@ -10,7 +10,6 @@ on:
   repository_dispatch:
     events: [reactor]
 
-
 jobs:
   reactor:
     runs-on: ubuntu-latest

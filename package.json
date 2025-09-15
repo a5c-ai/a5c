@@ -26,7 +26,7 @@
     "format": "prettier -w .",
     "typecheck": "tsc --noEmit -p tsconfig.build.json",
     "test": "vitest run",
-    "validate:obs": "node scripts/validate-obs.cjs",
+    "validate:obs": "node scripts/validate-obs.mjs",
     "test:ci": "vitest run --coverage --reporter=dot --reporter=junit --outputFile=junit.xml",
     "flaky:detect": "node scripts/flaky-detector.cjs",
     "dev": "tsx watch src/cli.ts -- --help",

@@ -12,7 +12,7 @@ this logic should apply to all providers, not just the ones in the example.
 
 prefer the more minimal templates, with less dependencies and features that what we actually need: for example, if we need a static frontend/landing page, we should not use a template that includes a database nor payments, etc.
 
-if a project parts needs data processing, ml, specialy algorithms and models, you should prefer python for that part. 
+if a project parts needs data processing, ml, specialy algorithms and models, you should prefer python for that part.
 
 if the description indicates that a part of the project depends on a library that is only available in specific language, you should prefer that language for that part. for example: cli project that needs pytorch or docling would be better in python.
 
@@ -40,7 +40,6 @@ https://github.com/vercel/vercel/tree/main/examples/nextjs (nextjs, shadcn/ui - 
 
 https://github.com/vercel/vercel/tree/main/examples/nuxtjs (nuxtjs, shadcn/ui - good for static pages, landing pages, public websites, etc)
 
-
 https://github.com/brocoders/nestjs-boilerplate (NestJS boilerplate. Auth, TypeORM, Mongoose, Postgres, MongoDB, Mailing, I18N)
 
 https://github.com/async-labs/saas (SaaS boilerplate. Productive stack: React, Material-UI, Next, MobX, WebSockets, Express, Node, Mongoose, MongoDB. Written with TypeScript.)
@@ -49,13 +48,11 @@ https://github.com/kriasoft/react-starter-kit - (cloudflare workers, react, type
 
 https://github.com/vercel/next-forge (react typescript stripe sentry nextjs neon seo feature-flags dark-mode prisma tailwindcss posthog clerk)
 
-
 https://github.com/kriasoft/graphql-starter-kit - (Monorepo, GraphQL API, PostgreSQL, React, and Joy UI.)
 
 https://github.com/lxieyang/chrome-extension-boilerplate-react (chrome extension boilerplate, react, webpack)
 
-
-there are many more templates in these catalogs: https://github.com/vercel/vercel/tree/main/examples , https://github.com/topics/boilerplate , https://github.com/topics/template , https://github.com/topics/starter-kit , https://github.com/topics/starter-template , https://github.com/prisma/prisma-examples (for prisma), 
+there are many more templates in these catalogs: https://github.com/vercel/vercel/tree/main/examples , https://github.com/topics/boilerplate , https://github.com/topics/template , https://github.com/topics/starter-kit , https://github.com/topics/starter-template , https://github.com/prisma/prisma-examples (for prisma),
 
 find the one with the best fit and the most stars.
 
@@ -74,14 +71,14 @@ https://github.com/obytes/react-native-template-obytes (React Native, Expo, PNPM
 pure microservices:
 
 https://github.com/hagopj13/node-express-boilerplate (nodejs, express, mongoose)
-https://github.com/santoshshinde2012/node-boilerplate 
+https://github.com/santoshshinde2012/node-boilerplate
 
 packages:
 
 https://github.com/tomchen/example-typescript-package
 https://github.com/lambda-science/modern-python-boilerplate
 
-if none of the templates fit the project requirements, try https://github.com/pankod/superplate ( generic scaffolding for many many types of stacks), and if that doesn't work, create a issue to ask for the specific templates to use or to build a new one. 
+if none of the templates fit the project requirements, try https://github.com/pankod/superplate ( generic scaffolding for many many types of stacks), and if that doesn't work, create a issue to ask for the specific templates to use or to build a new one.
 
 CLI/Command line tools:
 
@@ -89,8 +86,7 @@ https://github.com/chamoda/cookiecutter-typer (python, typer, cookiecutter templ
 
 https://github.com/simonw/click-app (python, click, cookiecutter template)
 
-https://github.com/samhuk/node-cli-template (Typescript, node, commander.js) 
-----
+## https://github.com/samhuk/node-cli-template (Typescript, node, commander.js)
 
 cookiecutter templates (python and go):
 
@@ -139,7 +135,7 @@ For Example: Prisma, need to set the DATABASE_URL according to the rest of the s
 (do not write the docs/specs/README.md file yourself)
 Create a new issue to 'Create project specifications' with the following details:
 
-- the project specifications should be a detailed description of the project, with the following details 
+- the project specifications should be a detailed description of the project, with the following details
   - the project name
   - seed(s) used (if any)
   - the project description
@@ -148,7 +144,7 @@ Create a new issue to 'Create project specifications' with the following details
   - the project deployment providers
   - instruction to research and create the project specifications in the docs/specs/README.md file in the root of the repo.
 
-### Husky pre-commit hooks (if the seed/stack includes a package.json,  otherwise, the right tool for pre-commit hooks)
+### Husky pre-commit hooks (if the seed/stack includes a package.json, otherwise, the right tool for pre-commit hooks)
 
 1. install husky (package.json and package-lock.json)
 2. configure it to run the tests and build before committing in .husky/pre-commit (according to the project npm scripts)
@@ -166,7 +162,7 @@ Examine the instructions in the README.md file or the docs site of the seed/star
 4. changes to the scripts dir (which are currently called by the main github workfow) to adapt to the seed/starter kit.
 5. only open tickets for non-functional (like the ones above) gaps from the seed/starter kit, not product features, gaps and requirements.
 6. another issue to open should be to 'Create project specifications'
-the actual issue should be opened with the details above in the description. with instructions to perform the changes in the repo. (for the producer-agent)
+   the actual issue should be opened with the details above in the description. with instructions to perform the changes in the repo. (for the producer-agent)
 7. open an issue to 'Producer' and tag the producer-agent to handle.
 
 - for each feature that is not trivial, add an issue for the developer agent to create an "implementation guide" by researching how it is implemented in similar open source projects with similar relevant stack components

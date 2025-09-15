@@ -11,7 +11,11 @@ describe("observability.json schema v0.1", () => {
   const examplePath = path.resolve("docs/examples/observability.json");
 
   it("validates the provided example artifact", () => {
-    const ajv = new Ajv2020({ strict: true, allErrors: true });
+    const ajv = new Ajv2020({
+      strict: true,
+      allErrors: true,
+      allowUnionTypes: true,
+    });
     addFormats(ajv);
     const schema = JSON.parse(fs.readFileSync(schemaPath, "utf8"));
     const validate = ajv.compile(schema);

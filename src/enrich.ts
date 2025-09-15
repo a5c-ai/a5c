@@ -21,62 +21,136 @@ export async function handleEnrich(opts: {
 }> {
   if (!opts.in) return { code: 2, output: { error: "enrich: missing --in" } };
   let input: any;
-  try { input = readJSONFile<any>(opts.in) || {}; } catch (e: any) {
+  try {
+    input = readJSONFile<any>(opts.in) || {};
+  } catch (e: any) {
     return { code: 2, output: { error: String(e?.message || e) } };
   }
   const includePatch = toBool(opts.flags?.include_patch ?? false);
   const commitLimit = toInt(opts.flags?.commit_limit, 50);
   const fileLimit = toInt(opts.flags?.file_limit, 200);
   const useGithub = toBool(opts.flags?.use_github);
-  const scanChangedFilesFlag = toBool((opts.flags as any)?.["mentions.scan.changed_files"] ?? true);
-  const maxFileBytesFlag = toInt((opts.flags as any)?.["mentions.max_file_bytes"], 200 * 1024);
+  const scanChangedFilesFlag = toBool(
+    (opts.flags as any)?.["mentions.scan.changed_files"] ?? true,
+  );
+  const maxFileBytesFlag = toInt(
+    (opts.flags as any)?.["mentions.max_file_bytes"],
+    200 * 1024,
+  );
   const langFilterRawFlag = (opts.flags as any)?.["mentions.languages"] as any;
   const languageFiltersFlag = Array.isArray(langFilterRawFlag)
     ? (langFilterRawFlag as string[])
     : typeof langFilterRawFlag === "string" && langFilterRawFlag.length
-      ? String(langFilterRawFlag).split(",").map((s) => s.trim()).filter(Boolean)
+      ? String(langFilterRawFlag)
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean)
       : undefined;
 
   const cfg = loadConfig();
   const token = cfg.githubToken;
 
-  const isNE = input && typeof input === "object" && input.provider === "github" && "payload" in input;
+  const isNE =
+    input &&
+    typeof input === "object" &&
+    input.provider === "github" &&
+    "payload" in input;
   const baseEvent = isNE ? input.payload : input;
 
-  const neShell: NormalizedEvent = isNE ? input : {
-    id: String(baseEvent?.after || baseEvent?.workflow_run?.id || baseEvent?.pull_request?.id || "temp-" + Math.random().toString(36).slice(2)),
-    provider: "github",
-    type: baseEvent?.pull_request ? "pull_request" : baseEvent?.workflow_run ? "workflow_run" : baseEvent?.ref ? "push" : "commit",
-    occurred_at: new Date(baseEvent?.head_commit?.timestamp || baseEvent?.workflow_run?.updated_at || baseEvent?.pull_request?.updated_at || Date.now()).toISOString(),
-    payload: baseEvent,
-    labels: opts.labels || [],
-    provenance: { source: "cli" },
-  };
+  const neShell: NormalizedEvent = isNE
+    ? input
+    : {
+        id: String(
+          baseEvent?.after ||
+            baseEvent?.workflow_run?.id ||
+            baseEvent?.pull_request?.id ||
+            "temp-" + Math.random().toString(36).slice(2),
+        ),
+        provider: "github",
+        type: baseEvent?.pull_request
+          ? "pull_request"
+          : baseEvent?.workflow_run
+            ? "workflow_run"
+            : baseEvent?.ref
+              ? "push"
+              : "commit",
+        occurred_at: new Date(
+          baseEvent?.head_commit?.timestamp ||
+            baseEvent?.workflow_run?.updated_at ||
+            baseEvent?.pull_request?.updated_at ||
+            Date.now(),
+        ).toISOString(),
+        payload: baseEvent,
+        labels: opts.labels || [],
+        provenance: { source: "cli" },
+      };
 
   let githubEnrichment: any = {};
   if (!useGithub) {
-    githubEnrichment = { provider: "github", partial: true, reason: "github_enrich_disabled" };
+    githubEnrichment = {
+      provider: "github",
+      partial: true,
+      reason: "github_enrich_disabled",
+    };
   } else if (!token && !opts.octokit) {
-    githubEnrichment = { provider: "github", skipped: true, reason: "token:missing", partial: true };
+    githubEnrichment = {
+      provider: "github",
+      skipped: true,
+      reason: "token:missing",
+      partial: true,
+    };
   } else {
     try {
       const mod: any = await import("./enrichGithubEvent.js");
-      const fn = (mod.enrichGithubEvent || mod.default) as (e: any, o?: any) => Promise<any>;
-      const enriched = await fn(baseEvent, { token, commitLimit, fileLimit, octokit: opts.octokit, includePatch });
+      const fn = (mod.enrichGithubEvent || mod.default) as (
+        e: any,
+        o?: any,
+      ) => Promise<any>;
+      const enriched = await fn(baseEvent, {
+        token,
+        commitLimit,
+        fileLimit,
+        octokit: opts.octokit,
+        includePatch,
+      });
       githubEnrichment = enriched?._enrichment || {};
       if (!includePatch) {
-        if (githubEnrichment.pr?.files) githubEnrichment.pr.files = githubEnrichment.pr.files.map((f: any) => ({ ...f, patch: undefined }));
-        if (githubEnrichment.push?.files) githubEnrichment.push.files = githubEnrichment.push.files.map((f: any) => ({ ...f, patch: undefined }));
+        if (githubEnrichment.pr?.files)
+          githubEnrichment.pr.files = githubEnrichment.pr.files.map(
+            (f: any) => ({ ...f, patch: undefined }),
+          );
+        if (githubEnrichment.push?.files)
+          githubEnrichment.push.files = githubEnrichment.push.files.map(
+            (f: any) => ({ ...f, patch: undefined }),
+          );
       } else {
-        if (githubEnrichment.pr?.files) githubEnrichment.pr.files = githubEnrichment.pr.files.map((f: any) => (Object.prototype.hasOwnProperty.call(f, "patch") ? f : { ...f, patch: "" }));
-        if (githubEnrichment.push?.files) githubEnrichment.push.files = githubEnrichment.push.files.map((f: any) => (Object.prototype.hasOwnProperty.call(f, "patch") ? f : { ...f, patch: "" }));
+        if (githubEnrichment.pr?.files)
+          githubEnrichment.pr.files = githubEnrichment.pr.files.map((f: any) =>
+            Object.prototype.hasOwnProperty.call(f, "patch")
+              ? f
+              : { ...f, patch: "" },
+          );
+        if (githubEnrichment.push?.files)
+          githubEnrichment.push.files = githubEnrichment.push.files.map(
+            (f: any) =>
+              Object.prototype.hasOwnProperty.call(f, "patch")
+                ? f
+                : { ...f, patch: "" },
+          );
       }
     } catch (e: any) {
       const errMessage = String(e?.message || e);
       if (opts.octokit) {
-        githubEnrichment = { provider: "github", partial: true, errors: [{ message: errMessage }] };
+        githubEnrichment = {
+          provider: "github",
+          partial: true,
+          errors: [{ message: errMessage }],
+        };
       } else {
-        return { code: 3, output: { error: `github enrichment failed: ${errMessage}` } };
+        return {
+          code: 3,
+          output: { error: `github enrichment failed: ${errMessage}` },
+        };
       }
     }
   }
@@ -85,11 +159,21 @@ export async function handleEnrich(opts: {
     if (useGithub) {
       const prPayload = (baseEvent as any)?.pull_request;
       if (prPayload) {
-        if (!githubEnrichment || typeof githubEnrichment !== "object") githubEnrichment = {};
+        if (!githubEnrichment || typeof githubEnrichment !== "object")
+          githubEnrichment = {};
         githubEnrichment.pr = { ...(githubEnrichment.pr || {}) };
-        if (githubEnrichment.pr.number == null && prPayload.number != null) githubEnrichment.pr.number = prPayload.number;
-        if (githubEnrichment.pr.draft == null && typeof prPayload.draft === "boolean") githubEnrichment.pr.draft = prPayload.draft;
-        if (githubEnrichment.pr.mergeable_state == null && prPayload.mergeable_state != null) githubEnrichment.pr.mergeable_state = prPayload.mergeable_state;
+        if (githubEnrichment.pr.number == null && prPayload.number != null)
+          githubEnrichment.pr.number = prPayload.number;
+        if (
+          githubEnrichment.pr.draft == null &&
+          typeof prPayload.draft === "boolean"
+        )
+          githubEnrichment.pr.draft = prPayload.draft;
+        if (
+          githubEnrichment.pr.mergeable_state == null &&
+          prPayload.mergeable_state != null
+        )
+          githubEnrichment.pr.mergeable_state = prPayload.mergeable_state;
       }
     }
   } catch {}
@@ -98,13 +182,19 @@ export async function handleEnrich(opts: {
   try {
     const pr = (baseEvent as any)?.pull_request;
     if (pr?.body) mentions.push(...extractMentions(String(pr.body), "pr_body"));
-    if (pr?.title) mentions.push(...extractMentions(String(pr.title), "pr_title"));
+    if (pr?.title)
+      mentions.push(...extractMentions(String(pr.title), "pr_title"));
     const commits = (baseEvent as any)?.commits;
     if (Array.isArray(commits)) {
-      for (const c of commits) if (c?.message) mentions.push(...extractMentions(String(c.message), "commit_message"));
+      for (const c of commits)
+        if (c?.message)
+          mentions.push(
+            ...extractMentions(String(c.message), "commit_message"),
+          );
     }
     const commentBody = (baseEvent as any)?.comment?.body;
-    if (commentBody) mentions.push(...extractMentions(String(commentBody), "issue_comment"));
+    if (commentBody)
+      mentions.push(...extractMentions(String(commentBody), "issue_comment"));
   } catch {}
 
   // GitHub content-based scanning when enabled
@@ -114,26 +204,74 @@ export async function handleEnrich(opts: {
       let owner: string | undefined = gh.owner;
       let repo: string | undefined = gh.repo;
       let filesList: any[] | undefined = gh?.pr?.files || gh?.push?.files;
-      let ref: string | undefined = (baseEvent as any)?.pull_request?.head?.sha || (baseEvent as any)?.pull_request?.head?.ref || (baseEvent as any)?.after || (baseEvent as any)?.head_commit?.id;
+      let ref: string | undefined =
+        (baseEvent as any)?.pull_request?.head?.sha ||
+        (baseEvent as any)?.pull_request?.head?.ref ||
+        (baseEvent as any)?.after ||
+        (baseEvent as any)?.head_commit?.id;
       if (!owner || !repo) {
         const full = (baseEvent as any)?.repository?.full_name;
         if (typeof full === "string" && full.includes("/")) {
-          const parts = full.split("/"); owner = parts[0]; repo = parts[1];
+          const parts = full.split("/");
+          owner = parts[0];
+          repo = parts[1];
         }
       }
       const mod: any = await import("./enrichGithubEvent.js");
-      const octokit = opts.octokit || (token ? mod.createOctokit?.(token) : undefined);
-      if ((!filesList || !Array.isArray(filesList)) && octokit && owner && repo) {
+      const octokit =
+        opts.octokit || (token ? mod.createOctokit?.(token) : undefined);
+      if (
+        (!filesList || !Array.isArray(filesList)) &&
+        octokit &&
+        owner &&
+        repo
+      ) {
         if ((baseEvent as any)?.pull_request?.number) {
-          try { const number = (baseEvent as any).pull_request.number; const list = await octokit.paginate(octokit.pulls.listFiles, { owner, repo, pull_number: number, per_page: 100 }); filesList = Array.isArray(list) ? list : []; } catch {}
+          try {
+            const number = (baseEvent as any).pull_request.number;
+            const list = await octokit.paginate(octokit.pulls.listFiles, {
+              owner,
+              repo,
+              pull_number: number,
+              per_page: 100,
+            });
+            filesList = Array.isArray(list) ? list : [];
+          } catch {}
         } else if ((baseEvent as any)?.before && (baseEvent as any)?.after) {
-          try { const comp = await octokit.repos.compareCommits({ owner, repo, base: (baseEvent as any).before, head: (baseEvent as any).after }); filesList = (comp?.data?.files as any[]) || []; ref = (baseEvent as any).after; } catch {}
+          try {
+            const comp = await octokit.repos.compareCommits({
+              owner,
+              repo,
+              base: (baseEvent as any).before,
+              head: (baseEvent as any).after,
+            });
+            filesList = (comp?.data?.files as any[]) || [];
+            ref = (baseEvent as any).after;
+          } catch {}
         }
       }
-      if (owner && repo && Array.isArray(filesList) && filesList.length && ref && octokit) {
+      if (
+        owner &&
+        repo &&
+        Array.isArray(filesList) &&
+        filesList.length &&
+        ref &&
+        octokit
+      ) {
         const files = filesList.map((f: any) => ({ filename: f.filename }));
-        const codeMentions = await scanCodeCommentsForMentions({ owner, repo, ref, files, octokit, options: { fileSizeCapBytes: maxFileBytesFlag, languageFilters: languageFiltersFlag } });
-        if (codeMentions.length) mentions.push(...codeMentions.map(normalizeCodeCommentLocation));
+        const codeMentions = await scanCodeCommentsForMentions({
+          owner,
+          repo,
+          ref,
+          files,
+          octokit,
+          options: {
+            fileSizeCapBytes: maxFileBytesFlag,
+            languageFilters: languageFiltersFlag,
+          },
+        });
+        if (codeMentions.length)
+          mentions.push(...codeMentions.map(normalizeCodeCommentLocation));
       }
     } catch {}
   }
@@ -151,9 +289,18 @@ export async function handleEnrich(opts: {
         if (!filename || isBinaryPatch(patch)) continue;
         const size = (patch || "").length;
         if (size > maxFileBytesFlag) continue;
-        if (languageFiltersFlag && !languageFiltersFlag.some((ext) => filename.toLowerCase().endsWith(`.${ext}`))) continue;
-        const found = scanPatchForCodeCommentMentions(filename, patch!, { window: 30 });
-        if (found.length) mentions.push(...found.map(normalizeCodeCommentLocation));
+        if (
+          languageFiltersFlag &&
+          !languageFiltersFlag.some((ext) =>
+            filename.toLowerCase().endsWith(`.${ext}`),
+          )
+        )
+          continue;
+        const found = scanPatchForCodeCommentMentions(filename, patch!, {
+          window: 30,
+        });
+        if (found.length)
+          mentions.push(...found.map(normalizeCodeCommentLocation));
       }
     }
   } catch {}
@@ -164,7 +311,10 @@ export async function handleEnrich(opts: {
       ...(neShell.enriched || {}),
       github: githubEnrichment,
       metadata: { ...(neShell.enriched?.metadata || {}), rules: opts.rules },
-      derived: { ...(neShell.enriched?.derived || {}), flags: opts.flags || {} },
+      derived: {
+        ...(neShell.enriched?.derived || {}),
+        flags: opts.flags || {},
+      },
       ...(mentions.length ? { mentions } : {}),
     },
   };
@@ -172,10 +322,23 @@ export async function handleEnrich(opts: {
   try {
     const rules = loadRules(opts.rules);
     if (rules.length) {
-      const evalObj: any = { ...output, enriched: output.enriched, labels: output.labels || [] };
+      const evalObj: any = {
+        ...output,
+        enriched: output.enriched,
+        labels: output.labels || [],
+      };
       const res = evaluateRulesDetailed(evalObj, rules);
       if (res?.composed?.length) {
-        const composed = res.composed.map((c: any) => ({ key: c.key, reason: Array.isArray(c.criteria) && c.criteria.length ? c.criteria.join(" && ") : undefined, targets: c.targets, labels: c.labels, payload: c.payload }));
+        const composed = res.composed.map((c: any) => ({
+          key: c.key,
+          reason:
+            Array.isArray(c.criteria) && c.criteria.length
+              ? c.criteria.join(" && ")
+              : undefined,
+          targets: c.targets,
+          labels: c.labels,
+          payload: c.payload,
+        }));
         (output as any).composed = composed;
       }
       const meta: any = (output.enriched as any).metadata || {};
@@ -183,7 +346,10 @@ export async function handleEnrich(opts: {
     }
   } catch (e) {
     const meta: any = (output.enriched as any).metadata || {};
-    (output.enriched as any).metadata = { ...meta, rules_status: { ok: false, warnings: [String((e as any)?.message || e)] } };
+    (output.enriched as any).metadata = {
+      ...meta,
+      rules_status: { ok: false, warnings: [String((e as any)?.message || e)] },
+    };
   }
   return { code: 0, output };
 }
@@ -201,14 +367,21 @@ function toInt(v: any, d = 0): number {
 }
 
 function normalizeCodeCommentLocation(m: Mention): Mention {
-  if (m && m.source === "code_comment" && typeof (m as any).location === "string") {
+  if (
+    m &&
+    m.source === "code_comment" &&
+    typeof (m as any).location === "string"
+  ) {
     const loc = String((m as any).location);
     const idx = loc.lastIndexOf(":");
     if (idx > 0) {
       const file = loc.slice(0, idx);
       const lineStr = loc.slice(idx + 1);
       const line = Number.parseInt(lineStr, 10);
-      return { ...m, location: { file, line: Number.isFinite(line) ? line : undefined } } as Mention;
+      return {
+        ...m,
+        location: { file, line: Number.isFinite(line) ? line : undefined },
+      } as Mention;
     }
   }
   return m;

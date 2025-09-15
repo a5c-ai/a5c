@@ -15,6 +15,7 @@ Types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert.
 Scope: kebab-case module or area (optional). Subject: imperative, no period.
 
 Examples:
+
 - `feat(cli): add validate command`
 - `fix(enrich): handle missing files edge case`
 - `docs: update README quick start`
@@ -41,4 +42,3 @@ feat(api): remove deprecated normalize flags
 
 BREAKING CHANGE: --select requires comma-separated values
 ```
-

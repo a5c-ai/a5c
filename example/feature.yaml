@@ -1,7 +1,6 @@
-
 on:
   repository_dispatch:
-    events: 
+    events:
       - create-feature
 
 jobs:
