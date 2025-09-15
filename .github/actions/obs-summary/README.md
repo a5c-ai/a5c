@@ -54,10 +54,10 @@ JSON shape excerpt:
         "hits": 1,
         "misses": 0,
         "total": 1,
-        "bytes_restored_total": 123456,
-      },
-    },
-  },
+        "bytes_restored_total": 123456
+      }
+    }
+  }
 }
 ```
 

@@ -24,6 +24,7 @@ runs:
 
         echo "OBS_FILE=${OBS_FILE}" >> "$GITHUB_ENV"
 
+ 
         # Compose JSON (includes coverage, cache metrics, started_at/duration, and vitest tests)
         node "${GITHUB_ACTION_PATH:-.github/actions/obs-summary}/compose.cjs" > "$OBS_FILE"
 
@@ -54,6 +55,12 @@ runs:
             }
           '
         fi
+ 
+        # Compose JSON (includes coverage, cache metrics, started_at/duration, and vitest tests)
+        # Using compose.cjs keeps schema compatibility and logic centralized.
+        # OBS_FILE is written by compose.cjs
+        :
+
 
         echo "## Observability" >> "$GITHUB_STEP_SUMMARY"
         echo "- Repo: ${REPO}" >> "$GITHUB_STEP_SUMMARY"
@@ -75,6 +82,7 @@ runs:
         if [ -n "${DUR}" ]; then
           echo "- Duration: ${DUR} ms" >> "$GITHUB_STEP_SUMMARY"
         fi
+ 
         # If vitest JSON exists, append flaky/slow summary
         if [ -f vitest-results.json ]; then
           node -e '
@@ -131,6 +139,7 @@ runs:
             echo "- Cache: ${hits}/${total} hits (ratio ${ratio}) (${line_parts})" >> "$GITHUB_STEP_SUMMARY"
           fi
         fi
+
 
     - name: Upload observability.json
       if: always()
