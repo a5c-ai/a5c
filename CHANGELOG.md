@@ -1,3 +1,23 @@
+## 1.1.0-a5c-main.18 (2025-09-15)
+
+* ⏱️ CI step hotspots and p95 summary (fixes #364) (#396) ([3fa7103](https://github.com/a5c-ai/events/commit/3fa7103)), closes [#364](https://github.com/a5c-ai/events/issues/364) [#396](https://github.com/a5c-ai/events/issues/396) [#364](https://github.com/a5c-ai/events/issues/364) [#364](https://github.com/a5c-ai/events/issues/364) [#378](https://github.com/a5c-ai/events/issues/378) [#363](https://github.com/a5c-ai/events/issues/363) [#363](https://github.com/a5c-ai/events/issues/363) [#363](https://github.com/a5c-ai/events/issues/363) [#375](https://github.com/a5c-ai/events/issues/375) [#376](https://github.com/a5c-ai/events/issues/376) [#366](https://github.com/a5c-ai/events/issues/366) [#365](https://github.com/a5c-ai/events/issues/365) [#380](https://github.com/a5c-ai/events/issues/380) [#378](https://github.com/a5c-ai/events/issues/378) [#378](https://github.com/a5c-ai/events/issues/378)
+* ⏱️ CI step hotspots annotations + p95 summary (#379) ([c3e5da5](https://github.com/a5c-ai/events/commit/c3e5da5)), closes [#379](https://github.com/a5c-ai/events/issues/379) [#364](https://github.com/a5c-ai/events/issues/364) [#364](https://github.com/a5c-ai/events/issues/364)
+* 🗃️ Cache metrics enrichment across matrix (fixes #365) (#380) ([8fa3c97](https://github.com/a5c-ai/events/commit/8fa3c97)), closes [#365](https://github.com/a5c-ai/events/issues/365) [#380](https://github.com/a5c-ai/events/issues/380)
+* 🧪 Flaky test detector (JUnit + retries) (#378) ([b28f786](https://github.com/a5c-ai/events/commit/b28f786)), closes [#378](https://github.com/a5c-ai/events/issues/378) [#363](https://github.com/a5c-ai/events/issues/363) [#363](https://github.com/a5c-ai/events/issues/363) [#363](https://github.com/a5c-ai/events/issues/363) [#375](https://github.com/a5c-ai/events/issues/375) [#376](https://github.com/a5c-ai/events/issues/376) [#366](https://github.com/a5c-ai/events/issues/366) [#365](https://github.com/a5c-ai/events/issues/365) [#380](https://github.com/a5c-ai/events/issues/380) [#378](https://github.com/a5c-ai/events/issues/378) [#378](https://github.com/a5c-ai/events/issues/378)
+* 🧪 Vitest: enable JUnit + retries and surface flaky suspects (fixes #348) (#367) ([a00884e](https://github.com/a5c-ai/events/commit/a00884e)), closes [#348](https://github.com/a5c-ai/events/issues/348) [#367](https://github.com/a5c-ai/events/issues/367)
+* 🚧 build: make Tests flaky detection non-blocking; add robust detector (#398) ([abe554f](https://github.com/a5c-ai/events/commit/abe554f)), closes [#398](https://github.com/a5c-ai/events/issues/398)
+* Merge pull request #373 from a5c-ai/a5c/main ([17789d8](https://github.com/a5c-ai/events/commit/17789d8)), closes [#373](https://github.com/a5c-ai/events/issues/373)
+* Merge pull request #401 from a5c-ai/docs/align-provenance-schema-issue-392 ([6361d2f](https://github.com/a5c-ai/events/commit/6361d2f)), closes [#401](https://github.com/a5c-ai/events/issues/401) [#392](https://github.com/a5c-ai/events/issues/392)
+* Merge pull request #403 from a5c-ai/chore/build-fixer/enrich-normalize-raw-then-enrich-389 ([47d9864](https://github.com/a5c-ai/events/commit/47d9864)), closes [#403](https://github.com/a5c-ai/events/issues/403)
+* fix(cli): enrich normalizes raw payload using mapToNE to include repo/ref/actor; preserve behavior f ([0fbd1f9](https://github.com/a5c-ai/events/commit/0fbd1f9)), closes [#389](https://github.com/a5c-ai/events/issues/389)
+* docs(dev): kickoff notes for Issue #366 – observability schema plan ([b8e7cd8](https://github.com/a5c-ai/events/commit/b8e7cd8)), closes [#366](https://github.com/a5c-ai/events/issues/366)
+* docs(dev): start plan for #389 — enrich should normalize raw payload first ([73576bc](https://github.com/a5c-ai/events/commit/73576bc)), closes [#389](https://github.com/a5c-ai/events/issues/389)
+* chore: fix tests workflow duplication; tidy aggregate job (#397) ([119d001](https://github.com/a5c-ai/events/commit/119d001)), closes [#397](https://github.com/a5c-ai/events/issues/397)
+* chore: normalize EOF newline in test file ([fea7014](https://github.com/a5c-ai/events/commit/fea7014))
+* chore: release a5c/main → main ([4c8e062](https://github.com/a5c-ai/events/commit/4c8e062))
+* chore(docs): add progress note for issue #392 ([f204383](https://github.com/a5c-ai/events/commit/f204383)), closes [#392](https://github.com/a5c-ai/events/issues/392)
+* test(obs): use Ajv 2020 for Draft 2020-12 schema validation to fix meta-schema ref error ([7da7696](https://github.com/a5c-ai/events/commit/7da7696))
+
 ## 1.1.0-a5c-main.17 (2025-09-15)
 
 * chore: lint fix in normalize.ts (unused catch var) ([57c812b](https://github.com/a5c-ai/events/commit/57c812b))
