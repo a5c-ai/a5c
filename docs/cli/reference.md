@@ -1,5 +1,3 @@
-# <<<<<<< HEAD
-
 ---
 
 title: CLI Reference
@@ -188,7 +186,7 @@ Usage:
 
 ```bash
 events validate [--in FILE | < stdin ] [--schema FILE] [--quiet]
-````
+```
 
 - `--in FILE`: JSON input file (reads from stdin if omitted)
 - `--schema FILE`: schema path (defaults to `docs/specs/ne.schema.json`)
