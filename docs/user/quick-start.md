@@ -8,6 +8,7 @@ description: Run the Events SDK/CLI locally and in CI to extract mentions, norma
 Use the Events SDK/CLI to extract mentions from text, turn raw GitHub payloads into a Normalized Event (NE), and add useful enrichment for downstream automations.
 
 ## Prerequisites
+
 - Node.js 20+ and npm
 - GitHub token (for enrichment that queries repo metadata): set `GITHUB_TOKEN`
 - Repo cloned with this project or install the package once published
@@ -85,7 +86,20 @@ jobs:
           jq '.type, .repo.full_name, .provenance.workflow?.name' event.json
 ```
 
+## Emit results
+
+After enrichment, you can emit the final NE to stdout or a file:
+
+```bash
+events emit --in enriched.json                       # stdout (default)
+events emit --in enriched.json --sink file --out result.json
+```
+
+- See CLI reference: docs/cli/reference.md#events-emit
+- Technical spec: docs/producer/phases/technical-specs/apis/cli-commands.md
+
 ## Next steps
+
 - Read the NE schema overview at `docs/cli/ne-schema.md`
 - See CLI reference in `docs/cli/reference.md`
 - Explore specs in `docs/specs/README.md`

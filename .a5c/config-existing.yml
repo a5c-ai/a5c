@@ -17,9 +17,9 @@
 #     - "*.test.*"
 remote_agents:
   enabled: true
-  cache_timeout: 120  # 2 hours
+  cache_timeout: 120 # 2 hours
   retry_attempts: 5
-  retry_delay: 2000   # 2 seconds
+  retry_delay: 2000 # 2 seconds
   sources:
     individual:
       - uri: "https://raw.githubusercontent.com/a5c-ai/registry/main/agents/development/team-installer-agent.agent.md"
@@ -34,4 +34,4 @@ remote_agents:
 # prompt_uri:
 #   cache_timeout: 120
 #   retry_attempts: 5
-#   retry_delay: 2000 
+#   retry_delay: 2000

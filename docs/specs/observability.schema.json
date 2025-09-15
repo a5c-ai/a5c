@@ -1,0 +1,190 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://a5c.ai/schemas/events/observability.schema.json",
+  "title": "a5c.ai Observability Document",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "repo", "workflow", "job", "run"],
+  "properties": {
+    "schema_version": { "type": "string", "minLength": 1 },
+    "repo": { "type": "string", "minLength": 1 },
+    "workflow": { "type": "string", "minLength": 1 },
+    "job": { "type": "string", "minLength": 1 },
+    "run": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "attempt",
+        "sha",
+        "ref",
+        "actor",
+        "event_name",
+        "started_at",
+        "completed_at",
+        "duration_ms"
+      ],
+      "properties": {
+        "id": { "anyOf": [{ "type": "string" }, { "type": "number" }] },
+        "attempt": { "type": "integer", "minimum": 1 },
+        "sha": { "type": "string", "pattern": "^[a-fA-F0-9]{7,40}$" },
+        "ref": { "type": "string", "minLength": 1 },
+        "actor": { "type": "string" },
+        "event_name": { "type": "string" },
+        "conclusion": { "type": "string" },
+        "started_at": { "type": "string", "format": "date-time" },
+        "completed_at": { "type": "string", "format": "date-time" },
+        "duration_ms": {
+          "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
+        }
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "coverage": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["total"],
+          "properties": {
+            "total": {
+              "type": "object",
+              "additionalProperties": true,
+              "properties": {
+                "lines": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "properties": {
+                    "pct": { "type": "number" },
+                    "covered": { "type": "integer" },
+                    "total": { "type": "integer" }
+                  }
+                },
+                "functions": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "properties": {
+                    "pct": { "type": "number" },
+                    "covered": { "type": "integer" },
+                    "total": { "type": "integer" }
+                  }
+                },
+                "branches": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "properties": {
+                    "pct": { "type": "number" },
+                    "covered": { "type": "integer" },
+                    "total": { "type": "integer" }
+                  }
+                },
+                "statements": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "properties": {
+                    "pct": { "type": "number" },
+                    "covered": { "type": "integer" },
+                    "total": { "type": "integer" }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "cache": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["entries", "summary"],
+          "properties": {
+            "entries": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["kind", "hit"],
+                "properties": {
+                  "kind": { "type": "string", "minLength": 1 },
+                  "hit": { "type": "boolean" },
+                  "bytes": { "type": "integer", "minimum": 0 },
+                  "key": { "type": "string" }
+                }
+              }
+            },
+            "summary": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["hits", "misses", "total"],
+              "properties": {
+                "hits": { "type": "integer", "minimum": 0 },
+                "misses": { "type": "integer", "minimum": 0 },
+                "total": { "type": "integer", "minimum": 0 },
+                "hit_ratio": {
+                  "anyOf": [
+                    { "type": "number", "minimum": 0 },
+                    { "type": "null" }
+                  ]
+                },
+                "bytes_restored_total": { "type": "integer", "minimum": 0 }
+              }
+            }
+          }
+        }
+      }
+    },
+    "tests": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "totals": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["total", "flaky", "slow_count"],
+          "properties": {
+            "total": { "type": "integer", "minimum": 0 },
+            "flaky": { "type": "integer", "minimum": 0 },
+            "slow_count": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "slowest": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["fullName", "status", "duration_ms", "retries"],
+            "properties": {
+              "fullName": { "type": "string" },
+              "status": { "type": "string" },
+              "duration_ms": {
+                "anyOf": [
+                  { "type": "integer", "minimum": 0 },
+                  { "type": "null" }
+                ]
+              },
+              "retries": { "type": "integer", "minimum": 0 }
+            }
+          }
+        },
+        "flaky": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["fullName", "status", "duration_ms", "retries"],
+            "properties": {
+              "fullName": { "type": "string" },
+              "status": { "type": "string" },
+              "duration_ms": {
+                "anyOf": [
+                  { "type": "integer", "minimum": 0 },
+                  { "type": "null" }
+                ]
+              },
+              "retries": { "type": "integer", "minimum": 0 }
+            }
+          }
+        }
+      }
+    }
+  }
+}
