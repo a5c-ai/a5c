@@ -7,6 +7,8 @@ Aggregates basic job metadata with optional coverage and cache metrics, writes a
 ```yaml
 - name: Observability summary
   uses: ./.github/actions/obs-summary
+  with:
+    node-version: 20 # optional, default 20
   env:
     OBS_FILE: observability.json # optional
     # Optional cache inputs (example: setup-node cache hit)
@@ -30,14 +32,13 @@ Aggregates basic job metadata with optional coverage and cache metrics, writes a
 Notes:
 
 - The action reads `coverage/coverage-summary.json` if present to include coverage metrics.
-- If any environment variables beginning with `CACHE_` are present, they are parsed and included under `metrics.cache` of `observability.json` and summarized in the job step summary.
-- Supported name patterns:
+- The action sets up Node.js using `actions/setup-node@v4` with a default version of `20`. Override via `with.node-version` if needed.
+- If cache envs are provided (any `CACHE_<KIND>_HIT`), `observability.json` will include a `metrics.cache` section and the step summary will include a cache line.
+- Supported cache env name patterns (current implementation):
   - `CACHE_<KIND>_HIT`: boolean ("true"/"1"/"yes"/"y")
-  - `CACHE_<KIND>_MISS`: boolean
+  - `CACHE_<KIND>_BYTES`: number (bytes restored)
   - `CACHE_<KIND>_KEY`: string (cache key used)
-  - `CACHE_<KIND>_PRIMARY`: string (primary key)
-  - `CACHE_<KIND>_RESTORED`: boolean
-  - `CACHE_<KIND>_SAVED`: boolean
+- If `CACHE_<KIND>_BYTES` is provided, per-entry `bytes` and a `bytes_restored_total` summary are included.
 - When `RUN_STARTED_AT` is provided, `observability.json` will include `run.started_at` and compute `run.duration_ms` from start to completion; otherwise the action will use its own start time as a fallback.
 
 JSON shape excerpt:
@@ -54,10 +55,10 @@ JSON shape excerpt:
         "hits": 1,
         "misses": 0,
         "total": 1,
-        "bytes_restored_total": 123456
-      }
-    }
-  }
+        "bytes_restored_total": 123456,
+      },
+    },
+  },
 }
 ```
 

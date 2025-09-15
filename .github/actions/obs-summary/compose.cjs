@@ -107,8 +107,15 @@ const obs = {
     completed_at: endIso,
     duration_ms: durationMs,
   },
-  // Shape coverage to match schema: only include the `total` subsection
-  metrics: { coverage: (cov && typeof cov === 'object') ? { total: cov.total || {} } : null, cache },
+  // Shape coverage to match schema: only include the `total` subsection.
+  // If neither coverage nor cache is present, omit metrics entirely per schema flexibility.
+  metrics: (() => {
+    const coverage = (cov && typeof cov === 'object') ? { total: cov.total || {} } : undefined;
+    const metrics = {};
+    if (coverage) metrics.coverage = coverage;
+    if (cache) metrics.cache = cache;
+    return Object.keys(metrics).length ? metrics : undefined;
+  })(),
   tests,
 };
 

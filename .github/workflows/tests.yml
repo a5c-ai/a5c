@@ -118,6 +118,7 @@ jobs:
       # Flaky tests detection (PR-only comment + label)
       - name: Flaky tests detection
         if: always()
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -327,6 +328,8 @@ jobs:
     runs-on: ubuntu-latest
     if: always()
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
       - name: Download & aggregate
         uses: ./.github/actions/obs-aggregate
       - name: Show aggregate

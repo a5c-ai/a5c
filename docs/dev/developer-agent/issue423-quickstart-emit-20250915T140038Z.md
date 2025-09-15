@@ -1,10 +1,12 @@
 # Issue 423: Add `events emit` snippet — Quick Start
 
 ## Context
+
 - Issue: #423
 - Goal: Include a minimal `events emit` example to complete the end-to-end flow.
 
 ## Plan
+
 1. Verify `emit` flags in `src/cli.ts` and `src/emit.ts`.
 2. Update `docs/user/quick-start.md` with two examples:
    - `events emit --in enriched.json` (stdout)
@@ -13,4 +15,5 @@
 4. Run pre-commit/docs lint.
 
 ## Notes
+
 - CLI implements `emit` with `--in`, `--out`, `--sink stdout|file`. Defaults to stdout when `--sink` omitted.

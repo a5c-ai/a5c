@@ -1,0 +1,1 @@
+# Align NE type for Issues\n\n- Task: Fix detectTypeAndId to emit type: 'issue' (not 'issues') per docs/specs/ne.schema.json.\n- Add tests for issues.opened.json sample.\n- Validate with Ajv and Zod tests.\n\nStarted: 2025-09-15T18:40:17Z

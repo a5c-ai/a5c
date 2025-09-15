@@ -67,23 +67,6 @@ events enrich --in samples/pull_request.synchronize.json --out out.json --use-gi
 jq '.enriched.github.pr.has_conflicts, .enriched.github.pr.mergeable_state' out.json
 ```
 
-## Emit results (stdout or file)
-
-After normalization or enrichment, you can emit the final JSON to stdout or write it to a file using the `emit` command:
-
-```bash
-# Emit to stdout (default)
-events emit --in out.json
-
-# Emit to a file sink
-events emit --in out.json --sink file --out result.json
-```
-
-Links:
-
-- CLI reference: docs/cli/reference.md#events-emit
-- Technical specs: docs/producer/phases/technical-specs/apis/cli-commands.md
-
 ## Use in GitHub Actions
 
 ```yaml
@@ -102,6 +85,18 @@ jobs:
           events normalize --source actions > event.json
           jq '.type, .repo.full_name, .provenance.workflow?.name' event.json
 ```
+
+## Emit results
+
+After enrichment, you can emit the final NE to stdout or a file:
+
+```bash
+events emit --in enriched.json                       # stdout (default)
+events emit --in enriched.json --sink file --out result.json
+```
+
+- See CLI reference: docs/cli/reference.md#events-emit
+- Technical spec: docs/producer/phases/technical-specs/apis/cli-commands.md
 
 ## Next steps
 
