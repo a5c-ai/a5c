@@ -78,6 +78,7 @@ try {
 } catch {}
 
 const obs = {
+  schema_version: '0.1',
   repo: env('GITHUB_REPOSITORY') || env('REPO'),
   workflow: env('GITHUB_WORKFLOW') || env('WORKFLOW_NAME'),
   job: env('JOB_NAME') || env('GITHUB_JOB'),

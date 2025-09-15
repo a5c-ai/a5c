@@ -29,15 +29,15 @@ runs:
 
         # Optional schema validation (warn-only)
         if [ "${OBS_VALIDATE_SCHEMA:-false}" = "true" ]; then
-          echo "Validating $OBS_FILE against docs/specs/observability.schema.json (warn-only)" >> "$GITHUB_STEP_SUMMARY"
+          echo "Validating $OBS_FILE against docs/schemas/observability.schema.json (warn-only)" >> "$GITHUB_STEP_SUMMARY"
           node -e '
             try {
               const fs = require("fs");
-              const Ajv = require("ajv");
+              const Ajv = require("ajv/dist/2020").default;
               const addFormats = require("ajv-formats");
-              const schema = JSON.parse(fs.readFileSync("docs/specs/observability.schema.json", "utf8"));
+              const schema = JSON.parse(fs.readFileSync("docs/schemas/observability.schema.json", "utf8"));
               const data = JSON.parse(fs.readFileSync(process.env.OBS_FILE, "utf8"));
-              const ajv = new Ajv({ strict: true, allErrors: true });
+              const ajv = new Ajv({ strict: true, allErrors: true, allowUnionTypes: true });
               addFormats(ajv);
               const validate = ajv.compile(schema);
               const ok = validate(data);
