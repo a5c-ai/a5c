@@ -36,7 +36,7 @@
     "prepush": "node scripts/prepush-related.js || vitest run",
     "release": "semantic-release",
     "lint:filenames": "node scripts/lint-filenames.cjs",
-    "validate:obs:file": "ajv -s docs/specs/observability.schema.json --spec=draft2020 -c ajv-formats"
+    "validate:obs:file": "ajv compile -s docs/specs/observability.schema.json --spec=draft2020 -c ajv-formats"
   },
   "files": [
     "dist",
