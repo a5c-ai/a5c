@@ -19,15 +19,20 @@ runs:
         SHA="${SHA:-${GITHUB_SHA:-}}"
         BRANCH_REF="${BRANCH_REF:-${GITHUB_REF:-}}"
         CONCLUSION="${CONCLUSION:-}"
+        # Optional: caller can pass the workflow run start time; else we'll fallback
+        RUN_STARTED_AT="${RUN_STARTED_AT:-}"
 
         echo "OBS_FILE=${OBS_FILE}" >> "$GITHUB_ENV"
 
-        # Compose JSON (includes coverage and optional cache metrics)
+        # Compose JSON (includes coverage, optional cache metrics, started_at/duration)
         node -e '
           const fs = require("fs");
           const env = (k, d = "") => process.env[k] ?? d;
+          const startedAtEnv = env("RUN_STARTED_AT") || env("GITHUB_RUN_STARTED_AT") || "";
+          const startedAt = startedAtEnv || new Date().toISOString();
           let cov = null;
           try { cov = JSON.parse(fs.readFileSync("coverage/coverage-summary.json", "utf8")); } catch {}
+          // Cache summary from envs
           // Collect cache entries from env keys like CACHE_<KIND>_HIT=true/false
           const cacheEntries = [];
           for (const [k, v] of Object.entries(process.env)) {
@@ -40,6 +45,13 @@ runs:
           const hits = cacheEntries.filter(e => e.hit).length;
           const total = cacheEntries.length;
           const cache = total ? { entries: cacheEntries, summary: { hits, misses: total - hits, total } } : null;
+          const end = new Date();
+          const endIso = end.toISOString();
+          let durationMs = null;
+          try {
+            const s = new Date(startedAt);
+            if (!isNaN(s.getTime())) durationMs = end.getTime() - s.getTime();
+          } catch {}
           const obs = {
             repo: env("GITHUB_REPOSITORY") || env("REPO"),
             workflow: env("GITHUB_WORKFLOW") || env("WORKFLOW_NAME"),
@@ -52,8 +64,9 @@ runs:
               actor: env("GITHUB_ACTOR", ""),
               event_name: env("GITHUB_EVENT_NAME", ""),
               conclusion: env("CONCLUSION", ""),
-              started_at: null,
-              completed_at: new Date().toISOString(),
+              started_at: startedAt,
+              completed_at: endIso,
+              duration_ms: durationMs,
             },
             metrics: { coverage: cov, cache },
           };
@@ -73,6 +86,11 @@ runs:
           FUNCS=$(node -e "const s=require('fs').readFileSync('coverage/coverage-summary.json','utf8'); const t=JSON.parse(s).total||{}; console.log((t.functions?.pct??0).toFixed(2))")
           BRANCHES=$(node -e "const s=require('fs').readFileSync('coverage/coverage-summary.json','utf8'); const t=JSON.parse(s).total||{}; console.log((t.branches?.pct??0).toFixed(2))")
           echo "- Coverage: lines ${LINES}% | funcs ${FUNCS}% | branches ${BRANCHES}%" >> "$GITHUB_STEP_SUMMARY"
+        fi
+        # Duration line (if computable)
+        DUR=$(node -e "try{const o=JSON.parse(require('fs').readFileSync(process.env.OBS_FILE,'utf8')); if(o?.run?.duration_ms!=null){ console.log(o.run.duration_ms) }}catch{}") || true
+        if [ -n "${DUR}" ]; then
+          echo "- Duration: ${DUR} ms" >> "$GITHUB_STEP_SUMMARY"
         fi
         # Cache summary if envs provided
         kinds=$(env | awk -F= '/^CACHE_[A-Z0-9]+_HIT=/{print $1}' | sed -E 's/^CACHE_([A-Z0-9]+)_HIT.*/\1/; s/.*/\L&/')
