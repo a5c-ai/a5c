@@ -4,7 +4,7 @@ This discovery doc proposes a minimal, pragmatic observability plan for consumer
 
 ## Artifact schema
 
-The CI workflows emit an `observability.json` artifact. Schema is experimental (`schema_version: 0.1`) and may evolve additively. A formal JSON Schema lives at `docs/specs/observability.schema.json`.
+The CI workflows emit an `observability.json` artifact. Schema is experimental (`schema_version: 0.1`) and may evolve additively. A formal JSON Schema lives at `docs/schemas/observability.schema.json`.
 
 Versioning policy:
 
@@ -167,3 +167,10 @@ export function withCorr(logger: LoggerLike, corr: string): LoggerLike {
 2. Wire optional OTEL spans guarded by a dynamic import/try-catch.
 3. Add CLI flags `--log-format`, `--log-level` mirroring env toggles.
 4. Cookbook examples in `docs/recipes/*.md` for pino, loglevel, Sentry, OTEL.
+
+## Dashboard wiring
+
+- Store `observability.json` as a workflow artifact (already configured).
+- Optionally publish to a long-lived sink (e.g., S3, GCS) via a follow-up workflow for dashboards.
+- Minimal GitHub-native option: use step summaries and repository insights with CSV/JSON exports.
+- For matrices, aggregate per-job artifacts into `observability.aggregate.json` for charting (p95 durations, cache hit ratios).

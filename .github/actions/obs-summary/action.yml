@@ -1,9 +1,18 @@
 name: "Obs Summary & Artifact"
 description: "Aggregate job metrics, write step summary, and upload observability.json"
 author: "a5c.ai"
+inputs:
+  node-version:
+    description: "Node.js version to setup"
+    required: false
+    default: "20"
 runs:
   using: "composite"
   steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
     - name: Collect metrics and write summary + file
       id: collect
       shell: bash
@@ -24,11 +33,13 @@ runs:
 
         echo "OBS_FILE=${OBS_FILE}" >> "$GITHUB_ENV"
 
+
         # Compose JSON (includes coverage, cache metrics, started_at/duration, and vitest tests)
         node "${GITHUB_ACTION_PATH:-.github/actions/obs-summary}/compose.cjs" > "$OBS_FILE"
 
         # Optional schema validation (warn-only)
-        if [ "${OBS_VALIDATE_SCHEMA:-false}" = "true" ]; then
+        # Accept both VALIDATE_OBS_SCHEMA (preferred) and OBS_VALIDATE_SCHEMA (legacy/doc)
+        if [ "${VALIDATE_OBS_SCHEMA:-${OBS_VALIDATE_SCHEMA:-false}}" = "true" ]; then
           echo "Validating $OBS_FILE against docs/specs/observability.schema.json (warn-only)" >> "$GITHUB_STEP_SUMMARY"
           node -e '
             try {
@@ -38,7 +49,7 @@ runs:
               const addFormats = require("ajv-formats");
               const schema = JSON.parse(fs.readFileSync("docs/specs/observability.schema.json", "utf8"));
               const data = JSON.parse(fs.readFileSync(process.env.OBS_FILE, "utf8"));
-              const ajv = new Ajv2020({ strict: true, allErrors: true });
+              const ajv = new Ajv2020({ strict: true, allErrors: true, allowUnionTypes: true });
               addFormats(ajv);
               const validate = ajv.compile(schema);
               const ok = validate(data);
@@ -55,11 +66,18 @@ runs:
           '
         fi
 
+        # Compose JSON (includes coverage, cache metrics, started_at/duration, and vitest tests)
+        # Using compose.cjs keeps schema compatibility and logic centralized.
+        # OBS_FILE is written by compose.cjs
+        :
+
+
         echo "## Observability" >> "$GITHUB_STEP_SUMMARY"
         echo "- Repo: ${REPO}" >> "$GITHUB_STEP_SUMMARY"
         echo "- Workflow: ${WORKFLOW_NAME}" >> "$GITHUB_STEP_SUMMARY"
         echo "- Job: ${JOB_NAME}" >> "$GITHUB_STEP_SUMMARY"
         echo "- Run: ${RUN_ID} (attempt ${RUN_ATTEMPT})" >> "$GITHUB_STEP_SUMMARY"
+        # Optional conclusion line
         if [ -n "${CONCLUSION}" ]; then
           echo "- Conclusion: ${CONCLUSION}" >> "$GITHUB_STEP_SUMMARY"
         fi
@@ -74,6 +92,7 @@ runs:
         if [ -n "${DUR}" ]; then
           echo "- Duration: ${DUR} ms" >> "$GITHUB_STEP_SUMMARY"
         fi
+
         # If vitest JSON exists, append flaky/slow summary
         if [ -f vitest-results.json ]; then
           node -e '
@@ -107,7 +126,9 @@ runs:
             v=$(eval echo "\$CACHE_${k^^}_HIT")
             bytes=$(eval echo "\${CACHE_${k^^}_BYTES-}")
             total=$((total+1))
-            if [ "$v" = "true" ] || [ "$v" = "1" ]; then
+            # Normalize boolean-like values per docs: true|1|yes|y
+            lv=$(printf '%s' "$v" | tr '[:upper:]' '[:lower:]')
+            if [ "$lv" = "true" ] || [ "$lv" = "1" ] || [ "$lv" = "yes" ] || [ "$lv" = "y" ]; then
               hits=$((hits+1)); state=hit
             else
               state=miss
@@ -137,6 +158,24 @@ runs:
       with:
         name: observability
         path: ${{ env.OBS_FILE }}
+
+    - name: Validate observability schema (optional)
+      if: env.VALIDATE_OBS_SCHEMA == 'true' || env.OBS_VALIDATE_SCHEMA == 'true'
+      shell: bash
+      run: |
+        set -euo pipefail
+        # Prefer local schema and ajv when repo checked out; fallback to npx
+        SCHEMA="docs/specs/observability.schema.json"
+        FILE="${OBS_FILE:-observability.json}"
+        if [ -f "$SCHEMA" ]; then
+          echo "Validating $FILE against $SCHEMA (Draft 2020-12)"
+          npx --yes ajv -s "$SCHEMA" -d "$FILE" --spec=draft2020 -c ajv-formats || {
+            echo "Schema validation failed (warn-only)." >&2
+            exit 0
+          }
+        else
+          echo "Schema file not found; skipping validation (warn-only)"
+        fi
 
 branding:
   icon: bar-chart-2
