@@ -1,0 +1,1349 @@
+{
+  "numTotalTestSuites": 81,
+  "numPassedTestSuites": 81,
+  "numFailedTestSuites": 0,
+  "numPendingTestSuites": 0,
+  "numTotalTests": 105,
+  "numPassedTests": 105,
+  "numFailedTests": 0,
+  "numPendingTests": 0,
+  "numTodoTests": 0,
+  "snapshot": {
+    "added": 0,
+    "failure": false,
+    "filesAdded": 0,
+    "filesRemoved": 0,
+    "filesRemovedList": [],
+    "filesUnmatched": 0,
+    "filesUpdated": 0,
+    "matched": 0,
+    "total": 0,
+    "unchecked": 0,
+    "uncheckedKeysByFile": [],
+    "unmatched": 0,
+    "updated": 0,
+    "didUpdate": false
+  },
+  "startTime": 1757920204449,
+  "success": true,
+  "testResults": [
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": ["enrich flags: include_patch"],
+          "fullName": "enrich flags: include_patch include_patch=true keeps patch fields (when files exist)",
+          "status": "passed",
+          "title": "include_patch=true keeps patch fields (when files exist)",
+          "duration": 1540.48356,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["enrich flags: include_patch"],
+          "fullName": "enrich flags: include_patch include_patch=false removes patch fields (when files exist)",
+          "status": "passed",
+          "title": "include_patch=false removes patch fields (when files exist)",
+          "duration": 1503.5723229999999,
+          "failureMessages": [],
+          "meta": {}
+        }
+      ],
+      "startTime": 1757920205109,
+      "endTime": 1757920208153.5723,
+      "status": "passed",
+      "message": "",
+      "name": "/home/runner/work/events/events/tests/cli.enrich.flags.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": ["CLI enrich (smoke)"],
+          "fullName": "CLI enrich (smoke) reads a sample and outputs enriched event shape",
+          "status": "passed",
+          "title": "reads a sample and outputs enriched event shape",
+          "duration": 593.1272610000001,
+          "failureMessages": [],
+          "meta": {}
+        }
+      ],
+      "startTime": 1757920210734,
+      "endTime": 1757920211327.1272,
+      "status": "passed",
+      "message": "",
+      "name": "/home/runner/work/events/events/tests/cli.enrich.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": ["CLI exit codes"],
+          "fullName": "CLI exit codes normalize: exits 2 when --in is missing (source=cli)",
+          "status": "passed",
+          "title": "normalize: exits 2 when --in is missing (source=cli)",
+          "duration": 534.135408,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["CLI exit codes"],
+          "fullName": "CLI exit codes normalize: exits 2 on invalid JSON input",
+          "status": "passed",
+          "title": "normalize: exits 2 on invalid JSON input",
+          "duration": 459.0586770000001,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["CLI exit codes"],
+          "fullName": "CLI exit codes enrich: exits 3 when --use-github is set but no token (provider failure)",
+          "status": "passed",
+          "title": "enrich: exits 3 when --use-github is set but no token (provider failure)",
+          "duration": 513.2023119999999,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["CLI exit codes"],
+          "fullName": "CLI exit codes enrich: exits 0 without --use-github even when no token",
+          "status": "passed",
+          "title": "enrich: exits 0 without --use-github even when no token",
+          "duration": 586.6109980000001,
+          "failureMessages": [],
+          "meta": {}
+        }
+      ],
+      "startTime": 1757920208322,
+      "endTime": 1757920210415.611,
+      "status": "passed",
+      "message": "",
+      "name": "/home/runner/work/events/events/tests/cli.exit-codes.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": ["CLI normalize (smoke)"],
+          "fullName": "CLI normalize (smoke) reads a sample and outputs normalized event shape",
+          "status": "passed",
+          "title": "reads a sample and outputs normalized event shape",
+          "duration": 544.46617,
+          "failureMessages": [],
+          "meta": {}
+        }
+      ],
+      "startTime": 1757920211486,
+      "endTime": 1757920212030.466,
+      "status": "passed",
+      "message": "",
+      "name": "/home/runner/work/events/events/tests/cli.normalize.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": ["README examples"],
+          "fullName": "README examples normalizes sample workflow_run and writes out.json",
+          "status": "passed",
+          "title": "normalizes sample workflow_run and writes out.json",
+          "duration": 163.60238299999997,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["README examples"],
+          "fullName": "README examples extracts mentions from stdin",
+          "status": "passed",
+          "title": "extracts mentions from stdin",
+          "duration": 179.08135199999998,
+          "failureMessages": [],
+          "meta": {}
+        }
+      ],
+      "startTime": 1757920210628,
+      "endTime": 1757920210971.0813,
+      "status": "passed",
+      "message": "",
+      "name": "/home/runner/work/events/events/tests/cli.readme.examples.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": ["CLI enrich with --rules emits composed events"],
+          "fullName": "CLI enrich with --rules emits composed events produces composed[].key from YAML rules",
+          "status": "passed",
+          "title": "produces composed[].key from YAML rules",
+          "duration": 560.882756,
+          "failureMessages": [],
+          "meta": {}
+        }
+      ],
+      "startTime": 1757920208531,
+      "endTime": 1757920209091.8828,
+      "status": "passed",
+      "message": "",
+      "name": "/home/runner/work/events/events/tests/cli.rules-composed.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": ["CLI select/filter"],
+          "fullName": "CLI select/filter normalize --select type,repo.full_name",
+          "status": "passed",
+          "title": "normalize --select type,repo.full_name",
+          "duration": 549.703077,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["CLI select/filter"],
+          "fullName": "CLI select/filter enrich --filter enriched.github.pr.mergeable_state=dirty (may be filtered depending on enrichment)",
+          "status": "passed",
+          "title": "enrich --filter enriched.github.pr.mergeable_state=dirty (may be filtered depending on enrichment)",
+          "duration": 587.5912229999999,
+          "failureMessages": [],
+          "meta": {}
+        }
+      ],
+      "startTime": 1757920210545,
+      "endTime": 1757920211682.5913,
+      "status": "passed",
+      "message": "",
+      "name": "/home/runner/work/events/events/tests/cli.select-filter.e2e.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": ["select/filter utilities"],
+          "fullName": "select/filter utilities selectFields builds nested output",
+          "status": "passed",
+          "title": "selectFields builds nested output",
+          "duration": 1.7695480000000146,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["select/filter utilities"],
+          "fullName": "select/filter utilities parseFilter handles equals and presence",
+          "status": "passed",
+          "title": "parseFilter handles equals and presence",
+          "duration": 0.5474430000000154,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["select/filter utilities"],
+          "fullName": "select/filter utilities passesFilter works",
+          "status": "passed",
+          "title": "passesFilter works",
+          "duration": 0.49761000000000877,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["select/filter integration with handlers"],
+          "fullName": "select/filter integration with handlers normalize + select produces only requested fields",
+          "status": "passed",
+          "title": "normalize + select produces only requested fields",
+          "duration": 1.5856139999999925,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["select/filter integration with handlers"],
+          "fullName": "select/filter integration with handlers enrich + filter blocks when not matching",
+          "status": "passed",
+          "title": "enrich + filter blocks when not matching",
+          "duration": 26.35497000000001,
+          "failureMessages": [],
+          "meta": {}
+        }
+      ],
+      "startTime": 1757920207305,
+      "endTime": 1757920207336.355,
+      "status": "passed",
+      "message": "",
+      "name": "/home/runner/work/events/events/tests/cli.select-filter.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": ["events validate (CLI)"],
+          "fullName": "events validate (CLI) validates a normalized sample and returns valid: true",
+          "status": "passed",
+          "title": "validates a normalized sample and returns valid: true",
+          "duration": 310.383063,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["events validate (CLI)"],
+          "fullName": "events validate (CLI) reports errors for invalid payload",
+          "status": "passed",
+          "title": "reports errors for invalid payload",
+          "duration": 211.31759000000005,
+          "failureMessages": [],
+          "meta": {}
+        }
+      ],
+      "startTime": 1757920209540,
+      "endTime": 1757920210061.3176,
+      "status": "passed",
+      "message": "",
+      "name": "/home/runner/work/events/events/tests/cli.validate.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": ["composed events via rules"],
+          "fullName": "composed events via rules emits composed event with key and targets from YAML rules",
+          "status": "passed",
+          "title": "emits composed event with key and targets from YAML rules",
+          "duration": 38.35503399999999,
+          "failureMessages": [],
+          "meta": {}
+        }
+      ],
+      "startTime": 1757920207534,
+      "endTime": 1757920207572.355,
+      "status": "passed",
+      "message": "",
+      "name": "/home/runner/work/events/events/tests/composed.rules.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": ["config token precedence"],
+          "fullName": "config token precedence prefers A5C_AGENT_GITHUB_TOKEN over GITHUB_TOKEN when both set",
+          "status": "passed",
+          "title": "prefers A5C_AGENT_GITHUB_TOKEN over GITHUB_TOKEN when both set",
+          "duration": 1.9286249999999825,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["config token precedence"],
+          "fullName": "config token precedence falls back to GITHUB_TOKEN when agent token missing",
+          "status": "passed",
+          "title": "falls back to GITHUB_TOKEN when agent token missing",
+          "duration": 0.4907869999999832,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["config token precedence"],
+          "fullName": "config token precedence is undefined when neither token is present",
+          "status": "passed",
+          "title": "is undefined when neither token is present",
+          "duration": 0.5888900000000206,
+          "failureMessages": [],
+          "meta": {}
+        }
+      ],
+      "startTime": 1757920212069,
+      "endTime": 1757920212072.5889,
+      "status": "passed",
+      "message": "",
+      "name": "/home/runner/work/events/events/tests/config.token-precedence.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [
+            "config.loadConfig token precedence and debug parsing"
+          ],
+          "fullName": "config.loadConfig token precedence and debug parsing githubToken is undefined when no env tokens provided",
+          "status": "passed",
+          "title": "githubToken is undefined when no env tokens provided",
+          "duration": 9.213090000000022,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "config.loadConfig token precedence and debug parsing"
+          ],
+          "fullName": "config.loadConfig token precedence and debug parsing uses GITHUB_TOKEN when only GITHUB_TOKEN is set",
+          "status": "passed",
+          "title": "uses GITHUB_TOKEN when only GITHUB_TOKEN is set",
+          "duration": 1.3714429999999993,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "config.loadConfig token precedence and debug parsing"
+          ],
+          "fullName": "config.loadConfig token precedence and debug parsing prefers A5C_AGENT_GITHUB_TOKEN over GITHUB_TOKEN when both set",
+          "status": "passed",
+          "title": "prefers A5C_AGENT_GITHUB_TOKEN over GITHUB_TOKEN when both set",
+          "duration": 1.2045009999999934,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "config.loadConfig token precedence and debug parsing"
+          ],
+          "fullName": "config.loadConfig token precedence and debug parsing parses DEBUG only when equals \"true\" (case-insensitive)",
+          "status": "passed",
+          "title": "parses DEBUG only when equals \"true\" (case-insensitive)",
+          "duration": 1.5044719999999927,
+          "failureMessages": [],
+          "meta": {}
+        }
+      ],
+      "startTime": 1757920207892,
+      "endTime": 1757920207905.5044,
+      "status": "passed",
+      "message": "",
+      "name": "/home/runner/work/events/events/tests/config.token.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": ["handleEmit"],
+          "fullName": "handleEmit writes to stdout by default and returns code 0",
+          "status": "passed",
+          "title": "writes to stdout by default and returns code 0",
+          "duration": 4.913283000000007,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["handleEmit"],
+          "fullName": "handleEmit writes to file sink when out is provided",
+          "status": "passed",
+          "title": "writes to file sink when out is provided",
+          "duration": 1.7360850000000028,
+          "failureMessages": [],
+          "meta": {}
+        }
+      ],
+      "startTime": 1757920211950,
+      "endTime": 1757920211956.736,
+      "status": "passed",
+      "message": "",
+      "name": "/home/runner/work/events/events/tests/emit.basic.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": ["handleEnrich"],
+          "fullName": "handleEnrich propagates flags and wraps metadata under enriched",
+          "status": "passed",
+          "title": "propagates flags and wraps metadata under enriched",
+          "duration": 45.23055199999999,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["handleEnrich"],
+          "fullName": "handleEnrich adds mentions from push commit messages",
+          "status": "passed",
+          "title": "adds mentions from push commit messages",
+          "duration": 1.7628449999999702,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["handleEnrich"],
+          "fullName": "handleEnrich omits patch fields by default (include_patch=false)",
+          "status": "passed",
+          "title": "omits patch fields by default (include_patch=false)",
+          "duration": 0.5968359999999961,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["handleEnrich"],
+          "fullName": "handleEnrich merges GitHub enrichment when flag enabled but missing token marks partial/skipped",
+          "status": "passed",
+          "title": "merges GitHub enrichment when flag enabled but missing token marks partial/skipped",
+          "duration": 0.5782609999999977,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["handleEnrich"],
+          "fullName": "handleEnrich does not perform GitHub enrichment when --use-github is not set (offline mode)",
+          "status": "passed",
+          "title": "does not perform GitHub enrichment when --use-github is not set (offline mode)",
+          "duration": 0.6946879999999851,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["handleEnrich"],
+          "fullName": "handleEnrich includes patch fields when explicitly enabled (include_patch=true)",
+          "status": "passed",
+          "title": "includes patch fields when explicitly enabled (include_patch=true)",
+          "duration": 0.4618030000000317,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["handleEnrich"],
+          "fullName": "handleEnrich adds code_comment mentions when enrichment contains files",
+          "status": "passed",
+          "title": "adds code_comment mentions when enrichment contains files",
+          "duration": 1506.524128,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["handleEnrich"],
+          "fullName": "handleEnrich when --use-github is requested, API failures return code 3; if token present, enrichment succeeds",
+          "status": "passed",
+          "title": "when --use-github is requested, API failures return code 3; if token present, enrichment succeeds",
+          "duration": 0.5051949999999579,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["handleEnrich"],
+          "fullName": "handleEnrich applies YAML rules and emits composed events",
+          "status": "passed",
+          "title": "applies YAML rules and emits composed events",
+          "duration": 11.717330000000175,
+          "failureMessages": [],
+          "meta": {}
+        }
+      ],
+      "startTime": 1757920204882,
+      "endTime": 1757920206450.7173,
+      "status": "passed",
+      "message": "",
+      "name": "/home/runner/work/events/events/tests/enrich.basic.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [
+            "enrich flags: include_patch default and override"
+          ],
+          "fullName": "enrich flags: include_patch default and override default include_patch=false removes patch from files (when files exist)",
+          "status": "passed",
+          "title": "default include_patch=false removes patch from files (when files exist)",
+          "duration": 1541.163899,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "enrich flags: include_patch default and override"
+          ],
+          "fullName": "enrich flags: include_patch default and override include_patch=true preserves patch in files (when files exist)",
+          "status": "passed",
+          "title": "include_patch=true preserves patch in files (when files exist)",
+          "duration": 1504.149977,
+          "failureMessages": [],
+          "meta": {}
+        }
+      ],
+      "startTime": 1757920205104,
+      "endTime": 1757920208149.15,
+      "status": "passed",
+      "message": "",
+      "name": "/home/runner/work/events/events/tests/enrich.flags.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": ["handleEnrich integrates enrichGithubEvent"],
+          "fullName": "handleEnrich integrates enrichGithubEvent maps PR enrichment under enriched.github and respects include_patch=false",
+          "status": "passed",
+          "title": "maps PR enrichment under enriched.github and respects include_patch=false",
+          "duration": 1531.776692,
+          "failureMessages": [],
+          "meta": {}
+        }
+      ],
+      "startTime": 1757920208100,
+      "endTime": 1757920209631.7766,
+      "status": "passed",
+      "message": "",
+      "name": "/home/runner/work/events/events/tests/enrich.handle.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": ["enrich() output is redacted"],
+          "fullName": "enrich() output is redacted applies redaction to output object",
+          "status": "passed",
+          "title": "applies redaction to output object",
+          "duration": 47.127362000000005,
+          "failureMessages": [],
+          "meta": {}
+        }
+      ],
+      "startTime": 1757920212649,
+      "endTime": 1757920212696.1274,
+      "status": "passed",
+      "message": "",
+      "name": "/home/runner/work/events/events/tests/enrich.redaction.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": ["enrichGithubEvent (GitHub provider)"],
+          "fullName": "enrichGithubEvent (GitHub provider) PR enrichment adds pr fields and owners",
+          "status": "passed",
+          "title": "PR enrichment adds pr fields and owners",
+          "duration": 9.166994000000045,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["enrichGithubEvent (GitHub provider)"],
+          "fullName": "enrichGithubEvent (GitHub provider) Push enrichment adds commits and files",
+          "status": "passed",
+          "title": "Push enrichment adds commits and files",
+          "duration": 0.9079169999999976,
+          "failureMessages": [],
+          "meta": {}
+        }
+      ],
+      "startTime": 1757920204814,
+      "endTime": 1757920204823.908,
+      "status": "passed",
+      "message": "",
+      "name": "/home/runner/work/events/events/tests/enrichGithubEvent.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": ["golden enrich"],
+          "fullName": "golden enrich matches workflow_run.completed.enrich.json",
+          "status": "passed",
+          "title": "matches workflow_run.completed.enrich.json",
+          "duration": 40.97017800000003,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["golden enrich"],
+          "fullName": "golden enrich matches pull_request.synchronize.enrich.json",
+          "status": "passed",
+          "title": "matches pull_request.synchronize.enrich.json",
+          "duration": 2.0505319999999756,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["golden enrich"],
+          "fullName": "golden enrich matches push.enrich.json",
+          "status": "passed",
+          "title": "matches push.enrich.json",
+          "duration": 1.666154000000006,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["golden enrich"],
+          "fullName": "golden enrich matches issue_comment.created.enrich.json",
+          "status": "passed",
+          "title": "matches issue_comment.created.enrich.json",
+          "duration": 1.0986930000000257,
+          "failureMessages": [],
+          "meta": {}
+        }
+      ],
+      "startTime": 1757920212320,
+      "endTime": 1757920212366.0986,
+      "status": "passed",
+      "message": "",
+      "name": "/home/runner/work/events/events/tests/golden.enrich.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": ["golden normalize"],
+          "fullName": "golden normalize matches workflow_run.completed.normalize.json",
+          "status": "passed",
+          "title": "matches workflow_run.completed.normalize.json",
+          "duration": 6.495330000000024,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["golden normalize"],
+          "fullName": "golden normalize matches pull_request.synchronize.normalize.json",
+          "status": "passed",
+          "title": "matches pull_request.synchronize.normalize.json",
+          "duration": 1.783253000000002,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["golden normalize"],
+          "fullName": "golden normalize matches push.normalize.json",
+          "status": "passed",
+          "title": "matches push.normalize.json",
+          "duration": 1.5509380000000021,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["golden normalize"],
+          "fullName": "golden normalize matches issue_comment.created.normalize.json",
+          "status": "passed",
+          "title": "matches issue_comment.created.normalize.json",
+          "duration": 1.027249999999981,
+          "failureMessages": [],
+          "meta": {}
+        }
+      ],
+      "startTime": 1757920212204,
+      "endTime": 1757920212215.0273,
+      "status": "passed",
+      "message": "",
+      "name": "/home/runner/work/events/events/tests/golden.normalize.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": ["code comment mentions"],
+          "fullName": "code comment mentions parses added lines with numbers",
+          "status": "passed",
+          "title": "parses added lines with numbers",
+          "duration": 4.690677000000022,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["code comment mentions"],
+          "fullName": "code comment mentions extracts mentions from js/ts comment lines",
+          "status": "passed",
+          "title": "extracts mentions from js/ts comment lines",
+          "duration": 2.2658250000000066,
+          "failureMessages": [],
+          "meta": {}
+        }
+      ],
+      "startTime": 1757920211818,
+      "endTime": 1757920211825.2659,
+      "status": "passed",
+      "message": "",
+      "name": "/home/runner/work/events/events/tests/mentions-code-comments.spec.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [
+            "mentions extractor - code comments scanning (local content)"
+          ],
+          "fullName": "mentions extractor - code comments scanning (local content) finds @developer-agent in JS line comment",
+          "status": "passed",
+          "title": "finds @developer-agent in JS line comment",
+          "duration": 4.367836000000011,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "mentions extractor - code comments scanning (local content)"
+          ],
+          "fullName": "mentions extractor - code comments scanning (local content) does not match inside code strings for JS when not in comments",
+          "status": "passed",
+          "title": "does not match inside code strings for JS when not in comments",
+          "duration": 0.39900599999998576,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "mentions extractor - code comments scanning (local content)"
+          ],
+          "fullName": "mentions extractor - code comments scanning (local content) respects language filter",
+          "status": "passed",
+          "title": "respects language filter",
+          "duration": 0.22407800000001998,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "mentions extractor - code comments scanning (local content)"
+          ],
+          "fullName": "mentions extractor - code comments scanning (local content) skips large files over byte cap",
+          "status": "passed",
+          "title": "skips large files over byte cap",
+          "duration": 0.40888400000000047,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["code comment mention scanning (octokit-backed)"],
+          "fullName": "code comment mention scanning (octokit-backed) finds mentions in JS/TS line and block comments with locations",
+          "status": "passed",
+          "title": "finds mentions in JS/TS line and block comments with locations",
+          "duration": 2.223705999999993,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["code comment mention scanning (octokit-backed)"],
+          "fullName": "code comment mention scanning (octokit-backed) finds mentions in README markdown lines",
+          "status": "passed",
+          "title": "finds mentions in README markdown lines",
+          "duration": 0.6850110000000313,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["code comment mention scanning (octokit-backed)"],
+          "fullName": "code comment mention scanning (octokit-backed) skips large files over size cap",
+          "status": "passed",
+          "title": "skips large files over size cap",
+          "duration": 0.8699760000000083,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "enrich() integration — uses patch content for changed files"
+          ],
+          "fullName": "enrich() integration — uses patch content for changed files adds code_comment mentions from PR files when patch includes comment with @mention",
+          "status": "passed",
+          "title": "adds code_comment mentions from PR files when patch includes comment with @mention",
+          "duration": 0.395828999999992,
+          "failureMessages": [],
+          "meta": {}
+        }
+      ],
+      "startTime": 1757920204815,
+      "endTime": 1757920204825.3958,
+      "status": "passed",
+      "message": "",
+      "name": "/home/runner/work/events/events/tests/mentions.code-comments.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": ["mentions extractor - commit messages"],
+          "fullName": "mentions extractor - commit messages extracts simple @agent mention",
+          "status": "passed",
+          "title": "extracts simple @agent mention",
+          "duration": 2.544045000000011,
+          "failureMessages": [],
+          "meta": {}
+        }
+      ],
+      "startTime": 1757920212615,
+      "endTime": 1757920212617.544,
+      "status": "passed",
+      "message": "",
+      "name": "/home/runner/work/events/events/tests/mentions.commit.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": ["mentions extractor - PR body"],
+          "fullName": "mentions extractor - PR body extracts multiple mentions with context",
+          "status": "passed",
+          "title": "extracts multiple mentions with context",
+          "duration": 3.652579000000003,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["mentions extractor - PR body"],
+          "fullName": "mentions extractor - PR body extracts from PR title as pr_title source (issue #250)",
+          "status": "passed",
+          "title": "extracts from PR title as pr_title source (issue #250)",
+          "duration": 0.7749080000000106,
+          "failureMessages": [],
+          "meta": {}
+        }
+      ],
+      "startTime": 1757920211589,
+      "endTime": 1757920211592.775,
+      "status": "passed",
+      "message": "",
+      "name": "/home/runner/work/events/events/tests/mentions.pr-body.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": ["mentions extractor - PR title"],
+          "fullName": "mentions extractor - PR title extracts an @mention from PR title with correct source and normalization",
+          "status": "passed",
+          "title": "extracts an @mention from PR title with correct source and normalization",
+          "duration": 46.09596099999999,
+          "failureMessages": [],
+          "meta": {}
+        }
+      ],
+      "startTime": 1757920212526,
+      "endTime": 1757920212572.096,
+      "status": "passed",
+      "message": "",
+      "name": "/home/runner/work/events/events/tests/mentions.pr-title.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": ["NE schema"],
+          "fullName": "NE schema compiles with Ajv",
+          "status": "passed",
+          "title": "compiles with Ajv",
+          "duration": 30.95918500000002,
+          "failureMessages": [],
+          "meta": {}
+        }
+      ],
+      "startTime": 1757920209322,
+      "endTime": 1757920209352.9592,
+      "status": "passed",
+      "message": "",
+      "name": "/home/runner/work/events/events/tests/ne.schema.compile.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": ["NE Zod schema"],
+          "fullName": "NE Zod schema parses a normalized sample (workflow_run)",
+          "status": "passed",
+          "title": "parses a normalized sample (workflow_run)",
+          "duration": 5.383431999999971,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["NE Zod schema"],
+          "fullName": "NE Zod schema rejects invalid provider",
+          "status": "passed",
+          "title": "rejects invalid provider",
+          "duration": 1.8175679999999943,
+          "failureMessages": [],
+          "meta": {}
+        }
+      ],
+      "startTime": 1757920211248,
+      "endTime": 1757920211254.8176,
+      "status": "passed",
+      "message": "",
+      "name": "/home/runner/work/events/events/tests/ne.zod.schema.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": ["handleNormalize"],
+          "fullName": "handleNormalize produces minimal NormalizedEvent with payload and provenance",
+          "status": "passed",
+          "title": "produces minimal NormalizedEvent with payload and provenance",
+          "duration": 4.260443000000009,
+          "failureMessages": [],
+          "meta": {}
+        }
+      ],
+      "startTime": 1757920212338,
+      "endTime": 1757920212342.2605,
+      "status": "passed",
+      "message": "",
+      "name": "/home/runner/work/events/events/tests/normalize.basic.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": ["GitHub normalization"],
+          "fullName": "GitHub normalization workflow_run -> NE fields",
+          "status": "passed",
+          "title": "workflow_run -> NE fields",
+          "duration": 2.5475610000000017,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["GitHub normalization"],
+          "fullName": "GitHub normalization pull_request -> NE fields",
+          "status": "passed",
+          "title": "pull_request -> NE fields",
+          "duration": 0.8698960000000113,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["GitHub normalization"],
+          "fullName": "GitHub normalization push -> NE fields",
+          "status": "passed",
+          "title": "push -> NE fields",
+          "duration": 0.6196879999999965,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["GitHub normalization"],
+          "fullName": "GitHub normalization issue_comment -> NE fields",
+          "status": "passed",
+          "title": "issue_comment -> NE fields",
+          "duration": 0.5734720000000095,
+          "failureMessages": [],
+          "meta": {}
+        }
+      ],
+      "startTime": 1757920206629,
+      "endTime": 1757920206633.5735,
+      "status": "passed",
+      "message": "",
+      "name": "/home/runner/work/events/events/tests/normalize.github.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": ["normalize → NE schema shape (smoke)"],
+          "fullName": "normalize → NE schema shape (smoke) workflow_run sample produces required fields",
+          "status": "passed",
+          "title": "workflow_run sample produces required fields",
+          "duration": 3.298353999999989,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["normalize → NE schema shape (smoke)"],
+          "fullName": "normalize → NE schema shape (smoke) pull_request sample sets ref base/head and labels preserved",
+          "status": "passed",
+          "title": "pull_request sample sets ref base/head and labels preserved",
+          "duration": 0.6031770000000165,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["normalize → NE schema shape (smoke)"],
+          "fullName": "normalize → NE schema shape (smoke) push sample sets branch ref and sha",
+          "status": "passed",
+          "title": "push sample sets branch ref and sha",
+          "duration": 0.5888710000000117,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["normalize → NE schema shape (smoke)"],
+          "fullName": "normalize → NE schema shape (smoke) issue_comment sample sets type and actor",
+          "status": "passed",
+          "title": "issue_comment sample sets type and actor",
+          "duration": 0.40739099999998984,
+          "failureMessages": [],
+          "meta": {}
+        }
+      ],
+      "startTime": 1757920208337,
+      "endTime": 1757920208342.4075,
+      "status": "passed",
+      "message": "",
+      "name": "/home/runner/work/events/events/tests/normalize.schema.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": ["normalize()"],
+          "fullName": "normalize() workflow_run sample validates",
+          "status": "passed",
+          "title": "workflow_run sample validates",
+          "duration": 3.851387999999986,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["normalize()"],
+          "fullName": "normalize() pull_request sample validates",
+          "status": "passed",
+          "title": "pull_request sample validates",
+          "duration": 0.5197619999999858,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["normalize()"],
+          "fullName": "normalize() push sample validates",
+          "status": "passed",
+          "title": "push sample validates",
+          "duration": 0.543925999999999,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["normalize()"],
+          "fullName": "normalize() issue_comment sample validates",
+          "status": "passed",
+          "title": "issue_comment sample validates",
+          "duration": 0.347709999999978,
+          "failureMessages": [],
+          "meta": {}
+        }
+      ],
+      "startTime": 1757920207090,
+      "endTime": 1757920207095.3477,
+      "status": "passed",
+      "message": "",
+      "name": "/home/runner/work/events/events/tests/normalize.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": ["redactString – additional patterns"],
+          "fullName": "redactString – additional patterns redacts URL basic auth credentials",
+          "status": "passed",
+          "title": "redacts URL basic auth credentials",
+          "duration": 2.203848000000022,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["redactString – additional patterns"],
+          "fullName": "redactString – additional patterns redacts Slack tokens",
+          "status": "passed",
+          "title": "redacts Slack tokens",
+          "duration": 0.529057999999992,
+          "failureMessages": [],
+          "meta": {}
+        }
+      ],
+      "startTime": 1757920212814,
+      "endTime": 1757920212817.529,
+      "status": "passed",
+      "message": "",
+      "name": "/home/runner/work/events/events/tests/redact.patterns.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": ["redaction regression"],
+          "fullName": "redaction regression masks multiple secret types in a single string",
+          "status": "passed",
+          "title": "masks multiple secret types in a single string",
+          "duration": 2.80712699999998,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["redaction regression"],
+          "fullName": "redaction regression masks nested structures and preserves safe fields",
+          "status": "passed",
+          "title": "masks nested structures and preserves safe fields",
+          "duration": 0.9094790000000046,
+          "failureMessages": [],
+          "meta": {}
+        }
+      ],
+      "startTime": 1757920210314,
+      "endTime": 1757920210317.9094,
+      "status": "passed",
+      "message": "",
+      "name": "/home/runner/work/events/events/tests/redaction.regression.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": ["rules composed events"],
+          "fullName": "rules composed events emits composed event for conflicted low-priority PR",
+          "status": "passed",
+          "title": "emits composed event for conflicted low-priority PR",
+          "duration": 30.207529000000022,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["rules composed events"],
+          "fullName": "rules composed events does not emit when conditions not met",
+          "status": "passed",
+          "title": "does not emit when conditions not met",
+          "duration": 1.0345340000000078,
+          "failureMessages": [],
+          "meta": {}
+        }
+      ],
+      "startTime": 1757920206836,
+      "endTime": 1757920206867.0344,
+      "status": "passed",
+      "message": "",
+      "name": "/home/runner/work/events/events/tests/rules.composed.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": ["loadConfig token precedence"],
+          "fullName": "loadConfig token precedence returns undefined when neither token is set",
+          "status": "passed",
+          "title": "returns undefined when neither token is set",
+          "duration": 1.9166019999999833,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["loadConfig token precedence"],
+          "fullName": "loadConfig token precedence uses GITHUB_TOKEN when only it is set",
+          "status": "passed",
+          "title": "uses GITHUB_TOKEN when only it is set",
+          "duration": 1.4988909999999862,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["loadConfig token precedence"],
+          "fullName": "loadConfig token precedence prefers A5C_AGENT_GITHUB_TOKEN over GITHUB_TOKEN when both set",
+          "status": "passed",
+          "title": "prefers A5C_AGENT_GITHUB_TOKEN over GITHUB_TOKEN when both set",
+          "duration": 0.4246430000000032,
+          "failureMessages": [],
+          "meta": {}
+        }
+      ],
+      "startTime": 1757920210250,
+      "endTime": 1757920210254.4246,
+      "status": "passed",
+      "message": "",
+      "name": "/home/runner/work/events/events/test/config.loadConfig.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": ["config token precedence"],
+          "fullName": "config token precedence prefers A5C_AGENT_GITHUB_TOKEN over GITHUB_TOKEN",
+          "status": "passed",
+          "title": "prefers A5C_AGENT_GITHUB_TOKEN over GITHUB_TOKEN",
+          "duration": 2.144287999999989,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["config token precedence"],
+          "fullName": "config token precedence falls back to GITHUB_TOKEN when A5C token missing",
+          "status": "passed",
+          "title": "falls back to GITHUB_TOKEN when A5C token missing",
+          "duration": 0.5269049999999993,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["config token precedence"],
+          "fullName": "config token precedence returns undefined when no token env provided",
+          "status": "passed",
+          "title": "returns undefined when no token env provided",
+          "duration": 0.5314429999999959,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["config token precedence"],
+          "fullName": "config token precedence parses DEBUG env to boolean",
+          "status": "passed",
+          "title": "parses DEBUG env to boolean",
+          "duration": 0.7773029999999892,
+          "failureMessages": [],
+          "meta": {}
+        }
+      ],
+      "startTime": 1757920210495,
+      "endTime": 1757920210499.7773,
+      "status": "passed",
+      "message": "",
+      "name": "/home/runner/work/events/events/test/config.precedence.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": ["enrich output redaction"],
+          "fullName": "enrich output redaction masks token-like strings in enriched metadata and fields",
+          "status": "passed",
+          "title": "masks token-like strings in enriched metadata and fields",
+          "duration": 48.71687200000002,
+          "failureMessages": [],
+          "meta": {}
+        }
+      ],
+      "startTime": 1757920209951,
+      "endTime": 1757920209999.7168,
+      "status": "passed",
+      "message": "",
+      "name": "/home/runner/work/events/events/test/enrich.redaction.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": ["redaction"],
+          "fullName": "redaction masks GitHub PAT in string",
+          "status": "passed",
+          "title": "masks GitHub PAT in string",
+          "duration": 1.7438889999999958,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["redaction"],
+          "fullName": "redaction masks JWT in string",
+          "status": "passed",
+          "title": "masks JWT in string",
+          "duration": 0.48103900000000976,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["redaction"],
+          "fullName": "redaction masks sensitive keys in objects",
+          "status": "passed",
+          "title": "masks sensitive keys in objects",
+          "duration": 0.8102850000000217,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["redaction"],
+          "fullName": "redaction masks bearer tokens in non-sensitive keys but preserves others",
+          "status": "passed",
+          "title": "masks bearer tokens in non-sensitive keys but preserves others",
+          "duration": 0.3275719999999751,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["redaction"],
+          "fullName": "redaction masks env-like object values",
+          "status": "passed",
+          "title": "masks env-like object values",
+          "duration": 0.34541600000000017,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["redaction"],
+          "fullName": "redaction masks Slack/AWS/Basic Auth patterns in strings",
+          "status": "passed",
+          "title": "masks Slack/AWS/Basic Auth patterns in strings",
+          "duration": 0.4175910000000158,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["redaction"],
+          "fullName": "redaction masks representative fixture payload values",
+          "status": "passed",
+          "title": "masks representative fixture payload values",
+          "duration": 0.8311139999999853,
+          "failureMessages": [],
+          "meta": {}
+        }
+      ],
+      "startTime": 1757920207734,
+      "endTime": 1757920207738.831,
+      "status": "passed",
+      "message": "",
+      "name": "/home/runner/work/events/events/test/redact.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": ["sum"],
+          "fullName": "sum adds two numbers",
+          "status": "passed",
+          "title": "adds two numbers",
+          "duration": 2.0480569999999716,
+          "failureMessages": [],
+          "meta": {}
+        }
+      ],
+      "startTime": 1757920212907,
+      "endTime": 1757920212909.048,
+      "status": "passed",
+      "message": "",
+      "name": "/home/runner/work/events/events/test/sum.test.ts"
+    }
+  ]
+}

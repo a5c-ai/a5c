@@ -32,7 +32,40 @@ runs:
           const startedAt = startedAtEnv || new Date().toISOString();
           let cov = null;
           try { cov = JSON.parse(fs.readFileSync("coverage/coverage-summary.json", "utf8")); } catch {}
-          // Cache summary from envs
+          // Parse Vitest JSON for retries and slow tests if available
+          let vitest = null;
+          try { vitest = JSON.parse(fs.readFileSync("vitest-results.json", "utf8")); } catch {}
+          let tests = null;
+          if (vitest && vitest.testResults) {
+            const all = [];
+            for (const tr of vitest.testResults) {
+              for (const a of (tr.assertionResults || [])) {
+                const meta = a.meta || {};
+                const attempts = Number(meta.retryCount || meta.retries || 0);
+                const duration = a.duration ?? null;
+                all.push({
+                  fullName: a.fullName || a.title || "",
+                  status: a.status,
+                  duration_ms: typeof duration === 'number' ? duration : null,
+                  retries: attempts,
+                });
+              }
+            }
+            const slowest = [...all]
+              .filter(t => typeof t.duration_ms === 'number')
+              .sort((a,b) => (b.duration_ms||0) - (a.duration_ms||0))
+              .slice(0, 10);
+            const flaky = all.filter(t => (t.retries||0) > 0);
+            tests = {
+              totals: {
+                total: all.length,
+                flaky: flaky.length,
+                slow_count: slowest.length,
+              },
+              slowest,
+              flaky,
+            };
+          }
           // Collect cache entries from env keys like CACHE_<KIND>_HIT=true/false
           const cacheEntries = [];
           for (const [k, v] of Object.entries(process.env)) {
@@ -69,6 +102,7 @@ runs:
               duration_ms: durationMs,
             },
             metrics: { coverage: cov, cache },
+            tests,
           };
           process.stdout.write(JSON.stringify(obs, null, 2));
         ' > "$OBS_FILE"
@@ -91,6 +125,30 @@ runs:
         DUR=$(node -e "try{const o=JSON.parse(require('fs').readFileSync(process.env.OBS_FILE,'utf8')); if(o?.run?.duration_ms!=null){ console.log(o.run.duration_ms) }}catch{}") || true
         if [ -n "${DUR}" ]; then
           echo "- Duration: ${DUR} ms" >> "$GITHUB_STEP_SUMMARY"
+        # If vitest JSON exists, append flaky/slow summary
+        if [ -f vitest-results.json ]; then
+          node -e '
+            const fs = require("fs");
+            const s = fs.readFileSync("vitest-results.json","utf8");
+            const v = JSON.parse(s);
+            const all = [];
+            for (const tr of (v.testResults||[])) {
+              for (const a of (tr.assertionResults||[])) {
+                const meta = a.meta || {};
+                const attempts = Number(meta.retryCount || meta.retries || 0);
+                all.push({ n: a.fullName || a.title || "", d: a.duration ?? null, r: attempts });
+              }
+            }
+            const flaky = all.filter(t => (t.r||0) > 0).length;
+            const slowest = all.filter(t => typeof t.d === "number").sort((a,b)=> (b.d||0)-(a.d||0)).slice(0,5);
+            let out = "\n### Tests (from vitest JSON)\n";
+            out += `- Flaky suspects (retries>0): ${flaky}\n`;
+            if (slowest.length) {
+              out += "- Slowest tests:\n";
+              for (const t of slowest) out += `  - ${t.n} — ${t.d} ms\n`;
+            }
+            fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, out);
+          ';
         fi
         # Cache summary if envs provided
         kinds=$(env | awk -F= '/^CACHE_[A-Z0-9]+_HIT=/{print $1}' | sed -E 's/^CACHE_([A-Z0-9]+)_HIT.*/\1/; s/.*/\L&/')
