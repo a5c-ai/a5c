@@ -47,14 +47,16 @@ jobs:
         if: github.ref == 'refs/heads/a5c/main'
         env:
           GITHUB_TOKEN: ${{ secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN || secrets.GITHUB_TOKEN }}
+          # Use GitHub token for GitHub Packages auth to avoid E401
+          NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HUSKY: 0
         run: npx semantic-release
       - name: Release (main stable)
         if: github.ref == 'refs/heads/main'
         env:
           GITHUB_TOKEN: ${{ secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN || secrets.GITHUB_TOKEN }}
+          # For GitHub Packages publish by semantic-release/npm, use GitHub token
+          NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HUSKY: 0
         run: npx semantic-release
       - name: Setup Node.js for npmjs (main only)
