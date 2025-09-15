@@ -5,12 +5,6 @@ concurrency:
   group: build-${{ github.ref }}
   cancel-in-progress: true
 on:
-  # Quick checks on PRs only run build and tests
-  pull_request:
-    types: [opened, synchronize, reopened, ready_for_review]
-    branches:
-      - a5c/main
-      - main
   push:
     branches:
       - a5c/main
