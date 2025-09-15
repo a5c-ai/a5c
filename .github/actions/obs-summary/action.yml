@@ -3,7 +3,7 @@ description: "Aggregate job metrics, write step summary, and upload observabilit
 author: "a5c.ai"
 inputs:
   node-version:
-    description: "Node.js version to setup"
+    description: "Node.js version to setup via actions/setup-node"
     required: false
     default: "20"
 runs:
@@ -13,6 +13,7 @@ runs:
       uses: actions/setup-node@v4
       with:
         node-version: ${{ inputs.node-version }}
+        cache: npm
     - name: Collect metrics and write summary + file
       id: collect
       shell: bash
