@@ -144,6 +144,11 @@ Core fields returned by `normalize`:
 
 See the detailed specs for full schema and roadmap.
 
+Notes:
+
+- Example outputs may omit or truncate large `payload` bodies to keep docs readable.
+- The optional `composed[].payload` allows `object | array | null` (from enrichment/rules). See `docs/specs/ne.schema.json`.
+
 ## Examples
 
 GitHub Actions (normalize current run):
