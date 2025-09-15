@@ -123,6 +123,23 @@ program
   .action(async (cmdOpts: any) => {
     const flags = { ...(cmdOpts.flag || {}) };
     if (cmdOpts.useGithub || cmdOpts["use-github"]) flags.use_github = "true";
+    // Guard: if --use-github is requested but no token available, exit 3 with a clear message
+    try {
+      const cfg = loadConfig();
+      const token = cfg.githubToken;
+      if (
+        (flags.use_github === true ||
+          String(flags.use_github).toLowerCase() === "true") &&
+        !token
+      ) {
+        process.stderr.write(
+          "GitHub enrichment failed: token is required when --use-github is set\n",
+        );
+        return process.exit(3);
+      }
+    } catch (_) {
+      // If config loading fails, proceed and let downstream logic handle errors
+    }
     const labels = Object.entries(cmdOpts.label || {}).map(
       ([k, v]) => `${k}=${v}`,
     );
@@ -168,18 +185,13 @@ program
   .description("Emit an event to a sink (stdout or file)")
   .option("--in <file>", "input JSON file path (default: stdin)")
   .option("--out <file>", "output JSON file path (for file sink)")
-  .option("--sink <name>", "sink name (stdout|file)", "stdout")
+  .option("--sink <name>", "sink name (stdout|file)")
   .action(async (cmdOpts: any) => {
     const { code, output } = await handleEmit({
       in: cmdOpts.in,
       out: cmdOpts.out,
       sink: cmdOpts.sink,
     });
-    // handleEmit already wrote to sink; also print redacted to stdout if sink=file and no --quiet flag (future)
-    if (cmdOpts.sink !== "file" && !cmdOpts.out) {
-      const safe = redactObject(output);
-      process.stdout.write(JSON.stringify(safe, null, 2) + "\n");
-    }
     process.exit(code);
   });
 

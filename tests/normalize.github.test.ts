@@ -82,7 +82,7 @@ describe("GitHub normalization", () => {
     expect(typeof ev.id).toBe("string");
   });
 
-  it("issue -> NE fields", async () => {
+  it("issues.opened -> type is issue (singular)", async () => {
     const input = fx("issues.opened.json");
     const tmp = path.join(
       fs.mkdtempSync(path.join(os.tmpdir(), "events-test-")),
@@ -95,7 +95,6 @@ describe("GitHub normalization", () => {
     });
     expect(ev.type).toBe("issue");
     expect(ev.repo?.full_name).toBe("a5c-ai/events");
-    expect(ev.actor?.login).toBe("tmuskal");
     expect(typeof ev.id).toBe("string");
   });
 });

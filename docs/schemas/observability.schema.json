@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://a5c.ai/schemas/observability-0.1.schema.json",
+  "title": "Observability Artifact",
+  "description": "Schema for CI observability artifact emitted by a5c workflows",
+  "type": "object",
+  "required": ["schema_version", "repo", "workflow", "job", "run", "metrics"],
+  "additionalProperties": true,
+  "properties": {
+    "schema_version": { "type": "string", "const": "0.1" },
+    "repo": { "type": "string", "minLength": 1 },
+    "workflow": { "type": "string", "minLength": 1 },
+    "job": { "type": "string", "minLength": 1 },
+    "run": {
+      "type": "object",
+      "required": [
+        "id",
+        "attempt",
+        "sha",
+        "ref",
+        "actor",
+        "event_name",
+        "conclusion",
+        "completed_at"
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "id": { "type": ["integer", "string"] },
+        "attempt": { "type": "integer", "minimum": 1 },
+        "sha": { "type": "string", "minLength": 7 },
+        "ref": { "type": "string", "minLength": 1 },
+        "actor": { "type": "string" },
+        "event_name": { "type": "string" },
+        "conclusion": { "type": "string" },
+        "started_at": { "type": ["string", "null"], "format": "date-time" },
+        "completed_at": { "type": "string", "format": "date-time" },
+        "duration_ms": { "type": ["integer", "null"], "minimum": 0 }
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "coverage": {
+          "type": ["object", "null"],
+          "additionalProperties": true
+        },
+        "cache": {
+          "type": ["object", "null"],
+          "additionalProperties": true,
+          "properties": {
+            "entries": { "type": "array" },
+            "summary": { "type": "object" }
+          }
+        }
+      }
+    }
+  }
+}

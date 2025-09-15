@@ -17,8 +17,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - id: setup-node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
+        id: setup-node
         with:
           node-version-file: .nvmrc
           cache: "npm"
@@ -298,9 +298,9 @@ jobs:
           OBS_FILE: observability.json
           # Pin schema version in produced artifact
           SCHEMA_VERSION: 0.1
+          # Pass cache hit from setup-node to the action as CACHE_NODE_HIT
           CACHE_NODE_HIT: ${{ steps.setup-node.outputs.cache-hit }}
-          CACHE_NODE_BYTES: ${{ env.CACHE_NODE_BYTES }}
-          CACHE_NODE_KEY: ${{ env.CACHE_NODE_KEY }}
+          # Include conclusion and run start time for duration
           CONCLUSION: ${{ job.status }}
           RUN_STARTED_AT: ${{ github.run_started_at }}
       - name: Step hotspots summary and annotations

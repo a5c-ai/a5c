@@ -56,7 +56,8 @@ runs:
             const vals = [];
             for (const r of runs) {
               const t = r?.metrics?.coverage?.total; if (!t) continue;
-              const v = t[key]?.pct; if (typeof v === 'number') vals.push(v);
+              const v = t[key]?.pct;
+              if (Number.isFinite(v)) vals.push(Number(v));
             }
             if (!vals.length) return undefined;
             return Number((vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(2));
@@ -90,7 +91,9 @@ runs:
       uses: actions/upload-artifact@v4
       with:
         name: observability-aggregate
-        path: ${{ env.OUT_FILE }}
+        # Use a static path; expression evaluation happens before prior step sets env.
+        # OUT_FILE is still exported for debugging, but artifact upload should not rely on it.
+        path: observability.aggregate.json
 
 branding:
   icon: bar-chart-2
