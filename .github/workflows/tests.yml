@@ -6,6 +6,8 @@ on:
 
 jobs:
   unit:
+    env:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN || '' }}
     permissions:
       contents: read
       actions: read
@@ -18,7 +20,7 @@ jobs:
       - id: setup-node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version-file: .nvmrc
           cache: "npm"
       - name: Init timings file
         run: |
@@ -91,6 +93,14 @@ jobs:
           path: |
             junit.xml
           if-no-files-found: ignore
+      - name: Upload to Codecov (optional)
+        if: env.CODECOV_TOKEN != ''
+        uses: codecov/codecov-action@v4
+        with:
+          files: coverage/lcov.info
+          token: ${{ secrets.CODECOV_TOKEN }}
+          flags: unit
+          fail_ci_if_error: false
       - name: Flaky tests detection
         if: always()
         shell: bash

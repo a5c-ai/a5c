@@ -14,13 +14,15 @@ jobs:
     name: Unit Tests (PR)
     runs-on: ubuntu-latest
     timeout-minutes: 6
+    env:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN || '' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version-file: .nvmrc
           cache: npm
       - name: Install
         run: npm ci
@@ -34,3 +36,11 @@ jobs:
           path: |
             coverage/lcov.info
             coverage/coverage-summary.json
+      - name: Upload to Codecov (optional)
+        if: env.CODECOV_TOKEN != ''
+        uses: codecov/codecov-action@v4
+        with:
+          files: coverage/lcov.info
+          token: ${{ secrets.CODECOV_TOKEN }}
+          flags: pr
+          fail_ci_if_error: false

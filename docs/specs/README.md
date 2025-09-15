@@ -37,6 +37,9 @@
 ## 4) Enrichment Taxonomy
 
 - metadata: repo settings, branch protection, topics, languages, default branch, owners.
+
+> Note: GitHub webhook event "issues" maps to NE type value "issue" (singular). See docs/specs/notes/issue-type-alignment.md.
+
 - derived: diff stats, changed files globs, semantic commit parsing, conventional commit scope; commit logs and PR/push diffs; PR conflict status.
 - correlations: link workflow_run -> commit -> PR -> issues; map failures to responsible code owners; associate deployments with releases.
 - mentions: extract `@agent`/`@user` mentions across commit messages, PR/issue titles + bodies, issue_comment, and changed files (code comments) with location context.
