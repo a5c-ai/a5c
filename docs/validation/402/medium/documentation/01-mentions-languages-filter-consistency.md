@@ -16,7 +16,7 @@ Recommendations:
 1. Normalize `mentions.languages` input to both:
    - a set of normalized extensions; and
    - a mapped set of language codes
-   and apply accordingly per scanner, so `tsx` implies `ts`, `jsx` implies `js`.
+     and apply accordingly per scanner, so `tsx` implies `ts`, `jsx` implies `js`.
 2. Document accepted values precisely (extensions and/or language codes) and guarantee equivalence.
 3. Add e2e tests covering mixed inputs: `ts,tsx`, `js,jsx` with and without `--use-github` and with `include_patch=true`.
 
@@ -25,4 +25,3 @@ References:
 - src/enrich.ts (languageFiltersFlag used in multiple scanners)
 - src/utils/commentScanner.ts (EXT_TO_LANG, detectLang, languageFilters semantics)
 - src/codeComments.ts (patch scanner)
-

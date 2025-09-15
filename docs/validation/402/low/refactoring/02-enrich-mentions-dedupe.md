@@ -17,4 +17,3 @@ Suggestions:
 2. Add a unit test asserting no duplicates when both scanners detect the same reference.
 
 References: src/commands/enrich.ts (dedupeMentionsWithLocation)
-

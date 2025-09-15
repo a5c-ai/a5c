@@ -27,7 +27,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version-file: .nvmrc
           cache: "npm"
           registry-url: "https://npm.pkg.github.com"
       - name: Install
@@ -65,7 +65,7 @@ jobs:
         if: github.ref == 'refs/heads/main'
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version-file: .nvmrc
           registry-url: "https://registry.npmjs.org"
       - name: Publish to npmjs (main only)
         if: github.ref == 'refs/heads/main'

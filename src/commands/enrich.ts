@@ -1,17 +1,11 @@
 //
 import type { NormalizedEvent, Mention } from "../types.js";
 import { readJSONFile, loadConfig } from "../config.js";
-import { extractMentions } from "../extractor.js";
+import { extractMentions, dedupeMentions } from "../extractor.js";
 import { loadRules, evaluateRulesDetailed } from "../rules.js";
 import { mapToNE } from "../providers/github/map.js";
-import {
-  scanPatchForCodeCommentMentions,
-  isBinaryPatch,
-} from "../codeComments.js";
-import {
-  scanMentionsInCodeComments,
-  detectLang as detectLangRich,
-} from "../utils/commentScanner.js";
+import { isBinaryPatch } from "../codeComments.js";
+import { scanMentionsInCodeComments, detectLang as detectLangRich } from "../utils/commentScanner.js";
 
 export async function cmdEnrich(opts: {
   in?: string;
@@ -58,15 +52,13 @@ export async function cmdEnrich(opts: {
   const isNE =
     input &&
     typeof input === "object" &&
-    (input as any).provider === "github" &&
-    "payload" in (input as any);
+    input.provider === "github" &&
+    "payload" in input;
+  const baseEvent = isNE ? (input as any).payload : input;
   // If input is already a NormalizedEvent, keep as-is. Otherwise, map raw payload to NE using provider mapping
   const neShell: NormalizedEvent = isNE
     ? (input as NormalizedEvent)
     : mapToNE(input, { source: "cli", labels: opts.labels });
-
-  // Use the underlying provider payload for enrichment/mentions extraction
-  const baseEvent = (neShell as any).payload || input;
   let githubEnrichment: any = {};
   try {
     const mod: any = await import("../enrichGithubEvent.js");
@@ -174,8 +166,21 @@ export async function cmdEnrich(opts: {
             const lang = detectLangRich(filename);
             if (!lang || !languageFilters.includes(lang)) continue;
           }
-          const found = scanPatchForCodeCommentMentions(filename, patch!, {
-            window: 30,
+          // Approximate content from patch and scan with comment scanner
+          const lines = String(patch || '').split(/\r?\n/);
+          const approx: string[] = [];
+          for (const l of lines) {
+            if (l.startsWith('+++') || l.startsWith('---') || l.startsWith('@@')) { approx.push(''); continue; }
+            if (l.startsWith('+') || l.startsWith(' ') || l.startsWith('-')) approx.push(l.slice(1));
+            else approx.push(l);
+          }
+          const content = approx.join('\n');
+          const found = scanMentionsInCodeComments({
+            content,
+            filename,
+            maxBytes: maxFileBytes,
+            languageFilters,
+            source: 'code_comment',
           });
           if (found.length) {
             for (const m of found) normalizeLocationObject(m);

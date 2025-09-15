@@ -33,6 +33,7 @@ runs:
 
         echo "OBS_FILE=${OBS_FILE}" >> "$GITHUB_ENV"
 
+
         # Compose JSON (includes coverage, cache metrics, started_at/duration, and vitest tests)
         node "${GITHUB_ACTION_PATH:-.github/actions/obs-summary}/compose.cjs" > "$OBS_FILE"
 
@@ -65,11 +66,18 @@ runs:
           '
         fi
 
+        # Compose JSON (includes coverage, cache metrics, started_at/duration, and vitest tests)
+        # Using compose.cjs keeps schema compatibility and logic centralized.
+        # OBS_FILE is written by compose.cjs
+        :
+
+
         echo "## Observability" >> "$GITHUB_STEP_SUMMARY"
         echo "- Repo: ${REPO}" >> "$GITHUB_STEP_SUMMARY"
         echo "- Workflow: ${WORKFLOW_NAME}" >> "$GITHUB_STEP_SUMMARY"
         echo "- Job: ${JOB_NAME}" >> "$GITHUB_STEP_SUMMARY"
         echo "- Run: ${RUN_ID} (attempt ${RUN_ATTEMPT})" >> "$GITHUB_STEP_SUMMARY"
+        # Optional conclusion line
         if [ -n "${CONCLUSION}" ]; then
           echo "- Conclusion: ${CONCLUSION}" >> "$GITHUB_STEP_SUMMARY"
         fi
@@ -84,6 +92,7 @@ runs:
         if [ -n "${DUR}" ]; then
           echo "- Duration: ${DUR} ms" >> "$GITHUB_STEP_SUMMARY"
         fi
+
         # If vitest JSON exists, append flaky/slow summary
         if [ -f vitest-results.json ]; then
           node -e '
@@ -117,7 +126,9 @@ runs:
             v=$(eval echo "\$CACHE_${k^^}_HIT")
             bytes=$(eval echo "\${CACHE_${k^^}_BYTES-}")
             total=$((total+1))
-            if [ "$v" = "true" ] || [ "$v" = "1" ]; then
+            # Normalize boolean-like values per docs: true|1|yes|y
+            lv=$(printf '%s' "$v" | tr '[:upper:]' '[:lower:]')
+            if [ "$lv" = "true" ] || [ "$lv" = "1" ] || [ "$lv" = "yes" ] || [ "$lv" = "y" ]; then
               hits=$((hits+1)); state=hit
             else
               state=miss
