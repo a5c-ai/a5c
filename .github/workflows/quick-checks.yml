@@ -18,7 +18,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 7
     env:
-      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN || '' }}
+      # Optional Codecov token; when empty, upload step is skipped
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN || vars.CODECOV_TOKEN || '' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -36,6 +37,16 @@ jobs:
         run: npm run -s typecheck
       - name: Unit tests (vitest)
         run: npm run -s test:ci
+      - name: Upload coverage to Codecov (optional)
+        if: env.CODECOV_TOKEN != ''
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ env.CODECOV_TOKEN }}
+          files: |
+            coverage/lcov.info
+          flags: pr
+          fail_ci_if_error: false
+          verbose: true
       - name: Upload coverage artifact
         if: always()
         uses: actions/upload-artifact@v4

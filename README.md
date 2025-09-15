@@ -148,6 +148,19 @@ events enrich --in samples/pull_request.synchronize.json \
   # note: `reason` may be omitted depending on rule configuration
 ```
 
+## Coverage (Optional)
+
+CI can upload coverage to Codecov and show a badge in this README. Uploads are disabled by default and only run when a token is configured.
+
+- Add a repo Secret or Variable named `CODECOV_TOKEN`.
+- When present, the following workflows upload `coverage/lcov.info` using `codecov/codecov-action@v4`:
+  - `.github/workflows/tests.yml` (push on `a5c/main` and `main`)
+  - `.github/workflows/quick-checks.yml` (PRs)
+  - `.github/workflows/pr-tests.yml` (PRs)
+- If the token is absent, the Codecov step is skipped and CI remains green.
+
+Badge note: If your Codecov project is public, the badge works without a token parameter. For private projects, configure the Codecov badge as appropriate for your org and visibility.
+
 ### Auth tokens: precedence & redaction
 
 - Token precedence: runtime prefers `A5C_AGENT_GITHUB_TOKEN` over `GITHUB_TOKEN` when both are set (see `src/config.ts`).
