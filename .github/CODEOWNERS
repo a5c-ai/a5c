@@ -1,0 +1,35 @@
+# CODEOWNERS — initial scaffold
+#
+# Purpose: Establish clear code ownership and enable routing/auto-mentions.
+# This initial version is intentionally conservative: all rules are commented
+# out to avoid accidentally blocking merges if branch protection requires
+# CODEOWNERS reviews. Replace placeholders with real teams/users and uncomment
+# in follow-up PRs.
+#
+# Notes:
+# - Use GitHub team handles (e.g., @org/team) or individual users (e.g., @user)
+# - Patterns are evaluated top-to-bottom; last match wins
+# - Keep rules stable; prefer directories over many file-level entries
+#
+# Examples (commented out):
+#
+# Root ownership (fallback for everything not matched above)
+# *                                   @a5c-ai/maintainers
+#
+# Source code
+# src/**                               @a5c-ai/events-core
+# src/providers/**                     @a5c-ai/integrations
+#
+# CLI and workflows
+# .github/workflows/**                 @a5c-ai/ci-platform
+# src/cli.ts                           @a5c-ai/cli
+#
+# Documentation
+# docs/**                              @a5c-ai/docs
+# docs/ownership/**                    @a5c-ai/docs @a5c-ai/product
+#
+# Tests
+# test/**                              @a5c-ai/qa
+# tests/**                             @a5c-ai/qa
+
+# No active rules yet — see docs/ownership/README.md
