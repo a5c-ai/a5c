@@ -2,7 +2,17 @@ import path from "node:path";
 import { MENTION_RE, inferKind, normalizeTarget } from "../regex.js";
 import type { Mention } from "../types.js";
 
-type Lang = "js" | "ts" | "py" | "go" | "java" | "c" | "cpp" | "sh" | "yaml";
+type Lang =
+  | "js"
+  | "ts"
+  | "py"
+  | "go"
+  | "java"
+  | "c"
+  | "cpp"
+  | "sh"
+  | "yaml"
+  | "md";
 
 const EXT_TO_LANG: Record<string, Lang> = {
   ".js": "js",
@@ -26,6 +36,8 @@ const EXT_TO_LANG: Record<string, Lang> = {
   ".zsh": "sh",
   ".yaml": "yaml",
   ".yml": "yaml",
+  ".md": "md",
+  ".markdown": "md",
 };
 
 export function detectLang(filename: string): Lang | undefined {
@@ -47,6 +59,8 @@ function lineCommentPrefix(lang: Lang): string[] {
     case "sh":
     case "yaml":
       return ["#"];
+    case "md":
+      return [];
     default:
       return [];
   }
@@ -60,6 +74,8 @@ function blockCommentDelims(lang: Lang): [string, string][] {
     case "c":
     case "cpp":
       return [["/*", "*/"]];
+    case "md":
+      return [];
     default:
       return [];
   }
@@ -101,6 +117,17 @@ export function scanMentionsInCodeComments(params: {
   const mentions: Mention[] = [];
   const lc = lineCommentPrefix(lang);
   const bc = blockCommentDelims(lang);
+
+  if (lang === "md") {
+    const lines = content.split(/\r?\n/);
+    let offset = 0;
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      collectMentions(line, content, offset, filename, i + 1);
+      offset += line.length + 1;
+    }
+    return dedupe(mentions);
+  }
 
   // First, scan block comments via a simple state machine
   if (bc.length) {
