@@ -1,3 +1,7 @@
+## 1.1.0-a5c-main.21 (2025-09-15)
+
+* feat(mentions): unify code_comment location to object shape; wire patch scanning in enrich path and  ([8ec793d](https://github.com/a5c-ai/events/commit/8ec793d)), closes [#387](https://github.com/a5c-ai/events/issues/387) [#418](https://github.com/a5c-ai/events/issues/418)
+
 ## 1.1.0-a5c-main.20 (2025-09-15)
 
 * fix(github): emit type "issue" (singular) for Issues payloads to match NE schema; add tests for norm ([7049aed](https://github.com/a5c-ai/events/commit/7049aed)), closes [#388](https://github.com/a5c-ai/events/issues/388) [#415](https://github.com/a5c-ai/events/issues/415)
