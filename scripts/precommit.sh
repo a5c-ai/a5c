@@ -17,12 +17,12 @@ if [ -z "$STAGED" ]; then
 fi
 
 fail() {
-  echo "[precommit] \033[31mFAIL\033[0m: $1" >&2
+  printf "[precommit] \033[31mFAIL\033[0m: %s\n" "$1" >&2
   exit 1
 }
 
 warn() {
-  echo "[precommit] \033[33mWARN\033[0m: $1" >&2
+  printf "[precommit] \033[33mWARN\033[0m: %s\n" "$1" >&2
 }
 
 # 1) Guard against Windows-invalid filenames (e.g., ':')
@@ -37,7 +37,8 @@ if [ -n "$TEXT_FILES" ]; then
   TW_BAD=0
   for f in $TEXT_FILES; do
     [ -f "$f" ] || continue
-    if grep -n -P "\s$" "$f" >/dev/null 2>&1; then
+    # Portable trailing whitespace check (POSIX char class)
+    if grep -nE "[[:space:]]$" "$f" >/dev/null 2>&1; then
       echo "[precommit] Trailing whitespace: $f"
       TW_BAD=1
     fi
@@ -69,7 +70,7 @@ if command -v npm >/dev/null 2>&1 && [ -f package.json ]; then
     if [ -f scripts/prepush-related.js ]; then
       echo "[precommit] Related tests (vitest)..."
       A5C_BASE_REF="origin/a5c/main" node scripts/prepush-related.js || {
-        warn "Related tests failed; running vite st fallback."
+        warn "Related tests failed; running vitest fallback."
         npx vitest run --passWithNoTests || fail "Tests failed."
       }
     else
@@ -81,4 +82,3 @@ fi
 
 echo "[precommit] All checks passed."
 exit 0
-
