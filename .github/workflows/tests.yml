@@ -72,6 +72,10 @@ jobs:
           path: |
             junit.xml
           if-no-files-found: ignore
+      - name: Validate observability example against schema
+        if: always()
+        run: |
+          node scripts/validate-observability.mjs
       - name: Flaky tests detection
         if: always()
         env:
@@ -249,6 +253,8 @@ jobs:
         uses: ./.github/actions/obs-summary
         env:
           OBS_FILE: observability.json
+          # Pin schema version in produced artifact
+          SCHEMA_VERSION: 0.1
           CACHE_NODE_HIT: ${{ steps.setup-node.outputs.cache-hit }}
           CACHE_NODE_BYTES: ${{ env.CACHE_NODE_BYTES }}
           CACHE_NODE_KEY: ${{ env.CACHE_NODE_KEY }}

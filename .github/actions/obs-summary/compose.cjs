@@ -2,6 +2,7 @@
 const fs = require('fs');
 
 const env = (k, d = '') => process.env[k] ?? d;
+const schemaVersion = env('SCHEMA_VERSION', '0.1');
 const HIT = 'HIT', BYTES = 'BYTES', KEY = 'KEY';
 
 const startedAtEnv = env('RUN_STARTED_AT') || env('GITHUB_RUN_STARTED_AT') || '';
@@ -78,6 +79,7 @@ try {
 } catch {}
 
 const obs = {
+  schema_version: schemaVersion,
   repo: env('GITHUB_REPOSITORY') || env('REPO'),
   workflow: env('GITHUB_WORKFLOW') || env('WORKFLOW_NAME'),
   job: env('JOB_NAME') || env('GITHUB_JOB'),

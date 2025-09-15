@@ -1,16 +1,12 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://a5c.ai/schemas/observability.schema.v0.1.json",
-  "title": "a5c Observability Artifact (v0.1)",
+  "$id": "https://a5c.ai/schemas/observability.schema.json",
+  "title": "Observability Artifact (v0.1)",
   "type": "object",
   "additionalProperties": false,
   "required": ["schema_version", "repo", "workflow", "job", "run", "metrics"],
   "properties": {
-    "schema_version": {
-      "type": "string",
-      "const": "0.1",
-      "description": "Schema version string for compatibility and migrations."
-    },
+    "schema_version": { "type": "string", "const": "0.1" },
     "repo": { "type": "string", "minLength": 1 },
     "workflow": { "type": "string", "minLength": 1 },
     "job": { "type": "string", "minLength": 1 },
@@ -25,81 +21,114 @@
         "actor",
         "event_name",
         "conclusion",
+        "started_at",
         "completed_at"
       ],
       "properties": {
-        "id": { "oneOf": [{ "type": "integer" }, { "type": "string" }] },
+        "id": { "anyOf": [{ "type": "integer" }, { "type": "string" }] },
         "attempt": { "type": "integer", "minimum": 1 },
-        "sha": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+        "sha": { "type": "string", "minLength": 7 },
         "ref": { "type": "string" },
         "actor": { "type": "string" },
         "event_name": { "type": "string" },
         "conclusion": { "type": "string" },
         "started_at": { "type": "string", "format": "date-time" },
         "completed_at": { "type": "string", "format": "date-time" },
-        "duration_ms": { "type": "integer", "minimum": 0 }
+        "duration_ms": { "anyOf": [{ "type": "integer" }, { "type": "null" }] }
       }
     },
     "metrics": {
       "type": "object",
       "additionalProperties": false,
+      "required": [],
       "properties": {
         "coverage": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "total": {
+          "anyOf": [
+            { "type": "null" },
+            {
               "type": "object",
-              "additionalProperties": false,
               "properties": {
-                "lines": { "$ref": "#/$defs/covStat" },
-                "functions": { "$ref": "#/$defs/covStat" },
-                "branches": { "$ref": "#/$defs/covStat" },
-                "statements": { "$ref": "#/$defs/covStat" }
-              }
+                "total": {
+                  "type": "object",
+                  "properties": {
+                    "lines": {
+                      "type": "object",
+                      "properties": {
+                        "pct": { "type": "number" },
+                        "covered": { "type": "integer" },
+                        "total": { "type": "integer" }
+                      },
+                      "additionalProperties": true
+                    },
+                    "functions": {
+                      "type": "object",
+                      "properties": {
+                        "pct": { "type": "number" },
+                        "covered": { "type": "integer" },
+                        "total": { "type": "integer" }
+                      },
+                      "additionalProperties": true
+                    },
+                    "branches": {
+                      "type": "object",
+                      "properties": {
+                        "pct": { "type": "number" },
+                        "covered": { "type": "integer" },
+                        "total": { "type": "integer" }
+                      },
+                      "additionalProperties": true
+                    },
+                    "statements": {
+                      "type": "object",
+                      "properties": {
+                        "pct": { "type": "number" },
+                        "covered": { "type": "integer" },
+                        "total": { "type": "integer" }
+                      },
+                      "additionalProperties": true
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              },
+              "additionalProperties": true
             }
-          }
+          ]
         },
         "cache": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "entries": {
-              "type": "array",
-              "items": {
-                "type": "object",
-                "additionalProperties": false,
-                "required": ["kind", "hit"],
-                "properties": {
-                  "kind": { "type": "string" },
-                  "hit": { "type": "boolean" }
-                }
-              }
-            },
-            "summary": {
+          "anyOf": [
+            { "type": "null" },
+            {
               "type": "object",
               "additionalProperties": false,
-              "required": ["hits", "misses", "total"],
               "properties": {
-                "hits": { "type": "integer", "minimum": 0 },
-                "misses": { "type": "integer", "minimum": 0 },
-                "total": { "type": "integer", "minimum": 0 }
+                "entries": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "kind": { "type": "string" },
+                      "hit": { "type": "boolean" },
+                      "bytes": { "type": "integer" },
+                      "key": { "type": "string" }
+                    }
+                  }
+                },
+                "summary": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "hits": { "type": "integer", "minimum": 0 },
+                    "misses": { "type": "integer", "minimum": 0 },
+                    "total": { "type": "integer", "minimum": 0 },
+                    "bytes_restored_total": { "type": "integer", "minimum": 0 }
+                  }
+                }
               }
             }
-          }
+          ]
         }
-      }
-    }
-  },
-  "$defs": {
-    "covStat": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["pct", "covered", "total"],
-      "properties": {
-        "pct": { "type": "number", "minimum": 0, "maximum": 100 },
-        "covered": { "type": "integer", "minimum": 0 },
-        "total": { "type": "integer", "minimum": 0 }
       }
     }
   }
