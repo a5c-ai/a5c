@@ -20,19 +20,34 @@ function parseJUnit(xml) {
   // Minimal parsing for Vitest junit: extract testcases with name, classname, file, and failures
   // We avoid XML deps; use regex heuristics sufficient for our junit.xml
   const cases = [];
-  const re = /<testcase\s+([^>]+)>([\s\S]*?)<\/testcase>/g;
+  // 1) Paired testcase tags with body (may include <failure>)
+  const rePaired = /<testcase\s+([^>]+)>([\s\S]*?)<\/testcase>/g;
   let m;
-  while ((m = re.exec(xml)) !== null) {
+  while ((m = rePaired.exec(xml)) !== null) {
     const attrs = m[1];
-    const body = m[2];
+    const body = m[2] || '';
     const get = (k) => {
-      const r = new RegExp(`${k}="([^"]*)"`).exec(attrs);
+      const r = new RegExp(`(?:^|\\s)${k}="([^"]*)"`).exec(attrs);
       return r ? r[1] : '';
     };
     const name = get('name');
     const classname = get('classname');
     const file = get('file') || '';
     const failed = /<failure\b/.test(body);
+    cases.push({ name, classname, file, failed });
+  }
+  // 2) Self-closing testcase tags (no body): treat as pass
+  const reSelf = /<testcase\s+([^>]+?)\s*\/>/g;
+  while ((m = reSelf.exec(xml)) !== null) {
+    const attrs = m[1];
+    const get = (k) => {
+      const r = new RegExp(`(?:^|\\s)${k}="([^"]*)"`).exec(attrs);
+      return r ? r[1] : '';
+    };
+    const name = get('name');
+    const classname = get('classname');
+    const file = get('file') || '';
+    const failed = false;
     cases.push({ name, classname, file, failed });
   }
   return cases;
@@ -64,7 +79,8 @@ function detectFlaky(cases) {
 }
 
 function main() {
-  const junitPath = path.resolve(process.cwd(), 'junit.xml');
+  const input = process.env.JUNIT_XML && process.env.JUNIT_XML.trim() ? process.env.JUNIT_XML.trim() : 'junit.xml';
+  const junitPath = path.isAbsolute(input) ? input : path.resolve(process.cwd(), input);
   const xml = safeRead(junitPath);
   const cases = parseJUnit(xml);
   const summary = detectFlaky(cases);
