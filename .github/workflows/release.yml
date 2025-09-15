@@ -27,18 +27,18 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
-          cache: 'npm'
-          registry-url: 'https://npm.pkg.github.com'
+          node-version-file: .nvmrc
+          cache: "npm"
+          registry-url: "https://npm.pkg.github.com"
       - name: Install
         run: |
-          if [ -f package-lock.json ]; then 
+          if [ -f package-lock.json ]; then
             echo "Attempting clean install via npm ci..."
             if ! npm ci; then
               echo "npm ci failed (likely lockfile mismatch). Falling back to npm install to update lockfile..."
               npm install
             fi
-          else 
+          else
             npm install
           fi
       - name: Build
@@ -46,21 +46,27 @@ jobs:
       - name: Release (a5c/main prerelease)
         if: github.ref == 'refs/heads/a5c/main'
         env:
+          # Use GitHub token (PAT) for GitHub Packages auth; do not use npmjs token here
           GITHUB_TOKEN: ${{ secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN || secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+          HUSKY: 0
         run: npx semantic-release
       - name: Release (main stable)
         if: github.ref == 'refs/heads/main'
         env:
+          # Use GitHub token for GitHub Packages; npmjs publish uses separate step
           GITHUB_TOKEN: ${{ secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN || secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+          HUSKY: 0
         run: npx semantic-release
       - name: Setup Node.js for npmjs (main only)
         if: github.ref == 'refs/heads/main'
         uses: actions/setup-node@v4
         with:
-          node-version: 22
-          registry-url: 'https://registry.npmjs.org'
+          node-version-file: .nvmrc
+          registry-url: "https://registry.npmjs.org"
       - name: Publish to npmjs (main only)
         if: github.ref == 'refs/heads/main'
         env:

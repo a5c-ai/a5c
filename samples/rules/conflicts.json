@@ -1,0 +1,30 @@
+{
+  "rules": [
+    {
+      "name": "conflict_in_pr_with_low_priority_label",
+      "on": "pull_request",
+      "when": {
+        "all": [
+          {
+            "path": "$.enriched.github.pr.mergeable_state",
+            "in": ["dirty", "blocked"]
+          },
+          {
+            "path": "$.payload.pull_request.labels[*].name",
+            "contains": "priority:low"
+          }
+        ]
+      },
+      "emit": {
+        "key": "conflict_in_pr_with_low_priority_label",
+        "labels": ["conflict", "pr", "priority:low"],
+        "targets": ["developer-agent", "triager-agent"],
+        "payload": {
+          "pr_number": "$.payload.pull_request.number",
+          "repo": "$.repository.full_name",
+          "mergeable_state": "$.enriched.github.pr.mergeable_state"
+        }
+      }
+    }
+  ]
+}

@@ -11,13 +11,17 @@ export default defineConfig({
     reporters: [
       'dot',
       ['junit', { outputFile: 'junit.xml' }],
+      // JSON reporter to enable post-processing of retries/slow tests in CI
+      ['json', { outputFile: 'vitest-results.json' }],
     ],
     coverage: {
       reporter: ['text', 'lcov', 'json-summary'],
       provider: 'v8',
       all: true,
       include: ['src/**/*.{ts,tsx}'],
-      exclude: ['**/*.d.ts', 'dist/**', 'node_modules/**', 'coverage/**'],
+      // Exclude CLI entrypoint since e2e tests invoke compiled JS (dist/cli.js),
+      // which is not instrumented against the TS source and skews coverage.
+      exclude: ['src/cli.ts', '**/*.d.ts', 'dist/**', 'node_modules/**', 'coverage/**'],
       thresholds: {
         lines: 60,
         branches: 55,

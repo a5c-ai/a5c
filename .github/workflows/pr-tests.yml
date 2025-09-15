@@ -14,23 +14,44 @@ jobs:
     name: Unit Tests (PR)
     runs-on: ubuntu-latest
     timeout-minutes: 6
+    env:
+      # Optional: enable Codecov uploads when token is set (secret or variable)
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN || vars.CODECOV_TOKEN || '' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version-file: .nvmrc
           cache: npm
       - name: Install
         run: npm ci
       - name: Test (vitest, coverage)
         run: npm run -s test:ci
+      - name: Upload coverage to Codecov (optional)
+        if: env.CODECOV_TOKEN != ''
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ env.CODECOV_TOKEN }}
+          files: |
+            coverage/lcov.info
+          flags: pr
+          fail_ci_if_error: false
+          verbose: true
       - name: Upload coverage artifact
-        if: failure()
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: pr-coverage-lcov
           path: |
             coverage/lcov.info
             coverage/coverage-summary.json
+      - name: Upload coverage to Codecov (optional)
+        if: env.CODECOV_TOKEN != ''
+        uses: codecov/codecov-action@v4
+        with:
+          files: coverage/lcov.info
+          token: ${{ secrets.CODECOV_TOKEN }}
+          flags: pr
+          fail_ci_if_error: false
