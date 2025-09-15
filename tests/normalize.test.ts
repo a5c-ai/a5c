@@ -75,7 +75,8 @@ describe("normalize()", () => {
     );
   });
 
-  it("issue sample validates", async () => {
+  it('issues.opened sample validates with type "issue"', async () => {
+    // Reuse tests/fixtures as input for normalize
     await run(
       path.resolve("tests/fixtures/github/issues.opened.json"),
       "issue",
