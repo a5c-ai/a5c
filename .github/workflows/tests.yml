@@ -25,13 +25,6 @@ jobs:
       - name: Test
         run: |
           ./scripts/test.sh
-      - name: Upload JUnit report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: junit-report
-          path: |
-            junit.xml
       - name: CLI smoke: normalize | validate sample
         run: |
           # build CLI if not already built by pretest
