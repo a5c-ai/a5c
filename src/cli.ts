@@ -168,7 +168,7 @@ program
   .description("Emit an event to a sink (stdout or file)")
   .option("--in <file>", "input JSON file path (default: stdin)")
   .option("--out <file>", "output JSON file path (for file sink)")
-  .option("--sink <name>", "sink name (stdout|file)", "stdout")
+  .option("--sink <name>", "sink name (stdout|file)")
   .action(async (cmdOpts: any) => {
     const { code, output } = await handleEmit({
       in: cmdOpts.in,
