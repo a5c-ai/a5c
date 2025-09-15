@@ -18,3 +18,4 @@
 ## Validation
 
 - Visual diff and quick grep to ensure no unsupported fields in examples.
+  \n## Changes\n- Updated docs/cli/ne-schema.md to align with docs/specs/ne.schema.json\n- Added Provenance details + Future extensions\n- Opened PR: https://github.com/a5c-ai/events/pull/401\n\n## Validation\n- Build and tests passed locally.\n- Grep found no unsupported provenance fields in examples.\n
