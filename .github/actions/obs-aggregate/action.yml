@@ -1,49 +1,89 @@
 name: "Observability Aggregate"
-description: "Download observability artifacts from prior jobs and summarize"
+description: "Download observability artifacts from prior jobs, aggregate into observability.aggregate.json"
 author: "a5c.ai"
-
-inputs:
-  artifact_name:
-    description: "Name of the artifact to download"
-    required: false
-    default: "observability"
-  path:
-    description: "Directory to download artifacts into"
-    required: false
-    default: "aggregated-observability"
-
 runs:
   using: "composite"
   steps:
-    - name: Download observability artifact(s)
+    - name: Download observability artifacts
       uses: actions/download-artifact@v4
       with:
-        name: ${{ inputs.artifact_name }}
-        path: ${{ inputs.path }}
+        # Download all artifacts to a known directory
+        path: observability_artifacts
+        pattern: |
+          observability
         merge-multiple: true
 
-    - name: Summarize observability files
+    - name: Aggregate observability JSON
+      id: aggregate
       shell: bash
       run: |
         set -euo pipefail
-        DIR="${{ inputs.path }}"
-        echo "## Aggregated Observability" >> "$GITHUB_STEP_SUMMARY"
-        if [ ! -d "$DIR" ]; then
-          echo "No directory $DIR after download; nothing to summarize." >> "$GITHUB_STEP_SUMMARY"
+        OUT="observability.aggregate.json"
+        # Discover candidate files
+        mapfile -d '' FILES < <(find observability_artifacts -type f -name 'observability.json' -print0 2>/dev/null || true) || true
+        if [ ${#FILES[@]} -eq 0 ]; then
+          echo "No observability.json artifacts found; emitting empty aggregate" >&2
+          printf '{"schema_version":"0.1","jobs":[],"metrics":{}}\n' > "$OUT"
           exit 0
         fi
-        count=$(find "$DIR" -type f -name '*.json' | wc -l | awk '{print $1}')
-        echo "- Downloaded JSON files: ${count}" >> "$GITHUB_STEP_SUMMARY"
-        # Print first few files for quick visibility
-        i=0
-        while IFS= read -r f; do
-          i=$((i+1))
-          echo "\n<details><summary>${f}</summary>" >> "$GITHUB_STEP_SUMMARY"
-          head -c 4000 "$f" | sed 's/$/  /' >> "$GITHUB_STEP_SUMMARY" || true
-          echo "\n</details>" >> "$GITHUB_STEP_SUMMARY"
-          [ "$i" -ge 3 ] && break || true
-        done < <(find "$DIR" -type f -name '*.json' | sort)
+        # Use node for robust JSON handling and aggregation (handles coverage + cache)
+        node - <<'NODE'
+        const fs = require('fs');
+        const path = require('path');
+        const baseDir = 'observability_artifacts';
+        // Recursively collect all observability.json files
+        const walk = (dir) => {
+          let res = [];
+          for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+            const p = path.join(dir, entry.name);
+            if (entry.isDirectory()) res = res.concat(walk(p));
+            else if (entry.isFile() && entry.name === 'observability.json') res.push(p);
+          }
+          return res;
+        };
+        const files = fs.existsSync(baseDir) ? walk(baseDir) : [];
+        const jobs = [];
+        const cacheEntries = [];
+        let bytesTotal = 0;
+        for (const f of files) {
+          try {
+            const obj = JSON.parse(fs.readFileSync(f, 'utf8'));
+            jobs.push(obj);
+            const cache = obj?.metrics?.cache;
+            if (cache) {
+              const entries = Array.isArray(cache.entries) ? cache.entries : [];
+              for (const e of entries) {
+                cacheEntries.push(e);
+                if (typeof e.bytes === 'number') bytesTotal += e.bytes;
+              }
+            }
+          } catch (e) {
+            // skip bad file but continue
+          }
+        }
+        // Aggregate cache summary
+        const hits = cacheEntries.filter(e => !!e.hit).length;
+        const total = cacheEntries.length;
+        const cacheAgg = total ? {
+          entries: cacheEntries,
+          summary: { hits, misses: total - hits, total, bytes_restored_total: bytesTotal }
+        } : null;
+        // For now, do not attempt to merge coverage; preserve per-job data only.
+        const aggregate = {
+          schema_version: '0.1',
+          jobs,
+          metrics: { cache: cacheAgg }
+        };
+        fs.writeFileSync('observability.aggregate.json', JSON.stringify(aggregate, null, 2));
+        NODE
+
+    - name: Upload aggregate artifact
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: observability-aggregate
+        path: observability.aggregate.json
 
 branding:
-  icon: bar-chart-2
+  icon: layers
   color: blue
