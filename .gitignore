@@ -62,3 +62,4 @@ next-env.d.ts
 
 # CLI outputs
 /out.json
+tmp-enrich-*.json
