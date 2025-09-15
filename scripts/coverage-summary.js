@@ -1,98 +1,92 @@
 #!/usr/bin/env node
-/**
- * Summarize coverage from coverage/coverage-summary.json and enforce Vitest thresholds.
- * - Prints a markdown table to stdout
- * - Appends to GITHUB_STEP_SUMMARY if set
- * - Exits non-zero if any threshold is not met
- */
-import fs from 'node:fs';
-import path from 'node:path';
+// ESM script (package type: module)
+import fs from 'node:fs'
+import path from 'node:path'
 
-const ROOT = process.cwd();
-
-function readJson(p) {
-  return JSON.parse(fs.readFileSync(p, 'utf8'));
-}
-
-function parseThresholdsFromVitestConfig() {
-  const tsPath = path.join(ROOT, 'vitest.config.ts');
-  const jsPath = path.join(ROOT, 'vitest.config.js');
-  let src = '';
-  if (fs.existsSync(tsPath)) src = fs.readFileSync(tsPath, 'utf8');
-  else if (fs.existsSync(jsPath)) src = fs.readFileSync(jsPath, 'utf8');
-  else return {};
-
-  // crude parse of thresholds block
-  const m = src.match(/thresholds\s*:\s*\{([\s\S]*?)\}/m);
-  if (!m) return {};
-  const body = m[1];
-  const out = {};
-  for (const key of ['lines','branches','functions','statements']) {
-    const km = body.match(new RegExp(key + "\\s*:\\s*([0-9]+(?:\\.[0-9]+)?)"));
-    if (km) out[key] = Number(km[1]);
+function readJSON(p) {
+  try {
+    return JSON.parse(fs.readFileSync(p, 'utf8'))
+  } catch (e) {
+    return null
   }
-  return out;
 }
 
-function buildTable(total) {
-  const row = (k) => `| ${k} | ${Number(total?.[k]?.pct ?? 0).toFixed(2)}% | ${total?.[k]?.covered ?? 0}/${total?.[k]?.total ?? 0} |`;
+function findRepoRoot(start = process.cwd()) {
+  let dir = start
+  while (dir !== path.parse(dir).root) {
+    if (fs.existsSync(path.join(dir, 'package.json'))) return dir
+    dir = path.dirname(dir)
+  }
+  return start
+}
+
+function parseVitestThresholds(vitestConfigPath) {
+  const defaults = { lines: 60, statements: 60, functions: 60, branches: 55 }
+  try {
+    const src = fs.readFileSync(vitestConfigPath, 'utf8')
+    // naive extraction for numeric thresholds inside `thresholds: { ... }`
+    const sectionMatch = src.match(/thresholds\s*:\s*\{([\s\S]*?)\}/)
+    if (!sectionMatch) return defaults
+    const body = sectionMatch[1]
+    const out = { ...defaults }
+    for (const key of Object.keys(defaults)) {
+      const m = body.match(new RegExp(key + "\s*:\s*(\n|\r|\s)*(\d+)", 'm'))
+      if (m) out[key] = Number(m[2])
+    }
+    return out
+  } catch {
+    return defaults
+  }
+}
+
+function makeTable(total) {
+  const row = (k) => `| ${k} | ${Number(total[k]?.pct ?? 0).toFixed(2)}% | ${total[k]?.covered ?? 0}/${total[k]?.total ?? 0} |`
   return [
-    '## Coverage Summary',
-    '',
     '| Metric | Percent | Covered/Total |',
     '|---|---:|---:|',
     row('lines'),
     row('statements'),
     row('functions'),
     row('branches'),
-    '',
-  ];
+    ''
+  ].join('\n')
 }
 
-async function main() {
-  const summaryPath = path.join(ROOT, 'coverage', 'coverage-summary.json');
-  if (!fs.existsSync(summaryPath)) {
-    console.error('coverage-summary.json not found at', summaryPath);
-    process.exitCode = 2;
-    return;
-  }
-  const sum = readJson(summaryPath);
-  const t = sum.total || {};
-  const lines = buildTable(t);
+const repo = findRepoRoot()
+const covSummaryPath = path.join(repo, 'coverage', 'coverage-summary.json')
+const summary = readJSON(covSummaryPath)
 
-  const thresholds = parseThresholdsFromVitestConfig();
-  const checks = [];
-  for (const metric of ['lines','branches','functions','statements']) {
-    const actual = Number(t?.[metric]?.pct ?? 0);
-    const expected = Number(thresholds?.[metric]);
-    if (!Number.isFinite(expected)) continue;
-    const ok = actual >= expected;
-    checks.push({ metric, actual, expected, ok });
-  }
-  const anyFail = checks.some(c => !c.ok);
-  if (checks.length) {
-    lines.push('### Thresholds', '');
-    lines.push('| Metric | Actual | Expected | Status |');
-    lines.push('|---|---:|---:|:--:|');
-    for (const c of checks) {
-      const status = c.ok ? '✅' : '❌';
-      lines.push(`| ${c.metric} | ${c.actual.toFixed(2)}% | ${c.expected.toFixed(2)}% | ${status} |`);
-    }
-    lines.push('');
-  }
-
-  const out = lines.join('\n');
-  console.log(out);
-  if (process.env.GITHUB_STEP_SUMMARY) {
-    try { fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, out + '\n'); } catch {}
-  }
-  if (anyFail) {
-    console.error('Coverage thresholds not met. Failing.');
-    process.exitCode = 1;
-  }
+if (!summary || !summary.total) {
+  console.log('## Coverage Summary')
+  console.log()
+  console.log('_coverage/coverage-summary.json not found; ensure vitest json-summary reporter is enabled_')
+  process.exit(2)
 }
 
-main().catch((e) => {
-  console.error('coverage-summary failed:', e?.stack || e?.message || String(e));
-  process.exit(1);
-});
+const vitestCfgPath = path.join(repo, 'vitest.config.ts')
+const thresholds = parseVitestThresholds(vitestCfgPath)
+const total = summary.total
+
+const meets = {
+  lines: (total.lines?.pct ?? 0) >= thresholds.lines,
+  statements: (total.statements?.pct ?? 0) >= thresholds.statements,
+  functions: (total.functions?.pct ?? 0) >= thresholds.functions,
+  branches: (total.branches?.pct ?? 0) >= thresholds.branches,
+}
+const allPass = Object.values(meets).every(Boolean)
+
+const table = makeTable(total)
+
+const title = allPass ? '## Coverage Summary ✅' : '## Coverage Summary ❌'
+console.log(title)
+console.log()
+console.log(table)
+console.log(`Thresholds: L${thresholds.lines}/S${thresholds.statements}/F${thresholds.functions}/B${thresholds.branches}`)
+
+// Append to job summary if available
+if (process.env.GITHUB_STEP_SUMMARY && fs.existsSync(path.dirname(process.env.GITHUB_STEP_SUMMARY))) {
+  fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${title}\n\n${table}\n\n`)
+}
+
+process.exit(allPass ? 0 : 1)
+

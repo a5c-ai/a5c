@@ -25,6 +25,18 @@ jobs:
       - name: Test
         run: |
           ./scripts/test.sh
+      - name: Coverage summary (compute and save)
+        id: coverage
+        if: always()
+        run: |
+          set -euo pipefail
+          node --version
+          # Run the summary script and capture its exit code without failing this step
+          set +e
+          node scripts/coverage-summary.js | tee /tmp/coverage-summary.md
+          rc=$?
+          set -e
+          echo "status=$rc" >> "$GITHUB_OUTPUT"
       - name: CLI smoke: normalize | validate sample
         run: |
           # build CLI if not already built by pretest
@@ -44,18 +56,7 @@ jobs:
           name: coverage-lcov
           path: |
             coverage/lcov.info
-      - name: Coverage summary (compute and save)
-        id: coverage
-        if: always()
-        run: |
-          set -euo pipefail
-          node --version
-          # Run the summary script and capture its exit code without failing this step
-          set +e
-          node scripts/coverage-summary.js | tee /tmp/coverage-summary.md
-          rc=$?
-          set -e
-          echo "status=$rc" >> "$GITHUB_OUTPUT"
+            coverage/coverage-summary.json
       - name: Comment coverage on PR
         if: ${{ github.event_name == 'pull_request' }}
         env:
