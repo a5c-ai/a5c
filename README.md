@@ -43,6 +43,23 @@ cat out.json | npx @a5c-ai/events validate --quiet
 
 ## CLI Reference
 
+### Mentions config (Quick Start)
+
+Control where and how mentions are scanned during `enrich`:
+
+```bash
+# Disable scanning changed files for code-comment mentions
+events enrich --in ... --flag 'mentions.scan.changed_files=false'
+
+# Limit per-file bytes when scanning code comments (default: 200KB)
+events enrich --in ... --flag 'mentions.max_file_bytes=65536'
+
+# Restrict code-comment scanning to specific languages
+events enrich --in ... --flag "mentions.languages=ts,js,md"
+```
+
+See: docs/specs/README.md#4.2-mentions-schema for full details.
+
 `events mentions`
 
 - Purpose: Extract @mentions from text (stdin) or a file.
