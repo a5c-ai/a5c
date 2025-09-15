@@ -15,3 +15,16 @@
 ## Notes
 
 - Choosing Node 20 LTS as canonical for CI and local dev.
+
+## Changes
+
+- Ensure `.nvmrc` present with `20`
+- Align workflows to Node 20 where applicable
+  - .github/workflows/main.yml: `matrix.node-version` from `[22]` → `[20]`
+  - Keep Typecheck matrix on `[20, 22]` for compatibility only
+- README and CONTRIBUTING already documented Node 20 policy; confirmed and left as-is
+
+## Validation
+
+- Local install and build succeeded
+- Pre-push tests passed prior to opening PR
