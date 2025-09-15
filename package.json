@@ -18,7 +18,7 @@
   },
   "scripts": {
     "pretest": "npm run build",
-    "prepare": "npm run build",
+    "prepare": "husky install || true",
     "clean": "rimraf dist .turbo .vitest coverage",
     "build": "tsc -p tsconfig.build.json && node scripts/build-post.js",
     "build:clean": "rimraf dist && npm run build",
@@ -79,6 +79,7 @@
     "prettier": "^3.3.3",
     "rimraf": "^5.0.5",
     "semantic-release": "^24.2.0",
+    "husky": "^9.1.6",
     "tsx": "^4.19.1",
     "typescript": "5.9.2",
     "typescript-eslint": "8.43.0",
