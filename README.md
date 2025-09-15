@@ -349,28 +349,27 @@ This repository initially used a generic a5c platform README. That content now l
 
 ### Composed + Validate (Walkthrough)
 
-You can enrich with rules to emit composed events, then validate the enriched output against the NE schema. The NE schema includes an optional top‑level `composed` array; enriched outputs validate as‑is. If you want to validate only the normalized core (without composed), you may optionally strip `composed` for that purpose.
+You can enrich with rules to emit composed events and validate the enriched output against the NE schema. The `composed` field is part of the NE schema and optional; enriched documents validate as‑is. If you want to validate just the normalized subset, you may drop `.composed` before validation.
 
 ```bash
 # Enrich with rules to produce `.composed[]`
-events enrich --in samples/pull_request.synchronize.json \
-  --rules samples/rules/conflicts.yml \
-  --out enriched.json
+events enrich --in samples/pull_request.synchronize.json   --rules samples/rules/conflicts.yml   --out enriched.json
 
 # Inspect composed events (guard for absence)
 jq '(.composed // []) | map({key, reason})' enriched.json
 
-# Validate the enriched document against the NE schema (no need to drop `.composed`)
+# Validate the enriched document against the NE schema (as‑is)
 events validate --in enriched.json --schema docs/specs/ne.schema.json --quiet
 
-# Optional: validate the normalized-only subset by removing `.composed`
+# Option: validate the normalized‑only subset (drop `.composed`)
 jq 'del(.composed)' enriched.json | events validate --schema docs/specs/ne.schema.json --quiet
 ```
 
 Notes:
 
 - `.composed` may be absent when no rules match. Use `(.composed // [])` in `jq`.
-- NE schema: `docs/specs/ne.schema.json` includes optional top‑level `composed`. `composed[].payload` may be `object | array | null`.
+- Validation uses the NE schema at `docs/specs/ne.schema.json`. The `composed` field is included in that schema and optional; strip it only if you want to validate the normalized‑only subset.
+- `payload` is `object | array` (verbatim) and `composed[].payload` may be `object | array | null`.
 
 ## Links
 
