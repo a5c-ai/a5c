@@ -287,7 +287,7 @@ events enrich --in samples/pull_request.synchronize.json \
   --rules samples/rules/conflicts.yml \
   --out enriched.json
 
-# Inspect composed events (guard for absence)
+# Inspect composed events (guard for absence; `reason` may be omitted)
 jq '(.composed // []) | map({key, reason})' enriched.json
 
 # Validate the enriched document against the NE schema (no need to drop `.composed`)
@@ -301,6 +301,7 @@ Notes:
 
 - `.composed` may be absent when no rules match. Use `(.composed // [])` in `jq`.
 - NE schema: `docs/specs/ne.schema.json` includes optional top‑level `composed`. `composed[].payload` may be `object | array | null`.
+- `reason` is optional depending on rule configuration.
 
 ## Links
 
