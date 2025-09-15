@@ -1,89 +1,90 @@
 name: "Observability Aggregate"
-description: "Download observability artifacts from prior jobs, aggregate into observability.aggregate.json"
+description: "Download all artifacts, summarize coverage/JUnit across jobs, write summary and aggregated JSON, upload artifact"
 author: "a5c.ai"
 runs:
   using: "composite"
   steps:
-    - name: Download observability artifacts
+    - name: Download all artifacts
       uses: actions/download-artifact@v4
       with:
-        # Download all artifacts to a known directory
-        path: observability_artifacts
-        pattern: |
-          observability
-        merge-multiple: true
+        path: artifacts
 
-    - name: Aggregate observability JSON
-      id: aggregate
+    - name: Aggregate coverage and JUnit
       shell: bash
       run: |
         set -euo pipefail
-        OUT="observability.aggregate.json"
-        # Discover candidate files
-        mapfile -d '' FILES < <(find observability_artifacts -type f -name 'observability.json' -print0 2>/dev/null || true) || true
-        if [ ${#FILES[@]} -eq 0 ]; then
-          echo "No observability.json artifacts found; emitting empty aggregate" >&2
-          printf '{"schema_version":"0.1","jobs":[],"metrics":{}}\n' > "$OUT"
-          exit 0
+        OUT_JSON="${OUT_JSON:-observability.aggregate.json}"
+        mkdir -p artifacts || true
+        # Find coverage summaries and junit reports
+        mapfile -t COVS < <(find artifacts -type f -name 'coverage-summary.json' 2>/dev/null || true)
+        mapfile -t JUNIT < <(find artifacts -type f -name '*.xml' -maxdepth 3 -printf '%p\n' 2>/dev/null | grep -E '/junit\.xml$' || true)
+        printf "%s\n" "${COVS[@]:-}" > /tmp/obs_covs.txt || true
+        printf "%s\n" "${JUNIT[@]:-}" > /tmp/obs_junit.txt || true
+        LINES=0 FUNCS=0 BRANCHES=0 COUNT=0
+        if [ ${#COVS[@]} -gt 0 ]; then
+          for f in "${COVS[@]}"; do
+            l=$(node -e "const t=require('fs').existsSync(process.argv[1])?JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')).total||{}:{}; console.log(Number((t.lines?.pct??0)))" "$f")
+            fn=$(node -e "const t=require('fs').existsSync(process.argv[1])?JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')).total||{}:{}; console.log(Number((t.functions?.pct??0)))" "$f")
+            br=$(node -e "const t=require('fs').existsSync(process.argv[1])?JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')).total||{}:{}; console.log(Number((t.branches?.pct??0)))" "$f")
+            LINES=$(awk -v a="$LINES" -v b="$l" 'BEGIN{print a+b}')
+            FUNCS=$(awk -v a="$FUNCS" -v b="$fn" 'BEGIN{print a+b}')
+            BRANCHES=$(awk -v a="$BRANCHES" -v b="$br" 'BEGIN{print a+b}')
+            COUNT=$((COUNT+1))
+          done
         fi
-        # Use node for robust JSON handling and aggregation (handles coverage + cache)
-        node - <<'NODE'
-        const fs = require('fs');
-        const path = require('path');
-        const baseDir = 'observability_artifacts';
-        // Recursively collect all observability.json files
-        const walk = (dir) => {
-          let res = [];
-          for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-            const p = path.join(dir, entry.name);
-            if (entry.isDirectory()) res = res.concat(walk(p));
-            else if (entry.isFile() && entry.name === 'observability.json') res.push(p);
-          }
-          return res;
-        };
-        const files = fs.existsSync(baseDir) ? walk(baseDir) : [];
-        const jobs = [];
-        const cacheEntries = [];
-        let bytesTotal = 0;
-        for (const f of files) {
-          try {
-            const obj = JSON.parse(fs.readFileSync(f, 'utf8'));
-            jobs.push(obj);
-            const cache = obj?.metrics?.cache;
-            if (cache) {
-              const entries = Array.isArray(cache.entries) ? cache.entries : [];
-              for (const e of entries) {
-                cacheEntries.push(e);
-                if (typeof e.bytes === 'number') bytesTotal += e.bytes;
-              }
+        avg() { if [ "$2" -gt 0 ]; then awk -v s="$1" -v n="$2" 'BEGIN{printf "%.2f", s/n}'; else echo 0; fi; }
+        LINES_A=$(avg "$LINES" "$COUNT")
+        FUNCS_A=$(avg "$FUNCS" "$COUNT")
+        BRANCHES_A=$(avg "$BRANCHES" "$COUNT")
+        node -e '
+          const fs = require("fs");
+          const OUT = process.env.OUT_JSON || "observability.aggregate.json";
+          const readList = (p) => {
+            try { return fs.readFileSync(p, "utf8").split(/\r?\n/).filter(Boolean); } catch { return []; }
+          };
+          const cov_files = readList("/tmp/obs_covs.txt");
+          const junit_files = readList("/tmp/obs_junit.txt");
+          const num = (k) => Number(process.env[k] || 0);
+          const agg = {
+            artifacts_root: "artifacts",
+            found: {
+              coverage_summaries: cov_files,
+              junit_reports: junit_files,
+            },
+            metrics: {
+              coverage_avg: {
+                lines_pct: num("LINES_A"),
+                functions_pct: num("FUNCS_A"),
+                branches_pct: num("BRANCHES_A"),
+                files_count: num("COUNT"),
+              },
+              cache: {}
             }
-          } catch (e) {
-            // skip bad file but continue
-          }
-        }
-        // Aggregate cache summary
-        const hits = cacheEntries.filter(e => !!e.hit).length;
-        const total = cacheEntries.length;
-        const cacheAgg = total ? {
-          entries: cacheEntries,
-          summary: { hits, misses: total - hits, total, bytes_restored_total: bytesTotal }
-        } : null;
-        // For now, do not attempt to merge coverage; preserve per-job data only.
-        const aggregate = {
-          schema_version: '0.1',
-          jobs,
-          metrics: { cache: cacheAgg }
-        };
-        fs.writeFileSync('observability.aggregate.json', JSON.stringify(aggregate, null, 2));
-        NODE
+          };
+          fs.writeFileSync(OUT, JSON.stringify(agg, null, 2));
+          console.log(`Wrote ${OUT}`);
+        ' 
 
-    - name: Upload aggregate artifact
-      if: always()
+    - name: Step summary
+      shell: bash
+      run: |
+        set -euo pipefail
+        OUT_JSON="${OUT_JSON:-observability.aggregate.json}"
+        echo "## Aggregate Observability" >> "$GITHUB_STEP_SUMMARY"
+        if [ -f "$OUT_JSON" ]; then
+          echo '\n```json' >> "$GITHUB_STEP_SUMMARY"
+          head -c 5000 "$OUT_JSON" >> "$GITHUB_STEP_SUMMARY" || true
+          echo '\n```' >> "$GITHUB_STEP_SUMMARY"
+        else
+          echo "No aggregate JSON produced." >> "$GITHUB_STEP_SUMMARY"
+        fi
+
+    - name: Upload aggregate
       uses: actions/upload-artifact@v4
       with:
         name: observability-aggregate
         path: observability.aggregate.json
 
 branding:
-  icon: layers
-  color: blue
+  icon: bar-chart
+  color: purple
