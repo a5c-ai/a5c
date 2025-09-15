@@ -1,6 +1,6 @@
 {
   "name": "@a5c-ai/events",
-  "version": "1.1.0-a5c-main.17",
+  "version": "1.1.0-a5c-main.21",
   "description": "Events SDK and CLI for normalizing and enriching repo/CI events for agentic workflows",
   "type": "module",
   "private": false,
@@ -18,8 +18,7 @@
   },
   "scripts": {
     "pretest": "npm run build",
-    "prepare": "npm run build",
-    "postinstall": "husky install || true",
+    "prepare": "husky && npm run build",
     "clean": "rimraf dist .turbo .vitest coverage",
     "build": "tsc -p tsconfig.build.json && node scripts/build-post.js",
     "build:clean": "rimraf dist && npm run build",

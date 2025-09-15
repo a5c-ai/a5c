@@ -101,7 +101,7 @@ runs:
         # Cache summary if envs provided
         kinds=$(env | awk -F= '/^CACHE_[A-Z0-9]+_HIT=/{print $1}' | sed -E 's/^CACHE_([A-Z0-9]+)_HIT.*/\1/; s/.*/\L&/')
         if [ -n "${kinds}" ]; then
-          hits=0; total=0; line_parts=""
+          hits=0; total=0; bytes_total=0; line_parts=""
           for k in $kinds; do
             v=$(eval echo "\$CACHE_${k^^}_HIT")
             bytes=$(eval echo "\${CACHE_${k^^}_BYTES-}")
@@ -116,11 +116,18 @@ runs:
             if [ -n "${bytes}" ] && [ "${bytes}" -gt 0 ] 2>/dev/null; then
               mb=$(awk -v b="${bytes}" 'BEGIN{ printf "%.2f", b/1000000 }')
               size_part=", size ~${mb} MB"
+              bytes_total=$((bytes_total + bytes))
             fi
             entry="${k}: ${state}${size_part}"
             if [ -z "$line_parts" ]; then line_parts="$entry"; else line_parts="${line_parts}, $entry"; fi
           done
-          echo "- Cache: ${hits}/${total} hits (${line_parts})" >> "$GITHUB_STEP_SUMMARY"
+          ratio=$(awk -v h="$hits" -v t="$total" 'BEGIN{ if (t>0) printf "%.2f", h/t; else printf "n/a" }')
+          if [ "$bytes_total" -gt 0 ] 2>/dev/null; then
+            mb_total=$(awk -v b="$bytes_total" 'BEGIN{ printf "%.2f", b/1000000 }')
+            echo "- Cache: ${hits}/${total} hits (ratio ${ratio}), restored ~${mb_total} MB (${line_parts})" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "- Cache: ${hits}/${total} hits (ratio ${ratio}) (${line_parts})" >> "$GITHUB_STEP_SUMMARY"
+          fi
         fi
 
     - name: Upload observability.json
