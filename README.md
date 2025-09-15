@@ -30,7 +30,6 @@ npx @a5c-ai/events normalize --in samples/workflow_run.completed.json --out out.
 jq '.type, .repo.full_name, .provenance.workflow?.name' out.json
 
 # Validate against the NE schema (quiet on success)
-# Uses default schema path: docs/specs/ne.schema.json
 cat out.json | npx @a5c-ai/events validate --quiet
 ```
 

@@ -99,18 +99,5 @@
     "minimatch": "^9.0.5",
     "yaml": "^2.8.1",
     "zod": "^3.23.8"
-  },
-  "lint-staged": {
-    "src/**/*.{ts,tsx}": [
-      "eslint --fix",
-      "prettier -w"
-    ],
-    "{test,tests}/**/*.{ts,tsx,js}": [
-      "eslint --fix --max-warnings=0",
-      "prettier -w"
-    ],
-    "**/*.{md,json,yml,yaml}": [
-      "prettier -w"
-    ]
   }
 }
