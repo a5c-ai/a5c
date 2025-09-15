@@ -48,13 +48,18 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN || secrets.GITHUB_TOKEN }}
-        run: npx semantic-release
+        run: |
+          # Disable Husky hooks during CI release to avoid commit-msg validation blocking @semantic-release/git
+          export HUSKY=0
+          npx semantic-release
       - name: Release (main stable)
         if: github.ref == 'refs/heads/main'
         env:
           GITHUB_TOKEN: ${{ secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN || secrets.GITHUB_TOKEN }}
-        run: npx semantic-release
+        run: |
+          export HUSKY=0
+          npx semantic-release
       - name: Setup Node.js for npmjs (main only)
         if: github.ref == 'refs/heads/main'
         uses: actions/setup-node@v4
