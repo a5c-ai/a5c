@@ -121,6 +121,11 @@ events enrich --in samples/pull_request.synchronize.json \
 events enrich --in samples/pull_request.synchronize.json \
   --rules samples/rules/conflicts.yml \
   | jq '(.composed // []) | map({key, reason})'
+
+# JSON rules are also supported via the same `--rules` flag:
+events enrich --in samples/pull_request.synchronize.json \
+  --rules samples/rules/conflicts.json \
+  | jq '(.composed // []) | map({key, reason})'
 ```
 
 Note:
