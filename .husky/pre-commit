@@ -7,7 +7,8 @@ if command -v npx >/dev/null 2>&1 && [ -f package.json ]; then
   if [ -n "$A5C_SKIP_PRECOMMIT" ] || [ -n "$SKIP_PRECOMMIT" ]; then
     echo "Skipping pre-commit due to env flag."
   else
-    npx --no-install lint-staged || npx lint-staged || true
+    # Run lint-staged; if it fails (lint errors), block the commit
+    npx --no-install lint-staged || npx lint-staged
   fi
 fi
 
