@@ -75,7 +75,6 @@ export function detectTypeAndId(payload: any): DetectResult {
       payload.issue?.id ||
         `${payload.repository?.full_name}/issues/${payload.issue?.number}`,
     );
-    // Align with NE schema enum: 'issue' (singular)
     return { type: "issue", occurred_at, id };
   }
   // check_run
