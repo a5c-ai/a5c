@@ -37,6 +37,22 @@ We enforce fast pre-commit checks to keep `main` and `a5c/main` healthy:
 
 The hook is implemented in `scripts/precommit.sh` and invoked from `.husky/pre-commit`.
 
+### Husky setup (prepare-based)
+
+We use Husky v9 with a `prepare` script so hooks are set up only for contributors (not package consumers):
+
+```
+"scripts": {
+  "prepare": "husky && npm run build"
+}
+```
+
+Notes:
+
+- `prepare` runs on local `npm install` and during development; CI can call `npm ci` which also runs `prepare`.
+- We chain `npm run build` to keep the existing behavior of building on install.
+- We intentionally removed the deprecated `postinstall: \"husky install\"` to eliminate CI noise.
+
 ### Bypass in Emergencies
 
 If you must bypass locally (e.g., to unblock a hotfix), you can temporarily set one of:

@@ -110,6 +110,9 @@ jobs:
   test:
     runs-on: runner8core
     needs: build
+    permissions:
+      actions: read
+      contents: read
     steps:
       - uses: actions/checkout@v4
       - name: Setup Node.js
@@ -120,3 +123,12 @@ jobs:
           cache: "npm"
           check-latest: true
       - run: ./scripts/test.sh
+      - name: Step hotspots summary
+        if: always()
+        uses: ./.github/actions/step-hotspots
+        with:
+          warn_ms: 300000
+          error_ms: 900000
+          p95_warn_ms: 420000
+          p95_error_ms: 1200000
+          top_n: 10

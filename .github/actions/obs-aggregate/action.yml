@@ -1,0 +1,49 @@
+name: "Observability Aggregate"
+description: "Download observability artifacts from prior jobs and summarize"
+author: "a5c.ai"
+
+inputs:
+  artifact_name:
+    description: "Name of the artifact to download"
+    required: false
+    default: "observability"
+  path:
+    description: "Directory to download artifacts into"
+    required: false
+    default: "aggregated-observability"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Download observability artifact(s)
+      uses: actions/download-artifact@v4
+      with:
+        name: ${{ inputs.artifact_name }}
+        path: ${{ inputs.path }}
+        merge-multiple: true
+
+    - name: Summarize observability files
+      shell: bash
+      run: |
+        set -euo pipefail
+        DIR="${{ inputs.path }}"
+        echo "## Aggregated Observability" >> "$GITHUB_STEP_SUMMARY"
+        if [ ! -d "$DIR" ]; then
+          echo "No directory $DIR after download; nothing to summarize." >> "$GITHUB_STEP_SUMMARY"
+          exit 0
+        fi
+        count=$(find "$DIR" -type f -name '*.json' | wc -l | awk '{print $1}')
+        echo "- Downloaded JSON files: ${count}" >> "$GITHUB_STEP_SUMMARY"
+        # Print first few files for quick visibility
+        i=0
+        while IFS= read -r f; do
+          i=$((i+1))
+          echo "\n<details><summary>${f}</summary>" >> "$GITHUB_STEP_SUMMARY"
+          head -c 4000 "$f" | sed 's/$/  /' >> "$GITHUB_STEP_SUMMARY" || true
+          echo "\n</details>" >> "$GITHUB_STEP_SUMMARY"
+          [ "$i" -ge 3 ] && break || true
+        done < <(find "$DIR" -type f -name '*.json' | sort)
+
+branding:
+  icon: bar-chart-2
+  color: blue

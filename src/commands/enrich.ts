@@ -1,86 +1,112 @@
-import type { NormalizedEvent, Mention } from '../types.js'
-import { readJSONFile, loadConfig } from '../config.js'
-import { extractMentions } from '../extractor.js'
-import { loadRules, evaluateRulesDetailed } from '../rules.js'
+import type { NormalizedEvent, Mention } from "../types.js";
+import { readJSONFile, loadConfig } from "../config.js";
+import { extractMentions } from "../extractor.js";
+import { loadRules, evaluateRulesDetailed } from "../rules.js";
+import { mapToNE } from "../providers/github/map.js";
 
 export async function cmdEnrich(opts: {
-  in?: string
-  labels?: string[]
-  rules?: string
-  flags?: Record<string, string | boolean | number>
-  octokit?: any
-}): Promise<{ code: number; output?: NormalizedEvent; errorMessage?: string }>{
-  if (!opts.in) return { code: 2, errorMessage: 'Missing required --in FILE' }
-  let input: any
+  in?: string;
+  labels?: string[];
+  rules?: string;
+  flags?: Record<string, string | boolean | number>;
+  octokit?: any;
+}): Promise<{ code: number; output?: NormalizedEvent; errorMessage?: string }> {
+  if (!opts.in) return { code: 2, errorMessage: "Missing required --in FILE" };
+  let input: any;
   try {
-    input = readJSONFile<any>(opts.in) || {}
+    input = readJSONFile<any>(opts.in) || {};
   } catch (e: any) {
-    const msg = e?.code === 'ENOENT' ? `Input file not found: ${e?.path || opts.in}` : `Invalid JSON or read error: ${e?.message || e}`
-    return { code: 2, errorMessage: msg }
+    const msg =
+      e?.code === "ENOENT"
+        ? `Input file not found: ${e?.path || opts.in}`
+        : `Invalid JSON or read error: ${e?.message || e}`;
+    return { code: 2, errorMessage: msg };
   }
   // Default include_patch to false to minimize payload size
-  const includePatch = toBool(opts.flags?.include_patch ?? false)
-  const commitLimit = toInt(opts.flags?.commit_limit, 50)
-  const fileLimit = toInt(opts.flags?.file_limit, 200)
+  const includePatch = toBool(opts.flags?.include_patch ?? false);
+  const commitLimit = toInt(opts.flags?.commit_limit, 50);
+  const fileLimit = toInt(opts.flags?.file_limit, 200);
 
-  const cfg = loadConfig()
-  const token = cfg.githubToken
+  const cfg = loadConfig();
+  const token = cfg.githubToken;
 
-  const isNE = input && typeof input === 'object' && input.provider === 'github' && 'payload' in input
-  const baseEvent = isNE ? input.payload : input
-
+  const isNE =
+    input &&
+    typeof input === "object" &&
+    input.provider === "github" &&
+    "payload" in input;
+  // If input is already a NormalizedEvent, keep as-is. Otherwise, map raw payload to NE using provider mapping
   const neShell: NormalizedEvent = isNE
-    ? input
-    : {
-        id: String(baseEvent?.after || baseEvent?.workflow_run?.id || baseEvent?.pull_request?.id || 'temp-' + Math.random().toString(36).slice(2)),
-        provider: 'github',
-        type: baseEvent?.pull_request ? 'pull_request' : baseEvent?.workflow_run ? 'workflow_run' : baseEvent?.ref ? 'push' : 'commit',
-        occurred_at: new Date(
-          baseEvent?.head_commit?.timestamp || baseEvent?.workflow_run?.updated_at || baseEvent?.pull_request?.updated_at || Date.now()
-        ).toISOString(),
-        payload: baseEvent,
-        labels: opts.labels || [],
-        provenance: { source: 'cli' }
-      }
+    ? (input as NormalizedEvent)
+    : mapToNE(input, { source: "cli", labels: opts.labels });
 
-  let githubEnrichment: any = {}
+  // Use the underlying provider payload for enrichment/mentions extraction
+  const baseEvent = (neShell as any).payload || input;
+
+  let githubEnrichment: any = {};
   try {
-    const mod: any = await import('../enrichGithubEvent.js')
-    const fn = (mod.enrichGithubEvent || mod.default) as (e: any, o?: any) => Promise<any>
+    const mod: any = await import("../enrichGithubEvent.js");
+    const fn = (mod.enrichGithubEvent || mod.default) as (
+      e: any,
+      o?: any,
+    ) => Promise<any>;
     // Only call provider if explicitly requested via flags.use_github truthy
-    const useGithub = toBool((opts.flags as any)?.use_github)
+    const useGithub = toBool((opts.flags as any)?.use_github);
     const enriched = useGithub
-      ? await fn(baseEvent, { token, commitLimit, fileLimit, octokit: opts.octokit })
-      : { _enrichment: { provider: 'github', skipped: true } }
-    githubEnrichment = enriched?._enrichment || {}
+      ? await fn(baseEvent, {
+          token,
+          commitLimit,
+          fileLimit,
+          octokit: opts.octokit,
+        })
+      : { _enrichment: { provider: "github", skipped: true } };
+    githubEnrichment = enriched?._enrichment || {};
     if (!includePatch) {
       if (githubEnrichment.pr?.files) {
-        githubEnrichment.pr.files = githubEnrichment.pr.files.map((f: any) => ({ ...f, patch: undefined }))
+        githubEnrichment.pr.files = githubEnrichment.pr.files.map((f: any) => ({
+          ...f,
+          patch: undefined,
+        }));
       }
       if (githubEnrichment.push?.files) {
-        githubEnrichment.push.files = githubEnrichment.push.files.map((f: any) => ({ ...f, patch: undefined }))
+        githubEnrichment.push.files = githubEnrichment.push.files.map(
+          (f: any) => ({ ...f, patch: undefined }),
+        );
       }
     }
   } catch (e: any) {
     // If provider was requested but failed, return provider error code 3
-    const useGithub = toBool((opts.flags as any)?.use_github)
+    const useGithub = toBool((opts.flags as any)?.use_github);
     if (useGithub) {
-      return { code: 3, errorMessage: `GitHub enrichment failed: ${e?.message || e}` }
+      return {
+        code: 3,
+        errorMessage: `GitHub enrichment failed: ${e?.message || e}`,
+      };
     }
-    githubEnrichment = { provider: 'github', partial: true, errors: [{ message: String(e?.message || e) }] }
+    githubEnrichment = {
+      provider: "github",
+      partial: true,
+      errors: [{ message: String(e?.message || e) }],
+    };
   }
 
-  const mentions: Mention[] = []
+  const mentions: Mention[] = [];
   try {
-    const pr = (baseEvent as any)?.pull_request
-    if (pr?.body) mentions.push(...extractMentions(String(pr.body), 'pr_body'))
-    if (pr?.title) mentions.push(...extractMentions(String(pr.title), 'pr_title'))
-    const commits = (baseEvent as any)?.commits
+    const pr = (baseEvent as any)?.pull_request;
+    if (pr?.body) mentions.push(...extractMentions(String(pr.body), "pr_body"));
+    if (pr?.title)
+      mentions.push(...extractMentions(String(pr.title), "pr_title"));
+    const commits = (baseEvent as any)?.commits;
     if (Array.isArray(commits)) {
-      for (const c of commits) if (c?.message) mentions.push(...extractMentions(String(c.message), 'commit_message'))
+      for (const c of commits)
+        if (c?.message)
+          mentions.push(
+            ...extractMentions(String(c.message), "commit_message"),
+          );
     }
-    const commentBody = (baseEvent as any)?.comment?.body
-    if (commentBody) mentions.push(...extractMentions(String(commentBody), 'issue_comment'))
+    const commentBody = (baseEvent as any)?.comment?.body;
+    if (commentBody)
+      mentions.push(...extractMentions(String(commentBody), "issue_comment"));
   } catch {}
 
   const output: NormalizedEvent = {
@@ -88,45 +114,61 @@ export async function cmdEnrich(opts: {
     enriched: {
       ...(neShell.enriched || {}),
       github: githubEnrichment,
-      metadata: { ...(neShell.enriched?.metadata || {}), rules: opts.rules || null },
-      derived: { ...(neShell.enriched?.derived || {}), flags: opts.flags || {} },
-      ...(mentions.length ? { mentions } : {})
-    }
-  }
+      metadata: {
+        ...(neShell.enriched?.metadata || {}),
+        rules: opts.rules || null,
+      },
+      derived: {
+        ...(neShell.enriched?.derived || {}),
+        flags: opts.flags || {},
+      },
+      ...(mentions.length ? { mentions } : {}),
+    },
+  };
   // Evaluate composed event rules when --rules provided
   try {
-    const rules = loadRules(opts.rules)
+    const rules = loadRules(opts.rules);
     if (rules.length) {
-      const evalObj: any = { ...output, enriched: output.enriched, labels: output.labels || [] }
-      const res = evaluateRulesDetailed(evalObj, rules)
+      const evalObj: any = {
+        ...output,
+        enriched: output.enriched,
+        labels: output.labels || [],
+      };
+      const res = evaluateRulesDetailed(evalObj, rules);
       if (res?.composed?.length) {
         const composed = res.composed.map((c: any) => ({
           key: c.key,
-          reason: Array.isArray(c.criteria) && c.criteria.length ? c.criteria.join(' && ') : undefined,
+          reason:
+            Array.isArray(c.criteria) && c.criteria.length
+              ? c.criteria.join(" && ")
+              : undefined,
           targets: c.targets,
           labels: c.labels,
           payload: c.payload,
-        }))
-        ;(output as any).composed = composed
+        }));
+        (output as any).composed = composed;
       }
-      const meta: any = (output.enriched as any).metadata || {}
-      ;(output.enriched as any).metadata = { ...meta, rules_status: res.status }
+      const meta: any = (output.enriched as any).metadata || {};
+      (output.enriched as any).metadata = { ...meta, rules_status: res.status };
     }
   } catch (e) {
-    const meta: any = (output.enriched as any).metadata || {}
-    ;(output.enriched as any).metadata = { ...meta, rules_status: { ok: false, warnings: [String((e as any)?.message || e)] } }
+    const meta: any = (output.enriched as any).metadata || {};
+    (output.enriched as any).metadata = {
+      ...meta,
+      rules_status: { ok: false, warnings: [String((e as any)?.message || e)] },
+    };
   }
-  return { code: 0, output }
+  return { code: 0, output };
 }
 
 function toBool(v: any): boolean {
-  if (typeof v === 'boolean') return v
-  if (v == null) return false
-  const s = String(v).toLowerCase()
-  return s === '1' || s === 'true' || s === 'yes' || s === 'y' || s === 'on'
+  if (typeof v === "boolean") return v;
+  if (v == null) return false;
+  const s = String(v).toLowerCase();
+  return s === "1" || s === "true" || s === "yes" || s === "y" || s === "on";
 }
 
 function toInt(v: any, def = 0): number {
-  const n = Number.parseInt(String(v ?? ''), 10)
-  return Number.isFinite(n) ? n : def
+  const n = Number.parseInt(String(v ?? ""), 10);
+  return Number.isFinite(n) ? n : def;
 }
