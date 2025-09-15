@@ -1,92 +1,48 @@
-name: "Obs Aggregate"
-description: "Aggregate observability.json artifacts across jobs/matrix and compute cache hit ratios"
+name: "Observability Aggregate"
+description: "Download observability artifacts from prior jobs and summarize"
 author: "a5c.ai"
+
+inputs:
+  artifact_name:
+    description: "Name of the artifact to download"
+    required: false
+    default: "observability"
+  path:
+    description: "Directory to download artifacts into"
+    required: false
+    default: "aggregated-observability"
+
 runs:
   using: "composite"
   steps:
-    - name: Download observability artifacts
+    - name: Download observability artifact(s)
       uses: actions/download-artifact@v4
       with:
-        name: observability
-        path: ./.obs
+        name: ${{ inputs.artifact_name }}
+        path: ${{ inputs.path }}
+        merge-multiple: true
 
-    - name: Aggregate observability
-      id: aggregate
+    - name: Summarize observability files
       shell: bash
       run: |
         set -euo pipefail
-        OUT_FILE="${AGG_OUT_FILE:-observability.aggregate.json}"
-        echo "AGG_OUT_FILE=${OUT_FILE}" >> "$GITHUB_ENV"
-        node -e '
-          const fs = require("fs");
-          const path = require("path");
-          const dir = path.resolve(".obs");
-          const files = fs.existsSync(dir) ? fs.readdirSync(dir).filter(f=>f.endsWith(".json")) : [];
-          const docs = [];
-          for (const f of files) {
-            try {
-              const j = JSON.parse(fs.readFileSync(path.join(dir, f), "utf8"));
-              docs.push(j);
-            } catch {}
-          }
-          const allCache = [];
-          for (const d of docs) {
-            if (d?.metrics?.cache?.entries) {
-              for (const e of d.metrics.cache.entries) allCache.push(e);
-            }
-          }
-          const byKind = new Map();
-          for (const e of allCache) {
-            const k = (e.kind||"unknown");
-            const m = byKind.get(k) || { kind: k, hits: 0, total: 0, bytes: 0 };
-            m.total += 1;
-            if (e.hit) m.hits += 1;
-            if (typeof e.bytes === 'number') m.bytes += e.bytes;
-            byKind.set(k, m);
-          }
-          const kinds = Array.from(byKind.values()).map(m => ({
-            kind: m.kind,
-            hits: m.hits,
-            total: m.total,
-            hit_ratio: m.total ? m.hits/m.total : null,
-            bytes_restored_total: m.bytes || 0,
-          }));
-          const total = kinds.reduce((a,k)=>a+k.total,0);
-          const hits = kinds.reduce((a,k)=>a+k.hits,0);
-          const bytes = kinds.reduce((a,k)=>a+k.bytes_restored_total,0);
-          const agg = {
-            schema_version: "0.1",
-            run: { id: process.env.GITHUB_RUN_ID || null, attempt: Number(process.env.GITHUB_RUN_ATTEMPT||1) },
-            metrics: {
-              cache: {
-                overall: { hits, total, hit_ratio: total ? hits/total : null, bytes_restored_total: bytes },
-                by_kind: kinds,
-              }
-            }
-          };
-          fs.writeFileSync(process.env.AGG_OUT_FILE || "observability.aggregate.json", JSON.stringify(agg, null, 2));
-        '
-        # Print concise summary
-        node -e '
-          try {
-            const j = JSON.parse(require("fs").readFileSync(process.env.AGG_OUT_FILE, "utf8"));
-            const o = j.metrics?.cache?.overall || {};
-            let line = `- Aggregate cache: ${o.hits||0}/${o.total||0} hits`;
-            if (typeof o.hit_ratio === "number") line += ` (ratio ${o.hit_ratio.toFixed(2)})`;
-            if (typeof o.bytes_restored_total === "number" && o.bytes_restored_total>0) {
-              const mb = (o.bytes_restored_total/1_000_000).toFixed(2);
-              line += `, restored ~${mb} MB`;
-            }
-            require("fs").appendFileSync(process.env.GITHUB_STEP_SUMMARY, `\n${line}\n`);
-          } catch {}
-        '
-
-    - name: Upload aggregate
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: observability-aggregate
-        path: ${{ env.AGG_OUT_FILE }}
+        DIR="${{ inputs.path }}"
+        echo "## Aggregated Observability" >> "$GITHUB_STEP_SUMMARY"
+        if [ ! -d "$DIR" ]; then
+          echo "No directory $DIR after download; nothing to summarize." >> "$GITHUB_STEP_SUMMARY"
+          exit 0
+        fi
+        count=$(find "$DIR" -type f -name '*.json' | wc -l | awk '{print $1}')
+        echo "- Downloaded JSON files: ${count}" >> "$GITHUB_STEP_SUMMARY"
+        # Print first few files for quick visibility
+        i=0
+        while IFS= read -r f; do
+          i=$((i+1))
+          echo "\n<details><summary>${f}</summary>" >> "$GITHUB_STEP_SUMMARY"
+          head -c 4000 "$f" | sed 's/$/  /' >> "$GITHUB_STEP_SUMMARY" || true
+          echo "\n</details>" >> "$GITHUB_STEP_SUMMARY"
+          [ "$i" -ge 3 ] && break || true
+        done < <(find "$DIR" -type f -name '*.json' | sort)
 
 branding:
   icon: bar-chart-2
