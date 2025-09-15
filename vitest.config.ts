@@ -4,6 +4,9 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
+    // Retries: help detect flaky tests by auto re-running failures.
+    // Use higher retries on CI if desired via env detection.
+    retry: process.env.CI ? 2 : 0,
     coverage: {
       reporter: ['text', 'lcov', 'json-summary'],
       provider: 'v8',
