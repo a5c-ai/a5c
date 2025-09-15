@@ -26,20 +26,22 @@ We include a Husky `commit-msg` hook that validates your commit message via `scr
 
 We enforce fast pre-commit checks to keep `main` and `a5c/main` healthy:
 
-- Staged file hygiene: trailing whitespace and end-of-file newline via `git diff --check`.
 - Filename guard: blocks Windows-invalid `:` in staged filenames.
+- Staged file hygiene: trailing whitespace and end-of-file newline checks.
 - Lint and typecheck: runs `npm run lint` and `npm run typecheck`.
-  - Note: `typecheck` uses `tsconfig.typecheck.json` (src-only) to avoid false positives from test typings. Vitest type-checks tests during `npm test`.
-- Tests: runs `vitest` with `--passWithNoTests` when test or source files are staged.
+  - Note: typecheck is source-focused to stay fast.
+- Tests: runs Vitest. If possible, runs related tests for changed files via `scripts/prepush-related.js`; otherwise runs `vitest run --passWithNoTests`.
 
 The hook is implemented in `scripts/precommit.sh` and invoked from `.husky/pre-commit`.
 
 ### Bypass in Emergencies
 
-If you must bypass locally (e.g., to unblock a hotfix), you can temporarily set:
+If you must bypass locally (e.g., to unblock a hotfix), you can temporarily set one of:
 
 ```
-SKIP_CHECKS=1 git commit -m "wip: bypass pre-commit"
+SKIP_PRECOMMIT=1 git commit -m "wip: bypass pre-commit"
+# or
+A5C_SKIP_PRECOMMIT=1 git commit -m "wip: bypass pre-commit"
 ```
 
 Please follow up with a separate commit to address lint/typecheck/test issues.
@@ -57,7 +59,7 @@ Or individual commands:
 ```
 npm run lint
 npm run typecheck
-npm test -- --passWithNoTests
+npx vitest run --passWithNoTests
 ```
 
 ## CI Validation
