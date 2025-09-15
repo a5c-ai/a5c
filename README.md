@@ -199,6 +199,16 @@ See `docs/specs/README.md` for examples and behavior-driven test outlines. Add y
 - Lint/format: `npm run lint` / `npm run format`
 - Minimal Node types + commander; TypeScript configured in `tsconfig.json`
 
+### Commit conventions
+
+We follow Conventional Commits. Local commit messages are validated with Husky + commitlint, and PRs run a commitlint check. See `docs/contributing/git-commits.md`.
+
+To use the commit message template locally:
+
+```
+git config commit.template .gitmessage.txt
+```
+
 Project structure:
 - `src/cli.ts` – CLI entrypoint (mentions, normalize, enrich, emit, validate)
 - `src/normalize.ts` / `src/enrich.ts` – command handlers

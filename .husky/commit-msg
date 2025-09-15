@@ -1,11 +1,12 @@
 #!/usr/bin/env sh
-set -e
-# Validate commit message against Conventional Commits
-MSG_FILE="$1"
-if [ -f "$MSG_FILE" ]; then
-  if command -v tsx >/dev/null 2>&1; then
-    tsx scripts/commit-verify.ts --file "$MSG_FILE" --allow-merge || exit 1
-  else
-    npx -y tsx scripts/commit-verify.ts --file "$MSG_FILE" --allow-merge || exit 1
-  fi
+
+# Validate commit message using commitlint if available
+if command -v npx >/dev/null 2>&1; then
+  npx --yes commitlint --edit "$1" || {
+    echo "\033[31mCommit message does not follow Conventional Commits.\033[0m" >&2
+    echo "See docs/contributing/git-commits.md for details." >&2
+    exit 1
+  }
+else
+  echo "npx not found; skipping commit message lint."
 fi
