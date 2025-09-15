@@ -187,16 +187,29 @@ events enrich --in samples/pull_request.synchronize.json \
 
 ## Coverage (Optional)
 
-CI can upload coverage to Codecov and show a badge in this README. Uploads are disabled by default and only run when a token is configured.
+You can optionally upload coverage to Codecov and show a badge. This repo does not enable uploads by default.
 
-- Add a repo Secret or Variable named `CODECOV_TOKEN`.
-- When present, the following workflows upload `coverage/lcov.info` using `codecov/codecov-action@v4`:
-  - `.github/workflows/tests.yml` (push on `a5c/main` and `main`)
-  - `.github/workflows/quick-checks.yml` (PRs)
-  - `.github/workflows/pr-tests.yml` (PRs)
-- If the token is absent, the Codecov step is skipped and CI remains green.
+Opt-in steps:
 
-Badge note: If your Codecov project is public, the badge works without a token parameter. For private projects, configure the Codecov badge as appropriate for your org and visibility.
+- Create a Codecov project for this repository and add a repo Secret or Variable named `CODECOV_TOKEN`.
+- Add the following step to your tests workflow after coverage is generated:
+
+```yaml
+- name: Upload coverage to Codecov (optional)
+  if: ${{ env.CODECOV_TOKEN != '' }}
+  run: |
+    bash scripts/coverage-upload.sh
+```
+
+Badge (optional):
+
+After the first successful upload, add a badge to this README:
+
+```
+[![codecov](https://codecov.io/gh/a5c-ai/events/graph/badge.svg?token=<TOKEN_OR_NOT_REQUIRED_FOR_PUBLIC>)](https://codecov.io/gh/a5c-ai/events)
+```
+
+Replace the URL to match your VCS provider and repository if different. Private projects may require a tokenized badge; see Codecov docs.
 
 ### Auth tokens: precedence & redaction
 
