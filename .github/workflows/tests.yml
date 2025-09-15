@@ -126,39 +126,40 @@ jobs:
           node scripts/flaky-detector.cjs \
             1>/tmp/flaky.json \
             2>/dev/null || true
-          node -e '
-            const fs = require("fs");
-            const { execSync } = require("child_process");
+          # Use heredoc to avoid shell quoting pitfalls in inline JS
+          node - <<'JS'
+            const fs = require('fs');
+            const { execSync } = require('child_process');
             let res = { found: false, flakies: [] };
-            try { res = JSON.parse(fs.readFileSync("/tmp/flaky.json","utf8")); } catch {}
+            try { res = JSON.parse(fs.readFileSync('/tmp/flaky.json', 'utf8')); } catch {}
             if (!res || !res.flakies) res = { found: false, flakies: [] };
-            const isPR = process.env.GITHUB_EVENT_NAME === "pull_request";
+            const isPR = process.env.GITHUB_EVENT_NAME === 'pull_request';
             if (isPR) {
               const lines = [];
-              lines.push("<!-- a5c:flaky-detector -->");
-              lines.push("## 🧪 Flaky Tests Summary");
+              lines.push('<!-- a5c:flaky-detector -->');
+              lines.push('## 🧪 Flaky Tests Summary');
               if (!res.found) {
-                lines.push("No flaky tests detected (no mixed pass/fail across retries).");
+                lines.push('No flaky tests detected (no mixed pass/fail across retries).');
               } else {
-                lines.push("The following tests appear flaky (failures followed by passes within the run):\n");
-                lines.push("| Test | File/Class | Attempts | Failed | Passed |");
-                lines.push("|---|---|---:|---:|---:|");
+                lines.push('The following tests appear flaky (failures followed by passes within the run):\n');
+                lines.push('| Test | File/Class | Attempts | Failed | Passed |');
+                lines.push('|---|---|---:|---:|---:|');
                 for (const f of res.flakies) {
-                  const loc = f.file || f.classname || "";
-                  const esc = s => String(s??'').replaceAll('|','\\|');
+                  const loc = f.file || f.classname || '';
+                  const esc = s => String(s ?? '').replaceAll('|','\\|');
                   lines.push(`| ${esc(f.name)} | ${esc(loc)} | ${f.attempts} | ${f.failed_runs} | ${f.passed_runs} |`);
                 }
               }
               fs.writeFileSync('/tmp/flaky.md', lines.join('\n'));
-              const pr = JSON.parse(fs.readFileSync(process.env.GITHUB_EVENT_PATH,'utf8')).pull_request.number;
+              const pr = JSON.parse(fs.readFileSync(process.env.GITHUB_EVENT_PATH, 'utf8')).pull_request.number;
               const repo = process.env.GITHUB_REPOSITORY;
               // Ensure label exists and apply when flakies found
-              const label = "flaky-test";
-              try { execSync(`gh label view \"${label}\" --repo ${repo}`, { stdio: 'ignore' }); }
-              catch { try { execSync(`gh label create \"${label}\" --color f9d0c4 --description \"Tests detected as flaky in CI\" --repo ${repo}`); } catch {}
+              const label = 'flaky-test';
+              try { execSync(`gh label view "${label}" --repo ${repo}`, { stdio: 'ignore' }); }
+              catch { try { execSync(`gh label create "${label}" --color f9d0c4 --description "Tests detected as flaky in CI" --repo ${repo}`); } catch {}
               }
               try {
-                if (res.found) execSync(`gh pr edit ${pr} --repo ${repo} --add-label \"${label}\"`, { stdio: 'ignore' });
+                if (res.found) execSync(`gh pr edit ${pr} --repo ${repo} --add-label "${label}"`, { stdio: 'ignore' });
               } catch {}
               // Upsert comment with stable marker
               try {
@@ -170,7 +171,7 @@ jobs:
                 }
               } catch {}
             }
-          '
+          JS
       - name: Upload Vitest JSON
         if: always()
         uses: actions/upload-artifact@v4
