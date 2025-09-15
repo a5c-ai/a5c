@@ -268,23 +268,28 @@ This repository initially used a generic a5c platform README. That content now l
 
 ### Composed + Validate (Walkthrough)
 
-You can enrich with rules to emit composed events, then validate the enriched output against the NE schema by omitting `composed` (since it is not part of the core schema file yet).
+You can enrich with rules to emit composed events, then validate the enriched output against the NE schema. The NE schema includes an optional top‑level `composed` array; enriched outputs validate as‑is. If you want to validate only the normalized core (without composed), you may optionally strip `composed` for that purpose.
 
 ```bash
 # Enrich with rules to produce `.composed[]`
-events enrich --in samples/pull_request.synchronize.json   --rules samples/rules/conflicts.yml   --out enriched.json
+events enrich --in samples/pull_request.synchronize.json \
+  --rules samples/rules/conflicts.yml \
+  --out enriched.json
 
 # Inspect composed events (guard for absence)
 jq '(.composed // []) | map({key, reason})' enriched.json
 
-# Validate the enriched document against the NE schema (drop `.composed`)
-cat enriched.json | jq 'del(.composed)' |   events validate --schema docs/specs/ne.schema.json --quiet
+# Validate the enriched document against the NE schema (no need to drop `.composed`)
+events validate --in enriched.json --schema docs/specs/ne.schema.json --quiet
+
+# Optional: validate the normalized-only subset by removing `.composed`
+jq 'del(.composed)' enriched.json | events validate --schema docs/specs/ne.schema.json --quiet
 ```
 
 Notes:
 
 - `.composed` may be absent when no rules match. Use `(.composed // [])` in `jq`.
-- Validation uses the NE schema at `docs/specs/ne.schema.json`. The `composed` field is not included in that schema; remove it before validation as shown above.
+- NE schema: `docs/specs/ne.schema.json` includes optional top‑level `composed`. `composed[].payload` may be `object | array | null`.
 
 ## Links
 
