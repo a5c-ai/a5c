@@ -57,6 +57,8 @@ next-env.d.ts
 **/pnpm-lock.yaml
 
 # local tmp files produced by tests/dev runs
+# a5c temp artifacts
+.a5c-tmp/
 tmp-enrich-*.json
 
 # local generated helper files (should not be committed)
@@ -65,3 +67,7 @@ tmp-enrich-*.json
 
 # CLI outputs
 /out.json
+
+# temporary enrich outputs
+tmp-enrich-*.json
+**/tmp-enrich-*.json
