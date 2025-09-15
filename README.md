@@ -78,6 +78,9 @@ cat out.json | npx @a5c-ai/events validate --quiet
   - `--flag mentions.max_file_bytes=<bytes>` (default: 200KB)
   - `--flag mentions.languages=<ext,...>` (optional list such as `ts,tsx,js,jsx,py,go,yaml`)
   - `--use-github`: enable GitHub API enrichment (requires `GITHUB_TOKEN`)
+  - `--flag mentions.scan.changed_files=<true|false>`: enable scanning changed files for code-comment mentions (default: true)
+  - `--flag mentions.max_file_bytes=<bytes>`: max bytes per file for code-comment scanning (default: 200000)
+  - `--flag mentions.languages=js,ts,py`: optional allowlist of languages/extensions for code-comment scanning
   - `--select <paths>`: comma-separated dot paths to include in output
   - `--filter <expr>`: filter expression `path[=value]`; if not matching, exits with code 2 and no output
   - `--label <key=value...>`: attach labels to top‑level `labels[]`
@@ -88,6 +91,23 @@ Behavior:
 - When `--use-github` is set but no token is configured, the CLI exits with code `3` (provider/network error) and prints an error. Use programmatic APIs with an injected Octokit for partial/offline testing if needed.
 
 Exit codes: `0` success, non‑zero on errors (invalid input, etc.).
+
+### Mentions scanning examples
+
+Disable scanning changed files for code-comment mentions:
+
+```bash
+events enrich --in samples/pull_request.synchronize.json \
+  --flag mentions.scan.changed_files=false
+```
+
+Limit scanned file size and restrict to TS/JS:
+
+```bash
+events enrich --in samples/pull_request.synchronize.json \
+  --flag mentions.max_file_bytes=102400 \
+  --flag mentions.languages=ts,tsx,js,jsx
+```
 
 ## Normalized Event Schema (MVP)
 
