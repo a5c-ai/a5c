@@ -188,3 +188,12 @@ jobs:
           CACHE_NODE_KEY: ${{ env.CACHE_NODE_KEY }}
           CONCLUSION: ${{ job.status }}
           RUN_STARTED_AT: ${{ github.run_started_at }}
+      - name: Step hotspots summary
+        if: always()
+        uses: ./.github/actions/step-hotspots
+        with:
+          warn_ms: 300000
+          error_ms: 900000
+          p95_warn_ms: 420000
+          p95_error_ms: 1200000
+          top_n: 10
