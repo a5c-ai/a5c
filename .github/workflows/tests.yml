@@ -91,9 +91,8 @@ jobs:
         with:
           files: coverage/lcov.info
           token: ${{ secrets.CODECOV_TOKEN }}
-          flags: push
+          flags: unit
           fail_ci_if_error: false
-          verbose: false
       - name: Upload JUnit report
         if: always()
         uses: actions/upload-artifact@v4
@@ -102,14 +101,7 @@ jobs:
           path: |
             junit.xml
           if-no-files-found: ignore
-      - name: Upload to Codecov (optional)
-        if: env.CODECOV_TOKEN != ''
-        uses: codecov/codecov-action@v4
-        with:
-          files: coverage/lcov.info
-          token: ${{ secrets.CODECOV_TOKEN }}
-          flags: unit
-          fail_ci_if_error: false
+      # (deduped) single Codecov upload guarded by token
       - name: Flaky tests detection
         if: always()
         shell: bash
