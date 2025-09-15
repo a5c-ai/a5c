@@ -4,29 +4,31 @@ This discovery doc proposes a minimal, pragmatic observability plan for consumer
 
 ## Artifact schema
 
-The CI workflows emit an `observability.json` artifact. Schema is experimental (`schema_version: 0.1`) and may evolve additively. A formal JSON Schema lives at `docs/schemas/observability.schema.json`.
+The CI workflows emit an `observability.json` artifact. Schema is versioned (`schema_version: "0.1"`) and evolves additively. The formal JSON Schema lives at `docs/specs/observability.schema.json`.
 
 Versioning policy:
 
 - Use a SemVer-like string for `schema_version` (e.g., `0.1`, `0.2`).
 - Minor bumps are additive and backward-compatible (new optional fields).
 - Breaking changes require a major bump (e.g., `1.0`) and migration notes.
-- Producers should pin the intended `schema_version`; consumers validate accordingly.
+- Producers pin the intended `schema_version`; consumers may validate accordingly.
 
 - Top-level fields: `repo`, `workflow`, `job`, `run`, `metrics`
-- `run`: `id`, `attempt`, `sha`, `ref`, `actor`, `event_name`, `conclusion`, `started_at` (optional), `completed_at`, `duration_ms` (optional)
+- `run`: `id`, `attempt`, `sha`, `ref`, `actor`, `event_name`, `conclusion`, `started_at`, `completed_at`, `duration_ms`
 - `metrics.coverage`: Vitest coverage-summary JSON embedded under `total`
 - `metrics.cache`: `entries[]` (`kind`, `hit`, optional `key`, optional `bytes`) and `summary` (`hits`, `misses`, `total`, `hit_ratio`, `bytes_restored_total`)
 
-Example: see `docs/examples/observability.json`. The example is validated in tests against the JSON Schema.
+Example: see `docs/examples/observability.json`. The example is intended to validate against the JSON Schema.
 
 When multiple jobs or a matrix run produce per-job artifacts, an aggregate artifact `observability.aggregate.json` may be produced with:
 
 - `metrics.cache.overall`: `hits`, `total`, `hit_ratio`, `bytes_restored_total`
 - `metrics.cache.by_kind[]`: per cache kind rollups with the same fields
-  Optional validation in CI:
 
-- Composite actions may validate the artifact using `ajv` when `OBS_VALIDATE_SCHEMA=true` is set; failures should log warnings initially (non-blocking) until stability increases.
+### Validation
+
+- The composite action `.github/actions/obs-summary` writes the file through a central composer that emits `schema_version`.
+- Optional schema validation can be enabled with `VALIDATE_OBS_SCHEMA=true` (warn-only) when using the composite action.
 
 ## Goals
 
