@@ -3,12 +3,13 @@
 Priority: low
 Category: documentation
 
-The PR adds a `Typecheck` step to `.github/workflows/lint.yml`, while `CONTRIBUTING.md` states that CI runs lint and performs type checking in test/build flows.
+Status: resolved — no action required.
 
-Proposed alignment options:
-- Update `CONTRIBUTING.md` to reflect that CI now runs a separate `Typecheck` step in the Lint workflow; or
-- Remove the `Typecheck` step from `.github/workflows/lint.yml` and keep type checking within build/test workflows as documented.
+Summary:
+- `.github/workflows/lint.yml` includes a dedicated "Typecheck (src-only)" step.
+- `CONTRIBUTING.md` now explicitly documents that CI runs `npm run lint` and a separate Typecheck step (src‑only) in the Lint workflow.
 
-Rationale: Keep docs and CI consistent to avoid confusion for contributors.
+Outcome:
+- Docs and CI are aligned; keeping this entry for traceability of the review.
 
 Context: PR #310
