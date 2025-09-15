@@ -29,7 +29,7 @@ export async function runNormalize(opts: {
       labels: opts.labels,
     });
     return { code: 0, output };
-  } catch (e: any) {
+  } catch {
     return {
       code: 2,
       output: {
