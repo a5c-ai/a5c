@@ -9,6 +9,9 @@ Normalize and enrich GitHub (and other) events for agentic workflows. Use the CL
 - Output: JSON to stdout or file
 - Extensible via provider adapters and enrichers
 
+## Ownership & Routing
+See docs/routing/ownership-and-routing.md for how CODEOWNERS drives routing and how owners_union is used in enrichment.
+
 ## Quick Start
 
 Prerequisites:
