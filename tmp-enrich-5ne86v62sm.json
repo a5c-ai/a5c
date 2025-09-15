@@ -1,0 +1,4 @@
+{
+  "provider": "github",
+  "payload": { "pull_request": { "title": "T", "body": "B" } }
+}
