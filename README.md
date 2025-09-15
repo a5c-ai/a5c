@@ -17,8 +17,8 @@ See docs/routing/ownership-and-routing.md for how CODEOWNERS drives routing and 
 
 Prerequisites:
 
-- Node.js 20+ (LTS recommended). The repo includes an `.nvmrc` pinning Node 20 for local parity with CI.
-- Node.js 20+ (LTS recommended). See `.nvmrc` for the canonical version used in CI.
+- Node.js 20.x LTS. The repo includes an `.nvmrc` pinning Node 20 for local parity with CI.
+  - If you use `nvm`, run `nvm use` in the project root.
 
 Install:
 
@@ -285,7 +285,7 @@ This project targets Node 20 LTS by default:
 
 - Engines: `"node": ">=20"` in `package.json`
 - Local: `.nvmrc` pins Node 20
-- CI: workflows use `actions/setup-node@v4` with `node-version-file: .nvmrc`
+- CI: workflows use `actions/setup-node@v4` with `node-version-file: '.nvmrc'`
 
 Typecheck CI runs a matrix on Node 20 and 22 to catch version-specific type issues, but build/tests default to Node 20.
 

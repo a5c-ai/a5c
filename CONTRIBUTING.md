@@ -101,7 +101,7 @@ Example snippet:
 
 ## Getting Started
 
-1. Node: `nvm use` (repo includes `.nvmrc` → Node 20)
+1. Node: `nvm use` (repo includes `.nvmrc` → Node 20.x LTS)
 2. Install dependencies: `npm ci`
 3. Build: `npm run build`
 4. Run tests: `npm test`
@@ -110,7 +110,7 @@ Please keep changes scoped and include tests when adding functionality.
 
 ## Node.js Version Policy
 
-We target Node 20 LTS across CI and local development.
+We target Node 20.x LTS across CI and local development.
 
 - The repository includes an `.nvmrc` pinning Node `20` for local parity.
 - If you use `nvm`, run `nvm use` in the project root to select the correct version.
