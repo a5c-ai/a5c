@@ -1,0 +1,43 @@
+
+on:
+  repository_dispatch:
+    events: 
+      - create-feature
+
+jobs:
+  create-feature:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Create a feature branch from a5c/main
+        run: |
+          git checkout a5c/main          
+          git checkout -b feature/${{ github.event.client_payload.feature_slug_name }}-${{ github.event.client_payload.event_id }}
+          # pass the feature slug name and event id to the agent
+          echo "feature_slug_name=${{ github.event.client_payload.feature_slug_name }}" >> $GITHUB_ENV
+          echo "event_id=${{ github.event.client_payload.event_id }}" >> $GITHUB_ENV
+          # add feature title and description to the branch as files
+          echo "${{ github.event.client_payload.feature_title }}" > feature_title.md
+          echo "${{ github.event.client_payload.feature_description }}" > feature_description.md
+          git add feature_title.md feature_description.md
+          git commit -m "Add feature title and description"
+          git push origin feature/${{ github.event.client_payload.feature_slug_name }}-${{ github.event.client_payload.event_id }}
+          # create a pull request
+          gh pr create --base a5c/main --head feature/${{ github.event.client_payload.feature_slug_name }}-${{ github.event.client_payload.event_id }} --title "${{ github.event.client_payload.feature_title }}" --body "${{ github.event.client_payload.feature_description }}"
+
+      - name: Run Agent Command to create feature
+        uses: a5c-ai/runner@main
+        id: feature
+        env:
+          feature_slug_name: ${{ github.event.client_payload.feature_slug_name }}
+          event_id: ${{ github.event.client_payload.event_id }}
+        with:
+          # extracts the event
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          inputs:
+            feature_slug_name: ${{ env.feature_slug_name }}
+            event_id: ${{ env.event_id }}
+          prompt_uri: "https://raw.githubusercontent.com/a5c-ai/a5c-githubaction/main/commands/feature.md"
