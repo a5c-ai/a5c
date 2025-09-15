@@ -14,3 +14,7 @@ Collects workflow/job metadata and optional coverage metrics, writes a step summ
     OBS_FILE: observability.json
     CONCLUSION: ${{ job.status }}
 ```
+
+Notes:
+
+- Node is ensured inside the composite using `actions/setup-node@v4` (default: 20, with npm cache). Override via `with.node-version` if needed.

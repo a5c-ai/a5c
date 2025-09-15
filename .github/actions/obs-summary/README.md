@@ -11,6 +11,7 @@ Aggregates basic job metadata with optional coverage and cache metrics, writes a
     node-version: 20 # optional, default 20
   env:
     OBS_FILE: observability.json # optional
+    VALIDATE_OBS_SCHEMA: "true" # optional, warn-only validation
     # Optional cache inputs (example: setup-node cache hit)
     # From actions/setup-node@v4 with id: setup-node
     # Boolean-like strings supported: true/1/yes/y
@@ -32,7 +33,7 @@ Aggregates basic job metadata with optional coverage and cache metrics, writes a
 Notes:
 
 - The action reads `coverage/coverage-summary.json` if present to include coverage metrics.
-- The action sets up Node.js using `actions/setup-node@v4` with a default version of `20`. Override via `with.node-version` if needed.
+- Node setup is performed inside the composite using `actions/setup-node@v4` with a default version of `20` and npm cache. Override via `with.node-version` if needed, or run your own setup-node before this action.
 - If cache envs are provided (any `CACHE_<KIND>_HIT`), `observability.json` will include a `metrics.cache` section and the step summary will include a cache line.
 - Supported cache env name patterns (current implementation):
   - `CACHE_<KIND>_HIT`: boolean ("true"/"1"/"yes"/"y")
@@ -40,6 +41,7 @@ Notes:
   - `CACHE_<KIND>_KEY`: string (cache key used)
 - If `CACHE_<KIND>_BYTES` is provided, per-entry `bytes` and a `bytes_restored_total` summary are included.
 - When `RUN_STARTED_AT` is provided, `observability.json` will include `run.started_at` and compute `run.duration_ms` from start to completion; otherwise the action will use its own start time as a fallback.
+- The artifact includes `schema_version: "0.1"` and can be validated against `docs/specs/observability.schema.json`.
 
 JSON shape excerpt:
 

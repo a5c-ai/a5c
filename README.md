@@ -78,16 +78,36 @@ cat out.json | npx @a5c-ai/events validate --quiet
   - `--flag mentions.max_file_bytes=<bytes>` (default: 200KB)
   - `--flag mentions.languages=<ext,...>` (optional list such as `ts,tsx,js,jsx,py,go,yaml`)
   - `--use-github`: enable GitHub API enrichment (requires `GITHUB_TOKEN`)
+  - `--flag mentions.scan.changed_files=<true|false>`: enable scanning changed files for code-comment mentions (default: true)
+  - `--flag mentions.max_file_bytes=<bytes>`: max bytes per file for code-comment scanning (default: 200000)
+  - `--flag mentions.languages=js,ts,py`: optional allowlist of languages/extensions for code-comment scanning
   - `--select <paths>`: comma-separated dot paths to include in output
   - `--filter <expr>`: filter expression `path[=value]`; if not matching, exits with code 2 and no output
   - `--label <key=value...>`: attach labels to top‑level `labels[]`
 
 Behavior:
 
-- Offline by default: without `--use-github`, no network calls occur. Output always includes `enriched.github` stub `{ provider: 'github', partial: true, reason: 'flag:not_set' }`.
-- When `--use-github` is set but no token is configured, enrichment attaches `{ provider: 'github', partial: true, reason: 'token:missing' }` under `enriched.github` and the CLI exits with code `3` (provider/network error). Mentions extraction still runs.
+- Offline by default: without `--use-github`, no network calls occur. Output includes `enriched.github` with `partial=true` and `reason="github_enrich_disabled"`.
+- When `--use-github` is set but no token is configured, the CLI exits with code `3` (provider/network error) and prints an error. Use programmatic APIs with an injected Octokit for partial/offline testing if needed.
 
 Exit codes: `0` success, non‑zero on errors (invalid input, etc.).
+
+### Mentions scanning examples
+
+Disable scanning changed files for code-comment mentions:
+
+```bash
+events enrich --in samples/pull_request.synchronize.json \
+  --flag mentions.scan.changed_files=false
+```
+
+Limit scanned file size and restrict to TS/JS:
+
+```bash
+events enrich --in samples/pull_request.synchronize.json \
+  --flag mentions.max_file_bytes=102400 \
+  --flag mentions.languages=ts,tsx,js,jsx
+```
 
 ## Normalized Event Schema (MVP)
 
@@ -100,7 +120,7 @@ Core fields returned by `normalize`:
 - `repo`: minimal repository info
 - `ref`: branch/ref context
 - `actor`: event actor
-- `payload`: raw provider payload (object | array; verbatim)
+- `payload`: raw provider payload (object | array; verbatim). Note: payloads may be large; avoid printing the entire value in examples and prefer selecting specific fields with tools like `jq`.
 - `enriched`: `{ metadata, derived, correlations }`
 - `labels`: string array for routing (e.g., `env=staging`)
 - `provenance`: `{ source: action|webhook|cli, workflow? }` (no labels here)
@@ -148,6 +168,19 @@ events enrich --in samples/pull_request.synchronize.json \
   # note: `reason` may be omitted depending on rule configuration
 ```
 
+## Coverage (Optional)
+
+CI can upload coverage to Codecov and show a badge in this README. Uploads are disabled by default and only run when a token is configured.
+
+- Add a repo Secret or Variable named `CODECOV_TOKEN`.
+- When present, the following workflows upload `coverage/lcov.info` using `codecov/codecov-action@v4`:
+  - `.github/workflows/tests.yml` (push on `a5c/main` and `main`)
+  - `.github/workflows/quick-checks.yml` (PRs)
+  - `.github/workflows/pr-tests.yml` (PRs)
+- If the token is absent, the Codecov step is skipped and CI remains green.
+
+Badge note: If your Codecov project is public, the badge works without a token parameter. For private projects, configure the Codecov badge as appropriate for your org and visibility.
+
 ### Auth tokens: precedence & redaction
 
 - Token precedence: runtime prefers `A5C_AGENT_GITHUB_TOKEN` over `GITHUB_TOKEN` when both are set (see `src/config.ts`).
@@ -187,7 +220,7 @@ See also: CLI reference for flags and exit codes: `docs/cli/reference.md`.
 
 Use the NE JSON Schema at `docs/specs/ne.schema.json` to validate CLI output.
 
-Note: outputs that include `composed` are enriched; `composed` is optional and defined in the NE schema (`docs/specs/ne.schema.json`), so it does not need to be removed for validation. If you want to validate the normalized-only subset, validate before enrichment or strip it with `jq 'del(.composed)'`. When present, `composed[].payload` may be object | array | null.
+Note: outputs that include `composed` are enriched; `composed` is optional and defined in the NE schema (`docs/specs/ne.schema.json`), so it does not need to be removed for validation. If you want to validate the normalized-only subset, validate before enrichment or strip it with `jq 'del(.composed)'`. When present, `composed[].payload` is `object | array | null`.
 
 ```bash
 # Normalize a sample workflow_run payload

@@ -96,7 +96,7 @@ export async function enrichGithubEvent(event, opts) {
 
     const prData = prRes.data;
     const files = filesRes.slice(0, fileLimit).map((f) => {
-      const keys = ["filename","status","additions","deletions","changes","sha","blob_url","raw_url"]; 
+      const keys = ["filename","status","additions","deletions","changes","sha","blob_url","raw_url"];
       if (includePatch && f.patch) keys.push("patch");
       return pick(f, keys);
     });
@@ -184,7 +184,7 @@ export async function enrichGithubEvent(event, opts) {
       try {
         const comp = await withRetry(() => octokit.repos.compareCommits({ owner, repo, base: before, head: after }));
         const files = (comp.data.files || []).slice(0, fileLimit).map((f) => {
-          const keys = ["filename","status","additions","deletions","changes","sha","blob_url","raw_url"]; 
+          const keys = ["filename","status","additions","deletions","changes","sha","blob_url","raw_url"];
           if (includePatch && f.patch) keys.push("patch");
           return pick(f, keys);
         });
