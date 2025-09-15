@@ -2,7 +2,7 @@ name: Tests
 
 on:
   push:
-    branches: [ a5c/main, main ]
+    branches: [a5c/main, main]
 
 jobs:
   unit:
@@ -18,7 +18,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
+          cache: "npm"
       - name: Install
         run: |
           ./scripts/install.sh
@@ -28,7 +28,7 @@ jobs:
       - name: Test
         run: |
           ./scripts/test.sh
-      - name: CLI smoke: normalize | validate sample
+      - name: "CLI smoke: normalize | validate sample"
         run: |
           # build CLI if not already built by pretest
           npm run build --silent
@@ -79,7 +79,7 @@ jobs:
           else
             echo "coverage/coverage-summary.json not found; ensure vitest json-summary reporter is enabled" >> "$GITHUB_STEP_SUMMARY";
           fi
-      - name: PR feedback: coverage thresholds -> comment + labels
+      - name: "PR feedback: coverage thresholds -> comment + labels"
         if: ${{ github.event_name == 'pull_request' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
