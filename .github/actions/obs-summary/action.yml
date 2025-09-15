@@ -9,6 +9,7 @@ runs:
       shell: bash
       run: |
         set -euo pipefail
+        # Defaults (prefer shell defaults over expressions for portability)
         OBS_FILE="${OBS_FILE:-observability.json}"
         JOB_NAME="${JOB_NAME:-${GITHUB_JOB:-}}"
         WORKFLOW_NAME="${WORKFLOW_NAME:-${GITHUB_WORKFLOW:-}}"
@@ -21,15 +22,15 @@ runs:
 
         echo "OBS_FILE=${OBS_FILE}" >> "$GITHUB_ENV"
 
+        # Compose JSON (includes coverage and optional cache metrics)
         node -e '
           const fs = require("fs");
-          const env = process.env;
-          const get = (k, d = "") => env[k] ?? d;
+          const env = (k, d = "") => process.env[k] ?? d;
           let cov = null;
           try { cov = JSON.parse(fs.readFileSync("coverage/coverage-summary.json", "utf8")); } catch {}
           // Collect cache entries from env keys like CACHE_<KIND>_HIT=true/false
           const cacheEntries = [];
-          for (const [k, v] of Object.entries(env)) {
+          for (const [k, v] of Object.entries(process.env)) {
             const m = /^CACHE_([A-Z0-9]+)_HIT$/.exec(k);
             if (!m) continue;
             const kind = m[1].toLowerCase();
@@ -37,51 +38,58 @@ runs:
             cacheEntries.push({ kind, hit });
           }
           const hits = cacheEntries.filter(e => e.hit).length;
-          const misses = cacheEntries.filter(e => !e.hit).length;
           const total = cacheEntries.length;
-          const cache = total ? { entries: cacheEntries, summary: { hits, misses, total } } : null;
+          const cache = total ? { entries: cacheEntries, summary: { hits, misses: total - hits, total } } : null;
           const obs = {
-            repo: get("GITHUB_REPOSITORY") || get("REPO"),
-            workflow: get("GITHUB_WORKFLOW") || get("WORKFLOW_NAME"),
-            job: get("JOB_NAME") || get("GITHUB_JOB"),
+            repo: env("GITHUB_REPOSITORY") || env("REPO"),
+            workflow: env("GITHUB_WORKFLOW") || env("WORKFLOW_NAME"),
+            job: env("JOB_NAME") || env("GITHUB_JOB"),
             run: {
-              id: get("GITHUB_RUN_ID") || get("RUN_ID"),
-              attempt: Number(get("GITHUB_RUN_ATTEMPT") || get("RUN_ATTEMPT") || "1"),
-              sha: get("GITHUB_SHA") || get("SHA"),
-              ref: get("GITHUB_REF") || get("BRANCH_REF"),
-              actor: get("GITHUB_ACTOR", ""),
-              event_name: get("GITHUB_EVENT_NAME", ""),
-              conclusion: get("CONCLUSION", ""),
+              id: env("GITHUB_RUN_ID") || env("RUN_ID"),
+              attempt: Number(env("GITHUB_RUN_ATTEMPT") || env("RUN_ATTEMPT") || "1"),
+              sha: env("GITHUB_SHA") || env("SHA"),
+              ref: env("GITHUB_REF") || env("BRANCH_REF"),
+              actor: env("GITHUB_ACTOR", ""),
+              event_name: env("GITHUB_EVENT_NAME", ""),
+              conclusion: env("CONCLUSION", ""),
               started_at: null,
               completed_at: new Date().toISOString(),
             },
             metrics: { coverage: cov, cache },
           };
-          fs.writeFileSync(process.env.OBS_FILE || "observability.json", JSON.stringify(obs, null, 2));
-          // Append to step summary
-          const summaryFile = process.env.GITHUB_STEP_SUMMARY;
-          if (summaryFile) {
-            const lines = [];
-            lines.push("## Observability");
-            lines.push(`- Repo: ${obs.repo}`);
-            lines.push(`- Workflow: ${obs.workflow}`);
-            lines.push(`- Job: ${obs.job}`);
-            lines.push(`- Run: ${obs.run.id} (attempt ${obs.run.attempt})`);
-            if (obs.run.conclusion) {
-              lines.push(`- Conclusion: ${obs.run.conclusion}`);
-            }
-            if (cov && cov.total) {
-              const t = cov.total;
-              const pct = (x) => (typeof x?.pct === 'number' ? x.pct.toFixed(2) : '0.00');
-              lines.push(`- Coverage: lines ${pct(t.lines)}% | funcs ${pct(t.functions)}% | branches ${pct(t.branches)}%`);
-            }
-            if (cache) {
-              const kinds = cache.entries.map(e => `${e.kind}: ${e.hit ? 'hit' : 'miss'}`).join(', ');
-              lines.push(`- Cache: ${cache.summary.hits}/${cache.summary.total} hits (${kinds})`);
-            }
-            fs.appendFileSync(summaryFile, lines.join("\n") + "\n");
-          }
-        '
+          process.stdout.write(JSON.stringify(obs, null, 2));
+        ' > "$OBS_FILE"
+
+        echo "## Observability" >> "$GITHUB_STEP_SUMMARY"
+        echo "- Repo: ${REPO}" >> "$GITHUB_STEP_SUMMARY"
+        echo "- Workflow: ${WORKFLOW_NAME}" >> "$GITHUB_STEP_SUMMARY"
+        echo "- Job: ${JOB_NAME}" >> "$GITHUB_STEP_SUMMARY"
+        echo "- Run: ${RUN_ID} (attempt ${RUN_ATTEMPT})" >> "$GITHUB_STEP_SUMMARY"
+        if [ -n "${CONCLUSION}" ]; then
+          echo "- Conclusion: ${CONCLUSION}" >> "$GITHUB_STEP_SUMMARY"
+        fi
+        if [ -f coverage/coverage-summary.json ]; then
+          LINES=$(node -e "const s=require('fs').readFileSync('coverage/coverage-summary.json','utf8'); const t=JSON.parse(s).total||{}; console.log((t.lines?.pct??0).toFixed(2))")
+          FUNCS=$(node -e "const s=require('fs').readFileSync('coverage/coverage-summary.json','utf8'); const t=JSON.parse(s).total||{}; console.log((t.functions?.pct??0).toFixed(2))")
+          BRANCHES=$(node -e "const s=require('fs').readFileSync('coverage/coverage-summary.json','utf8'); const t=JSON.parse(s).total||{}; console.log((t.branches?.pct??0).toFixed(2))")
+          echo "- Coverage: lines ${LINES}% | funcs ${FUNCS}% | branches ${BRANCHES}%" >> "$GITHUB_STEP_SUMMARY"
+        fi
+        # Cache summary if envs provided
+        kinds=$(env | awk -F= '/^CACHE_[A-Z0-9]+_HIT=/{print $1}' | sed -E 's/^CACHE_([A-Z0-9]+)_HIT.*/\1/; s/.*/\L&/')
+        if [ -n "${kinds}" ]; then
+          hits=0; total=0; line_parts=""
+          for k in $kinds; do
+            v=$(eval echo "\$CACHE_${k^^}_HIT")
+            total=$((total+1))
+            if [ "$v" = "true" ] || [ "$v" = "1" ]; then
+              hits=$((hits+1)); state=hit
+            else
+              state=miss
+            fi
+            if [ -z "$line_parts" ]; then line_parts="${k}: ${state}"; else line_parts="${line_parts}, ${k}: ${state}"; fi
+          done
+          echo "- Cache: ${hits}/${total} hits (${line_parts})" >> "$GITHUB_STEP_SUMMARY"
+        fi
 
     - name: Upload observability.json
       if: always()

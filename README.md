@@ -10,14 +10,17 @@ Normalize and enrich GitHub (and other) events for agentic workflows. Use the CL
 - Extensible via provider adapters and enrichers
 
 ## Ownership & Routing
+
 See docs/routing/ownership-and-routing.md for how CODEOWNERS drives routing and how owners_union is used in enrichment.
 
 ## Quick Start
 
 Prerequisites:
+
 - Node.js 20+ (LTS recommended)
 
 Install:
+
 ```bash
 npm install @a5c-ai/events
 # or for CLI-only usage
@@ -25,6 +28,7 @@ npm install -g @a5c-ai/events
 ```
 
 Try it:
+
 ```bash
 # Normalize a payload file
 npx @a5c-ai/events normalize --in samples/workflow_run.completed.json --out out.json
@@ -33,13 +37,13 @@ npx @a5c-ai/events normalize --in samples/workflow_run.completed.json --out out.
 jq '.type, .repo.full_name, .provenance.workflow?.name' out.json
 
 # Validate against the NE schema (quiet on success)
-# Uses default schema path: docs/specs/ne.schema.json
 cat out.json | npx @a5c-ai/events validate --quiet
 ```
 
 ## CLI Reference
 
 `events mentions`
+
 - Purpose: Extract @mentions from text (stdin) or a file.
 - Common flags:
   - `--source <kind>`: `pr_body|pr_title|commit_message|issue_comment` (default: `pr_body`)
@@ -48,6 +52,7 @@ cat out.json | npx @a5c-ai/events validate --quiet
   - `--known-agent <name...>`: known agent names to boost confidence
 
 `events normalize`
+
 - Purpose: Convert a raw provider payload into the normalized Event schema.
 - Common flags:
   - `--in <file>`: input JSON file (raw event)
@@ -58,6 +63,7 @@ cat out.json | npx @a5c-ai/events validate --quiet
   - `--label <key=value...>`: attach labels to top‑level `labels[]` (repeatable)
 
 `events enrich`
+
 - Purpose: Add metadata and correlations to a normalized event.
 - Common flags:
   - `--in <file>`: normalized event JSON (or raw payload; NE shell will be created)
@@ -72,6 +78,7 @@ cat out.json | npx @a5c-ai/events validate --quiet
   - `--label <key=value...>`: attach labels to top‑level `labels[]`
 
 Behavior:
+
 - Offline by default: without `--use-github`, no network calls occur. Output includes `enriched.github` with `partial=true` and `reason="github_enrich_disabled"`.
 - When `--use-github` is set but no token is configured, enrichment is skipped/partial with `reason="token:missing"` in `enriched.github` and the CLI exits with code `3` (provider/network error). Mentions extraction still runs.
 
@@ -80,6 +87,7 @@ Exit codes: `0` success, non‑zero on errors (invalid input, etc.).
 ## Normalized Event Schema (MVP)
 
 Core fields returned by `normalize`:
+
 - `id`: provider-unique id (stubbed in CLI for local files)
 - `provider`: `github` (default) or other
 - `type`: coarse event type (e.g., `workflow_run`, `pull_request`, `push`)
@@ -97,6 +105,7 @@ See the detailed specs for full schema and roadmap.
 ## Examples
 
 GitHub Actions (normalize current run):
+
 ```yaml
 - name: Normalize workflow_run
   run: |
@@ -108,6 +117,7 @@ jq '.type, .repo.full_name, .labels' event.json
 ```
 
 Local payload file:
+
 ```bash
 events normalize --in samples/pull_request.synchronize.json \
   --out out.json
@@ -115,6 +125,7 @@ jq '.type, .labels' out.json
 ```
 
 Enrichment (with GitHub lookups enabled):
+
 ```bash
 export GITHUB_TOKEN=ghp_your_token_here
 events enrich --in samples/pull_request.synchronize.json \
@@ -131,6 +142,7 @@ jq '.enriched' enriched.json
   - Pattern masking includes (non‑exhaustive): GitHub PATs (`ghp_`, `gho_`, `ghu_`, `ghs_`, `ghe_`), JWTs, `Bearer ...` headers, AWS `AKIA...`/`ASIA...` keys, Stripe `sk_live_`/`sk_test_`, Slack `xox...` tokens, and URL basic auth (`https://user:pass@host`).
 
 Examples:
+
 ```bash
 # Precedence: A5C_AGENT_GITHUB_TOKEN wins when both are set
 export GITHUB_TOKEN=ghp_low_scope
@@ -181,12 +193,14 @@ echo "Please route to @developer-agent and @validator-agent" | \
 ## Configuration
 
 Environment variables:
+
 - `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`: enables GitHub API enrichment
 - `DEBUG`: set to `true` to enable debug mode
 - `A5C_AGENT_GITHUB_TOKEN` or `GITHUB_TOKEN`: required when using `--use-github`
 - Debug flags TBD (`DEBUG=@a5c/events*`)
 
 CLI behavior:
+
 - Defaults are safe for local runs (no network calls unless `--use-github` is set).
 - Exit codes: 0 success; 1 generic error; 2 input/validation error (missing `--in`, invalid JSON, filter mismatch); 3 provider/network error when `--use-github` is requested and calls fail.
 - For CI, prefer explicit `--in` and write `--out` artifacts for downstream steps.
@@ -215,6 +229,7 @@ git config commit.template .gitmessage.txt
 ```
 
 Project structure:
+
 - `src/cli.ts` – CLI entrypoint (mentions, normalize, enrich, emit, validate)
 - `src/normalize.ts` / `src/enrich.ts` – command handlers
 - `src/providers/*` – provider adapters (GitHub mapping under `providers/github`)
@@ -223,8 +238,6 @@ Project structure:
 ## Background: a5c Platform Template
 
 This repository initially used a generic a5c platform README. That content now lives in `docs/producer/platform-template.md`. The top‑level README focuses on the Events SDK/CLI. For the broader platform, visit https://a5c.ai and the docs.
-
-
 
 ### Composed + Validate (Walkthrough)
 
@@ -242,8 +255,10 @@ cat enriched.json | jq 'del(.composed)' |   events validate --schema docs/specs/
 ```
 
 Notes:
+
 - `.composed` may be absent when no rules match. Use `(.composed // [])` in `jq`.
 - Validation uses the NE schema at `docs/specs/ne.schema.json`. The `composed` field is not included in that schema; remove it before validation as shown above.
+
 ## Links
 
 - Specs: `docs/specs/README.md`

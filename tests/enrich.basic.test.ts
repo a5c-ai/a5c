@@ -75,7 +75,6 @@ describe("handleEnrich", () => {
         Array.isArray(gh.errors),
     ).toBe(true);
   });
-
   it("does not perform GitHub enrichment when --use-github is not set (offline mode)", async () => {
     const res = await handleEnrich({
       in: "samples/pull_request.synchronize.json",
