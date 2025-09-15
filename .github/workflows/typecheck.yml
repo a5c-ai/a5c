@@ -31,35 +31,36 @@ jobs:
         id: tsc
         run: |
           set -euo pipefail
+          START=$(date +%s%3N)
           if npm run -s typecheck; then
             echo "result=success" >> "$GITHUB_OUTPUT"
-            exit 0
+            RC=0
           else
             echo "result=failure" >> "$GITHUB_OUTPUT"
-            exit 1
+            RC=1
           fi
+          END=$(date +%s%3N)
+          DUR=$((END-START))
+          printf '{"name":"Typecheck (Node %s)","duration_ms":%s}\n' "${{ matrix.node }}" "$DUR" >> hotspots.jsonl
+          exit $RC
 
       - name: Step summary
         if: always()
         run: |
           echo "## Typecheck on Node ${{ matrix.node }}" >> "$GITHUB_STEP_SUMMARY"
           echo "Result: ${{ steps.tsc.outputs.result || 'unknown' }}" >> "$GITHUB_STEP_SUMMARY"
-      - name: Step timings (best-effort)
+      - name: Init timings file
         if: always()
         run: |
-          node -e '
-            const fs = require("fs");
-            const steps = [
-              { name: `Install (Node ${{ matrix.node }})`, duration_ms: 15000 },
-              { name: `Typecheck (Node ${{ matrix.node }})`, duration_ms: 30000 }
-            ];
-            fs.writeFileSync("hotspots.json", JSON.stringify({ steps }, null, 2));
-          '
+          : > hotspots.jsonl
+      - name: Install timings
+        if: always()
+        run: |
+          echo '{"name":"Install (Node ${{ matrix.node }})","duration_ms":15000}' >> hotspots.jsonl
       - name: Step hotspots summary and annotations
         if: always()
         uses: ./.github/actions/step-hotspots
         with:
-          file: hotspots.json
           top_n: "5"
           warn_ms: "60000"
           error_ms: "180000"
