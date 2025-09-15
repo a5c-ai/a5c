@@ -1,97 +1,133 @@
-name: "Obs Aggregate"
-description: "Download 'observability' artifacts from this run, aggregate into a single JSON, write step summary, and upload."
-author: "a5c.ai"
+name: "Observability Aggregate"
+description: "Download 'observability' artifacts from a workflow run and aggregate into a single JSON file."
+inputs:
+  repo:
+    description: "Repository in owner/repo form"
+    required: false
+    default: ""
+  run_id:
+    description: "Workflow run ID to pull artifacts from"
+    required: false
+    default: ""
+  artifact_prefix:
+    description: "Artifact name prefix to match"
+    required: false
+    default: "observability"
+  output_file:
+    description: "Output JSON file path"
+    required: false
+    default: "observability-aggregate.json"
+  token:
+    description: "GitHub token (falls back to GH_TOKEN/GITHUB_TOKEN)"
+    required: false
+    default: ""
 runs:
   using: "composite"
   steps:
-    - name: Download observability artifacts
-      uses: actions/download-artifact@v4
-      with:
-        name: observability
-        path: observability_artifacts
-        merge-multiple: true
-
-    - name: Aggregate observability.json files
+    - name: Resolve inputs
+      id: vars
       shell: bash
       run: |
         set -euo pipefail
-        OUT="observability.aggregate.json"
-        files=$(ls -1 observability_artifacts 2>/dev/null || true)
-        if [ -z "$files" ]; then
-          echo "{}" > "$OUT"
-          echo "No observability artifacts found" >> "$GITHUB_STEP_SUMMARY"
-          echo "OUT_FILE=$OUT" >> "$GITHUB_ENV"
+        REPO_IN=${{ inputs.repo }}
+        RUN_ID_IN=${{ inputs.run_id }}
+        ART_PREF=${{ inputs.artifact_prefix }}
+        OUT=${{ inputs.output_file }}
+        if [ -z "${REPO_IN}" ]; then REPO_IN="${GITHUB_REPOSITORY}"; fi
+        if [ -z "${RUN_ID_IN}" ]; then RUN_ID_IN="${GITHUB_RUN_ID}"; fi
+        echo "repo=${REPO_IN}" >> "$GITHUB_OUTPUT"
+        echo "run_id=${RUN_ID_IN}" >> "$GITHUB_OUTPUT"
+        echo "artifact_prefix=${ART_PREF}" >> "$GITHUB_OUTPUT"
+        echo "output_file=${OUT}" >> "$GITHUB_OUTPUT"
+    - name: Download & aggregate
+      id: agg
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        GH_FALLBACK_TOKEN: ${{ env.GH_TOKEN || env.GITHUB_TOKEN }}
+      run: |
+        set -euo pipefail
+        : "${GH_TOKEN:=${GH_FALLBACK_TOKEN:-}}"
+        if [ -z "${GH_TOKEN}" ]; then
+          echo "Warning: No GH token present; attempting unauthenticated downloads (may fail)." >&2
+        fi
+        OWNER_REPO='${{ steps.vars.outputs.repo }}'
+        RUN_ID='${{ steps.vars.outputs.run_id }}'
+        PREF='${{ steps.vars.outputs.artifact_prefix }}'
+        OUT='${{ steps.vars.outputs.output_file }}'
+        workdir=$(mktemp -d)
+        trap 'rm -rf "$workdir"' EXIT
+        echo "Fetching artifacts list for $OWNER_REPO run $RUN_ID"
+        # List artifacts
+        if ! gh api repos/$OWNER_REPO/actions/runs/$RUN_ID/artifacts --jq '.artifacts[] | {id, name, expired, archive_download_url}' > "$workdir/list.json" 2>/dev/null; then
+          echo "No artifacts listing available; writing empty aggregate." >&2
+          echo '{"items":[],"count":0}' > "$OUT"
+          echo "count=0" >> "$GITHUB_OUTPUT"
+          echo "file=$OUT" >> "$GITHUB_OUTPUT"
           exit 0
         fi
-        # Aggregate with Node for robustness
-        node -e '
-          const fs = require("fs");
-          const path = require("path");
-          const dir = "observability_artifacts";
-          const runs = [];
-          for (const f of fs.readdirSync(dir)) {
-            const p = path.join(dir, f);
-            if (!fs.statSync(p).isFile()) continue;
-            if (!/\.json$/i.test(p)) continue;
-            try {
-              const o = JSON.parse(fs.readFileSync(p, "utf8"));
-              runs.push(o);
-            } catch {}
-          }
-          const agg = { runs };
-          // Aggregate cache metrics if available
-          const caches = runs.map(r => r?.metrics?.cache?.summary).filter(Boolean);
-          if (caches.length) {
-            const sum = caches.reduce((a, c) => ({
-              hits: (a.hits||0) + (c.hits||0),
-              misses: (a.misses||0) + (c.misses||0),
-              total: (a.total||0) + (c.total||0),
-              bytes_restored_total: (a.bytes_restored_total||0) + (c.bytes_restored_total||0),
-            }), {});
-            agg.metrics = agg.metrics || {};
-            agg.metrics.cache = sum;
-          }
-          // Aggregate coverage percentages (simple average of present ones)
-          const pct = key => {
-            const vals = [];
-            for (const r of runs) {
-              const t = r?.metrics?.coverage?.total; if (!t) continue;
-              const v = t[key]?.pct; if (typeof v === 'number') vals.push(v);
-            }
-            if (!vals.length) return undefined;
-            return Number((vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(2));
-          };
-          const cov = {
-            lines_avg_pct: pct("lines"),
-            branches_avg_pct: pct("branches"),
-            functions_avg_pct: pct("functions"),
-            statements_avg_pct: pct("statements"),
-          };
-          if (Object.values(cov).some(v => v != null)) {
-            agg.metrics = agg.metrics || {};
-            agg.metrics.coverage = cov;
-          }
-          fs.writeFileSync("observability.aggregate.json", JSON.stringify(agg, null, 2));
-        '
-        echo "OUT_FILE=$OUT" >> "$GITHUB_ENV"
-        # Write brief summary
-        echo "## Observability Aggregate" >> "$GITHUB_STEP_SUMMARY"
-        if jq -e '.metrics.cache' "$OUT" >/dev/null 2>&1; then
-          echo "- Cache: $(jq -r '.metrics.cache.hits // 0') hits / $(jq -r '.metrics.cache.total // 0') total, bytes $(jq -r '.metrics.cache.bytes_restored_total // 0')" >> "$GITHUB_STEP_SUMMARY"
-        else
-          echo "- Cache: n/a" >> "$GITHUB_STEP_SUMMARY"
+        # Filter by prefix and not expired
+        jq -c --arg p "$PREF" 'select(.name | startswith($p)) | select(.expired|not)' < "$workdir/list.json" > "$workdir/sel.json" || true
+        if [ ! -s "$workdir/sel.json" ]; then
+          echo "No matching artifacts (prefix=$PREF); writing empty aggregate." >&2
+          echo '{"items":[],"count":0}' > "$OUT"
+          echo "count=0" >> "$GITHUB_OUTPUT"
+          echo "file=$OUT" >> "$GITHUB_OUTPUT"
+          exit 0
         fi
-        if jq -e '.metrics.coverage' "$OUT" >/dev/null 2>&1; then
-          echo "- Coverage (avg): lines $(jq -r '.metrics.coverage.lines_avg_pct // "n/a"')% | funcs $(jq -r '.metrics.coverage.functions_avg_pct // "n/a"')% | branches $(jq -r '.metrics.coverage.branches_avg_pct // "n/a"')%" >> "$GITHUB_STEP_SUMMARY"
+        mkdir -p "$workdir/zips" "$workdir/unzipped"
+        i=0
+        while IFS= read -r line; do
+          i=$((i+1))
+          id=$(echo "$line" | jq -r .id)
+          name=$(echo "$line" | jq -r .name)
+          url=$(echo "$line" | jq -r .archive_download_url)
+          zip="$workdir/zips/${id}-${name}.zip"
+          echo "Downloading $name ($id)"
+          if [ -n "$GH_TOKEN" ]; then
+            curl -fsSL -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" "$url" -o "$zip"
+          else
+            curl -fsSL "$url" -o "$zip"
+          fi
+          dest="$workdir/unzipped/${id}-${name}"
+          mkdir -p "$dest"
+          unzip -q "$zip" -d "$dest" || true
+        done < "$workdir/sel.json"
+        # Collect JSON files named like observability.json
+        mapfile -t files < <(find "$workdir/unzipped" -type f -name "*.json" -printf "%p\n" | sort)
+        if [ ${#files[@]} -eq 0 ]; then
+          echo "No JSON files found in artifacts; writing empty aggregate." >&2
+          echo '{"items":[],"count":0}' > "$OUT"
+          echo "count=0" >> "$GITHUB_OUTPUT"
+          echo "file=$OUT" >> "$GITHUB_OUTPUT"
+          exit 0
         fi
-
-    - name: Upload aggregate
+        # Merge
+        jq -s '{items: ., count: length}' "${files[@]}" > "$OUT" || {
+          echo "Failed to aggregate JSON; writing fallback list of paths." >&2
+          printf '{"items": %s, "count": %d}\n' "$(printf '%s\n' "${files[@]}" | jq -R . | jq -s .)" "${#files[@]}" > "$OUT"
+        }
+        echo "count=${#files[@]}" >> "$GITHUB_OUTPUT"
+        echo "file=$OUT" >> "$GITHUB_OUTPUT"
+    - name: Step summary
       if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: observability-aggregate
-        path: ${{ env.OUT_FILE }}
-
-branding:
-  icon: bar-chart-2
-  color: blue
+      shell: bash
+      run: |
+        set -euo pipefail
+        OUT='${{ steps.vars.outputs.output_file }}'
+        COUNT='${{ steps.agg.outputs.count || 0 }}'
+        {
+          echo "## Observability Aggregate"
+          echo ""
+          echo "Aggregated items: ${COUNT}"
+          if [ -f "$OUT" ]; then
+            echo "Output: $OUT"
+          fi
+        } >> "$GITHUB_STEP_SUMMARY"
+outputs:
+  file:
+    description: "Path to aggregated JSON file"
+    value: ${{ steps.agg.outputs.file }}
+  count:
+    description: "Number of items aggregated"
+    value: ${{ steps.agg.outputs.count }}
