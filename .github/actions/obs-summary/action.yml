@@ -1,0 +1,84 @@
+name: 'Obs Summary & Artifact'
+description: 'Aggregate job metrics, write step summary, and upload observability.json'
+author: 'a5c.ai'
+runs:
+  using: 'composite'
+  steps:
+    - name: Collect metrics and write summary + file
+      id: collect
+      shell: bash
+      run: |
+        set -euo pipefail
+        # Defaults
+        OBS_FILE="${{ env.OBS_FILE || 'observability.json' }}"
+        JOB_NAME="${{ env.JOB_NAME || github.job }}"
+        WORKFLOW_NAME="${{ env.WORKFLOW_NAME || github.workflow }}"
+        RUN_ID="${{ env.RUN_ID || github.run_id }}"
+        RUN_ATTEMPT="${{ env.RUN_ATTEMPT || github.run_attempt }}"
+        REPO="${{ env.REPO || github.repository }}"
+        SHA="${{ env.SHA || github.sha }}"
+        BRANCH_REF="${{ env.BRANCH_REF || github.ref }}"
+        CONCLUSION="${{ env.CONCLUSION || (github.event.workflow_run && github.event.workflow_run.conclusion) || '' }}"
+
+        echo "Computing timings and step summary..."
+        START_TS=$(date -u +%s)
+
+        # Attempt to derive timings from GitHub provided vars when available
+        # Fallback is to compute only end timestamp here.
+        # Duration not precisely known; allow consumer to compute if needed.
+        END_TS=$(date -u +%s)
+
+        # Try to read coverage summary if exists to enrich metrics
+        COV_METRICS="{}"
+        if [ -f coverage/coverage-summary.json ]; then
+          COV_METRICS=$(cat coverage/coverage-summary.json)
+        fi
+
+        # Compose JSON using node for robust escaping
+        node << 'NODE' > "$OBS_FILE"
+const fs = require('fs');
+const path = require('path');
+function env(k, d='') { return process.env[k] ?? d }
+const obs = {
+  repo: env('GITHUB_REPOSITORY', env('REPO')),
+  workflow: env('GITHUB_WORKFLOW', env('WORKFLOW_NAME')),
+  job: env('JOB_NAME') || env('GITHUB_JOB'),
+  run: {
+    id: env('GITHUB_RUN_ID', env('RUN_ID')),
+    attempt: Number(env('GITHUB_RUN_ATTEMPT', env('RUN_ATTEMPT') || '1')),
+    sha: env('GITHUB_SHA', env('SHA')),
+    ref: env('GITHUB_REF', env('BRANCH_REF')),
+    actor: env('GITHUB_ACTOR',''),
+    event_name: env('GITHUB_EVENT_NAME',''),
+    conclusion: env('CONCLUSION',''),
+    started_at: null,
+    completed_at: new Date().toISOString(),
+  },
+  metrics: {
+    coverage: (()=>{ try { return JSON.parse(fs.readFileSync('coverage/coverage-summary.json','utf8')); } catch { return null } })(),
+  }
+}
+fs.writeFileSync(process.env.OBS_FILE || 'observability.json', JSON.stringify(obs, null, 2));
+NODE
+
+        echo "## Observability" >> "$GITHUB_STEP_SUMMARY"
+        echo "- Repo: ${REPO}" >> "$GITHUB_STEP_SUMMARY"
+        echo "- Workflow: ${WORKFLOW_NAME}" >> "$GITHUB_STEP_SUMMARY"
+        echo "- Job: ${JOB_NAME}" >> "$GITHUB_STEP_SUMMARY"
+        echo "- Run: ${RUN_ID} (attempt ${RUN_ATTEMPT})" >> "$GITHUB_STEP_SUMMARY"
+        if [ -f coverage/coverage-summary.json ]; then
+          LINES=$(node -e "const s=require('fs').readFileSync('coverage/coverage-summary.json','utf8'); const t=JSON.parse(s).total||{}; console.log((t.lines?.pct??0).toFixed(2))")
+          FUNCS=$(node -e "const s=require('fs').readFileSync('coverage/coverage-summary.json','utf8'); const t=JSON.parse(s).total||{}; console.log((t.functions?.pct??0).toFixed(2))")
+          BRANCHES=$(node -e "const s=require('fs').readFileSync('coverage/coverage-summary.json','utf8'); const t=JSON.parse(s).total||{}; console.log((t.branches?.pct??0).toFixed(2))")
+          echo "- Coverage: lines ${LINES}% | funcs ${FUNCS}% | branches ${BRANCHES}%" >> "$GITHUB_STEP_SUMMARY"
+        fi
+
+    - name: Upload observability.json
+      uses: actions/upload-artifact@v4
+      with:
+        name: observability
+        path: ${{ env.OBS_FILE || 'observability.json' }}
+
+branding:
+  icon: bar-chart-2
+  color: green

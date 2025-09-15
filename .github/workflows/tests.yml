@@ -69,3 +69,8 @@ jobs:
           else
             echo "coverage/coverage-summary.json not found; ensure vitest json-summary reporter is enabled" >> "$GITHUB_STEP_SUMMARY";
           fi
+      - name: Observability summary
+        if: always()
+        uses: ./.github/actions/obs-summary
+        env:
+          OBS_FILE: observability.json
