@@ -1,5 +1,7 @@
 name: "Step Hotspots"
 description: "Annotate long-running steps and summarize p95 duration"
+author: "a5c.ai"
+
 inputs:
   warn_ms:
     description: "Warn when a step exceeds this duration (ms)"
@@ -24,6 +26,16 @@ inputs:
   token:
     description: "GitHub token (defaults to github.token)"
     required: false
+  # Back-compat inputs used by existing workflows (ignored by script)
+  upload_artifact:
+    description: "No-op: retained for back-compat"
+    required: false
+    default: "false"
+  summary_title:
+    description: "No-op: retained for back-compat"
+    required: false
+    default: "Step Hotspots"
+
 runs:
   using: "composite"
   steps:
@@ -40,3 +52,7 @@ runs:
       run: |
         set -euo pipefail
         node scripts/ci-step-hotspots.cjs
+
+branding:
+  icon: activity
+  color: orange

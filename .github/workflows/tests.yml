@@ -20,6 +20,9 @@ jobs:
         with:
           node-version: 20
           cache: "npm"
+      - name: Init timings file
+        run: |
+          : > hotspots.jsonl
       - name: Parse cache restored bytes (best-effort)
         if: always()
         id: cache-bytes
@@ -36,15 +39,28 @@ jobs:
           echo "CACHE_NODE_KEY=${KEY}" >> "$GITHUB_ENV"
       - name: Install
         run: |
+          START=$(date +%s%3N)
           ./scripts/install.sh
+          END=$(date +%s%3N)
+          DUR=$((END-START))
+          echo "{\"name\":\"Install\",\"duration_ms\":$DUR}" >> hotspots.jsonl
       - name: Build
         run: |
+          START=$(date +%s%3N)
           ./scripts/build.sh
+          END=$(date +%s%3N)
+          DUR=$((END-START))
+          echo "{\"name\":\"Build\",\"duration_ms\":$DUR}" >> hotspots.jsonl
       - name: Test
         run: |
+          START=$(date +%s%3N)
           ./scripts/test.sh
+          END=$(date +%s%3N)
+          DUR=$((END-START))
+          echo "{\"name\":\"Test\",\"duration_ms\":$DUR}" >> hotspots.jsonl
       - name: "CLI smoke: normalize | validate sample"
         run: |
+          START=$(date +%s%3N)
           # build CLI if not already built by pretest
           npm run build --silent
           # normalize a sample and validate against the schema using built-in validator
@@ -55,6 +71,9 @@ jobs:
             --in /tmp/out.validate.json \
             --schema docs/specs/ne.schema.json \
             --quiet
+          END=$(date +%s%3N)
+          DUR=$((END-START))
+          echo "{\"name\":\"CLI smoke\",\"duration_ms\":$DUR}" >> hotspots.jsonl
       - name: Upload coverage artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -194,6 +213,7 @@ jobs:
       - name: Coverage summary
         if: always()
         run: |
+          START=$(date +%s%3N)
           if [ -f coverage/coverage-summary.json ]; then
             node -e '
               const fs = require("fs");
@@ -216,6 +236,9 @@ jobs:
           else
             echo "coverage/coverage-summary.json not found; ensure vitest json-summary reporter is enabled" >> "$GITHUB_STEP_SUMMARY";
           fi
+          END=$(date +%s%3N)
+          DUR=$((END-START))
+          echo "{\"name\":\"Coverage summary\",\"duration_ms\":$DUR}" >> hotspots.jsonl
       - name: "PR feedback: coverage thresholds -> comment + labels"
         if: ${{ github.event_name == 'pull_request' }}
         env:
@@ -308,6 +331,24 @@ jobs:
           CACHE_NODE_KEY: ${{ env.CACHE_NODE_KEY }}
           CONCLUSION: ${{ job.status }}
           RUN_STARTED_AT: ${{ github.run_started_at }}
+      - name: Step hotspots summary and annotations
+        if: always()
+        uses: ./.github/actions/step-hotspots
+        with:
+          top_n: "5"
+          warn_ms: "60000"
+          error_ms: "180000"
+          upload_artifact: "false"
+          summary_title: "CI Step Hotspots"
+      - name: Step hotspots summary
+        if: always()
+        uses: ./.github/actions/step-hotspots
+        with:
+          warn_ms: 300000
+          error_ms: 900000
+          p95_warn_ms: 420000
+          p95_error_ms: 1200000
+          top_n: 10
 
   aggregate:
     name: Aggregate Observability
