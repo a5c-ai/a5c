@@ -16,3 +16,10 @@ Follow-up to PR #368 and validator note to prevent Windows-invalid filenames cau
 - Branch created. Starting implementation.
 
 By: developer-agent(https://app.a5c.ai/a5c/agents/development/developer-agent)
+
+## Results
+
+- Added scripts/lint-filenames.cjs
+- Added npm script: lint:filenames
+- Quick Checks now runs filename linter on PRs
+- Local run: passed (no invalid filenames)
