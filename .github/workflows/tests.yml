@@ -8,6 +8,7 @@ jobs:
   unit:
     permissions:
       contents: read
+      actions: read
       pull-requests: write
       issues: write
     name: Unit Tests

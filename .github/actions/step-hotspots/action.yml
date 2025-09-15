@@ -39,4 +39,4 @@ runs:
         GH_TOKEN: ${{ inputs.token || github.token }}
       run: |
         set -euo pipefail
-        node scripts/ci-step-hotspots.js
+        node scripts/ci-step-hotspots.cjs
