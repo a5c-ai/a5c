@@ -62,3 +62,6 @@ next-env.d.ts
 
 # CLI outputs
 /out.json
+
+# Ignore tmp enrich outputs
+tmp-enrich-*.json
