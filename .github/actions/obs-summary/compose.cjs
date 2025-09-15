@@ -16,6 +16,7 @@ const startedAt = startedAtEnv || new Date().toISOString();
 let cov = null;
 try { cov = JSON.parse(fs.readFileSync('coverage/coverage-summary.json', 'utf8')); } catch {}
 
+// Collect cache info from envs. We normalize to entries[] with allowed fields per schema.
 const byKind = new Map();
 for (const [k, v] of Object.entries(process.env)) {
   const m = /^CACHE_([A-Z0-9]+)_(HIT|BYTES|KEY)$/.exec(k);
@@ -31,8 +32,14 @@ for (const [k, v] of Object.entries(process.env)) {
   byKind.set(kind, rec);
 }
 
-const cacheEntries = Array.from(byKind.values());
-const hits = cacheEntries.filter(e => e.hit).length;
+// Sanitize entries to schema-allowed fields only
+const cacheEntries = Array.from(byKind.values()).map((r) => {
+  const out = { kind: r.kind, hit: !!r.hit };
+  if (typeof r.bytes === 'number') out.bytes = r.bytes;
+  if (typeof r.key === 'string' && r.key) out.key = r.key;
+  return out;
+});
+const hits = cacheEntries.filter(e => e.hit === true).length;
 const total = cacheEntries.length;
 const bytes_total = cacheEntries.reduce((a, e) => a + (typeof e.bytes === 'number' ? e.bytes : 0), 0);
 const cache = total
