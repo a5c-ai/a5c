@@ -165,17 +165,15 @@ runs:
       shell: bash
       run: |
         set -euo pipefail
-        # Prefer local schema and ajv when repo checked out; fallback to npx
-        SCHEMA="docs/specs/observability.schema.json"
+        # Single validation path via scripts/validate-obs.cjs (warn-only)
         FILE="${OBS_FILE:-observability.json}"
-        if [ -f "$SCHEMA" ]; then
-          echo "Validating $FILE against $SCHEMA (Draft 2020-12)"
-          npx --yes ajv -s "$SCHEMA" -d "$FILE" --spec=draft2020 -c ajv-formats || {
+        if [ -f "scripts/validate-obs.cjs" ]; then
+          node scripts/validate-obs.cjs -- "$FILE" || {
             echo "Schema validation failed (warn-only)." >&2
             exit 0
           }
         else
-          echo "Schema file not found; skipping validation (warn-only)"
+          echo "Validator script not found; skipping validation (warn-only)"
         fi
 
 branding:

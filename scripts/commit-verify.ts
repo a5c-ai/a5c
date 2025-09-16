@@ -49,9 +49,9 @@ const BREAK = "(?:!)?";
 const COLON = ":";
 const SPACE = " ";
 const SUBJECT = ".+"; // at least one char
-// Use regex literal for clarity and correctness
+// Accept an optional leading emoji/symbols (common PR/commit style), then type
 const REG =
-  /^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(?:\([a-z0-9_.,-]+\))?(?:!)?: .+$/;
+  /^(?:[^\p{L}\p{N}]+\s*)?(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(?:\([a-z0-9_.,-]+\))?(?:!)?: .+$/u;
 
 let messageRaw = readMessage().split(/\r?\n/)[0]?.trim() ?? "";
 // If validating a PR title, allow and strip leading non-alphanumeric (e.g., emojis)
