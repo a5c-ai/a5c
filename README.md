@@ -101,6 +101,22 @@ Canonical reference and examples:
 - `--filter <expr>`: filter expression `path[=value]`; if not matching, exits with code 2 and no output
 - `--label <key=value...>`: attach labels to top‑level `labels[]`
 
+Normalize first (recommended):
+
+It is recommended to run normalize first, then pipe to enrich. This ensures a complete, predictable NE shape and avoids the minimal shell fallback used when raw payloads are passed directly to enrich.
+
+Example:
+
+```bash
+events normalize --in samples/pull_request.synchronize.json \
+  | events enrich --flag 'mentions.scan.changed_files=false'
+```
+
+Notes:
+
+- Passing a raw payload to `events enrich` is supported; the CLI will construct a minimal NE shell when needed. That fallback may omit some fields (`repo`, `ref`, `actor`, etc.). Prefer the normalize → enrich flow for consistent outputs.
+- See also: docs/cli/reference.md#events-enrich and docs/cli/reference.md#events-normalize for more on normalization, including `--source actions` usage.
+
 #### Mentions flags
 
 For the authoritative list and defaults for Mentions controls during `enrich` (including `mentions.scan.changed_files`, `mentions.max_file_bytes`, and `mentions.languages`), see the CLI reference: `docs/cli/reference.md#events-enrich`.

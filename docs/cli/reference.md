@@ -68,6 +68,21 @@ Notes:
 
 Enrich a normalized event (or raw GitHub payload) with repository and provider metadata.
 
+Recommended flow
+
+- Normalize first, then enrich. This produces predictable NE fields and avoids the minimal shell fallback when passing raw payloads directly to `enrich`.
+
+Example pipeline:
+
+```bash
+events normalize --in samples/pull_request.synchronize.json \
+  | events enrich --out enriched.json
+```
+
+See also:
+
+- Normalization reference: `docs/cli/reference.md#events-normalize` (including `--source actions` usage in GitHub Actions)
+
 Behavior:
 
 - Offline by default: no network calls without `--use-github`. Output includes a minimal stub under `enriched.github`:
