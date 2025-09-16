@@ -38,6 +38,39 @@ Alternative — script/uploader for local or non–GitHub Actions CI. Do not com
 
 Recommended as a required PR check.
 
+### Example Validation
+
+Validate that a normalized example matches the NE schema. CI uses `ajv-cli` with pinned versions, and gracefully falls back to the built-in validator to avoid network flakiness.
+
+Copy/paste to run locally with ajv-cli (Draft 2020-12 + formats):
+
+```
+# produce an example NE json
+npm run build --silent
+node dist/cli.js normalize \
+  --in samples/workflow_run.completed.json \
+  --out /tmp/out.ne.json
+
+# validate with ajv-cli v5 and ajv-formats v3 (pinned)
+npx -y ajv-cli@5.0.0 validate \
+  -s docs/specs/ne.schema.json \
+  -d /tmp/out.ne.json \
+  --spec=draft2020 \
+  -c ajv-formats@3.0.1
+```
+
+Local alternative using the built-in CLI (no network dependency):
+
+```
+npm run build --silent
+node dist/cli.js validate \
+  --in /tmp/out.ne.json \
+  --schema docs/specs/ne.schema.json \
+  --quiet
+```
+
+Tip: `npm run validate:examples` runs both checks locally.
+
 ## Lint (PR)
 
 - Name: `Lint`

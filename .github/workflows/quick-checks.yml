@@ -20,6 +20,9 @@ jobs:
     env:
       # Optional Codecov token; when empty, upload step is skipped
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN || vars.CODECOV_TOKEN || '' }}
+      # Pinned validator tools used for example validation
+      AJV_CLI_VERSION: "5.0.0" # ajv-cli v5 (Ajv v8, Draft 2020-12)
+      AJV_FORMATS_VERSION: "3.0.1" # ajv-formats v3 for Ajv v8
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -43,6 +46,28 @@ jobs:
         run: npm run -s typecheck
       - name: Unit tests (vitest)
         run: npm run -s test:ci
+      - name: Example validation (NE schema) — ajv-cli with fallback
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Build CLI if not already built by previous steps
+          npm run -s build
+          # Produce a sample NE JSON from a known fixture
+          node dist/cli.js normalize \
+            --in samples/workflow_run.completed.json \
+            --out /tmp/out.ne.json
+          echo "Attempting ajv-cli@${AJV_CLI_VERSION} validation (ajv-formats)"
+          if ! npx -y ajv-cli@"${AJV_CLI_VERSION}" validate \
+              -s docs/specs/ne.schema.json \
+              -d /tmp/out.ne.json \
+              --spec=draft2020 \
+              -c ajv-formats; then
+            echo "ajv-cli unavailable or failed; falling back to built-in CLI validator"
+            node dist/cli.js validate \
+              --in /tmp/out.ne.json \
+              --schema docs/specs/ne.schema.json \
+              --quiet
+          fi
       - name: Validate example enrich outputs (schema + parse)
         run: |
           set -euo pipefail
