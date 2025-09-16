@@ -59,7 +59,7 @@ program
   .addOption(
     new Option(
       "--source <name>",
-      "source name (action|webhook|cli); accepts 'actions' as alias of 'action'",
+      "source name (action|webhook|cli); accepts 'actions' as input alias; persists 'action'",
     ).default("cli"),
   )
   .option("--select <paths>", "comma-separated dot paths to include in output")
