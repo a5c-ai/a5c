@@ -75,7 +75,8 @@ See: docs/specs/README.md#4.2-mentions-schema for full details.
 - Common flags:
   - `--in <file>`: input JSON file (raw event)
   - `--out <file>`: write result to file (default: stdout)
-  - `--source <name>`: provenance (`actions|webhook|cli`) [default: `cli`]
+  - `--source <name>`: provenance (`action|webhook|cli`)
+    - Tip: The CLI accepts `actions` as an input alias for convenience when running in GitHub Actions, but the persisted `provenance.source` is normalized to `action`. [default: `cli`]
   - `--select <paths>`: comma-separated dot paths to include in output
   - `--filter <expr>`: filter expression `path[=value]`; if not matching, exits with code 2 and no output
   - `--label <key=value...>`: attach labels to top‑level `labels[]` (repeatable)
@@ -160,6 +161,7 @@ GitHub Actions (normalize current run):
       --source actions \
       --in "$GITHUB_EVENT_PATH" \
       --out event.json
+    # Note: --source actions is accepted as an alias; the stored value will be provenance.source: "action".
 jq '.type, .repo.full_name, .labels' event.json
 ```
 
