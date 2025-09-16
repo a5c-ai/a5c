@@ -89,8 +89,6 @@ Examples:
 Configuration (aligns with CLI and README):
 
 - `mentions.scan.changed_files`: `true|false` (default: true) — scan changed files for `@...` in code comments.
-- `mentions.scan.commit_messages`: `true|false` (default: true) — scan commit messages for mentions.
-- `mentions.scan.issue_comments`: `true|false` (default: true) — scan issue comment bodies for mentions.
 - `mentions.max_file_bytes`: number of bytes cap per file (default: 204800 bytes ≈ 200KB)
 - `mentions.languages`: optional allowlist of canonical language codes to scan (e.g., `js,ts,py,go,yaml,md`). When omitted, detection is used.
   - Mapping note: extensions are normalized to codes during detection (e.g., `.tsx → ts`, `.jsx → js`, `.yml → yaml`), but the allowlist compares codes.
@@ -114,11 +112,16 @@ Example mention from a code comment:
 }
 ```
 
+Examples:
+
+- Offline enrichment sample (no `--use-github`): `docs/examples/enrich.offline.json` — minimal NE document without `enriched.github`.
+- Online enrichment sample (`--use-github` with token): `docs/examples/enrich.online.json` — includes `enriched.github.provider` and a minimal PR excerpt.
+
 ## 5) Configuration
 
 - Env vars: `GITHUB_TOKEN` (or custom `A5C_AGENT_GITHUB_TOKEN`), debug flags, provider-specific tokens.
 - Sources: prefer GitHub Actions runtime env and `secrets.*` and `vars.*` as in existing workflows.
-- CLI flags (implemented): `--in file.json`, `--out out.json`, `--label key=value`, `--select paths`, `--filter expr`. See CLI reference: `docs/cli/reference.md`.
+- CLI flags (implemented): `--in file.json`, `--out out.json`, `--label key=value`, `--select paths`, `--filter expr`.
 - Provider adapters: `providers/github`, stub interfaces for others. Auto-detect when running in Actions.
 
 ### 5.1) Environment Variables and Precedence

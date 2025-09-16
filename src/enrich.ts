@@ -80,23 +80,6 @@ export async function handleEnrich(opts: {
         provenance: { source: "cli" },
       };
 
-  // Optional UX notice: if input is a raw payload (non-NE), emit a single-line hint to stderr.
-  // This does not change behavior or exit codes.
-  try {
-    if (
-      !isNE &&
-      process &&
-      process.stderr &&
-      typeof process.stderr.write === "function"
-    ) {
-      process.stderr.write(
-        "Note: input appears to be a raw payload; consider normalizing first for full NE fields.\n",
-      );
-    }
-  } catch {
-    // ignore if stderr is not writable (e.g., programmatic use)
-  }
-
   let githubEnrichment: any = {};
   if (!useGithub) {
     githubEnrichment = {
@@ -195,7 +178,7 @@ export async function handleEnrich(opts: {
     if (pr?.body) mentions.push(...extractMentions(String(pr.body), "pr_body"));
     if (pr?.title)
       mentions.push(...extractMentions(String(pr.title), "pr_title"));
-    // Issue title/body mentions (always-on when present)
+    // Issue title/body mentions (issues.* events)
     const issue = (baseEvent as any)?.issue;
     if (issue?.title)
       mentions.push(...extractMentions(String(issue.title), "issue_title"));

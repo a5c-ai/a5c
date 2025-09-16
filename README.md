@@ -1,5 +1,6 @@
 [![99% built by agents](https://img.shields.io/badge/99%25-built%20by%20agents-blue.svg)](https://a5c.ai) [![codecov](https://codecov.io/gh/a5c-ai/events/branch/a5c/main/graph/badge.svg)](https://app.codecov.io/gh/a5c-ai/events/tree/a5c/main)
 
+
 # @a5c-ai/events – Events SDK & CLI
 
 Normalize and enrich GitHub (and other) events for agentic workflows. Use the CLI in CI or locally to turn raw webhook/Actions payloads into a compact, consistent schema that downstream agents and automations can trust.
@@ -53,19 +54,11 @@ Use a simple example, then see the CLI reference for the canonical flags and def
 # Disable scanning of changed files (code-comment mentions)
 events enrich --in ... --flag 'mentions.scan.changed_files=false'
 
-# Limit per-file bytes when scanning code comments (default: 200KB / 204800 bytes)
-events enrich --in ... --flag 'mentions.max_file_bytes=65536'
-
 # Restrict code‑comment scanning to canonical language IDs
 # Pass language IDs, not extensions: js, ts, py, go, java, c, cpp, sh, yaml, md.
 # Extensions are normalized internally for detection (.tsx→ts, .jsx→js, .yml→yaml),
 # but the allowlist compares the language IDs directly (values like .ts will not match).
 events enrich --in ... --flag "mentions.languages=ts,js"
-
-# Control which textual sources are scanned for @mentions during enrichment (commit messages and issue comments).
-# For code-comment scanning details, see `docs/cli/code-comment-mentions.md`.
-events enrich --in ... --flag 'mentions.scan.commit_messages=false'
-events enrich --in ... --flag 'mentions.scan.issue_comments=false'
 ```
 
 Canonical reference and examples:
@@ -91,7 +84,7 @@ Canonical reference and examples:
   - `--source <name>`: provenance (`action|webhook|cli`) [default: `cli`]
     - Accepts `actions` as input alias and persists `provenance.source: "action"`.
   - `--select <paths>`: comma-separated dot paths to include in output
-  - `--filter <expr>`: filter expression `path[=value]`; if not matching, exits with code 2 and no output
+  - `--filter <expr>`: filter expression `path[=value]`; if not matching, exits with code 2 and no output (see CLI reference example: docs/cli/reference.md#events-normalize)
   - `--label <key=value...>`: attach labels to top‑level `labels[]` (repeatable)
 
 `events enrich`
@@ -106,24 +99,8 @@ Canonical reference and examples:
 - Mentions scanning flags are documented once in the CLI reference at `docs/cli/reference.md#events-enrich` and are the canonical source of truth for wording and defaults.
 - `--use-github`: enable GitHub API enrichment (requires `GITHUB_TOKEN`)
 - `--select <paths>`: comma-separated dot paths to include in output
-- `--filter <expr>`: filter expression `path[=value]`; if not matching, exits with code 2 and no output
+  - `--filter <expr>`: filter expression `path[=value]`; if not matching, exits with code 2 and no output (see CLI reference example: docs/cli/reference.md#events-enrich)
 - `--label <key=value...>`: attach labels to top‑level `labels[]`
-
-Normalize first (recommended):
-
-It is recommended to run normalize first, then pipe to enrich. This ensures a complete, predictable NE shape and avoids the minimal shell fallback used when raw payloads are passed directly to enrich.
-
-Example:
-
-```bash
-events normalize --in samples/pull_request.synchronize.json \
-  | events enrich --flag 'mentions.scan.changed_files=false'
-```
-
-Notes:
-
-- Passing a raw payload to `events enrich` is supported; the CLI will construct a minimal NE shell when needed. That fallback may omit some fields (`repo`, `ref`, `actor`, etc.). Prefer the normalize → enrich flow for consistent outputs.
-- See also: docs/cli/reference.md#events-enrich and docs/cli/reference.md#events-normalize for more on normalization, including `--source actions` usage.
 
 #### Mentions flags
 
@@ -134,8 +111,13 @@ Behavior:
 - Offline by default: without `--use-github`, no network calls occur. Output includes `enriched.github = { provider: 'github', partial: true, reason: 'flag:not_set' }`.
 - When `--use-github` is set but no token is configured, the CLI exits with code `3` (provider/network error) and prints an error. Use programmatic APIs with an injected Octokit for testing scenarios if needed.
   - `--flag mentions.scan.changed_files=<true|false>` — enable scanning code comments in changed files for `@mentions` (default: `true`).
-  - `--flag mentions.max_file_bytes=<bytes>` — per‑file size cap when scanning code comments (default: `200KB` / `204800`). Files larger than this are skipped. - `--flag mentions.languages=<lang,...>` — optional allowlist of canonical language codes to scan (e.g., `js,ts,py,go,yaml,md`). When omitted, the scanner uses filename/heuristics. - Mapping note: extensions are normalized to codes during detection (e.g., `.tsx → ts`, `.jsx → js`, `.yml → yaml`), but the filter list compares codes. - `--flag mentions.scan.commit_messages=<true|false>` — enable scanning commit messages for `@mentions` (default: `true`). - `--flag mentions.scan.issue_comments=<true|false>` — enable scanning issue comment bodies for `@mentions` (default: `true`).
-    Quick examples:
+  - `--flag mentions.max_file_bytes=<bytes>` — per‑file size cap when scanning code comments (default: `200KB` / `204800`). Files larger than this are skipped.
+    - `--flag mentions.languages=<lang,...>` — optional allowlist of canonical language codes to scan (e.g., `js,ts,py,go,yaml,md`). When omitted, the scanner uses filename/heuristics.
+      - Mapping note: extensions are normalized to codes during detection (e.g., `.tsx → ts`, `.jsx → js`, `.yml → yaml`), but the filter list compares codes.
+    - `--flag mentions.scan.commit_messages=<true|false>` — enable scanning commit messages for `@mentions` (default: `true`).
+    - `--flag mentions.scan.issue_comments=<true|false>` — enable scanning issue comment bodies for `@mentions` (default: `true`).
+
+Quick examples:
 
 ```bash
 # Disable scanning changed files for code‑comment mentions
@@ -153,16 +135,61 @@ See also:
 - Specs: `docs/specs/README.md#42-mentions-schema`
 - CLI reference: `docs/cli/reference.md#events-enrich`
 
+- Behavior:
+
 - Offline by default: without `--use-github`, no network calls occur. Output includes `enriched.github` with `partial=true` and `reason="flag:not_set"`. See example outputs: `docs/examples/enrich.offline.json` and `docs/examples/enrich.online.json`.
 - When `--use-github` is set but no token is configured, the CLI exits with code `3` (provider/network error) and prints an error; no JSON is emitted. For programmatic SDK usage and tests with an injected Octokit, a partial structure with `reason: "token:missing"` may be returned, but the CLI UX is exit `3`.
 
 Exit codes: `0` success, non‑zero on errors (invalid input, etc.).
+
+For detailed command usage and examples, see docs/cli/reference.md.
 
 ### Mentions scanning examples
 
 Examples are centralized in the CLI Reference:
 
 - docs/cli/reference.md#mentions-scanning-controls-code-comments-in-changed-files
+
+### Rules quick-start (composed events)
+
+Define a minimal rule in YAML and evaluate it with `enrich --rules` to emit composed events. This example matches the included PR sample (`samples/pull_request.synchronize.json`) which carries a `documentation` label.
+
+```bash
+# 1) Create a tiny rules file
+cat > rules.sample.yml <<'YAML'
+rules:
+  - name: pr_labeled_documentation
+    on: pull_request
+    when:
+      all:
+        - { path: "$.payload.pull_request.labels[*].name", contains: "documentation" }
+    emit:
+      key: pr_labeled_documentation
+      reason: "PR has documentation label"
+      targets: [developer-agent]
+YAML
+
+# 2) Enrich with rules and inspect composed outputs
+events enrich --in samples/pull_request.synchronize.json \
+  --rules rules.sample.yml \
+  | jq '(.composed // []) | map({key, reason})'
+```
+
+Notes:
+
+```bash
+events enrich --in samples/pull_request.synchronize.json \
+  --flag mentions.max_file_bytes=102400 \
+  --flag mentions.languages=ts,js
+```
+
+// Learn more links
+
+- Real‑world rules can combine predicates (`all/any/not`, `eq`, `in`, `contains`, `exists`) and project fields into `emit.payload`. See the richer sample at `samples/rules/conflicts.yml`.
+- When no rules match, `.composed` may be absent or `null`. Guard with `(.composed // [])` as shown.
+- Learn more:
+  - Specs §6.1: docs/specs/README.md#61-rule-engine-and-composed-events
+  - Full CLI options: docs/cli/reference.md
 
 ### Rules quick-start (composed events)
 
@@ -249,14 +276,19 @@ events normalize --in samples/pull_request.synchronize.json \
 jq '.type, .labels' out.json
 ```
 
-Enrichment (with GitHub lookups enabled):
+Enrichment (offline vs online):
 
 ```bash
+# Offline (default; no network calls)
+events enrich --in samples/pull_request.synchronize.json --out enriched.offline.json
+jq '.enriched.github // { partial: "offline" }' enriched.offline.json
+
+# Online (GitHub enrichment; requires token)
 export GITHUB_TOKEN=ghp_your_token_here
 events enrich --in samples/pull_request.synchronize.json \
   --flag include_patch=false --flag commit_limit=50 --flag file_limit=200 \
-  --use-github --out enriched.json
-jq '.enriched' enriched.json
+  --use-github --out enriched.online.json
+jq '.enriched.github.provider' enriched.online.json
 ```
 
 With rules (composed events):
@@ -267,6 +299,11 @@ events enrich --in samples/pull_request.synchronize.json \
   | jq '(.composed // []) | map({key, reason})'
   # note: `reason` may be omitted depending on rule configuration
 ```
+
+See also sample outputs:
+
+- docs/examples/enrich.offline.json
+- docs/examples/enrich.online.json
 
 ## Coverage (Optional)
 
