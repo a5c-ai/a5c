@@ -90,6 +90,7 @@ See also:
 
 Behavior:
 
+- Pass `--use-github` to enable GitHub API enrichment. If no token is configured, the CLI exits with code `3` (provider/network error) and prints an error (no JSON is emitted by the CLI path).
 - Offline by default: no network calls without `--use-github`. Output includes a minimal stub under `enriched.github`:
 
 > Offline states
@@ -139,6 +140,10 @@ events enrich --in FILE [--out FILE] [--rules FILE] \
     - `mentions.scan.commit_messages=true|false` (default: `true`) – enable/disable scanning commit messages for `@mentions`
     - `mentions.scan.issue_comments=true|false` (default: `true`) – enable/disable scanning issue comments for `@mentions`
 - `--use-github`: enable GitHub API enrichment; equivalent to `--flag use_github=true` (requires `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`). Without this flag, the CLI performs no network calls and sets `enriched.github = { provider: 'github', partial: true, reason: 'flag:not_set' }`.
+    - `mentions.max_file_bytes=<bytes>` (default: `204800`) – skip files larger than this many bytes when scanning
+    - `mentions.languages=<ext,...>` – optional allowlist of file extensions to scan (e.g., `ts,tsx,js,jsx,py,go,yaml`). When omitted, language/extension detection is used.
+    - Notes: Mentions found in file diffs or changed files are emitted with `source: code_comment` and include `location.file` and `location.line` when available.
+- `--use-github`: enable GitHub API enrichment; equivalent to `--flag use_github=true` (requires `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`). Without this flag, the CLI performs no network calls and the CLI uses a stub under `enriched.github` (see above). The exact `reason` value is implementation-defined and may evolve; current default is `flag:not_set`.
 - `--label KEY=VAL...`: labels to attach
 - `--select PATHS`: comma-separated dot paths to include in output
 - `--filter EXPR`: filter expression `path[=value]`; if it doesn't pass, exits with code `2`
@@ -283,6 +288,14 @@ events enrich --in samples/pull_request.synchronize.json \
   | jq '.enriched.github.pr.files | map(has("patch")) | all'
 ```
 
+Include patch diffs explicitly (opt‑in):
+
+```bash
+events enrich --in samples/pull_request.synchronize.json \
+  --use-github --flag include_patch=true \
+  | jq '.enriched.github.pr.files | map(has("patch")) | all'
+```
+
 Inspect composed if present:
 
 ```bash
@@ -402,6 +415,10 @@ Offline vs token-missing notes:
 ```
 
 With --use-github but token missing (exit code 3): the CLI exits with status `3` and prints an error to stderr; no JSON is emitted. For programmatic SDK usage with an injected Octokit, some paths may return a partial object with `reason: "token:missing"`, but the CLI UX remains exit `3` with no JSON.
+Offline and token-missing behavior:
+
+- Offline (no `--use-github`): CLI emits a stub — see `docs/examples/enrich.offline.stub.json`.
+- `--use-github` but token missing: CLI exits with code `3` and prints an error to stderr; it does not emit JSON. Programmatic API paths may return a partial object with `reason: "token:missing"` when an injected Octokit is used in tests.
 
 References:
 

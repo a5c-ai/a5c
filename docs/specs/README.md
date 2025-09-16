@@ -74,6 +74,13 @@ Examples:
 - Offline enrich (no `--use-github`): `docs/examples/enrich.offline.json` (stub with `enriched.github.partial=true`, `reason: "flag:not_set"`)
 - Online enrich (`--use-github`): `docs/examples/enrich.online.json`
 
+Offline behavior (no `--use-github`):
+
+- Minimal NE: outputs may omit `enriched.github` entirely (valid per schema).
+- CLI default stub: outputs may include `enriched.github` with `{ provider: 'github', partial: true, reason: <implementation-defined> }`.
+
+Both shapes are acceptable. See example stub at `docs/examples/enrich.offline.stub.json`.
+
 ### 4.2) Mentions Schema
 
 - mentions[] items have:

@@ -142,6 +142,40 @@ See also:
 
 Exit codes: `0` success, non‑zero on errors (invalid input, etc.).
 
+#### Offline GitHub enrichment
+
+When you do not pass `--use-github`, enrichment runs without network calls. Two acceptable offline shapes exist:
+
+- Minimal NE: omit `enriched.github` entirely (valid per schema; often used in minimal examples).
+- CLI default stub: include `enriched.github` with `{ provider: 'github', partial: true, reason: <implementation-defined> }`.
+
+The CLI currently uses the stub form; the exact `reason` string may evolve. See examples: `docs/examples/enrich.offline.stub.json`.
+
+Example (excerpt):
+
+```jsonc
+{
+  "enriched": {
+    "github": {
+      "provider": "github",
+      "partial": true,
+      "reason": "flag:not_set",
+    },
+  },
+}
+```
+
+With `--use-github` and a valid token, fields are populated. For example:
+
+```bash
+events enrich --in samples/pull_request.synchronize.json --use-github | jq '.enriched.github.pr.mergeable_state'
+```
+
+If you pass `--use-github` without a token, the CLI exits with code `3` and prints a clear error to stderr. The programmatic API may return a partial object with `reason: "token:missing"`, but the CLI does not emit JSON on this error.
+
+Notes:
+
+- Minimal offline examples may omit `enriched.github`. Both shapes validate against the NE schema. See also: `docs/examples/enrich.offline.stub.json`.
 For detailed command usage and examples, see docs/cli/reference.md.
 
 ### Mentions scanning examples
@@ -595,7 +629,7 @@ events enrich --in samples/pull_request.synchronize.json \
 See also:
 
 - [Specs §6.1 Rule Engine and Composed Events](docs/specs/README.md#61-rule-engine-and-composed-events)
-- [Full CLI reference](docs/cli/reference.md)
+- [Full CLI reference](docs/cli/reference.md) — see also offline examples under `docs/examples/`.
 
 ## Coverage (Optional)
 
@@ -634,7 +668,7 @@ After the first successful upload, add a badge to this README:
 [![codecov](https://codecov.io/gh/a5c-ai/events/branch/a5c/main/graph/badge.svg)](https://codecov.io/gh/a5c-ai/events)
 ```
 
-Adjust the badge URL to match your repository/branch (and VCS provider) as needed. Private projects may require a tokenized badge; see Codecov documentation.
+Adjust the badge URL to match your repository/branch (and VCS provider) as needed. Private projects may require a tokenized badge; see Codecov docs.
 
 ### Auth tokens: precedence & redaction
 

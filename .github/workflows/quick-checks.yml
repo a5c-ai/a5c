@@ -46,6 +46,12 @@ jobs:
         run: npm run -s typecheck
       - name: Unit tests (vitest)
         run: npm run -s test:ci
+      - name: Validate offline stub example (NE schema)
+        run: |
+          node dist/cli.js validate \
+            --in docs/examples/enrich.offline.stub.json \
+            --schema docs/specs/ne.schema.json \
+            --quiet
       - name: Example validation (NE schema) — ajv-cli with fallback
         shell: bash
         run: |
