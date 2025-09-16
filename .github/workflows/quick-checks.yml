@@ -56,12 +56,12 @@ jobs:
           node dist/cli.js normalize \
             --in samples/workflow_run.completed.json \
             --out /tmp/out.ne.json
-          echo "Attempting ajv-cli@${AJV_CLI_VERSION} validation (ajv-formats@${AJV_FORMATS_VERSION})"
+          echo "Attempting ajv-cli@${AJV_CLI_VERSION} validation (ajv-formats)"
           if ! npx -y ajv-cli@"${AJV_CLI_VERSION}" validate \
               -s docs/specs/ne.schema.json \
               -d /tmp/out.ne.json \
               --spec=draft2020 \
-              -c ajv-formats@"${AJV_FORMATS_VERSION}"; then
+              -c ajv-formats; then
             echo "ajv-cli unavailable or failed; falling back to built-in CLI validator"
             node dist/cli.js validate \
               --in /tmp/out.ne.json \
