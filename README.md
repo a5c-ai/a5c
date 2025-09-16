@@ -45,6 +45,30 @@ cat out.json | npx @a5c-ai/events validate --quiet
 
 ## CLI Reference
 
+### Mentions flags (enrich)
+
+These control code-comment mention scanning performed by `events enrich`:
+
+- `--flag mentions.scan.changed_files=<true|false>` (default: `true`) — enable/disable scanning of changed files for `@mentions` inside code comments.
+- `--flag mentions.max_file_bytes=<bytes>` (default: `204800`) — skip files larger than this many bytes when scanning code comments.
+- `--flag mentions.languages=<ext,...>` — optional allowlist of file extensions to scan (for example: `ts,tsx,js,jsx,py,go,yaml`). When omitted, filename/heuristics are used.
+
+Examples:
+
+```bash
+events enrich --in samples/pull_request.synchronize.json \
+  --flag mentions.scan.changed_files=false
+
+events enrich --in samples/pull_request.synchronize.json \
+  --flag mentions.max_file_bytes=102400 \
+  --flag mentions.languages=ts,tsx,js,jsx
+```
+
+See also:
+
+- docs/specs/README.md#4.2-mentions-schema
+- docs/cli/reference.md#events-enrich
+
 ### Mentions config (Quick Start)
 
 Use a simple example, then see the CLI reference for canonical flags and defaults:
