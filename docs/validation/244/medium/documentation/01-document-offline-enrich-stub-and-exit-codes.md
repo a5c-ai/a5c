@@ -1,3 +1,5 @@
+[Note] Updated semantics: offline reason is `flag:not_set` (replaced prior `github_enrich_disabled`). See `docs/cli/reference.md` for canonical behavior.
+
 # [Validator] [Documentation] - Document offline enrich stub shape and exit codes
 
 ## Context

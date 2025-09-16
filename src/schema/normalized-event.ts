@@ -16,7 +16,7 @@ export const RepoSchema = z
 export const RefSchema = z
   .object({
     name: z.string().optional(),
-    type: z.enum(["branch", "tag", "pr", "unknown"]).nullable().optional(),
+    type: z.enum(["branch", "tag", "unknown"]).nullable().optional(),
     sha: z.string().optional(),
     base: z.string().optional(),
     head: z.string().optional(),
