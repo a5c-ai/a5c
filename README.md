@@ -11,9 +11,9 @@ Normalize and enrich GitHub (and other) events for agentic workflows. Use the CL
 
 ## Ownership & Routing
 
-See `docs/routing/ownership-and-routing.md` for how CODEOWNERS drives routing and how `owners_union` is used in enrichment.
+Semantics: enrichment computes `owners_union` as the sorted, de‑duplicated union of all CODEOWNERS across changed files. This differs from GitHub’s per‑file evaluation where the last matching rule wins. We use union semantics to enable broader, safer routing.
 
-Note: For routing, this project computes a per-PR `owners_union` as the sorted, de-duplicated union of all owners across changed files. This intentionally differs from GitHub CODEOWNERS evaluation where the last matching rule wins for a single file. See the routing doc for examples and rationale.
+Learn more and see examples in `docs/routing/ownership-and-routing.md` (Semantics).
 
 ## Quick Start
 
@@ -52,6 +52,12 @@ Use a simple example, then see the CLI reference for the canonical flags and def
 ```bash
 # Disable scanning of changed files (code-comment mentions)
 events enrich --in ... --flag 'mentions.scan.changed_files=false'
+
+# Restrict code‑comment scanning to canonical language IDs
+# Pass language IDs, not extensions: js, ts, py, go, java, c, cpp, sh, yaml, md.
+# Extensions are normalized internally for detection (.tsx→ts, .jsx→js, .yml→yaml),
+# but the allowlist compares the language IDs directly (values like .ts will not match).
+events enrich --in ... --flag "mentions.languages=ts,js"
 ```
 
 Canonical reference and examples:
@@ -89,8 +95,7 @@ Canonical reference and examples:
   - `--rules <file>`: rules file path (yaml/json)
 - `--flag include_patch=<true|false>`: include diff patches in files (default: false)
 - `--flag commit_limit=<n>`: max commits to include (default: 50)
-- `--flag file_limit=<n>`: max files to include (default: 200)
-- Mentions scanning flags are centralized in `docs/cli/reference.md` (see canonical wording and defaults there).
+- Mentions scanning flags are documented once in the CLI reference at `docs/cli/reference.md#events-enrich` and are the canonical source of truth for wording and defaults.
 - `--use-github`: enable GitHub API enrichment (requires `GITHUB_TOKEN`)
 - `--select <paths>`: comma-separated dot paths to include in output
 - `--filter <expr>`: filter expression `path[=value]`; if not matching, exits with code 2 and no output
@@ -98,14 +103,25 @@ Canonical reference and examples:
 
 #### Mentions flags
 
-For flags and examples, see the canonical section:
+For the authoritative list and defaults for Mentions controls during `enrich` (including `mentions.scan.changed_files`, `mentions.max_file_bytes`, and `mentions.languages`), see the CLI reference: `docs/cli/reference.md#events-enrich`.
 
-- docs/cli/reference.md#mentions-scanning-controls-code-comments-in-changed-files
+Quick examples:
 
-Behavior:
+```bash
+# Disable scanning changed files for code‑comment mentions
+events enrich --in samples/pull_request.synchronize.json \
+  --flag mentions.scan.changed_files=false
 
-- Offline by default: without `--use-github`, no network calls occur. Output includes `enriched.github` with `partial=true` and `reason="flag:not_set"`.
-- When `--use-github` is set but no token is configured, the CLI exits with code `3` (provider/network error) and prints an error. Use programmatic APIs with an injected Octokit for partial/offline testing if needed.
+# Restrict to specific languages and lower the size cap
+events enrich --in samples/pull_request.synchronize.json \
+  --flag mentions.languages=ts,js \
+  --flag mentions.max_file_bytes=102400
+```
+
+See also:
+
+- Specs: `docs/specs/README.md#42-mentions-schema`
+- CLI reference: `docs/cli/reference.md#events-enrich`
 
 Exit codes: `0` success, non‑zero on errors (invalid input, etc.).
 
@@ -114,6 +130,39 @@ Exit codes: `0` success, non‑zero on errors (invalid input, etc.).
 Examples are centralized in the CLI Reference:
 
 - docs/cli/reference.md#mentions-scanning-controls-code-comments-in-changed-files
+
+### Rules quick-start (composed events)
+
+Define a minimal rule in YAML and evaluate it with `enrich --rules` to emit composed events. This example matches the included PR sample (`samples/pull_request.synchronize.json`) which carries a `documentation` label.
+
+```bash
+# 1) Create a tiny rules file
+cat > rules.sample.yml <<'YAML'
+rules:
+  - name: pr_labeled_documentation
+    on: pull_request
+    when:
+      all:
+        - { path: "$.payload.pull_request.labels[*].name", contains: "documentation" }
+    emit:
+      key: pr_labeled_documentation
+      reason: "PR has documentation label"
+      targets: [developer-agent]
+YAML
+
+# 2) Enrich with rules and inspect composed outputs
+events enrich --in samples/pull_request.synchronize.json \
+  --rules rules.sample.yml \
+  | jq '(.composed // []) | map({key, reason})'
+```
+
+Notes:
+
+- Real‑world rules can combine predicates (`all/any/not`, `eq`, `in`, `contains`, `exists`) and project fields into `emit.payload`. See the richer sample at `samples/rules/conflicts.yml`.
+- When no rules match, `.composed` may be absent or `null`. Guard with `(.composed // [])` as shown.
+- Learn more:
+  - Specs §6.1: docs/specs/README.md#61-rule-engine-and-composed-events
+  - Full CLI options: docs/cli/reference.md
 
 ## Normalized Event Schema (MVP)
 
@@ -212,7 +261,7 @@ export GITHUB_TOKEN=ghp_low_scope
 export A5C_AGENT_GITHUB_TOKEN=ghs_org_or_repo_scope
 events enrich --in samples/pull_request.synchronize.json --use-github | jq '.enriched.github.provider'
 
-# Missing token with --use-github: exits 3 and marks reason
+# Missing token with --use-github: exits 3
 unset GITHUB_TOKEN A5C_AGENT_GITHUB_TOKEN
 events enrich --in samples/pull_request.synchronize.json --use-github || echo $?
 # stderr: GitHub enrichment failed: ...
@@ -230,7 +279,7 @@ events enrich --in samples/pull_request.synchronize.json \
   | jq '.enriched.mentions // [] | map(select(.source=="code_comment")) | length'
 ```
 
-See also: CLI reference for flags and exit codes: `docs/cli/reference.md`.
+See also: CLI reference for flags and exit codes: `docs/cli/reference.md`. Cross‑link: `docs/cli/code-comment-mentions.md` and specs §4.2 in `docs/specs/README.md`.
 
 ### Validate against schema
 
