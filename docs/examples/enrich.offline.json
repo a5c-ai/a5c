@@ -12,5 +12,12 @@
   "actor": { "id": 221166651, "login": "a5c-ai[bot]", "type": "Bot" },
   "payload": { "pull_request": { "number": 567, "title": "Update docs" } },
   "provenance": { "source": "cli" },
-  "labels": ["docs", "example"]
+  "labels": ["docs", "example"],
+  "enriched": {
+    "github": {
+      "provider": "github",
+      "partial": true,
+      "reason": "flag:not_set"
+    }
+  }
 }
