@@ -78,13 +78,16 @@ Ownership semantics:
   - context: `string` short excerpt around the mention (<=140 chars)
   - confidence: `0..1` (parser confidence, esp. for code_comment extraction)
 
-Configuration:
+Configuration (aligns with CLI and README):
 
-- `mentions.scan.changed_files`: `true|false` (default true) — scan changed files for `@...` in code comments.
-- `mentions.scan.commit_messages`: `true|false` (default true)
-- `mentions.scan.issue_comments`: `true|false` (default true)
-- `mentions.max_file_bytes`: bytes cap per file (default 200KB)
-- `mentions.languages`: opt-in list for code-comment scanning; default detects via filename.
+- `mentions.scan.changed_files`: `true|false` (default: true) — scan changed files for `@...` in code comments.
+- `mentions.max_file_bytes`: number of bytes cap per file (default: 204800 bytes ≈ 200KB)
+- `mentions.languages`: optional allowlist of file extensions to scan (e.g., `ts,tsx,js,jsx,py,go,yaml`). When omitted, language/extension detection is used.
+
+See also:
+
+- CLI details and examples: `docs/cli/reference.md#events-enrich`.
+- Root README quick reference: `README.md#mentions-scanning-examples`.
 
 Example mention from a code comment:
 
