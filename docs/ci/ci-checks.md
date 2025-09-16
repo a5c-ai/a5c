@@ -81,8 +81,8 @@ Script
 
 - Use `scripts/coverage-upload.sh`. It:
   - No-ops if `CODECOV_TOKEN` is not set or `coverage/lcov.info` is missing.
-  - Attempts to use a local `codecov` binary or downloads a temporary uploader.
-  - Never fails the build if upload errors occur.
+  - Uploads using Codecov's bash uploader from `https://codecov.io/bash`.
+  - Never fails the build if token is missing or file is absent (script exits 0).
 
 Enable in Tests workflow (example snippet)
 
@@ -91,6 +91,8 @@ Add a step after tests to upload coverage. Do not commit this change unless your
 ```yaml
 - name: Upload coverage to Codecov (optional)
   if: ${{ env.CODECOV_TOKEN != '' }}
+  env:
+    CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
   run: |
     bash scripts/coverage-upload.sh
 ```
@@ -98,8 +100,9 @@ Add a step after tests to upload coverage. Do not commit this change unless your
 Optional environment variables:
 
 - `CODECOV_FLAGS`: e.g., `tests,vitest`
-- `CODECOV_NAME`: upload name (defaults to job name)
-- `CODECOV_FILE`: path to LCOV file (defaults to `coverage/lcov.info`)
+- `CODECOV_BUILD`: build identifier (commit SHA or run id)
+- `CODECOV_URL`: override the uploader host for self-hosted instances
+- `CODECOV_DRY`: set to `1` to print the upload command and skip execution
 
 Badge (README)
 
