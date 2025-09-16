@@ -72,7 +72,7 @@ export async function cmdNormalize(opts: {
   if (!inPath)
     return {
       code: 2,
-      errorMessage: "Missing required --in FILE (or use --source action)",
+      errorMessage: "Missing required --in FILE (or use --source actions)",
     };
 
   try {
