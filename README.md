@@ -5,13 +5,15 @@
 Normalize and enrich GitHub (and other) events for agentic workflows. Use the CLI in CI or locally to turn raw webhook/Actions payloads into a compact, consistent schema that downstream agents and automations can trust.
 
 - Quick install via npm
-- Commands: `events mentions`, `events normalize`, `events enrich`, `events emit`, `events validate`
+- Commands: `events mentions`, `events normalize`, `events enrich`, `events emit`, `events validate` (see `docs/cli/reference.md#events-emit` for `emit` options and examples)
 - Output: JSON to stdout or file
 - Extensible via provider adapters and enrichers
 
 ## Ownership & Routing
 
 See docs/routing/ownership-and-routing.md for how CODEOWNERS drives routing and how owners_union is used in enrichment.
+
+Note: For routing, this project computes a per-PR `owners_union` as the sorted, de-duplicated union of all owners across changed files. This intentionally differs from GitHub CODEOWNERS evaluation where the last matching rule wins for a single file. See the routing doc for examples and rationale.
 
 ## Quick Start
 
@@ -43,22 +45,40 @@ cat out.json | npx @a5c-ai/events validate --quiet
 
 ## CLI Reference
 
-### Mentions config (Quick Start)
+### Mentions flags (enrich)
 
-Control where and how mentions are scanned during `enrich`:
+These control code-comment mention scanning performed by `events enrich`:
+
+- `--flag mentions.scan.changed_files=<true|false>` (default: `true`) — enable/disable scanning of changed files for `@mentions` inside code comments.
+- `--flag mentions.max_file_bytes=<bytes>` (default: `204800`) — skip files larger than this many bytes when scanning code comments.
+- `--flag mentions.languages=<ext,...>` — optional allowlist of file extensions to scan (for example: `ts,tsx,js,jsx,py,go,yaml`). When omitted, filename/heuristics are used.
+
+Examples:
 
 ```bash
-# Disable scanning changed files for code-comment mentions
-events enrich --in ... --flag 'mentions.scan.changed_files=false'
+events enrich --in samples/pull_request.synchronize.json \
+  --flag mentions.scan.changed_files=false
 
-# Limit per-file bytes when scanning code comments (default: 200KB / 204800 bytes)
-events enrich --in ... --flag 'mentions.max_file_bytes=65536'
-
-# Restrict code-comment scanning to specific languages
-events enrich --in ... --flag "mentions.languages=ts,js,md"
+events enrich --in samples/pull_request.synchronize.json \
+  --flag mentions.max_file_bytes=102400 \
+  --flag mentions.languages=ts,tsx,js,jsx
 ```
 
-See: docs/specs/README.md#4.2-mentions-schema for full details.
+See also:
+
+- docs/specs/README.md#4.2-mentions-schema
+- docs/cli/reference.md#events-enrich
+
+### Mentions config (Quick Start)
+
+Use a simple example, then see the CLI reference for canonical flags and defaults:
+
+```bash
+# Disable scanning of changed files (code-comment mentions)
+events enrich --in ... --flag 'mentions.scan.changed_files=false'
+```
+
+Full reference and examples: docs/cli/reference.md#events-enrich
 
 `events mentions`
 
@@ -75,8 +95,8 @@ See: docs/specs/README.md#4.2-mentions-schema for full details.
 - Common flags:
   - `--in <file>`: input JSON file (raw event)
   - `--out <file>`: write result to file (default: stdout)
-  - `--source <name>`: provenance (`action|webhook|cli`)
-    - Tip: The CLI accepts `actions` as an input alias for convenience when running in GitHub Actions, but the persisted `provenance.source` is normalized to `action`. [default: `cli`]
+  - `--source <name>`: provenance (`action|webhook|cli`) [default: `cli`]
+    - Alias: the CLI accepts `actions` as an input alias (e.g., in GitHub Actions); the stored value is normalized to `provenance.source: "action"`.
   - `--select <paths>`: comma-separated dot paths to include in output
   - `--filter <expr>`: filter expression `path[=value]`; if not matching, exits with code 2 and no output
   - `--label <key=value...>`: attach labels to top‑level `labels[]` (repeatable)
@@ -87,24 +107,35 @@ See: docs/specs/README.md#4.2-mentions-schema for full details.
 - Common flags:
   - `--in <file>`: normalized event JSON (or raw payload; NE shell will be created)
   - `--out <file>`: write enriched result
-  - `--rules <file>`: rules file path (yaml/json)
+- `--rules <file>`: rules file path (yaml/json)
 - `--flag include_patch=<true|false>`: include diff patches in files (default: false)
 - `--flag commit_limit=<n>`: max commits to include (default: 50)
 - `--flag file_limit=<n>`: max files to include (default: 200)
-- Mentions scanning (code comments in changed files):
-  - `--flag mentions.scan.changed_files=<true|false>` (default: true)
-  - `--flag mentions.max_file_bytes=<bytes>` (default: 200KB / 204800 bytes)
-  - `--flag mentions.languages=<ext,...>` (optional list such as `ts,tsx,js,jsx,py,go,yaml`)
-  - See more: docs/cli/reference.md#events-enrich
-  - `--use-github`: enable GitHub API enrichment (requires `GITHUB_TOKEN`)
-  - `--select <paths>`: comma-separated dot paths to include in output
-  - `--filter <expr>`: filter expression `path[=value]`; if not matching, exits with code 2 and no output
-  - `--label <key=value...>`: attach labels to top‑level `labels[]`
+- Mentions scanning flags are centralized in `docs/cli/reference.md` (see that section for canonical wording and defaults).
+- Mentions scanning flags are centralized in `docs/cli/reference.md` (see that section for canonical wording and defaults).
+- `--use-github`: enable GitHub API enrichment (requires `GITHUB_TOKEN`)
+- `--select <paths>`: comma-separated dot paths to include in output
+- `--filter <expr>`: filter expression `path[=value]`; if not matching, exits with code 2 and no output
+- `--label <key=value...>`: attach labels to top‑level `labels[]`
 
 Behavior:
 
-- Offline by default: without `--use-github`, no network calls occur. Output includes `enriched.github` with `partial=true` and `reason="flag:not_set"`.
-- When `--use-github` is set but no token is configured, the CLI exits with code `3` (provider/network error) and prints an error. Use programmatic APIs with an injected Octokit for partial/offline testing if needed.
+- Offline by default: without `--use-github`, no network calls occur. Output includes a minimal stub under `enriched.github`:
+
+  ```json
+  {
+    "enriched": {
+      "github": {
+        "provider": "github",
+        "partial": true,
+        "reason": "flag:not_set"
+      }
+    }
+  }
+  ```
+
+- Online with `--use-github` and a valid token: enrichment populates fields like `enriched.github.pr.mergeable_state`, `enriched.github.pr.files[]`, and `enriched.github.branch_protection`.
+- With `--use-github` but token missing: the CLI exits with code `3` and writes an error (no JSON output). For SDK tests with an injected Octokit, a partial object with `reason: "token:missing"` may appear programmatically, but not via the CLI.
 
 Exit codes: `0` success, non‑zero on errors (invalid input, etc.).
 
@@ -136,20 +167,16 @@ If you pass `--use-github` without a token, the CLI exits with code `3` and prin
 
 ### Mentions scanning examples
 
-Disable scanning changed files for code-comment mentions:
+See the CLI reference for canonical examples covering `mentions.scan.changed_files`, `mentions.max_file_bytes`, and `mentions.languages`:
 
-```bash
-events enrich --in samples/pull_request.synchronize.json \
-  --flag mentions.scan.changed_files=false
-```
+- docs/cli/reference.md#events-enrich
 
-Limit scanned file size and restrict to TS/JS:
+See E2E coverage in `tests/mentions.flags.e2e.test.ts` for practical examples validating:
 
-```bash
-events enrich --in samples/pull_request.synchronize.json \
-  --flag mentions.max_file_bytes=102400 \
-  --flag mentions.languages=ts,tsx,js,jsx
-```
+- default scanning on for changed files
+- disabling scan via `mentions.scan.changed_files=false`
+- size cap via `mentions.max_file_bytes`
+- language restrictions via `mentions.languages`
 
 ## Normalized Event Schema (MVP)
 
@@ -244,23 +271,32 @@ See also:
 
 ## Coverage (Optional)
 
-You can optionally upload coverage to Codecov. This repo does not enable uploads by default.
+Default (recommended) — GitHub Action
 
-Opt-in steps:
-
-- Create a Codecov project for this repository and add a repo Secret or Variable named `CODECOV_TOKEN`.
-- Add the following step to your tests workflow after coverage is generated:
+- Prefer the official Action in CI. Add a repo secret named `CODECOV_TOKEN` and include a guarded step after tests generate `coverage/lcov.info`:
 
 ```yaml
 - name: Upload coverage to Codecov (optional)
-  if: ${{ env.CODECOV_TOKEN != '' }}
-  env:
-    CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-  run: |
-    bash scripts/coverage-upload.sh
+  if: ${{ secrets.CODECOV_TOKEN != '' }}
+  uses: codecov/codecov-action@v4
+  with:
+    token: ${{ secrets.CODECOV_TOKEN }}
+    files: coverage/lcov.info
+    # flags: pr|push (optional)
+    fail_ci_if_error: false
 ```
 
-Badge (optional):
+- Existing workflows already follow this Action-based approach and will upload when a token is present:
+  - `.github/workflows/tests.yml` (push on `a5c/main` and `main`)
+  - `.github/workflows/quick-checks.yml` (PRs)
+  - `.github/workflows/pr-tests.yml` (PRs)
+- If the token is absent, the step is skipped and CI remains green.
+
+Alternative — Script-based uploader
+
+- For local runs or non-GitHub CI, you may use a script uploader. If your setup includes a helper script (for example, `scripts/coverage-upload.sh`), call it after tests. Do not combine the script and the Action in the same workflow to avoid duplicate uploads.
+
+Badge (optional)
 
 After the first successful upload, add a badge to this README:
 
@@ -268,8 +304,7 @@ After the first successful upload, add a badge to this README:
 [![codecov](https://codecov.io/gh/a5c-ai/events/branch/a5c/main/graph/badge.svg)](https://codecov.io/gh/a5c-ai/events)
 ```
 
-Replace the URL to match your VCS provider and repository if different. Private projects may require a tokenized badge; see Codecov docs.
-
+Adjust the badge target for your repository or branch as needed. Private projects may require a tokenized badge per Codecov docs.
 
 ### Auth tokens: precedence & redaction
 
@@ -292,16 +327,6 @@ events enrich --in samples/pull_request.synchronize.json --use-github || echo $?
 # stderr: GitHub enrichment failed: ...
 # exit code: 3
 
-# Mentions scanning controls for code comments
-# Disable scanning of changed files
-events enrich --in samples/pull_request.synchronize.json \
-  --flag mentions.scan.changed_files=false | jq '.enriched.mentions // [] | length'
-
-# Restrict to selected languages and reduce size cap
-events enrich --in samples/pull_request.synchronize.json \
-  --flag mentions.languages=ts,js \
-  --flag mentions.max_file_bytes=102400 \
-  | jq '.enriched.mentions // [] | map(select(.source=="code_comment")) | length'
 ```
 
 See also: CLI reference for flags and exit codes: `docs/cli/reference.md`.

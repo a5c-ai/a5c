@@ -20,7 +20,8 @@
 ## 3) Event Sources, Types, and Normalization Model
 
 - Sources: GitHub (Actions, webhooks), other VCS/providers via adapters.
-- Core types: repo, ref, commit, workflow_run, job, step, pr, issue, comment, release, deployment, check_run, alert.
+- Core types: repo, ref, commit, workflow_run, job, step, pull_request, issue, issue_comment, release, deployment, check_run, alert.
+- Note: GitHub webhook event name issues maps to NE value issue (singular), and GitHub webhook issue_comment maps directly to NE value issue_comment. See docs/specs/notes/issue-type-alignment.md.
 - Normalized Event (NE) schema (MVP):
   - id: provider-unique id
   - provider: "github"
@@ -28,6 +29,11 @@
   - occurred_at: ISO timestamp
   - repo: { id, name, full_name, private, visibility }
   - ref: { name, type, sha, base?: sha, head?: sha }
+    - ref.type enum: `branch | tag | pr | unknown`
+    - Notes:
+      - pull_request events use `ref.type: "branch"` and populate `ref.base` and `ref.head` with the base and head branch names respectively.
+      - push/workflow_run typically use `ref.type: "branch"`; tags use `ref.type: "tag"`.
+      - when the ref cannot be categorized, use `ref.type: "unknown"`.
   - actor: { id, login, type }
   - payload: provider-native payload (raw)
   - enriched: { metadata: {}, derived: {}, correlations: {} }
@@ -46,6 +52,8 @@
 - scoring: compute risk/impact scores for events (MVP optional).
 
 ### 4.1) GitHub Enrichment Details (MVP)
+
+Note: For routing, PR-level owners use a union-based `owners_union` across changed files (sorted, deduplicated). GitHub's last-match-per-file semantics still apply when resolving per-file owners. A future flag may allow switching strategies.
 
 - commits (for push/pr): list last N commits with `{ sha, message, author {login,email}, committer {login}, stats {additions,deletions,total} }` and per-commit `files[]` with `{filename,status,additions,deletions,changes,patch?}`; configurable `max_commits` and `include_patch` (default false).
 - diffs: summary for event `{changed_files, additions, deletions}` plus `files[]` above. For large diffs, capture only filenames and stats unless explicitly enabled.
@@ -71,7 +79,7 @@ Configuration:
 - `mentions.scan.changed_files`: `true|false` (default true) — scan changed files for `@...` in code comments.
 - `mentions.scan.commit_messages`: `true|false` (default true)
 - `mentions.scan.issue_comments`: `true|false` (default true)
-- `mentions.max_file_bytes`: bytes cap per file (default 200KB)
+- `mentions.max_file_bytes`: bytes cap per file (default 200KB / 204800 bytes)
 - `mentions.languages`: opt-in list for code-comment scanning; default detects via filename.
 
 Example mention from a code comment:
@@ -92,10 +100,8 @@ Example mention from a code comment:
 
 - Env vars: `GITHUB_TOKEN` (or custom `A5C_AGENT_GITHUB_TOKEN`), debug flags, provider-specific tokens.
 - Sources: prefer GitHub Actions runtime env and `secrets.*` and `vars.*` as in existing workflows.
-- CLI flags (implemented): `--in file.json` (webhook sample), `--out out.json`, `--label key=value`, `--select paths`, `--filter expr` expr`.
-- CLI flags (implemented): `--in file.json` (webhook sample), `--out out.json`, `--label key=value`.
-- CLI flags (planned/not yet implemented): `--select fields`, `--filter expr`.
-- CLI flags (implemented): `--in file.json` (webhook sample), `--out out.json`, `--label key=value`, `--select paths`, `--filter expr` expr`.
+- CLI flags (overview, implemented): `--in file.json` (webhook sample), `--out out.json`, `--label key=value`, `--select paths`, `--filter expr`. See CLI Reference for full details.
+- Mentions scanning flags (via `events enrich --flag KEY=VAL`): see §4.2 [Mentions Schema](#42-mentions-schema) and [CLI: events enrich](../cli/reference.md#events-enrich). Quick examples also in [README](../../README.md#cli-reference).
 - Provider adapters: `providers/github`, stub interfaces for others. Auto-detect when running in Actions.
 
 ### 5.1) Environment Variables and Precedence
@@ -143,9 +149,9 @@ Example mention from a code comment:
   - `reason?: string` (optional human-readable summary of matched criteria)
   - `labels?: string[]` additional routing labels
   - `targets?: string[]` optional list of intended agent recipients (by name)
-  - `payload?: any` projected fields from the source event
+  - `payload?: object | array | null` projected fields from the source event
 
-Schema: `docs/specs/ne.schema.json` includes an optional top-level `composed[]` array matching the structure above (each item requires `key`).
+Schema: `docs/specs/ne.schema.json` includes an optional top-level `composed[]` array matching the structure above (each item requires `key`). `composed[].payload` is constrained to `object | array | null`.
 
 Example rule (YAML):
 
