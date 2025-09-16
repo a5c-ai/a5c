@@ -1,4 +1,5 @@
 ## 1.2.0 (2025-09-16)
+
 - 📊 Observability: JSON Schema + validator + CI integration (fixes #453) (#514) ([433efbd](https://github.com/a5c-ai/events/commit/433efbd)), closes [#453](https://github.com/a5c-ai/events/issues/453) [#514](https://github.com/a5c-ai/events/issues/514)
 - 📝 docs: align commit docs with hooks and lint-staged (fixes #502) (#525) ([55668e2](https://github.com/a5c-ai/events/commit/55668e2)), closes [#502](https://github.com/a5c-ai/events/issues/502) [#525](https://github.com/a5c-ai/events/issues/525) [#502](https://github.com/a5c-ai/events/issues/502) [#502](https://github.com/a5c-ai/events/issues/502)
 - 📝 docs: align mentions.source (remove file_change) (#583) ([da64b16](https://github.com/a5c-ai/events/commit/da64b16)), closes [#583](https://github.com/a5c-ai/events/issues/583) [#571](https://github.com/a5c-ai/events/issues/571) [#571](https://github.com/a5c-ai/events/issues/571) [#583](https://github.com/a5c-ai/events/issues/583)
