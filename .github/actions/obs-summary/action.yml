@@ -38,34 +38,7 @@ runs:
         # Compose JSON (includes coverage, cache metrics, started_at/duration, and vitest tests)
         node "${GITHUB_ACTION_PATH:-.github/actions/obs-summary}/compose.cjs" > "$OBS_FILE"
 
-        # Optional schema validation (warn-only)
-        # Accept both VALIDATE_OBS_SCHEMA (preferred) and OBS_VALIDATE_SCHEMA (legacy/doc)
-        if [ "${VALIDATE_OBS_SCHEMA:-${OBS_VALIDATE_SCHEMA:-false}}" = "true" ]; then
-          echo "Validating $OBS_FILE against docs/specs/observability.schema.json (warn-only)" >> "$GITHUB_STEP_SUMMARY"
-          node -e '
-            try {
-              const fs = require("fs");
-              // Use Ajv 2020 to support Draft 2020-12 meta-schema referenced by our schema
-              const Ajv2020 = require("ajv/dist/2020");
-              const addFormats = require("ajv-formats");
-              const schema = JSON.parse(fs.readFileSync("docs/specs/observability.schema.json", "utf8"));
-              const data = JSON.parse(fs.readFileSync(process.env.OBS_FILE, "utf8"));
-              const ajv = new Ajv2020({ strict: true, allErrors: true, allowUnionTypes: true });
-              addFormats(ajv);
-              const validate = ajv.compile(schema);
-              const ok = validate(data);
-              if (!ok) {
-                console.log("Schema validation warnings:", validate.errors);
-                process.exitCode = 0;
-              } else {
-                console.log("Schema validation passed.");
-              }
-            } catch (e) {
-              console.log("Schema validation encountered an error (ignored):", e && e.message);
-              process.exitCode = 0;
-            }
-          '
-        fi
+        # (Schema validation deduplicated into a single step below)
 
         # Compose JSON (includes coverage, cache metrics, started_at/duration, and vitest tests)
         # Using compose.cjs keeps schema compatibility and logic centralized.

@@ -5,6 +5,8 @@ module.exports = {
     parserOpts: {
       headerPattern:
         /^(?:[^\p{L}\p{N}]+\s*)?(?<type>build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(?:\((?<scope>[^)]+)\))?(?<breaking>!)?: (?<subject>.+)$/u,
+      // Map capture groups including the optional breaking (!) marker
+      headerCorrespondence: ["type", "scope", "breaking", "subject"],
     },
   },
   rules: {
