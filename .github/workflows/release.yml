@@ -134,11 +134,23 @@ jobs:
           VERSION=$(node -p "require('./package.json').version")
           NAME=$(node -p "require('./package.json').name")
           echo "Attempt publish ${NAME}@${VERSION} to registry.npmjs.org"
-          # Check if already published on npmjs
-          if npm view "${NAME}@${VERSION}" version --registry=https://registry.npmjs.org > /dev/null 2>&1; then
-            echo "Version already exists on npmjs, skipping publish."
-            exit 0
-          fi
+          # Check if already published on npmjs (best-effort with a short retry for registry propagation)
+          view_attempts=0
+          view_max_attempts=3
+          view_backoff=2
+          while true; do
+            view_attempts=$((view_attempts+1))
+            if npm view "${NAME}@${VERSION}" version --registry=https://registry.npmjs.org > /dev/null 2>&1; then
+              echo "Version already exists on npmjs, skipping publish."
+              exit 0
+            fi
+            if [ "$view_attempts" -ge "$view_max_attempts" ]; then
+              break
+            fi
+            echo "npm view did not find ${NAME}@${VERSION}. Retrying in ${view_backoff}s..."
+            sleep "$view_backoff"
+            view_backoff=$((view_backoff*2))
+          done
           # Temporarily override project .npmrc to ensure scoped package publishes to npmjs (not GitHub Packages)
           BACKUP_NPMRC=false
           if [ -f .npmrc ]; then
@@ -153,10 +165,25 @@ jobs:
           @a5c-ai:registry=https://registry.npmjs.org/
           NPMRC
           echo "Auth check against npmjs: $(npm whoami --registry=https://registry.npmjs.org || echo 'not authenticated')"
-          # Publish to npmjs overriding any publishConfig registry
-          npm publish --registry=https://registry.npmjs.org --access public
-          # Restore original .npmrc if it existed
-          if [ "$BACKUP_NPMRC" = true ]; then
-            rm -f .npmrc
-            mv .npmrc.gpr .npmrc
+          # Ensure original .npmrc is restored on exit
+          cleanup() {
+            if [ "$BACKUP_NPMRC" = true ]; then
+              rm -f .npmrc || true
+              mv .npmrc.gpr .npmrc || true
+            else
+              rm -f .npmrc || true
+            fi
+          }
+          trap cleanup EXIT
+          # Publish to npmjs overriding any publishConfig registry (gracefully handle already-published error)
+          if out=$(npm publish --registry=https://registry.npmjs.org --access public 2>&1); then
+            echo "$out"
+          else
+            rc=$?
+            echo "$out"
+            if echo "$out" | grep -Eqi 'You cannot publish over the previously published versions'; then
+              echo "Version already published on npmjs, treating as success."
+              exit 0
+            fi
+            exit "$rc"
           fi
