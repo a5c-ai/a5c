@@ -82,7 +82,8 @@ Configuration (aligns with CLI and README):
 
 - `mentions.scan.changed_files`: `true|false` (default: true) — scan changed files for `@...` in code comments.
 - `mentions.max_file_bytes`: number of bytes cap per file (default: 204800 bytes ≈ 200KB)
-- `mentions.languages`: optional allowlist of file extensions to scan (e.g., `ts,tsx,js,jsx,py,go,yaml`). When omitted, language/extension detection is used.
+- `mentions.languages`: optional allowlist of canonical language codes to scan (e.g., `js,ts,py,go,yaml,md`). When omitted, detection is used.
+  - Mapping note: extensions are normalized to codes during detection (e.g., `.tsx → ts`, `.jsx → js`, `.yml → yaml`), but the allowlist compares codes.
 
 See also:
 
