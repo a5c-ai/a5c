@@ -37,13 +37,14 @@ Normalize a raw provider payload into the NE schema.
 Usage:
 
 ```bash
-events normalize [--in FILE] [--out FILE] [--source <actions|webhook|cli>] \
+events normalize [--in FILE] [--out FILE] [--source <action|webhook|cli>] \
   [--label KEY=VAL...] [--select PATHS] [--filter EXPR]
 ```
 
 - `--in FILE`: path to a JSON webhook payload
 - `--out FILE`: write result JSON (stdout if omitted)
-- `--source <name>`: provenance source (`actions|webhook|cli`) [default: `cli`]
+- `--source <name>`: provenance source (`action|webhook|cli`) [default: `cli`]
+  - Alias: the CLI also accepts `actions` as input for convenience (e.g., in GitHub Actions). It is normalized and persisted as `provenance.source: "action"`.
 - `--label KEY=VAL...`: attach labels to top‑level `labels[]` (repeatable)
 - `--select PATHS`: comma‑separated dot paths to include in output (e.g., `type,repo.full_name`)
 - `--filter EXPR`: filter expression `path[=value]`; if it doesn't pass, exits with code `2`
