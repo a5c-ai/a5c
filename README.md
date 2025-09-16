@@ -560,6 +560,8 @@ Alternative — Script-based uploader
 
 Badge (optional)
 
+For thresholds and how PR feedback works, see `docs/ci/coverage.md`.
+
 After the first successful upload, add a badge to this README:
 
 ```
