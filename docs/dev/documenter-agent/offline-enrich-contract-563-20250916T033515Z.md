@@ -10,10 +10,10 @@
 
 1. Update README.md with an "Offline GitHub enrichment" subsection under CLI Reference.
 2. Update docs/cli/reference.md to align language and add a compact example.
-3. Add a test covering offline path (no `--use-github`): `enriched.github.partial=true` and `reason='flag:not_set'`.
+3. Add a test covering offline path (no `--use-github`): `enriched.github.partial=true` and `reason='github_enrich_disabled'`.
 4. Run tests and open a draft PR linked to #563.
 
 ## Notes
 
-- CLI currently guards `--use-github` without token (exit 3). Offline default in `handleEnrich()` sets a stub with `reason: 'flag:not_set'`.
+- CLI currently guards `--use-github` without token (exit 3). Offline default in `handleEnrich()` sets a stub with `reason: 'github_enrich_disabled'`.
 - Acceptance requested in #563 suggests omitting or stubbing. We retain the stub (present today) and document explicitly.
