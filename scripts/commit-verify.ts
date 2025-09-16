@@ -1,13 +1,13 @@
 #!/usr/bin/env -S tsx
 /*
- Validates Conventional Commits for commit messages and PR titles.
- - When run with no args, reads HEAD commit message (for hooks).
- - Args:
-   --file <path>   Path to commit message file (commit-msg hook)
-   --message <str> Validate provided message string
-   --pr-title <str> Validate provided PR title string
-   --allow-merge   Allow "Merge" commits to pass
- Exits non-zero on violation; prints concise guidance.
+  Validates Conventional Commits for commit messages and PR titles.
+  - When run with no args, reads HEAD commit message (for hooks).
+  - Args:
+    --file <path>   Path to commit message file (commit-msg hook)
+    --message <str> Validate provided message string
+    --pr-title <str> Validate provided PR title string
+    --allow-merge   Allow "Merge" commits to pass
+  Exits non-zero on violation; prints concise guidance.
 */
 import fs from "node:fs";
 

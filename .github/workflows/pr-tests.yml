@@ -134,7 +134,7 @@ jobs:
               -X PATCH \
               -H "Accept: application/vnd.github+json" \
               repos/${REPO_FULL}/issues/comments/${existing_id} \
-              -f body@/tmp/pr-comment.md >/dev/null
+              -F body=@/tmp/pr-comment.md >/dev/null
           else
             gh pr comment "$PR_NUMBER" --repo "$REPO_FULL" -F /tmp/pr-comment.md >/dev/null
           fi

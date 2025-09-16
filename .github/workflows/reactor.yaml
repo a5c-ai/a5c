@@ -1,59 +1,26 @@
-name: Packages Npx Test
-
+name: Reactor
 on:
   push:
-    branches: [a5c/main]
   pull_request:
-    branches: [a5c/main]
-    types:
-      [
-        opened,
-        synchronize,
-        reopened,
-        ready_for_review,
-        edited,
-        labeled,
-        unlabeled,
-        closed,
-      ]
-  repository_dispatch:
-    types: [packages-npx-test, pull_request_ready_for_review]
+    types: [opened, reopened, ready_for_review]
   issue_comment:
-    types: [created, edited, deleted]
   issues:
-    types:
-      [
-        opened,
-        edited,
-        deleted,
-        labeled,
-        unlabeled,
-        closed,
-        reopened,
-        assigned,
-        unassigned,
-      ]
-
-  workflow_dispatch: {}
-
-permissions:
-  contents: read
-  packages: read
+  workflow_dispatch:
+  repository_dispatch:
+  check_run:
+  check_suite:
 
 jobs:
-  test-npx:
-    name: Install and run via npx
+  reactor:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
           # Avoid setting global registry to GPR; use project .npmrc scoping instead
-
       - name: Configure npm auth (env)
         env:
           NODE_AUTH_TOKEN: ${{ secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
@@ -68,7 +35,6 @@ jobs:
           export NPM_CONFIG_USERCONFIG="$PWD/.npmrc"
           echo "NPM_CONFIG_USERCONFIG=$NPM_CONFIG_USERCONFIG" >> "$GITHUB_ENV"
           npm whoami || true
-
       - name: Run npx package help
         env:
           NODE_AUTH_TOKEN: ${{ secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
@@ -85,40 +51,7 @@ jobs:
             npx -y "$PKG_SPEC" --help >/dev/null
           fi
           echo "A5C_PKG_SPEC=$PKG_SPEC" >> "$GITHUB_ENV"
-
-      - name: Run npx package version
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
-          NPM_CONFIG_USERCONFIG: ${{ env.NPM_CONFIG_USERCONFIG }}
-        run: |
-          set -euo pipefail
-          node -v
-          npm -v
-          npx -y "$A5C_PKG_SPEC" --version || true
-
-      - name: Smoke – normalize sample payload
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
-          NPM_CONFIG_USERCONFIG: ${{ env.NPM_CONFIG_USERCONFIG }}
-        run: |
-          npx -y "$A5C_PKG_SPEC" normalize \
-            --in samples/workflow_run.completed.json \
-            --out out.normalize.json
-          # basic shape checks
-          jq -e '.type == "workflow_run"' out.normalize.json >/dev/null
-          jq -e '.repo and .provenance and .payload' out.normalize.json >/dev/null
-
-      - name: Smoke – enrich sample payload
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
-          NPM_CONFIG_USERCONFIG: ${{ env.NPM_CONFIG_USERCONFIG }}
-        run: |
-          npx -y "$A5C_PKG_SPEC" enrich \
-            --in samples/pull_request.synchronize.json \
-            --out out.enrich.json
-          # enriched structure exists
-          jq -e '.enriched and .payload and (.labels // []) != null' out.enrich.json >/dev/null
-      - name: Real test with actual github context
+      - name: Enrich and run reactor with actual github context
         env:
           NODE_AUTH_TOKEN: ${{ secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
           NPM_CONFIG_USERCONFIG: ${{ env.NPM_CONFIG_USERCONFIG }}
@@ -131,11 +64,15 @@ jobs:
           # enriched structure exists
           jq -e '.enriched and .payload and (.labels // []) != null' out.enrich.json >/dev/null
           cat out.enrich.json
-
-      - name: Upload npx smoke artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: packages-npx-test-artifacts
-          path: |
-            out.normalize.json
-            out.enrich.json
+          npx -y "$A5C_PKG_SPEC" reactor \
+            --in out.enrich.json \
+            --out out.reactor.json \
+            --file example/.a5c/events/validation_request.yaml
+          # list of events to emit
+          jq -r '.events[]' out.reactor.json
+          cat out.reactor.json
+          # emit the events using the CLI (repository_dispatch)
+          npx -y "$A5C_PKG_SPEC" emit \
+            --in out.reactor.json \
+            --sink github
+          echo "Done emitting events via emit command"

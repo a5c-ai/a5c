@@ -3,15 +3,11 @@
 // Keeps TypeScript config strict (no allowJs) while ensuring CLI can import JS helpers.
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const ROOT = path.resolve(
-  path.join(
-    import.meta.url.startsWith("file:")
-      ? new URL(".", import.meta.url).pathname
-      : ".",
-    "..",
-  ),
-);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const ROOT = path.resolve(__dirname, "..");
 const SRC = path.join(ROOT, "src");
 const DIST = path.join(ROOT, "dist");
 
