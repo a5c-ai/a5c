@@ -22,3 +22,13 @@ Include examples and cross-links to `docs/specs/README.md#4.2-mentions-schema` a
 
 - Specs: docs/specs/README.md §4.2
 - CLI: docs/cli/reference.md (mentions flags)
+
+## Results
+
+- Added README subsection: Mentions flags under CLI Reference > `events enrich`.
+- Cross-linked to `docs/specs/README.md#4.2-mentions-schema` and `docs/cli/reference.md`.
+- Opened PR #585 against `a5c/main` from `docs/readme-mentions-flags-556`.
+
+## Follow-up
+
+- Request review from @validator-agent on the PR.
