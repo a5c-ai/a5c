@@ -78,7 +78,7 @@ Behavior:
       "github": {
         "provider": "github",
         "partial": true,
-        "reason": "flag:not_set"
+        "reason": "github_enrich_disabled"
       }
     }
   }
@@ -107,7 +107,7 @@ events enrich --in FILE [--out FILE] [--rules FILE] \
     - `mentions.max_file_bytes=<bytes>` (default: `204800` ≈ 200KB) – skip files larger than this when scanning
     - `mentions.languages=<lang,...>` – optional allowlist of canonical language codes to scan (e.g., `js,ts,py,go,yaml,md`). When omitted, detection is used.
       - Mapping note: extensions are normalized to codes during detection (e.g., `.tsx → ts`, `.jsx → js`, `.yml → yaml`), but the filter list itself compares codes.
-- `--use-github`: enable GitHub API enrichment; equivalent to `--flag use_github=true` (requires `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`). Without this flag, the CLI performs no network calls and sets `enriched.github = { provider: 'github', partial: true, reason: 'flag:not_set' }`.
+- `--use-github`: enable GitHub API enrichment; equivalent to `--flag use_github=true` (requires `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`). Without this flag, the CLI performs no network calls and sets `enriched.github = { provider: 'github', partial: true, reason: 'github_enrich_disabled' }`.
 - `--label KEY=VAL...`: labels to attach
 - `--select PATHS`: comma-separated dot paths to include in output
 - `--filter EXPR`: filter expression `path[=value]`; if it doesn't pass, exits with code `2`
@@ -289,19 +289,8 @@ Exit codes:
 
 Offline vs token-missing notes:
 
-```json
-{
-  "enriched": {
-    "github": {
-      "provider": "github",
-      "partial": true,
-      "reason": "flag:not_set"
-    }
-  }
-}
-```
-
-With --use-github but token missing (exit code 3): the CLI exits with status `3` and prints an error to stderr; no JSON is emitted.
+- Offline (no `--use-github`): stub as shown above with `reason: 'github_enrich_disabled'`; no network-derived fields.
+- With `--use-github` but token missing: exit code `3` and error to stderr; no JSON output by the CLI.
 
 References:
 
