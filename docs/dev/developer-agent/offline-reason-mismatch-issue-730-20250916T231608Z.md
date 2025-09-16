@@ -10,3 +10,4 @@ Quick Start uses `github_enrich_disabled`; canonical reason is `flag:not_set`.
 
 ## Work Log
 - 20250916T231608Z: Initialized branch and plan.
+- 20250916T231905Z: Updated Quick Start; added canonical note; PR #744 ready for review.
