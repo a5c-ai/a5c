@@ -1,4 +1,4 @@
-[![99% built by agents](https://img.shields.io/badge/99%25-built%20by%20agents-blue.svg)](https://a5c.ai) [![codecov](https://codecov.io/gh/a5c-ai/events/branch/a5c/main/graph/badge.svg)](https://app.codecov.io/gh/a5c-ai/events/tree/a5c/main)
+[![99% built by agents](https://img.shields.io/badge/99%25-built%20by%20agents-blue.svg)](https://a5c.ai)
 
 # @a5c-ai/events – Events SDK & CLI
 
@@ -112,10 +112,11 @@ Full reference and examples: docs/cli/reference.md#events-enrich
 - `--flag commit_limit=<n>`: max commits to include (default: 50)
 - `--flag file_limit=<n>`: max files to include (default: 200)
 - Mentions scanning flags are centralized in `docs/cli/reference.md` (see that section for canonical wording and defaults).
-  - `--use-github`: enable GitHub API enrichment (requires `GITHUB_TOKEN`)
-  - `--select <paths>`: comma-separated dot paths to include in output
-  - `--filter <expr>`: filter expression `path[=value]`; if not matching, exits with code 2 and no output
-  - `--label <key=value...>`: attach labels to top‑level `labels[]`
+- Mentions scanning flags are centralized in `docs/cli/reference.md` (see that section for canonical wording and defaults).
+- `--use-github`: enable GitHub API enrichment (requires `GITHUB_TOKEN`)
+- `--select <paths>`: comma-separated dot paths to include in output
+- `--filter <expr>`: filter expression `path[=value]`; if not matching, exits with code 2 and no output
+- `--label <key=value...>`: attach labels to top‑level `labels[]`
 
 Behavior:
 
@@ -137,6 +138,32 @@ Behavior:
 - With `--use-github` but token missing: the CLI exits with code `3` and writes an error (no JSON output). For SDK tests with an injected Octokit, a partial object with `reason: "token:missing"` may appear programmatically, but not via the CLI.
 
 Exit codes: `0` success, non‑zero on errors (invalid input, etc.).
+
+#### Offline GitHub enrichment
+
+When you do not pass `--use-github`, enrichment runs fully offline and stubs the GitHub section to avoid implying data that was not fetched.
+
+Example (excerpt):
+
+```jsonc
+{
+  "enriched": {
+    "github": {
+      "provider": "github",
+      "partial": true,
+      "reason": "flag:not_set",
+    },
+  },
+}
+```
+
+With `--use-github` and a valid token, fields are populated. For example:
+
+```bash
+events enrich --in samples/pull_request.synchronize.json --use-github | jq '.enriched.github.pr.mergeable_state'
+```
+
+If you pass `--use-github` without a token, the CLI exits with code `3` and prints a clear error to stderr. The programmatic API may return a partial object with `reason: "token:missing"`, but the CLI does not emit JSON on this error.
 
 ### Mentions scanning examples
 
@@ -185,6 +212,7 @@ GitHub Actions (normalize current run):
       --source actions \
       --in "$GITHUB_EVENT_PATH" \
       --out event.json
+    # Note: --source actions is accepted as an alias; the stored value will be provenance.source: "action".
 jq '.type, .repo.full_name, .labels' event.json
 ```
 
@@ -215,23 +243,68 @@ events enrich --in samples/pull_request.synchronize.json \
   # note: `reason` may be omitted depending on rule configuration
 ```
 
+### Rules quick-start
+
+Evaluate simple YAML/JSON rules during enrichment to emit composed events (`.composed[]`). This enables lightweight routing/triggers without extra services.
+
+Minimal example using included samples:
+
+```bash
+# Offline mode (no GitHub API). May yield no matches if PR state
+# like mergeability cannot be determined without API lookups.
+events enrich --in samples/pull_request.synchronize.json \
+  --rules samples/rules/conflicts.yml \
+  | jq '(.composed // []) | map({key, labels})'
+
+# Recommended: enable GitHub lookups for PR rules using PR state
+export GITHUB_TOKEN=ghp_your_token_here
+events enrich --in samples/pull_request.synchronize.json \
+  --use-github \
+  --rules samples/rules/conflicts.yml \
+  | jq '(.composed // []) | map({key, reason, labels})'
+```
+
+See also:
+
+- [Specs §6.1 Rule Engine and Composed Events](docs/specs/README.md#61-rule-engine-and-composed-events)
+- [Full CLI reference](docs/cli/reference.md)
+
 ## Coverage (Optional)
 
-You can optionally upload coverage to Codecov. This repo does not enable uploads by default.
+Default (recommended) — GitHub Action
 
-Opt-in steps:
-
-- Create a Codecov project for this repository and add a repo Secret or Variable named `CODECOV_TOKEN`.
-- Add the following step to your tests workflow after coverage is generated:
+- Prefer the official Action in CI. Add a repo secret named `CODECOV_TOKEN` and include a guarded step after tests generate `coverage/lcov.info`:
 
 ```yaml
 - name: Upload coverage to Codecov (optional)
-  if: ${{ env.CODECOV_TOKEN != '' }}
-  run: |
-    bash scripts/coverage-upload.sh
+  if: ${{ secrets.CODECOV_TOKEN != '' }}
+  uses: codecov/codecov-action@v4
+  with:
+    token: ${{ secrets.CODECOV_TOKEN }}
+    files: coverage/lcov.info
+    # flags: pr|push (optional)
+    fail_ci_if_error: false
 ```
 
-Note: The Codecov badge is shown at the top of this README and links to the tree view for `a5c/main`: https://app.codecov.io/gh/a5c-ai/events/tree/a5c/main
+- Existing workflows already follow this Action-based approach and will upload when a token is present:
+  - `.github/workflows/tests.yml` (push on `a5c/main` and `main`)
+  - `.github/workflows/quick-checks.yml` (PRs)
+  - `.github/workflows/pr-tests.yml` (PRs)
+- If the token is absent, the step is skipped and CI remains green.
+
+Alternative — Script-based uploader
+
+- For local runs or non-GitHub CI, you may use a script uploader. If your setup includes a helper script (for example, `scripts/coverage-upload.sh`), call it after tests. Do not combine the script and the Action in the same workflow to avoid duplicate uploads.
+
+Badge (optional)
+
+After the first successful upload, add a badge to this README:
+
+```
+[![codecov](https://codecov.io/gh/a5c-ai/events/branch/a5c/main/graph/badge.svg)](https://codecov.io/gh/a5c-ai/events)
+```
+
+Adjust the badge target for your repository or branch as needed. Private projects may require a tokenized badge per Codecov docs.
 
 ### Auth tokens: precedence & redaction
 
