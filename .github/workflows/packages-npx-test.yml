@@ -87,6 +87,17 @@ jobs:
             --out out.enrich.json
           # enriched structure exists
           jq -e '.enriched and .payload and (.labels // []) != null' out.enrich.json >/dev/null
+      - name: Real test with actual github context
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+          NPM_CONFIG_USERCONFIG: ${{ env.NPM_CONFIG_USERCONFIG }}
+          GITHUB_TOKEN: ${{ secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          npx -y "$A5C_PKG_SPEC" enrich \
+            --in "$GITHUB_EVENT_PATH" \
+            --out out.enrich.json
+          # enriched structure exists
+          jq -e '.enriched and .payload and (.labels // []) != null' out.enrich.json >/dev/null
 
       - name: Upload npx smoke artifacts
         uses: actions/upload-artifact@v4
