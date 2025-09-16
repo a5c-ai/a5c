@@ -4,6 +4,7 @@
 - Impact: Non-blocking for this PR. Our `npm test` pipeline is green. Aligning `tsconfig.json` or adding `vitest` types would eliminate these false positives during `typecheck`.
 
 ## Suggestions
+
 - Add `"types": ["vitest/globals"]` to `tsconfig.json` or a `tsconfig.test.json` referenced via `tsconfig.json"references"` for tests.
 - Alternatively, exclude tests from the default `typecheck` script and add a separate `typecheck:tests` that includes Vitest types.
 

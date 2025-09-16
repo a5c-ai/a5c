@@ -1,25 +1,27 @@
-import { z } from 'zod'
+import { z } from "zod";
 
 // Zod schema for Normalized Event (aligned with docs/specs/ne.schema.json)
 // Keep this strict and mirror enums/optionals carefully.
 
-export const RepoSchema = z.object({
-  id: z.number(),
-  name: z.string(),
-  full_name: z.string(),
-  private: z.boolean().optional(),
-  visibility: z.enum(['public', 'private', 'internal']).nullable().optional(),
-}).strict()
+export const RepoSchema = z
+  .object({
+    id: z.number(),
+    name: z.string(),
+    full_name: z.string(),
+    private: z.boolean().optional(),
+    visibility: z.enum(["public", "private", "internal"]).nullable().optional(),
+  })
+  .strict();
 
 export const RefSchema = z
   .object({
     name: z.string().optional(),
-    type: z.enum(['branch', 'tag', 'pr', 'unknown']).nullable().optional(),
+    type: z.enum(["branch", "tag", "pr", "unknown"]).nullable().optional(),
     sha: z.string().optional(),
     base: z.string().optional(),
     head: z.string().optional(),
   })
-  .strict()
+  .strict();
 
 export const ActorSchema = z
   .object({
@@ -27,11 +29,11 @@ export const ActorSchema = z
     login: z.string(),
     type: z.string(),
   })
-  .strict()
+  .strict();
 
 export const ProvenanceSchema = z
   .object({
-    source: z.enum(['action', 'webhook', 'cli']),
+    source: z.enum(["action", "webhook", "cli"]),
     workflow: z
       .object({
         name: z.string().optional(),
@@ -40,25 +42,25 @@ export const ProvenanceSchema = z
       .strict()
       .optional(),
   })
-  .strict()
+  .strict();
 
 export const NormalizedEventSchema = z
   .object({
     id: z.string(),
-    provider: z.enum(['github']),
+    provider: z.enum(["github"]),
     type: z.enum([
-      'workflow_run',
-      'pull_request',
-      'push',
-      'issue_comment',
-      'commit',
-      'job',
-      'step',
-      'issue',
-      'release',
-      'deployment',
-      'check_run',
-      'alert',
+      "workflow_run",
+      "pull_request",
+      "push",
+      "issue_comment",
+      "commit",
+      "job",
+      "step",
+      "issue",
+      "release",
+      "deployment",
+      "check_run",
+      "alert",
     ]),
     occurred_at: z.string().datetime(),
     repo: RepoSchema,
@@ -69,7 +71,6 @@ export const NormalizedEventSchema = z
     labels: z.array(z.string()).optional(),
     provenance: ProvenanceSchema,
   })
-  .strict()
+  .strict();
 
-export type NormalizedEventZ = z.infer<typeof NormalizedEventSchema>
-
+export type NormalizedEventZ = z.infer<typeof NormalizedEventSchema>;
