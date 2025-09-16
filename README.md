@@ -47,20 +47,23 @@ cat out.json | npx @a5c-ai/events validate --quiet
 
 ### Mentions config (Quick Start)
 
-Use a simple example, then see the CLI reference for canonical flags and defaults:
+Use a simple example, then see the CLI reference for the canonical flags and defaults:
 
 ```bash
 # Disable scanning of changed files (code-comment mentions)
 events enrich --in ... --flag 'mentions.scan.changed_files=false'
 
-# Restrict code‑comment scanning to canonical language codes
-# Note: pass canonical codes used by the scanner (js, ts, py, go, yaml, md).
+# Restrict code‑comment scanning to canonical language IDs
+# Pass language IDs, not extensions: js, ts, py, go, java, c, cpp, sh, yaml, md.
 # Extensions are normalized internally for detection (.tsx→ts, .jsx→js, .yml→yaml),
-# but the allowlist compares codes.
+# but the allowlist compares the language IDs directly (values like .ts will not match).
 events enrich --in ... --flag "mentions.languages=ts,js"
 ```
 
-Full reference and examples: docs/cli/reference.md#events-enrich
+Canonical reference and examples:
+
+- docs/cli/reference.md#events-enrich
+- docs/cli/reference.md#mentions-scanning-controls-code-comments-in-changed-files
 
 `events mentions`
 
@@ -92,7 +95,7 @@ Full reference and examples: docs/cli/reference.md#events-enrich
   - `--rules <file>`: rules file path (yaml/json)
 - `--flag include_patch=<true|false>`: include diff patches in files (default: false)
 - `--flag commit_limit=<n>`: max commits to include (default: 50)
-- Mentions scanning flags are centralized in `docs/cli/reference.md` (see that section for canonical wording and defaults).
+- Mentions scanning flags are documented once in the CLI reference at `docs/cli/reference.md#events-enrich` and are the canonical source of truth for wording and defaults.
 - `--use-github`: enable GitHub API enrichment (requires `GITHUB_TOKEN`)
 - `--select <paths>`: comma-separated dot paths to include in output
 - `--filter <expr>`: filter expression `path[=value]`; if not matching, exits with code 2 and no output
@@ -100,16 +103,20 @@ Full reference and examples: docs/cli/reference.md#events-enrich
 
 #### Mentions flags
 
-Common flags to control Mentions extraction during `enrich` (particularly for `source=code_comment` in changed files):
+For the authoritative list and defaults for Mentions controls during `enrich` (including `mentions.scan.changed_files`, `mentions.max_file_bytes`, and `mentions.languages`), see the CLI reference: `docs/cli/reference.md#events-enrich`.
 
-- `--flag mentions.scan.changed_files=<true|false>` — enable scanning code comments in changed files for `@mentions` (default: `true`).
-- `--flag mentions.max_file_bytes=<bytes>` — per‑file size cap when scanning code comments (default: `200KB` / `204800`). Files larger than this are skipped.
-  - `--flag mentions.languages=<lang,...>` — optional allowlist of canonical language codes to scan. Accepted: `js, ts, py, go, java, c, cpp, sh, yaml, md`. When omitted, the scanner uses filename/heuristics.
-    - Mapping note: common extensions are normalized to codes (case‑insensitive; leading dots allowed), e.g., `.tsx → ts`, `.jsx → js`, `.yml → yaml`. The allowlist compares canonical codes.
-  - `--flag mentions.scan.commit_messages=<true|false>` — enable scanning commit messages for `@mentions` (default: `true`).
-  - `--flag mentions.scan.issue_comments=<true|false>` — enable scanning issue comment bodies for `@mentions` (default: `true`).
+Behavior:
 
-Examples:
+- Offline by default: without `--use-github`, no network calls occur. Output includes `enriched.github = { provider: 'github', partial: true, reason: 'flag:not_set' }`.
+- When `--use-github` is set but no token is configured, the CLI exits with code `3` (provider/network error) and prints an error. Use programmatic APIs with an injected Octokit for testing scenarios if needed.
+  - `--flag mentions.scan.changed_files=<true|false>` — enable scanning code comments in changed files for `@mentions` (default: `true`).
+  - `--flag mentions.max_file_bytes=<bytes>` — per‑file size cap when scanning code comments (default: `200KB` / `204800`). Files larger than this are skipped.
+    - `--flag mentions.languages=<lang,...>` — optional allowlist of canonical language codes to scan (e.g., `js,ts,py,go,yaml,md`). When omitted, the scanner uses filename/heuristics.
+      - Mapping note: extensions are normalized to codes during detection (e.g., `.tsx → ts`, `.jsx → js`, `.yml → yaml`), but the filter list compares codes.
+    - `--flag mentions.scan.commit_messages=<true|false>` — enable scanning commit messages for `@mentions` (default: `true`).
+    - `--flag mentions.scan.issue_comments=<true|false>` — enable scanning issue comment bodies for `@mentions` (default: `true`).
+
+Quick examples:
 
 ```bash
 # Disable scanning changed files for code‑comment mentions
@@ -125,31 +132,15 @@ events enrich --in samples/pull_request.synchronize.json \
 See also:
 
 - Specs: `docs/specs/README.md#42-mentions-schema`
-- CLI reference: `docs/cli/reference.md` (enrich > Mentions scanning flags)
-
-Behavior:
-
-- Offline by default: without `--use-github`, no network calls occur. Output includes `enriched.github = { provider: 'github', partial: true, reason: 'github_enrich_disabled' }`.
-- When `--use-github` is set but no token is configured, the CLI exits with code `3` (provider/network error) and prints an error. Use programmatic APIs with an injected Octokit for testing scenarios if needed.
+- CLI reference: `docs/cli/reference.md#events-enrich`
 
 Exit codes: `0` success, non‑zero on errors (invalid input, etc.).
 
 ### Mentions scanning examples
 
-Disable scanning changed files for code-comment mentions:
+Examples are centralized in the CLI Reference:
 
-```bash
-events enrich --in samples/pull_request.synchronize.json \
-  --flag mentions.scan.changed_files=false
-```
-
-Limit scanned file size and restrict to TS/JS:
-
-```bash
-events enrich --in samples/pull_request.synchronize.json \
-  --flag mentions.max_file_bytes=102400 \
-  --flag mentions.languages=ts,js   # or tsx,jsx (normalized)
-```
+- docs/cli/reference.md#mentions-scanning-controls-code-comments-in-changed-files
 
 ### Rules quick-start (composed events)
 

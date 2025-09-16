@@ -72,13 +72,18 @@ Behavior:
 
 - Offline by default: no network calls without `--use-github`. Output includes a minimal stub under `enriched.github`:
 
+> Offline states
+
+- Offline (flag not set): `enriched.github = { provider: 'github', partial: true, reason: 'flag:not_set' }`
+- Requested but missing token: `reason: 'token:missing'` and the CLI exits with code `3` (no JSON output).
+
   ```json
   {
     "enriched": {
       "github": {
         "provider": "github",
         "partial": true,
-        "reason": "github_enrich_disabled"
+        "reason": "flag:not_set"
       }
     }
   }
@@ -102,14 +107,14 @@ events enrich --in FILE [--out FILE] [--rules FILE] \
   - `include_patch=true|false` (default: `false`) – include diff patches; when `false`, patches are removed. Defaulting to false avoids leaking secrets via diffs and keeps outputs small; enable only when required.
   - `commit_limit=<n>` (default: `50`) – limit commits fetched for PR/push
   - `file_limit=<n>` (default: `200`) – limit files per compare list
-  - Mentions scanning flags (code comments in changed files):
+  - Mentions scanning flags (code comments in changed files) — canonical:
     - `mentions.scan.changed_files=true|false` (default: `true`) – scan changed files for `@mentions` inside code comments
     - `mentions.max_file_bytes=<bytes>` (default: `204800` ≈ 200KB) – skip files larger than this when scanning
-    - `mentions.languages=<lang,...>` – optional allowlist of canonical language codes to scan. Accepted: `js, ts, py, go, java, c, cpp, sh, yaml, md`. When omitted, detection is used.
-      - Mapping note: common extensions are normalized to codes during detection (case‑insensitive; leading dots allowed), e.g., `.tsx → ts`, `.jsx → js`, `.yml → yaml`. The filter list itself compares codes.
+    - `mentions.languages=<lang,...>` – optional allowlist of canonical language codes to scan. Accepted values are language IDs, not extensions: `js, ts, py, go, java, c, cpp, sh, yaml, md`.
+      - Mapping note: extensions are normalized to codes during detection (e.g., `.tsx → ts`, `.jsx → js`, `.yml → yaml`), but the allowlist itself compares the language IDs directly. Dot‑prefixed values like `.ts` are not supported and will not match.
     - `mentions.scan.commit_messages=true|false` (default: `true`) – enable/disable scanning commit messages for `@mentions`
     - `mentions.scan.issue_comments=true|false` (default: `true`) – enable/disable scanning issue comments for `@mentions`
-- `--use-github`: enable GitHub API enrichment; equivalent to `--flag use_github=true` (requires `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`). Without this flag, the CLI performs no network calls and sets `enriched.github = { provider: 'github', partial: true, reason: 'github_enrich_disabled' }`.
+- `--use-github`: enable GitHub API enrichment; equivalent to `--flag use_github=true` (requires `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`). Without this flag, the CLI performs no network calls and sets `enriched.github = { provider: 'github', partial: true, reason: 'flag:not_set' }`.
 - `--label KEY=VAL...`: labels to attach
 - `--select PATHS`: comma-separated dot paths to include in output
 - `--filter EXPR`: filter expression `path[=value]`; if it doesn't pass, exits with code `2`
@@ -117,8 +122,27 @@ events enrich --in FILE [--out FILE] [--rules FILE] \
 Mentions scanning (code comments in changed files):
 
 - `mentions.scan.changed_files=true|false` (default: `true`) – when `true`, scan changed files' patches for `@mentions` within code comments and add to `enriched.mentions[]` with `source="code_comment"` and `location` hints.
-- `mentions.max_file_bytes=<bytes>` (default: `200KB`) – skip scanning any single file patch larger than this cap.
-- `mentions.languages=lang1,lang2,...` (optional) – only scan files whose detected languages match one of these codes (e.g., `js,ts,yaml,md`). Use `js,ts` to include `.jsx/.tsx` files.
+- `mentions.max_file_bytes=<bytes>` (default: `204800` ≈ 200KB) – skip scanning any single file larger than this cap.
+- `mentions.languages=<lang,...>` (optional) – only scan files whose detected language matches the allowlist. Use canonical language IDs, not extensions: `js, ts, py, go, java, c, cpp, sh, yaml, md`.
+
+Language allowlist details:
+
+- Accepted language IDs and common extensions detected → ID
+  - `.js, .mjs, .cjs, .jsx` → `js`
+  - `.ts, .tsx` → `ts`
+  - `.py` → `py`
+  - `.go` → `go`
+  - `.java` → `java`
+  - `.c, .h` → `c`
+  - `.cc, .cpp, .cxx, .hpp, .hh` → `cpp`
+  - `.sh, .bash, .zsh` → `sh`
+  - `.yaml, .yml` → `yaml`
+  - `.md, .markdown` → `md`
+
+Notes:
+
+- Provide language IDs in the allowlist (e.g., `--flag mentions.languages=ts,js,md`). Do not include a leading dot; values like `.ts` will not match.
+- You don’t need to list JSX/TSX/YML explicitly; detection maps them to `js`/`ts`/`yaml` automatically.
   Examples:
 
 ```bash
@@ -133,7 +157,7 @@ events enrich --in samples/pull_request.synchronize.json \
 events enrich --in samples/pull_request.synchronize.json \
   --flag mentions.scan.changed_files=false | jq '.enriched.mentions // [] | length'
 
-# Restrict by languages and cap bytes (use canonical codes; tsx/jsx map automatically)
+# Restrict by languages and cap bytes (use canonical language IDs; tsx/jsx map automatically)
 events enrich --in samples/pull_request.synchronize.json \
   --flag mentions.languages=ts,js \
   --flag mentions.max_file_bytes=102400 \
@@ -152,7 +176,7 @@ events enrich --in samples/pull_request.synchronize.json \
 
 Mentions sources:
 
-- Allowed values for `mentions[].source`: `commit_message`, `pr_title`, `pr_body`, `issue_comment`, `code_comment`.
+- Allowed values for `mentions[].source`: `commit_message`, `pr_title`, `pr_body`, `issue_title`, `issue_body`, `issue_comment`, `code_comment`.
 - Mentions discovered within diffs/changed files are emitted as `source: code_comment` with `location.file` and `location.line` populated. There is no distinct `file_change` source.
 
 Mentions sources for GitHub Issues:
@@ -161,7 +185,7 @@ Mentions sources for GitHub Issues:
   - `issue.title` → entries with `source: "issue_title"`
   - `issue.body` → entries with `source: "issue_body"`
 
-These are included under `enriched.mentions` and are deduplicated by normalized target and location when applicable. If the same target appears in both title and body, only one entry is emitted.
+These are included under `enriched.mentions` and are deduplicated by normalized target and location on a per‑source basis. The same target may appear once for `issue_title` and once for `issue_body` when present in both.
 
 Note:
 
@@ -304,7 +328,7 @@ Offline vs token-missing notes:
     "github": {
       "provider": "github",
       "partial": true,
-      "reason": "github_enrich_disabled"
+      "reason": "flag:not_set"
     }
   }
 }

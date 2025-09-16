@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   pr-fast:
-    name: Lint, Typecheck, Unit Tests, Filenames
+    name: Lint, Typecheck, Unit Tests, Filenames, Actionlint, EditorConfig
     runs-on: ubuntu-latest
     timeout-minutes: 7
     env:
@@ -33,6 +33,12 @@ jobs:
         run: npm run -s lint
       - name: Lint (filenames)
         run: npm run -s lint:filenames
+      - name: Validate GitHub Workflows (actionlint)
+        run: |
+          bash scripts/ci-actionlint.sh
+      - name: Check EditorConfig compliance
+        run: |
+          bash scripts/ci-editorconfig.sh
       - name: Typecheck (tsc --noEmit)
         run: npm run -s typecheck
       - name: Unit tests (vitest)

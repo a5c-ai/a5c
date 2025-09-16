@@ -1,18 +1,19 @@
 # [Low] Documentation — Align README payload type with schema
 
+Status: Resolved (2025-09-16)
+
 ## Summary
 
-Resolved: `docs/specs/README.md` now aligns with `docs/specs/ne.schema.json` — `composed[].payload` is `object | array | null`.
+`docs/specs/README.md` and `docs/specs/ne.schema.json` are aligned: `composed[].payload` is `object | array | null`.
 
-Notes:
+## Notes
 
 - Source of truth remains the schema file.
-- Add docs lint to prevent regressions.
+- A CI docs-lint is in place to prevent regressions. See `.github/workflows/docs-lint.yml` and `scripts/docs-lint.sh`.
 
 ## Recommendation
 
-- Option A: Update README wording to reflect the schema precisely (`object | array | null`).
-- Option B: If primitives are intended, extend the JSON Schema to include `string | number | boolean` and update tests accordingly.
+No further action needed. If primitives are required in the future, update both the schema and docs together and adjust the docs-lint.
 
 ## Rationale
 
