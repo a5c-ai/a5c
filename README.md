@@ -104,10 +104,36 @@ See: docs/specs/README.md#4.2-mentions-schema for full details.
 
 Behavior:
 
-- Offline by default: without `--use-github`, no network calls occur. Output includes `enriched.github` with `partial=true` and `reason="github_enrich_disabled"`.
+- Offline by default: without `--use-github`, no network calls occur. Output includes `enriched.github` with `partial=true` and `reason="flag:not_set"`.
 - When `--use-github` is set but no token is configured, the CLI exits with code `3` (provider/network error) and prints an error. Use programmatic APIs with an injected Octokit for partial/offline testing if needed.
 
 Exit codes: `0` success, non‑zero on errors (invalid input, etc.).
+
+#### Offline GitHub enrichment
+
+When you do not pass `--use-github`, enrichment runs fully offline and stubs the GitHub section to avoid implying data that was not fetched.
+
+Example (excerpt):
+
+```jsonc
+{
+  "enriched": {
+    "github": {
+      "provider": "github",
+      "partial": true,
+      "reason": "flag:not_set",
+    },
+  },
+}
+```
+
+With `--use-github` and a valid token, fields are populated. For example:
+
+```bash
+events enrich --in samples/pull_request.synchronize.json --use-github | jq '.enriched.github.pr.mergeable_state'
+```
+
+If you pass `--use-github` without a token, the CLI exits with code `3` and prints a clear error to stderr. The programmatic API may return a partial object with `reason: "token:missing"`, but the CLI does not emit JSON on this error.
 
 ### Mentions scanning examples
 
