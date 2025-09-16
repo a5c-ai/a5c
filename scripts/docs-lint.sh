@@ -1,23 +1,46 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Simple docs linter for outdated composed[].payload type references.
-# Exits with non-zero status if violations found, unless A5C_DOCS_LINT_WARN=1.
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-ROOT_DIR=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
-cd "$ROOT_DIR"
+echo "==> Docs Lint: scanning for outdated payload types..."
 
-# Flag only the explicit outdated phrasing in the same line as composed[].payload
-violations=$(rg -n --no-heading --color never "composed\[\]\.payload[^\n]*\bany\b" docs README.md || true)
+FOUND=0
 
-if [[ -n "$violations" ]]; then
-  echo "[docs-lint] Found outdated 'any' references for composed[].payload:" >&2
-  echo "$violations" >&2
-  if [[ "${A5C_DOCS_LINT_WARN:-0}" == "1" ]]; then
-    echo "[docs-lint] WARN mode enabled; not failing CI." >&2
-    exit 0
+# Build list of files to scan: README.md and docs/**/*.md excluding dev and validation logs
+mapfile -t FILES < <(\
+  find "$ROOT_DIR/docs" -type f -name "*.md" \
+    -not -path "*/dev/*" \
+    -not -path "*/validation/*" \
+    -print; \
+  printf "%s\n" "$ROOT_DIR/README.md" \
+)
+
+scan_file() {
+  local file="$1"
+  # Disallow generic 'payload?: any' wording
+  if grep -nE "payload\?:\s*any" "$file" > /dev/null 2>&1; then
+    echo "error: $file contains 'payload?: any' which is disallowed for composed[].payload (use 'object | array | null')."
+    grep -nE "payload\?:\s*any" "$file" || true
+    FOUND=1
   fi
+  # Disallow describing composed[].payload as any
+  if grep -nE "composed\\[\\]\\.payload.*any" "$file" > /dev/null 2>&1; then
+    echo "error: $file mentions composed[].payload as 'any'. It must be 'object | array | null'."
+    grep -nE "composed\\[\\]\\.payload.*any" "$file" || true
+    FOUND=1
+  fi
+}
+
+for f in "${FILES[@]}"; do
+  [ -f "$f" ] || continue
+  scan_file "$f"
+done
+
+if [ "$FOUND" -ne 0 ]; then
+  echo
+  echo "Docs Lint failed. Update docs to state composed[].payload is 'object | array | null'."
   exit 1
-else
-  echo "[docs-lint] OK — no outdated 'any' references found."
 fi
+
+echo "Docs Lint passed."

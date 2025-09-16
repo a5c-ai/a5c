@@ -2,31 +2,34 @@ name: Docs Lint
 
 on:
   pull_request:
-    branches: [a5c/main]
+    types: [opened, synchronize, reopened]
     paths:
-      - 'docs/**'
-      - 'README.md'
-      - 'scripts/docs-lint.sh'
+      - "docs/**"
+      - "README.md"
+      - ".github/workflows/docs-lint.yml"
+      - "scripts/docs-lint.sh"
   push:
     branches: [a5c/main]
     paths:
-      - 'docs/**'
-      - 'README.md'
-      - 'scripts/docs-lint.sh'
+      - "docs/**"
+      - "README.md"
+      - ".github/workflows/docs-lint.yml"
+      - "scripts/docs-lint.sh"
 
 jobs:
-  docs-lint:
+  lint:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
         with:
-          node-version-file: '.nvmrc'
-      - name: Install ripgrep
-        run: sudo apt-get update && sudo apt-get install -y ripgrep
-      - name: Run docs linter
-        run: |
-          bash scripts/docs-lint.sh
-
+          node-version-file: ".nvmrc"
+      - name: Make script executable
+        run: chmod +x scripts/docs-lint.sh
+      - name: Run docs lint
+        run: ./scripts/docs-lint.sh
