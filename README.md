@@ -110,8 +110,33 @@ For flags and examples, see the canonical section in the CLI Reference:
 
 Behavior:
 
-- Offline by default: without `--use-github`, no network calls occur. Output includes `enriched.github` with `partial=true` and `reason="flag:not_set"`.
-- When `--use-github` is set but no token is configured, the CLI exits with code `3` (provider/network error) and prints an error. Use programmatic APIs with an injected Octokit for partial/offline testing if needed.
+- Offline by default: without `--use-github`, no network calls occur. Output includes `enriched.github = { provider: 'github', partial: true, reason: 'github_enrich_disabled' }`.
+- When `--use-github` is set but no token is configured, the CLI exits with code `3` (provider/network error) and prints an error. Use programmatic APIs with an injected Octokit for testing scenarios if needed.
+
+  - `--flag mentions.scan.changed_files=<true|false>` — enable scanning code comments in changed files for `@mentions` (default: `true`).
+  - `--flag mentions.max_file_bytes=<bytes>` — per‑file size cap when scanning code comments (default: `200KB` / `204800`). Files larger than this are skipped.
+    - `--flag mentions.languages=<lang,...>` — optional allowlist of canonical language codes to scan (e.g., `js,ts,py,go,yaml,md`). When omitted, the scanner uses filename/heuristics.
+      - Mapping note: extensions are normalized to codes during detection (e.g., `.tsx → ts`, `.jsx → js`, `.yml → yaml`), but the filter list compares codes.
+    - `--flag mentions.scan.commit_messages=<true|false>` — enable scanning commit messages for `@mentions` (default: `true`).
+    - `--flag mentions.scan.issue_comments=<true|false>` — enable scanning issue comment bodies for `@mentions` (default: `true`).
+
+Examples:
+
+```bash
+# Disable scanning changed files for code‑comment mentions
+events enrich --in samples/pull_request.synchronize.json \
+  --flag mentions.scan.changed_files=false
+
+# Restrict to specific languages and lower the size cap
+events enrich --in samples/pull_request.synchronize.json \
+  --flag mentions.languages=ts,js \
+  --flag mentions.max_file_bytes=102400
+```
+
+See also:
+
+- Specs: `docs/specs/README.md#42-mentions-schema`
+- CLI reference: `docs/cli/reference.md` (enrich > Mentions scanning flags)
 
 Exit codes: `0` success, non‑zero on errors (invalid input, etc.).
 
@@ -269,7 +294,7 @@ events enrich --in samples/pull_request.synchronize.json \
   | jq '.enriched.mentions // [] | map(select(.source=="code_comment")) | length'
 ```
 
-See also: CLI reference for flags and exit codes: `docs/cli/reference.md`.
+See also: CLI reference for flags and exit codes: `docs/cli/reference.md`. Cross‑link: `docs/cli/code-comment-mentions.md` and specs §4.2 in `docs/specs/README.md`.
 
 ### Validate against schema
 

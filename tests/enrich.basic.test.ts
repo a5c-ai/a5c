@@ -45,6 +45,29 @@ describe("handleEnrich", () => {
     expect(names).toContain("developer-agent");
   });
 
+  it("respects mentions.scan.commit_messages=false (suppresses commit_message mentions)", async () => {
+    const enriched = await handleEnrich({
+      in: "samples/push.json",
+      labels: [],
+      rules: undefined,
+      flags: { "mentions.scan.commit_messages": false } as any,
+    });
+    const mentions = (enriched.output.enriched as any)?.mentions || [];
+    const sources = new Set(mentions.map((m: any) => m.source));
+    expect(sources.has("commit_message")).toBe(false);
+  });
+
+  it("respects mentions.scan.issue_comments=false (suppresses issue_comment mentions)", async () => {
+    const res = await handleEnrich({
+      in: "samples/issue_comment.created.json",
+      labels: [],
+      rules: undefined,
+      flags: { "mentions.scan.issue_comments": false } as any,
+    });
+    const mentions = (res.output.enriched as any)?.mentions || [];
+    expect(mentions.some((m: any) => m.source === "issue_comment")).toBe(false);
+  });
+
   it("omits patch fields by default (include_patch=false)", async () => {
     const { output } = await handleEnrich({
       in: "samples/pull_request.synchronize.json",
@@ -76,7 +99,7 @@ describe("handleEnrich", () => {
       }
     }
   });
-  it("offline mode: sets stub reason github_enrich_disabled", async () => {
+  it("offline mode: always attaches stub with reason github_enrich_disabled", async () => {
     const res = await handleEnrich({
       in: "samples/pull_request.synchronize.json",
       labels: [],
@@ -87,11 +110,8 @@ describe("handleEnrich", () => {
     expect(gh).toBeTruthy();
     expect(gh.partial).toBeTruthy();
     expect(gh.reason).toBe("github_enrich_disabled");
-    // minimal contract: in offline mode, network-only aggregates like branch_protection or PR compare may be absent
-    // Ensure we didn't accidentally populate fields that imply network fetches
-    expect(
-      gh.branch_protection == null || gh.branch_protection.partial === true,
-    ).toBe(true);
+    // Offline contract: no PR details fetched from network should be present
+    expect(gh.pr?.number).toBeUndefined();
   });
 
   it("includes patch fields when explicitly enabled (include_patch=true)", async () => {
