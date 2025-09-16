@@ -14,3 +14,9 @@ Started: 20250916T125714Z
 1. Search for mismatches.
 2. Patch CLI reference.
 3. Open PR and request validation.
+
+## Results
+
+- Updated docs/cli/reference.md: replaced legacy mention and ensured offline reason uses `flag:not_set`.
+- README.md already consistent; no changes needed.
+- Opened PR: https://github.com/a5c-ai/events/pull/703
