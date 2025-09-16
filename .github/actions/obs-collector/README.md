@@ -2,19 +2,11 @@
 
 Collects workflow/job metadata and optional coverage metrics, writes a step summary, emits an `observability.json`, and uploads it as an artifact.
 
-> Node requirement: This composite executes Node.js inline scripts (`node -e`). Node is ensured inside the composite via `actions/setup-node@v4` (default: Node 20, with npm cache). You may override via `with.node-version`, or pre‑setup Node earlier in your job if you prefer (optional snippet below). (docs(actions): document Node setup prerequisite for composite actions (Node 20)\n\n- obs-summary: add setup-node@v4 snippet\n- obs-collector: add setup-node@v4 snippet\n- README: note prerequisite under CI Observability\n\nRefs: #455)
+> Node behavior: This composite executes Node.js inline scripts (`node -e`) and ensures Node inside the composite via `actions/setup-node@v4` (default: Node 20, with npm cache). You may override via `with.node-version`, or optionally pre‑setup Node earlier in your job if you prefer explicit control.
 
-## Usage
-
-Standard usage (composite sets up Node internally):
+## Usage (internal Node setup by default)
 
 ```yaml
-# Ensure Node is available (recommended for this composite)
-- name: Setup Node.js
-  uses: actions/setup-node@v4
-  with:
-    node-version: 20
-
 - name: Observability collector
   if: always()
   uses: ./.github/actions/obs-collector
@@ -42,4 +34,8 @@ Optional: pre‑setup Node earlier in the job (if you want to control the Node t
 
 Notes:
 
-- Node is ensured inside the composite using `actions/setup-node@v4` (default: 20, with npm cache). Override via `with.node-version` if needed, or manage Node yourself as shown above. (docs(actions): document Node setup prerequisite for composite actions (Node 20)\n\n- obs-summary: add setup-node@v4 snippet\n- obs-collector: add setup-node@v4 snippet\n- README: note prerequisite under CI Observability\n\nRefs: #455)
+- Node is ensured inside the composite using `actions/setup-node@v4` (default: 20, with npm cache). Override via `with.node-version` if needed, or manage Node yourself as shown above.
+
+---
+
+See also: `.github/actions/obs-summary` for a variant that aggregates job metrics and uploads an artifact along with a detailed step summary.
