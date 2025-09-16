@@ -192,21 +192,47 @@ events enrich --in samples/pull_request.synchronize.json \
 
 ## Coverage (Optional)
 
-You can optionally upload coverage to Codecov. This repo does not enable uploads by default.
+CI can upload coverage to Codecov and show a badge in this README. Uploads are disabled by default and only run when a token is configured.
 
-Opt-in steps:
-
-- Create a Codecov project for this repository and add a repo Secret or Variable named `CODECOV_TOKEN`.
-- Add the following step to your tests workflow after coverage is generated:
+Default (recommended) — GitHub Action in CI:
 
 ```yaml
+# Example step in a job that generates coverage/lcov.info
 - name: Upload coverage to Codecov (optional)
-  if: ${{ env.CODECOV_TOKEN != '' }}
-  run: |
-    bash scripts/coverage-upload.sh
+  if: ${{ secrets.CODECOV_TOKEN != '' }}
+  uses: codecov/codecov-action@v4
+  with:
+    token: ${{ secrets.CODECOV_TOKEN }}
+    files: coverage/lcov.info
+    flags: pr
+    fail_ci_if_error: false
 ```
 
-Note: The Codecov badge is shown at the top of this README and links to the tree view for `a5c/main`: https://app.codecov.io/gh/a5c-ai/events/tree/a5c/main
+- Add a repo Secret named `CODECOV_TOKEN` (or use an org secret).
+- Our workflows prefer this Action-based upload path as the default.
+- If the token is absent, the step is skipped and CI remains green.
+
+Alternative (advanced) — script uploader:
+
+- You may use Codecov’s script/uploader for local runs or non–GitHub Actions CI. Do not use both the Action and a script uploader in the same workflow to avoid duplicate uploads.
+
+Existing CI usage in this repo (Action-based):
+
+- `.github/workflows/tests.yml` (push on `a5c/main` and `main`)
+- `.github/workflows/quick-checks.yml` (PRs)
+- `.github/workflows/pr-tests.yml` (PRs)
+
+Badge (optional):
+
+After the first successful upload, add a badge to this README:
+
+```
+[![codecov](https://codecov.io/gh/a5c-ai/events/graph/badge.svg?token=<TOKEN_OR_NOT_REQUIRED_FOR_PUBLIC>)](https://codecov.io/gh/a5c-ai/events)
+```
+
+Replace the URL to match your VCS provider and repository if different. Private projects may require a tokenized badge; see Codecov docs.
+
+Badge note: The Codecov badge at the top of this README links to the tree view for `a5c/main`: https://app.codecov.io/gh/a5c-ai/events/tree/a5c/main
 
 ### Auth tokens: precedence & redaction
 

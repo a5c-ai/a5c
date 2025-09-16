@@ -14,6 +14,24 @@ This repo uses a fast/slow split for CI to keep PR feedback under a few minutes 
   - `npm run test:ci` (vitest with coverage)
   - Artifacts: `coverage/lcov.info`, `coverage/coverage-summary.json`
   - Step summary: Coverage table appended to the job summary
+  - Optional Codecov upload: prefer `codecov/codecov-action@v4` guarded by a token
+
+### Coverage Upload
+
+Default (recommended) — use the Codecov GitHub Action in CI and gate on a secret:
+
+```yaml
+- name: Upload coverage to Codecov (optional)
+  if: ${{ secrets.CODECOV_TOKEN != '' }}
+  uses: codecov/codecov-action@v4
+  with:
+    token: ${{ secrets.CODECOV_TOKEN }}
+    files: coverage/lcov.info
+    flags: pr
+    fail_ci_if_error: false
+```
+
+Alternative — script/uploader for local or non–GitHub Actions CI. Do not combine both methods in the same workflow to avoid duplicate uploads.
 
 Recommended as a required PR check.
 
