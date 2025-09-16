@@ -93,8 +93,8 @@ on:
         Quick Checks,
         Typecheck,
         Commit Hygiene,
-        Docs Lint,
         Release,
+        Docs Lint,
       ]
 
   # Manual Triggers
