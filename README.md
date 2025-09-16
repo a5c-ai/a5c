@@ -45,29 +45,7 @@ cat out.json | npx @a5c-ai/events validate --quiet
 
 ## CLI Reference
 
-### Mentions flags (enrich)
 
-These control code-comment mention scanning performed by `events enrich`:
-
-- `--flag mentions.scan.changed_files=<true|false>` (default: `true`) — enable/disable scanning of changed files for `@mentions` inside code comments.
-- `--flag mentions.max_file_bytes=<bytes>` (default: `204800`) — skip files larger than this many bytes when scanning code comments.
-- `--flag mentions.languages=<ext,...>` — optional allowlist of file extensions to scan (for example: `ts,tsx,js,jsx,py,go,yaml`). When omitted, filename/heuristics are used.
-
-Examples:
-
-```bash
-events enrich --in samples/pull_request.synchronize.json \
-  --flag mentions.scan.changed_files=false
-
-events enrich --in samples/pull_request.synchronize.json \
-  --flag mentions.max_file_bytes=102400 \
-  --flag mentions.languages=ts,tsx,js,jsx
-```
-
-See also:
-
-- docs/specs/README.md#4.2-mentions-schema
-- docs/cli/reference.md#events-enrich
 
 ### Mentions config (Quick Start)
 
@@ -111,14 +89,37 @@ Full reference and examples: docs/cli/reference.md#events-enrich
 - `--flag include_patch=<true|false>`: include diff patches in files (default: false)
 - `--flag commit_limit=<n>`: max commits to include (default: 50)
 - `--flag file_limit=<n>`: max files to include (default: 200)
-- Mentions scanning (code comments in changed files):
-  - `--flag mentions.scan.changed_files=<true|false>` (default: true)
-  - `--flag mentions.max_file_bytes=<bytes>` (default: 200KB / 204800 bytes)
-  - `--flag mentions.languages=<ext,...>` (optional list such as `ts,tsx,js,jsx,py,go,yaml`)
-  - `--use-github`: enable GitHub API enrichment (requires `GITHUB_TOKEN`)
-  - `--select <paths>`: comma-separated dot paths to include in output
-  - `--filter <expr>`: filter expression `path[=value]`; if not matching, exits with code 2 and no output
-  - `--label <key=value...>`: attach labels to top‑level `labels[]`
+- Mentions scanning flags are centralized in `docs/cli/reference.md` (see that section for canonical wording and defaults).
+- `--use-github`: enable GitHub API enrichment (requires `GITHUB_TOKEN`)
+- `--select <paths>`: comma-separated dot paths to include in output
+- `--filter <expr>`: filter expression `path[=value]`; if not matching, exits with code 2 and no output
+- `--label <key=value...>`: attach labels to top‑level `labels[]`
+
+#### Mentions flags
+
+Common flags to control Mentions extraction during `enrich` (particularly for `source=code_comment` in changed files):
+
+- `--flag mentions.scan.changed_files=<true|false>` — enable scanning code comments in changed files for `@mentions` (default: `true`).
+- `--flag mentions.max_file_bytes=<bytes>` — per‑file size cap when scanning code comments (default: `200KB` / `204800`). Files larger than this are skipped.
+- `--flag mentions.languages=<ext,...>` — optional allowlist of file extensions to scan (e.g., `ts,tsx,js,jsx,py,go,yaml`). When omitted, the scanner uses filename/heuristics.
+
+Examples:
+
+```bash
+# Disable scanning changed files for code‑comment mentions
+events enrich --in samples/pull_request.synchronize.json \
+  --flag mentions.scan.changed_files=false
+
+# Restrict to specific languages and lower the size cap
+events enrich --in samples/pull_request.synchronize.json \
+  --flag mentions.languages=ts,tsx,js \
+  --flag mentions.max_file_bytes=102400
+```
+
+See also:
+
+- Specs: `docs/specs/README.md#42-mentions-schema`
+- CLI reference: `docs/cli/reference.md` (enrich > Mentions scanning flags)
 
 Behavior:
 
