@@ -27,6 +27,8 @@ We include a Husky `commit-msg` hook that validates your commit message using Co
 
 ## Commit Hygiene and Pre-commit Hook
 
+For more details, see `docs/ci/commit-hygiene.md`. Run `npm run commit:prepare` if hooks are missing. You can bypass pre-commit with `A5C_SKIP_PRECOMMIT=1` or `SKIP_PRECOMMIT=1` in emergencies. The pre-commit also guards against Windows-invalid `:` in filenames.
+
 We enforce fast pre-commit checks to keep branches healthy. The Husky pre-commit hook delegates to `scripts/precommit.sh`, which runs:
 
 - Filename guard: blocks Windows-invalid `:` in staged filenames.
