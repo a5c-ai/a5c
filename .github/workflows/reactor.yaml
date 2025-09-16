@@ -34,6 +34,22 @@ jobs:
           export NPM_CONFIG_USERCONFIG="$PWD/.npmrc"
           echo "NPM_CONFIG_USERCONFIG=$NPM_CONFIG_USERCONFIG" >> "$GITHUB_ENV"
           npm whoami || true
+      - name: Run npx package help
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+          NPM_CONFIG_USERCONFIG: ${{ env.NPM_CONFIG_USERCONFIG }}
+        run: |
+          set -euo pipefail
+          # Prefer dev channel on a5c/main; fallback to latest if not found
+          PKG_SPEC="@a5c-ai/events@a5c-main"
+          if npx -y "$PKG_SPEC" --help >/dev/null 2>&1; then
+            echo "Resolved package: $PKG_SPEC"
+          else
+            PKG_SPEC="@a5c-ai/events@latest"
+            echo "Fallback package: $PKG_SPEC"
+            npx -y "$PKG_SPEC" --help >/dev/null
+          fi
+          echo "A5C_PKG_SPEC=$PKG_SPEC" >> "$GITHUB_ENV"
       - name: Enrich and run reactor with actual github context
         env:
           NODE_AUTH_TOKEN: ${{ secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
