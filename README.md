@@ -309,7 +309,13 @@ See `docs/specs/README.md` for examples and behavior-driven test outlines. Add y
 - Build: `npm run build`
 - Dev CLI: `npm run dev` (runs `src/cli.ts` via tsx)
 - Lint/Typecheck/Format: `npm run lint` / `npm run typecheck` / `npm run format`
-  - CI Observability: see `.github/actions/obs-summary` composite action which writes a job summary and uploads `observability.json`. The composite sets up Node (`actions/setup-node@v4`) with default Node 20; override with `with.node-version` if needed. Example usage lives in `.github/workflows/tests.yml`.
+  - CI Observability: see `.github/actions/obs-summary` and `.github/actions/obs-collector` composite actions which write a job summary and upload `observability.json`. Both composites set up Node via `actions/setup-node@v4` with default Node 20; override with `with.node-version` if needed. Example usage lives in `.github/workflows/tests.yml`.
+    - Node requirement: the composites under `.github/actions/obs-*` execute Node inline scripts and ensure Node internally. You can optionally pre‑setup Node in your job if you want to control the toolchain:
+      ```yaml
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      ```
   - CI runs lint and typecheck on PRs; see `.github/workflows/lint.yml` and `.github/workflows/typecheck.yml`.
   - Local pre-commit enforces whitespace/newline hygiene, lint, and typecheck; see `docs/contributing/README.md#pre-commit-checks`.
 - Minimal Node types + commander; TypeScript configured in `tsconfig.json`
