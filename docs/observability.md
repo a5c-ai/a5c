@@ -104,7 +104,39 @@ await context.with(
 
 ### Sample Usage (CLI)
 
-- Recommend users initialize OTEL via environment (e.g., `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_SERVICE_NAME=a5c-events-cli`) and run a vendor distro or SDK bootstrap script before invoking the CLI in CI.
+- The CLI now emits minimal spans around core commands (mentions, normalize, enrich, emit, validate) only when env is configured and an OTEL API is available.
+- Enable by setting env and ensuring an OTEL SDK/provider is initialized by your runner image or bootstrap step. If the API is not present, spans are no-ops.
+
+Example (GitHub Actions):
+
+```yaml
+env:
+  OTEL_SERVICE_NAME: a5c-events-cli
+  OTEL_EXPORTER_OTLP_ENDPOINT: https://otel-collector.your.company:4318
+  # Optional tuning
+  OTEL_TRACES_EXPORTER: otlp
+  OTEL_TRACES_SAMPLER: parentbased_traceidratio
+  OTEL_TRACES_SAMPLER_ARG: "0.1"
+
+steps:
+  - uses: actions/checkout@v4
+  - name: Bootstrap OTEL (example)
+    run: |
+      # If your image doesn't preinstall an SDK, add it here
+      npm i -g @opentelemetry/api @opentelemetry/sdk-node @opentelemetry/auto-instrumentations-node
+      node -e "const { NodeSDK } = require('@opentelemetry/sdk-node'); const sdk = new NodeSDK(); sdk.start(); setTimeout(()=>{},1);"
+  - name: Normalize
+    run: |
+      npx @a5c-ai/events normalize --in event.json --out ne.json --label run=${{ github.run_id }}
+  - name: Enrich
+    run: |
+      npx @a5c-ai/events enrich --in ne.json --out enr.json
+```
+
+Behavior:
+
+- Without `OTEL_EXPORTER_OTLP_ENDPOINT` (or exporter envs), tracing is disabled with zero overhead.
+- With env set and `@opentelemetry/api` available, spans named `cli.normalize`, `cli.enrich`, etc., are emitted with basic attributes (`cmd`, `source`, flags).
 
 ## Error Reporting (Sentry/GlitchTip)
 

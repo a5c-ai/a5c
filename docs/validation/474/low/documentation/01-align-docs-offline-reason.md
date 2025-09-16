@@ -1,3 +1,5 @@
+[Note] Updated semantics: offline reason is `flag:not_set` (replaced prior `github_enrich_disabled`). See `docs/cli/reference.md` for canonical behavior.
+
 # [Low] Documentation alignment: offline enrichment reason
 
 Scope: PR #474 – Unify offline GitHub enrichment contract

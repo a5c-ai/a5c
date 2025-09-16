@@ -64,7 +64,15 @@ Ownership semantics:
 - PR state: `{ number, draft, mergeable_state, has_conflicts: boolean, base, head, labels[], requested_reviewers[], requested_teams[] }`. Populate from GitHub API; `has_conflicts` derived from `mergeable_state in {"dirty","blocked"}`.
 - branch protections: if token permits, include key flags (dismiss_stale_reviews, required_approvals, linear_history, required_status_checks present?).
 - owners: resolved code owners per changed file and union at PR level.
+  - Semantics: the PR‑level `owners_union` is the sorted, de‑duplicated union of all CODEOWNERS across changed files. This intentionally differs from GitHub’s per‑file evaluation (last matching rule wins). A future toggle may allow strict last‑rule parity at PR level.
 - mentions: see schema below; sources include commit messages, PR/issue title/body, latest issue_comment (event), and code comments in changed files using language-aware regexes for `@name` inside comments.
+  Examples: see `docs/examples/enrich.offline.json` (offline; includes `enriched.github` with `partial=true` and `reason: "flag:not_set"`) and
+  `docs/examples/enrich.online.json` (minimal representative `enriched.github`). Both validate against `docs/specs/ne.schema.json`.
+
+Examples:
+
+- Offline enrich (no `--use-github`): `docs/examples/enrich.offline.json` (stub with `enriched.github.partial=true`, `reason: "flag:not_set"`)
+- Online enrich (`--use-github`): `docs/examples/enrich.online.json`
 
 ### 4.2) Mentions Schema
 
@@ -110,7 +118,7 @@ Example mention from a code comment:
 
 - Env vars: `GITHUB_TOKEN` (or custom `A5C_AGENT_GITHUB_TOKEN`), debug flags, provider-specific tokens.
 - Sources: prefer GitHub Actions runtime env and `secrets.*` and `vars.*` as in existing workflows.
-- CLI flags (implemented): `--in file.json`, `--out out.json`, `--label key=value`, `--select paths`, `--filter expr`.
+- CLI flags (implemented): `--in file.json`, `--out out.json`, `--label key=value`, `--select paths`, `--filter expr`. See CLI reference: `docs/cli/reference.md`.
 - Provider adapters: `providers/github`, stub interfaces for others. Auto-detect when running in Actions.
 
 ### 5.1) Environment Variables and Precedence
