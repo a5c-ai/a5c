@@ -134,7 +134,7 @@ See also:
 - Specs: `docs/specs/README.md#42-mentions-schema`
 - CLI reference: `docs/cli/reference.md#events-enrich`
 
-Behavior:
+- Behavior:
 
 - Offline by default: without `--use-github`, no network calls occur. Output includes `enriched.github` with `partial=true` and `reason="flag:not_set"`. See example outputs: `docs/examples/enrich.offline.json` and `docs/examples/enrich.online.json`.
 - When `--use-github` is set but no token is configured, the CLI exits with code `3` (provider/network error) and prints an error; no JSON is emitted. For programmatic SDK usage and tests with an injected Octokit, a partial structure with `reason: "token:missing"` may be returned, but the CLI UX is exit `3`.
@@ -218,7 +218,7 @@ jq '.type, .repo.full_name, .labels' event.json
 
 ### Enrichment examples
 
-- Offline (no `enriched` block): `docs/examples/enrich.offline.json`
+- Offline (includes minimal `enriched.github` stub): `docs/examples/enrich.offline.json`
 - Online (includes minimal `enriched.github`): `docs/examples/enrich.online.json`
 
 Both examples conform to the NE schema (`docs/specs/ne.schema.json`) and are validated in CI.
