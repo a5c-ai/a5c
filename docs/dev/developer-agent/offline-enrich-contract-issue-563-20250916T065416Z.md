@@ -1,5 +1,3 @@
-[Note] Updated semantics: offline reason is `flag:not_set` (replaced prior `github_enrich_disabled`). See `docs/cli/reference.md` for canonical behavior.
-
 # Offline GitHub enrichment contract — issue #563
 
 Scope: Document offline vs online enrichment behavior; add a unit test asserting absence (or stub) of `enriched.github` when `--use-github` is not provided. Align README and CLI docs with examples.
