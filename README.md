@@ -84,7 +84,7 @@ Canonical reference and examples:
   - `--source <name>`: provenance (`action|webhook|cli`) [default: `cli`]
     - Accepts `actions` as input alias and persists `provenance.source: "action"`.
   - `--select <paths>`: comma-separated dot paths to include in output
-  - `--filter <expr>`: filter expression `path[=value]`; if not matching, exits with code 2 and no output
+  - `--filter <expr>`: filter expression `path[=value]`; if not matching, exits with code 2 and no output (see CLI reference example: docs/cli/reference.md#events-normalize)
   - `--label <key=value...>`: attach labels to top‑level `labels[]` (repeatable)
 
 `events enrich`
@@ -99,7 +99,7 @@ Canonical reference and examples:
 - Mentions scanning flags are documented once in the CLI reference at `docs/cli/reference.md#events-enrich` and are the canonical source of truth for wording and defaults.
 - `--use-github`: enable GitHub API enrichment (requires `GITHUB_TOKEN`)
 - `--select <paths>`: comma-separated dot paths to include in output
-- `--filter <expr>`: filter expression `path[=value]`; if not matching, exits with code 2 and no output
+  - `--filter <expr>`: filter expression `path[=value]`; if not matching, exits with code 2 and no output (see CLI reference example: docs/cli/reference.md#events-enrich)
 - `--label <key=value...>`: attach labels to top‑level `labels[]`
 
 #### Mentions flags
@@ -141,6 +141,8 @@ See also:
 - When `--use-github` is set but no token is configured, the CLI exits with code `3` (provider/network error) and prints an error; no JSON is emitted. For programmatic SDK usage and tests with an injected Octokit, a partial structure with `reason: "token:missing"` may be returned, but the CLI UX is exit `3`.
 
 Exit codes: `0` success, non‑zero on errors (invalid input, etc.).
+
+For detailed command usage and examples, see docs/cli/reference.md.
 
 ### Mentions scanning examples
 

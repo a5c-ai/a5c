@@ -58,6 +58,11 @@ events normalize --in samples/workflow_run.completed.json \
 
 # Gate output via filter (exit 2 if not matched)
 events normalize --in samples/workflow_run.completed.json --filter 'type=workflow_run'
+
+# Non-matching filter exits with code 2 (no output)
+events normalize --in samples/workflow_run.completed.json \
+  --filter 'type=push' >/dev/null || echo $?
+# prints: 2
 ```
 
 Notes:
@@ -206,16 +211,26 @@ events enrich --in /tmp/issue.json | jq '.enriched.mentions | map({source, targe
 
 # With rules (composed events)
 
+```bash
 events enrich --in samples/pull_request.synchronize.json \
- --rules samples/rules/conflicts.yml \
- | jq '(.composed // []) | map({key, reason})'
+  --rules samples/rules/conflicts.yml \
+  | jq '(.composed // []) | map({key, reason})'
+```
 
 # JSON rules are also supported via the same `--rules` flag:
 
+```bash
 events enrich --in samples/pull_request.synchronize.json \
- --rules samples/rules/conflicts.json \
- | jq '(.composed // []) | map({key, reason})'
+  --rules samples/rules/conflicts.json \
+  | jq '(.composed // []) | map({key, reason})'
+```
 
+# Non-matching filter exits with code 2 (no output)
+
+```bash
+events enrich --in samples/pull_request.synchronize.json \
+  --filter 'type=push' >/dev/null || echo $?
+# prints: 2
 ```
 
 Mentions sources:
@@ -239,7 +254,7 @@ Note:
 - Programmatic API nuance: when using the SDK directly and `--use-github` semantics are requested without a token, some code paths may return a partial `enriched.github` with `reason: 'token:missing'` for testing with an injected Octokit. The CLI path exits with code `3` and does not emit JSON.
 - Redaction: CLI redacts sensitive keys and common secret patterns in output by default (see `src/utils/redact.ts`).
 
-```
+````
 
 Outputs:
 
@@ -250,7 +265,7 @@ Without network calls (mentions only):
 ```bash
 events enrich --in samples/push.json --out out.json
 jq '.enriched.mentions' out.json
-```
+````
 
 Include patch diffs explicitly (opt‑in):
 
