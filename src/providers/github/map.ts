@@ -166,6 +166,7 @@ export function mapToNE(
   payload: any,
   opts: { source?: string; labels?: string[] } = {},
 ): NormalizedEvent {
+  const source = normalizeSource(opts.source);
   const detected =
     detectTypeAndId(payload) ||
     ({
@@ -189,7 +190,7 @@ export function mapToNE(
     actor,
     payload,
     labels: opts.labels || [],
-    provenance: { source: (coerceSource(opts.source) as any) || "cli" },
+    provenance: { source: (source as any) || "cli" },
   };
   // Optional workflow provenance enrichment when workflow_run is present
   if (payload?.workflow_run) {
@@ -209,7 +210,10 @@ export function mapToNE(
 // Optional: expose a Provider-compatible adapter without changing existing exports
 export const GitHubProvider: Provider = {
   normalize: (payload: any, opts?: NormalizeOptions) =>
-    mapToNE(payload, { source: opts?.source, labels: opts?.labels }),
+    mapToNE(payload, {
+      source: normalizeSource(opts?.source),
+      labels: opts?.labels,
+    }),
   enrich: async (event: any, opts?: EnrichOptions) => {
     const mod: any = await import("../../enrichGithubEvent.js");
     const fn = (mod.enrichGithubEvent || mod.default) as (
@@ -219,3 +223,14 @@ export const GitHubProvider: Provider = {
     return fn(event, opts);
   },
 };
+
+function normalizeSource(
+  src?: string,
+): "action" | "webhook" | "cli" | undefined {
+  if (!src) return src as any;
+  const s = String(src).toLowerCase();
+  if (s === "actions" || s === "action") return "action";
+  if (s === "webhook") return "webhook";
+  if (s === "cli") return "cli";
+  return src as any;
+}

@@ -45,19 +45,18 @@ describe("CLI exit codes", () => {
     expect(res.stderr).toMatch(/GitHub enrichment failed|token is required/i);
   });
 
-  it("enrich: exits 0 without --use-github even when no token and emits offline stub with reason", () => {
+  it("enrich: exits 0 without --use-github even when no token", () => {
     const inFile = path.resolve(
       "tests/fixtures/github/pull_request.synchronize.json",
     );
     const res = runCLI(["enrich", "--in", inFile]);
     expect(res.status, res.stderr).toBe(0);
-    // stdout should be JSON containing enriched.github provider stub
     expect(res.stdout).toMatch(/"provider":\s*"github"/);
     const out = JSON.parse(res.stdout || "{}") as any;
     const gh = out?.enriched?.github || {};
     expect(gh.provider).toBe("github");
     expect(gh.partial).toBe(true);
-    // Contract currently uses reason 'flag:not_set' for offline mode
+    // Contract uses reason 'flag:not_set' for offline mode
     expect(gh.reason).toBe("flag:not_set");
   });
 });

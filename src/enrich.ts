@@ -1,6 +1,6 @@
 import type { NormalizedEvent, Mention } from "./types.js";
 import { readJSONFile, loadConfig } from "./config.js";
-import { extractMentions } from "./extractor.js";
+import { extractMentions, dedupeMentions } from "./extractor.js";
 import { isBinaryPatch } from "./codeComments.js";
 import { scanMentionsInCodeComments } from "./utils/commentScanner.js";
 import { evaluateRulesDetailed, loadRules } from "./rules.js";
@@ -28,6 +28,12 @@ export async function handleEnrich(opts: {
   const useGithub = toBool(opts.flags?.use_github);
   const scanChangedFilesFlag = toBool(
     (opts.flags as any)?.["mentions.scan.changed_files"] ?? true,
+  );
+  const scanCommitMessagesFlag = toBool(
+    (opts.flags as any)?.["mentions.scan.commit_messages"] ?? true,
+  );
+  const scanIssueCommentsFlag = toBool(
+    (opts.flags as any)?.["mentions.scan.issue_comments"] ?? true,
   );
   const maxFileBytesFlag = toInt(
     (opts.flags as any)?.["mentions.max_file_bytes"],
@@ -179,13 +185,14 @@ export async function handleEnrich(opts: {
     if (pr?.body) mentions.push(...extractMentions(String(pr.body), "pr_body"));
     if (pr?.title)
       mentions.push(...extractMentions(String(pr.title), "pr_title"));
+    // Extract mentions from GitHub Issue events (title/body)
     const issue = (baseEvent as any)?.issue;
     if (issue?.title)
       mentions.push(...extractMentions(String(issue.title), "issue_title"));
     if (issue?.body)
       mentions.push(...extractMentions(String(issue.body), "issue_body"));
     const commits = (baseEvent as any)?.commits;
-    if (Array.isArray(commits)) {
+    if (Array.isArray(commits) && scanCommitMessagesFlag) {
       for (const c of commits)
         if (c?.message)
           mentions.push(
@@ -193,7 +200,7 @@ export async function handleEnrich(opts: {
           );
     }
     const commentBody = (baseEvent as any)?.comment?.body;
-    if (commentBody)
+    if (commentBody && scanIssueCommentsFlag)
       mentions.push(...extractMentions(String(commentBody), "issue_comment"));
   } catch {}
 
@@ -332,141 +339,11 @@ export async function handleEnrich(opts: {
       }
     }
   } catch {}
-  // Code comment mention scanning in changed files
-  try {
-    if (scanChangedFilesFlag) {
-      const gh = githubEnrichment || {};
-      const prFiles = Array.isArray(gh?.pr?.files) ? gh.pr.files : [];
-      const pushFiles = Array.isArray(gh?.push?.files) ? gh.push.files : [];
-      const files: { filename: string; patch?: string }[] = [
-        ...prFiles,
-        ...pushFiles,
-      ].map((f: any) => ({ filename: f.filename, patch: f.patch }));
-      const hasUsablePatch = files.some(
-        (f) => typeof f.patch === "string" && !!f.patch,
-      );
 
-      if (includePatch && hasUsablePatch) {
-        // Prefer scanning synthesized content from patches
-        for (const f of files) {
-          const filename = f.filename;
-          const patch = f.patch || "";
-          if (!filename || !patch || isBinaryPatch(patch)) continue;
-          if (languageFiltersFlag && languageFiltersFlag.length) {
-            // commentScanner expects language IDs (js,ts,py,...) — filter via detected lang there
-          }
-          const lines = patch.split(/\r?\n/);
-          const approxFile: string[] = [];
-          for (const l of lines) {
-            if (
-              l.startsWith("+++") ||
-              l.startsWith("---") ||
-              l.startsWith("@@")
-            ) {
-              approxFile.push("");
-              continue;
-            }
-            if (l.startsWith("+") || l.startsWith(" ") || l.startsWith("-"))
-              approxFile.push(l.slice(1));
-            else approxFile.push(l);
-          }
-          const content = approxFile.join("\n");
-          const found = scanMentionsInCodeComments({
-            content,
-            filename,
-            maxBytes: maxFileBytesFlag,
-            languageFilters: languageFiltersFlag,
-            source: "code_comment",
-          });
-          if (found.length) mentions.push(...found);
-        }
-      } else if (useGithub) {
-        // Fallback to fetching raw file contents (when allowed)
-        const ghMeta = (githubEnrichment || {}) as any;
-        let owner: string | undefined = ghMeta.owner;
-        let repo: string | undefined = ghMeta.repo;
-        let ref: string | undefined =
-          (baseEvent as any)?.pull_request?.head?.sha ||
-          (baseEvent as any)?.pull_request?.head?.ref ||
-          (baseEvent as any)?.after ||
-          (baseEvent as any)?.head_commit?.id;
-        if (!owner || !repo) {
-          const full = (baseEvent as any)?.repository?.full_name;
-          if (typeof full === "string" && full.includes("/")) {
-            const parts = full.split("/");
-            owner = parts[0];
-            repo = parts[1];
-          }
-        }
-        const mod: any = await import("./enrichGithubEvent.js");
-        const octokit =
-          opts.octokit || (token ? mod.createOctokit?.(token) : undefined);
-        let filesList: any[] = [...files];
-        if ((!filesList || !filesList.length) && octokit && owner && repo) {
-          if ((baseEvent as any)?.pull_request?.number) {
-            try {
-              const number = (baseEvent as any).pull_request.number;
-              const list = await octokit.paginate(octokit.pulls.listFiles, {
-                owner,
-                repo,
-                pull_number: number,
-                per_page: 100,
-              });
-              filesList = Array.isArray(list) ? list : [];
-            } catch {}
-          } else if ((baseEvent as any)?.before && (baseEvent as any)?.after) {
-            try {
-              const comp = await octokit.repos.compareCommits({
-                owner,
-                repo,
-                base: (baseEvent as any).before,
-                head: (baseEvent as any).after,
-              });
-              filesList = (comp?.data?.files as any[]) || [];
-              ref = (baseEvent as any).after;
-            } catch {}
-          }
-        }
-        if (
-          octokit &&
-          owner &&
-          repo &&
-          ref &&
-          Array.isArray(filesList) &&
-          filesList.length
-        ) {
-          for (const f of filesList) {
-            const path = f.filename || f.path || f.name;
-            if (!path) continue;
-            try {
-              const res = await octokit.repos.getContent({
-                owner,
-                repo,
-                path,
-                ref,
-              });
-              if (Array.isArray(res.data)) continue;
-              const size = res.data.size ?? 0;
-              if (maxFileBytesFlag > 0 && size > maxFileBytesFlag) continue;
-              const encoding = res.data.encoding || "base64";
-              const content: string = Buffer.from(
-                res.data.content || "",
-                encoding,
-              ).toString("utf8");
-              const found = scanMentionsInCodeComments({
-                content,
-                filename: path,
-                maxBytes: maxFileBytesFlag,
-                languageFilters: languageFiltersFlag,
-                source: "code_comment",
-              });
-              if (found.length) mentions.push(...found);
-            } catch {}
-          }
-        }
-      }
-    }
-  } catch {}
+  // De-duplicate mentions (per-source/location) before attaching to output
+  const normalizedMentions: Mention[] = dedupeMentions(
+    mentions.map((m) => normalizeCodeCommentLocation(m)),
+  );
 
   const output: NormalizedEvent = {
     ...(neShell as any),
@@ -478,7 +355,7 @@ export async function handleEnrich(opts: {
         ...(neShell.enriched?.derived || {}),
         flags: opts.flags || {},
       },
-      ...(mentions.length ? { mentions } : {}),
+      ...(normalizedMentions.length ? { mentions: normalizedMentions } : {}),
     },
   };
 

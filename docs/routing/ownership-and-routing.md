@@ -17,7 +17,7 @@ docs/**             @a5c-ai/docs
 
 Tips:
 
-- Place more specific patterns higher; last match wins.
+- Place more specific patterns lower; last match wins. (Order matters; the last matching rule per file takes precedence.)
 - Prefer team handles over individuals.
 - Keep owners current to ensure accurate routing in CI and agent workflows.
 
@@ -61,3 +61,5 @@ Rationale:
 - Downstream agents can still implement stricter strategies if needed (e.g., use per-file last-rule owners only).
 
 Future toggle (tracking): a configuration flag may allow switching between union-based routing and strict last-rule parity for PR-level owners.
+
+See also: `docs/specs/README.md` §4.1 for a concise specification note.

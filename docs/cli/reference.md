@@ -78,7 +78,7 @@ Behavior:
       "github": {
         "provider": "github",
         "partial": true,
-        "reason": "flag:not_set"
+        "reason": "github_enrich_disabled"
       }
     }
   }
@@ -98,15 +98,18 @@ events enrich --in FILE [--out FILE] [--rules FILE] \
 - `--in FILE`: input JSON (normalized event or raw GitHub payload)
 - `--out FILE`: write result JSON (stdout if omitted)
 - `--rules FILE`: YAML/JSON rules file (optional). When provided, matching rules emit `composed[]` with `{ key, reason, targets?, labels?, payload? }`.
-- `--flag KEY=VAL...`: enrichment flags (repeatable); notable flags:
+  - `--flag KEY=VAL...`: enrichment flags (repeatable); notable flags:
   - `include_patch=true|false` (default: `false`) – include diff patches; when `false`, patches are removed. Defaulting to false avoids leaking secrets via diffs and keeps outputs small; enable only when required.
   - `commit_limit=<n>` (default: `50`) – limit commits fetched for PR/push
   - `file_limit=<n>` (default: `200`) – limit files per compare list
   - Mentions scanning flags (code comments in changed files) — canonical:
     - `mentions.scan.changed_files=true|false` (default: `true`) – scan changed files for `@mentions` inside code comments
     - `mentions.max_file_bytes=<bytes>` (default: `204800` ≈ 200KB) – skip files larger than this when scanning
-    - `mentions.languages=<ext,...>` – optional allowlist of file extensions to scan (e.g., `ts,tsx,js,jsx,py,go,yaml`). When omitted, detection is used.
-- `--use-github`: enable GitHub API enrichment; equivalent to `--flag use_github=true` (requires `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`). Without this flag, the CLI performs no network calls and sets `enriched.github = { provider: 'github', partial: true, reason: 'flag:not_set' }`.
+    - `mentions.languages=<lang,...>` – optional allowlist of canonical language codes to scan (e.g., `js,ts,py,go,yaml,md`). When omitted, detection is used.
+      - Mapping note: extensions are normalized to codes during detection (e.g., `.tsx → ts`, `.jsx → js`, `.yml → yaml`), but the filter list itself compares codes.
+    - `mentions.scan.commit_messages=true|false` (default: `true`) – enable/disable scanning commit messages for `@mentions`
+    - `mentions.scan.issue_comments=true|false` (default: `true`) – enable/disable scanning issue comments for `@mentions`
+- `--use-github`: enable GitHub API enrichment; equivalent to `--flag use_github=true` (requires `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`). Without this flag, the CLI performs no network calls and sets `enriched.github = { provider: 'github', partial: true, reason: 'github_enrich_disabled' }`.
 - `--label KEY=VAL...`: labels to attach
 - `--select PATHS`: comma-separated dot paths to include in output
 - `--filter EXPR`: filter expression `path[=value]`; if it doesn't pass, exits with code `2`
@@ -131,9 +134,9 @@ events enrich --in samples/pull_request.synchronize.json \
 events enrich --in samples/pull_request.synchronize.json \
   --flag mentions.scan.changed_files=false | jq '.enriched.mentions // [] | length'
 
-# Restrict by languages and cap bytes (tsx/jsx are mapped automatically)
+# Restrict by languages and cap bytes (use canonical codes; tsx/jsx map automatically)
 events enrich --in samples/pull_request.synchronize.json \
-  --flag mentions.languages=js,ts \
+  --flag mentions.languages=ts,js \
   --flag mentions.max_file_bytes=102400 \
   | jq '.enriched.mentions // [] | map(select(.source=="code_comment")) | length'
 
@@ -148,13 +151,18 @@ events enrich --in samples/pull_request.synchronize.json \
   | jq '(.composed // []) | map({key, reason})'
 ```
 
+Mentions sources:
+
+- Allowed values for `mentions[].source`: `commit_message`, `pr_title`, `pr_body`, `issue_comment`, `code_comment`.
+- Mentions discovered within diffs/changed files are emitted as `source: code_comment` with `location.file` and `location.line` populated. There is no distinct `file_change` source.
+
 Mentions sources for GitHub Issues:
 
 - When the input is a GitHub `issues.*` webhook payload (or an NE of type `issue`), the enrich step also extracts `@mentions` from:
   - `issue.title` → entries with `source: "issue_title"`
   - `issue.body` → entries with `source: "issue_body"`
 
-These are included under `enriched.mentions` and are deduplicated by normalized target and location when applicable.
+These are included under `enriched.mentions` and are deduplicated by normalized target and location when applicable. If the same target appears in both title and body, only one entry is emitted.
 
 Note:
 
@@ -283,8 +291,19 @@ Exit codes:
 
 Offline vs token-missing notes:
 
-- Offline (no `--use-github`): stub as shown above with `reason: 'flag:not_set'`; no network-derived fields.
-- With `--use-github` but token missing: exit code `3` and error to stderr; no JSON output by the CLI.
+```json
+{
+  "enriched": {
+    "github": {
+      "provider": "github",
+      "partial": true,
+      "reason": "github_enrich_disabled"
+    }
+  }
+}
+```
+
+With --use-github but token missing (exit code 3): the CLI exits with status `3` and prints an error to stderr; no JSON is emitted.
 
 References:
 
@@ -295,3 +314,8 @@ References:
 - Large payloads: JSON is read/written from files/stdin/stdout; providers may add streaming in future.
 
 See also: `docs/specs/README.md`. Technical specs reference for token precedence: `docs/producer/phases/technical-specs/tech-stack.md`.
+
+# Disable commit message and issue comment scanning
+
+events enrich --in samples/push.json --flag 'mentions.scan.commit_messages=false'
+events enrich --in samples/issue_comment.created.json --flag 'mentions.scan.issue_comments=false'
