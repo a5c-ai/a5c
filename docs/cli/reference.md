@@ -117,8 +117,8 @@ events enrich --in FILE [--out FILE] [--rules FILE] \
 Mentions scanning (code comments in changed files):
 
 - `mentions.scan.changed_files=true|false` (default: `true`) – when `true`, scan changed files' patches for `@mentions` within code comments and add to `enriched.mentions[]` with `source="code_comment"` and `location` hints.
-- `mentions.max_file_bytes=<bytes>` (default: `200KB`) – skip scanning any single file patch larger than this cap.
-- `mentions.languages=lang1,lang2,...` (optional) – only scan files whose detected languages match one of these codes (e.g., `js,ts,yaml,md`). Use `js,ts` to include `.jsx/.tsx` files.
+- `mentions.max_file_bytes=<bytes>` (default: `204800` ≈ 200KB) – skip scanning any single file larger than this cap.
+- `mentions.languages=<ext,...>` (optional) – only scan files whose extensions match the allowlist (e.g., `ts,tsx,js,jsx,py,go,yaml`). Using `js,ts` also covers `.jsx/.tsx`.
   Examples:
 
 ```bash
