@@ -117,7 +117,7 @@ program
   .option("--flag <key=value...>", "enrichment flags", collectKeyValue, {})
   .option(
     "--use-github",
-    "enable GitHub API enrichment (requires GITHUB_TOKEN)",
+    "enable GitHub API enrichment (requires token; A5C_AGENT_GITHUB_TOKEN preferred). On missing token, exits with code 3",
   )
   .option("--select <paths>", "comma-separated dot paths to include in output")
   .option("--filter <expr>", "filter expression path[=value] to gate output")
