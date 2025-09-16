@@ -102,6 +102,32 @@ See: docs/specs/README.md#4.2-mentions-schema for full details.
   - `--filter <expr>`: filter expression `path[=value]`; if not matching, exits with code 2 and no output
   - `--label <key=value...>`: attach labels to top‑level `labels[]`
 
+#### Mentions flags
+
+Common flags to control Mentions extraction during `enrich` (particularly for `source=code_comment` in changed files):
+
+- `--flag mentions.scan.changed_files=<true|false>` — enable scanning code comments in changed files for `@mentions` (default: `true`).
+- `--flag mentions.max_file_bytes=<bytes>` — per‑file size cap when scanning code comments (default: `200KB` / `204800`). Files larger than this are skipped.
+- `--flag mentions.languages=<ext,...>` — optional allowlist of file extensions to scan (e.g., `ts,tsx,js,jsx,py,go,yaml`). When omitted, the scanner uses filename/heuristics.
+
+Examples:
+
+```bash
+# Disable scanning changed files for code‑comment mentions
+events enrich --in samples/pull_request.synchronize.json \
+  --flag mentions.scan.changed_files=false
+
+# Restrict to specific languages and lower the size cap
+events enrich --in samples/pull_request.synchronize.json \
+  --flag mentions.languages=ts,tsx,js \
+  --flag mentions.max_file_bytes=102400
+```
+
+See also:
+
+- Specs: `docs/specs/README.md#4.2-mentions-schema`
+- CLI reference: `docs/cli/reference.md` (enrich > Mentions scanning flags)
+
 Behavior:
 
 - Offline by default: without `--use-github`, no network calls occur. Output includes `enriched.github` with `partial=true` and `reason="github_enrich_disabled"`.
