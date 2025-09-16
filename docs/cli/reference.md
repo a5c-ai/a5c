@@ -160,7 +160,7 @@ Mentions sources for GitHub Issues:
   - `issue.title` → entries with `source: "issue_title"`
   - `issue.body` → entries with `source: "issue_body"`
 
-These are included under `enriched.mentions` and are deduplicated by normalized target and location when applicable.
+These are included under `enriched.mentions` and are deduplicated by normalized target and location when applicable. If the same target appears in both title and body, only one entry is emitted.
 
 Note:
 
