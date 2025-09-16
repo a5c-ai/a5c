@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { handleEnrich } from "../src/enrich.js";
 
 describe("offline GitHub enrichment contract", () => {
-  it("without --use-github, returns stub with reason=flag:not_set", async () => {
+  it("without --use-github, returns stub with reason=github_enrich_disabled", async () => {
     const res = await handleEnrich({
       in: "samples/pull_request.synchronize.json",
       labels: [],
@@ -14,6 +14,6 @@ describe("offline GitHub enrichment contract", () => {
     expect(gh).toBeTruthy();
     expect(gh.provider).toBe("github");
     expect(gh.partial).toBe(true);
-    expect(gh.reason).toBe("flag:not_set");
+    expect(gh.reason).toBe("github_enrich_disabled");
   });
 });
