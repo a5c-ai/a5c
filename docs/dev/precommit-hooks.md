@@ -5,6 +5,14 @@ This repo uses Husky to run fast checks locally:
 - pre-commit: staged-file hygiene + lint-staged (ESLint + Prettier)
 - pre-push: TypeScript typecheck and targeted tests (Vitest related)
 
+## Checks performed (pre-commit)
+
+The `.husky/pre-commit` hook delegates to `scripts/precommit.sh`, which enforces:
+
+- Filename guard: blocks staged filenames containing `:` (breaks Windows checkouts).
+- Whitespace/newline hygiene: `git diff --cached --check` must pass.
+- lint-staged: runs ESLint and Prettier on staged files only.
+
 ## Install
 
 Run `npm install` once; Husky will install hooks automatically. Node >= 20 is required.
