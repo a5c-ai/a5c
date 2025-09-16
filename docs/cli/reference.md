@@ -102,11 +102,12 @@ events enrich --in FILE [--out FILE] [--rules FILE] \
   - `include_patch=true|false` (default: `false`) – include diff patches; when `false`, patches are removed. Defaulting to false avoids leaking secrets via diffs and keeps outputs small; enable only when required.
   - `commit_limit=<n>` (default: `50`) – limit commits fetched for PR/push
   - `file_limit=<n>` (default: `200`) – limit files per compare list
-  - Mentions scanning flags (code comments in changed files) — canonical:
-    - `mentions.scan.changed_files=true|false` (default: `true`) – scan changed files for `@mentions` inside code comments
+  - Mentions scanning flags:
+    - `mentions.scan.commit_messages=true|false` (default: `true`) – enable/disable scanning commit messages
+    - `mentions.scan.issue_comments=true|false` (default: `true`) – enable/disable scanning issue comment bodies
+    - `mentions.scan.changed_files=true|false` (default: `true`) – enable/disable scanning code comments in changed files for `@mentions`
     - `mentions.max_file_bytes=<bytes>` (default: `204800` ≈ 200KB) – skip files larger than this when scanning
-    - `mentions.languages=<lang,...>` – optional allowlist of canonical language codes to scan (e.g., `js,ts,py,go,yaml,md`). When omitted, detection is used.
-      - Mapping note: extensions are normalized to codes during detection (e.g., `.tsx → ts`, `.jsx → js`, `.yml → yaml`), but the filter list itself compares codes.
+    - `mentions.languages=<lang,...>` – optional allowlist of canonical language codes (e.g., `js,ts,py,go,yaml,md`). Extensions are normalized during detection (e.g., `.tsx → ts`, `.jsx → js`, `.yml → yaml`).
 - `--use-github`: enable GitHub API enrichment; equivalent to `--flag use_github=true` (requires `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`). Without this flag, the CLI performs no network calls and sets `enriched.github = { provider: 'github', partial: true, reason: 'github_enrich_disabled' }`.
 - `--label KEY=VAL...`: labels to attach
 - `--select PATHS`: comma-separated dot paths to include in output
@@ -127,10 +128,17 @@ events enrich --in samples/pull_request.synchronize.json \
   --flag include_patch=false \
   | jq '.enriched.github.pr.mergeable_state'
 
-# Mentions scanning controls (code comments in changed files)
+# Mentions scanning controls
 # Disable scanning entirely
 events enrich --in samples/pull_request.synchronize.json \
   --flag mentions.scan.changed_files=false | jq '.enriched.mentions // [] | length'
+
+# Disable commit and/or issue comment scanning
+events enrich --in samples/push.json \
+  --flag 'mentions.scan.commit_messages=false' | jq '.enriched.mentions // [] | map(select(.source=="commit_message")) | length'
+
+events enrich --in samples/issue_comment.created.json \
+  --flag 'mentions.scan.issue_comments=false' | jq '.enriched.mentions // [] | map(select(.source=="issue_comment")) | length'
 
 # Restrict by languages and cap bytes (use canonical codes; tsx/jsx map automatically)
 events enrich --in samples/pull_request.synchronize.json \

@@ -42,6 +42,13 @@ export async function handleEnrich(opts: {
           .map((s) => s.trim())
           .filter(Boolean)
       : undefined;
+  // New flags per specs §4.2 — default true when absent
+  const scanCommitMessagesFlag = toBool(
+    (opts.flags as any)?.["mentions.scan.commit_messages"] ?? true,
+  );
+  const scanIssueCommentsFlag = toBool(
+    (opts.flags as any)?.["mentions.scan.issue_comments"] ?? true,
+  );
 
   const cfg = loadConfig();
   const token = cfg.githubToken;
@@ -179,23 +186,29 @@ export async function handleEnrich(opts: {
     if (pr?.body) mentions.push(...extractMentions(String(pr.body), "pr_body"));
     if (pr?.title)
       mentions.push(...extractMentions(String(pr.title), "pr_title"));
-    // Extract mentions from GitHub Issue events (title/body)
+    // Scan issue title/body when present (always-on)
     const issue = (baseEvent as any)?.issue;
     if (issue?.title)
       mentions.push(...extractMentions(String(issue.title), "issue_title"));
     if (issue?.body)
       mentions.push(...extractMentions(String(issue.body), "issue_body"));
-    const commits = (baseEvent as any)?.commits;
-    if (Array.isArray(commits)) {
-      for (const c of commits)
-        if (c?.message)
-          mentions.push(
-            ...extractMentions(String(c.message), "commit_message"),
-          );
+    // Gate commit message scanning by flag
+    if (scanCommitMessagesFlag) {
+      const commits = (baseEvent as any)?.commits;
+      if (Array.isArray(commits)) {
+        for (const c of commits)
+          if (c?.message)
+            mentions.push(
+              ...extractMentions(String(c.message), "commit_message"),
+            );
+      }
     }
-    const commentBody = (baseEvent as any)?.comment?.body;
-    if (commentBody)
-      mentions.push(...extractMentions(String(commentBody), "issue_comment"));
+    // Gate issue comment body scanning by flag
+    if (scanIssueCommentsFlag) {
+      const commentBody = (baseEvent as any)?.comment?.body;
+      if (commentBody)
+        mentions.push(...extractMentions(String(commentBody), "issue_comment"));
+    }
   } catch {}
 
   // Code comment mention scanning in changed files

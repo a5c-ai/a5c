@@ -81,9 +81,9 @@ Ownership semantics:
 Configuration:
 
 - `mentions.scan.changed_files`: `true|false` (default true) — scan changed files for `@...` in code comments.
-- `mentions.scan.commit_messages`: `true|false` (default true)
-- `mentions.scan.issue_comments`: `true|false` (default true)
-- `mentions.max_file_bytes`: bytes cap per file (default 200KB)
+- `mentions.scan.commit_messages`: `true|false` (default true) — scan commit messages for mentions.
+- `mentions.scan.issue_comments`: `true|false` (default true) — scan issue comment bodies for mentions.
+- `mentions.max_file_bytes`: bytes cap per file (default 200KB / 204800 bytes)
 - `mentions.languages`: opt-in list for code-comment scanning; default detects via filename.
 
 Example mention from a code comment:
