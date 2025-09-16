@@ -108,10 +108,7 @@ Example mention from a code comment:
 
 - Env vars: `GITHUB_TOKEN` (or custom `A5C_AGENT_GITHUB_TOKEN`), debug flags, provider-specific tokens.
 - Sources: prefer GitHub Actions runtime env and `secrets.*` and `vars.*` as in existing workflows.
-- CLI flags (implemented): `--in file.json` (webhook sample), `--out out.json`, `--label key=value`, `--select paths`, `--filter expr` expr`.
-- CLI flags (implemented): `--in file.json` (webhook sample), `--out out.json`, `--label key=value`.
-- CLI flags (planned/not yet implemented): `--select fields`, `--filter expr`.
-- CLI flags (implemented): `--in file.json` (webhook sample), `--out out.json`, `--label key=value`, `--select paths`, `--filter expr` expr`.
+- CLI flags (implemented): `--in file.json`, `--out out.json`, `--label key=value`, `--select paths`, `--filter expr`.
 - Provider adapters: `providers/github`, stub interfaces for others. Auto-detect when running in Actions.
 
 ### 5.1) Environment Variables and Precedence
