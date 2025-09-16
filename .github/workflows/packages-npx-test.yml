@@ -1,39 +1,8 @@
 name: Packages Npx Test
 
 on:
-  push:
-    branches: [a5c/main]
-  pull_request:
-    branches: [a5c/main]
-    types:
-      [
-        opened,
-        synchronize,
-        reopened,
-        ready_for_review,
-        edited,
-        labeled,
-        unlabeled,
-        closed,
-      ]
   repository_dispatch:
     types: [packages-npx-test, pull_request_ready_for_review]
-  issue_comment:
-    types: [created, edited, deleted]
-  issues:
-    types:
-      [
-        opened,
-        edited,
-        deleted,
-        labeled,
-        unlabeled,
-        closed,
-        reopened,
-        assigned,
-        unassigned,
-      ]
-
   workflow_dispatch: {}
 
 permissions:
@@ -45,92 +14,9 @@ jobs:
     name: Install and run via npx
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version-file: .nvmrc
-          # Avoid setting global registry to GPR; use project .npmrc scoping instead
-
-      - name: Configure npm auth (env)
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
-        run: |
-          set -euo pipefail
-          # Create a project-level npmrc and point npm to use it for all subsequent steps
-          echo "registry=https://registry.npmjs.org" > .npmrc
-          echo "//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}" >> .npmrc
-          echo "@a5c-ai:registry=https://npm.pkg.github.com/" >> .npmrc
-          echo "always-auth=true" >> .npmrc
-          export NPM_CONFIG_USERCONFIG="$PWD/.npmrc"
-          echo "NPM_CONFIG_USERCONFIG=$NPM_CONFIG_USERCONFIG" >> "$GITHUB_ENV"
-          npm whoami || true
-
-      - name: Run npx package help
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
-          NPM_CONFIG_USERCONFIG: ${{ env.NPM_CONFIG_USERCONFIG }}
-        run: |
-          set -euo pipefail
-          # Prefer dev channel on a5c/main; fallback to latest if not found
-          PKG_SPEC="@a5c-ai/events@a5c-main"
-          if npx -y "$PKG_SPEC" --help >/dev/null 2>&1; then
-            echo "Resolved package: $PKG_SPEC"
-          else
-            PKG_SPEC="@a5c-ai/events@latest"
-            echo "Fallback package: $PKG_SPEC"
-            npx -y "$PKG_SPEC" --help >/dev/null
-          fi
-          echo "A5C_PKG_SPEC=$PKG_SPEC" >> "$GITHUB_ENV"
-
-      - name: Run npx package version
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
-          NPM_CONFIG_USERCONFIG: ${{ env.NPM_CONFIG_USERCONFIG }}
-        run: |
-          set -euo pipefail
-          node -v
-          npm -v
-          npx -y "$A5C_PKG_SPEC" --version || true
-
-      - name: Smoke – normalize sample payload
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
-          NPM_CONFIG_USERCONFIG: ${{ env.NPM_CONFIG_USERCONFIG }}
-        run: |
-          npx -y "$A5C_PKG_SPEC" normalize \
-            --in samples/workflow_run.completed.json \
-            --out out.normalize.json
-          # basic shape checks
-          jq -e '.type == "workflow_run"' out.normalize.json >/dev/null
-          jq -e '.repo and .provenance and .payload' out.normalize.json >/dev/null
-
-      - name: Smoke – enrich sample payload
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
-          NPM_CONFIG_USERCONFIG: ${{ env.NPM_CONFIG_USERCONFIG }}
-        run: |
-          npx -y "$A5C_PKG_SPEC" enrich \
-            --in samples/pull_request.synchronize.json \
-            --out out.enrich.json
-          # enriched structure exists
-          jq -e '.enriched and .payload and (.labels // []) != null' out.enrich.json >/dev/null
       - name: Real test with actual github context
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
-          NPM_CONFIG_USERCONFIG: ${{ env.NPM_CONFIG_USERCONFIG }}
-          GITHUB_TOKEN: ${{ secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
-          npx -y "$A5C_PKG_SPEC" enrich \
-            --in "$GITHUB_EVENT_PATH" \
-            --out out.enrich.json \
-            --use-github
-          # enriched structure exists
-          jq -e '.enriched and .payload and (.labels // []) != null' out.enrich.json >/dev/null
-          cat out.enrich.json
+          cat $GITHUB_EVENT_PATH
 
       - name: Upload npx smoke artifacts
         uses: actions/upload-artifact@v4

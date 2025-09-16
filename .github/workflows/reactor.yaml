@@ -9,6 +9,14 @@ on:
   repository_dispatch:
   check_run:
   check_suite:
+permissions:
+  contents: read
+  packages: read
+  id-token: write
+  actions: write
+  statuses: write
+  checks: write
+  repository-projects: write
 
 jobs:
   reactor:
