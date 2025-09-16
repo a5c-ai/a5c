@@ -56,7 +56,7 @@ describe("CLI exit codes", () => {
     const gh = out?.enriched?.github || {};
     expect(gh.provider).toBe("github");
     expect(gh.partial).toBe(true);
-    // Contract uses reason 'github_enrich_disabled' for offline mode
-    expect(gh.reason).toBe("github_enrich_disabled");
+    // Contract uses reason 'flag:not_set' for offline mode
+    expect(gh.reason).toBe("flag:not_set");
   });
 });
