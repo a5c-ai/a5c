@@ -152,7 +152,7 @@ events enrich --in samples/pull_request.synchronize.json \
 
 Mentions sources:
 
-- Allowed values for `mentions[].source`: `commit_message`, `pr_title`, `pr_body`, `issue_comment`, `code_comment`.
+- Allowed values for `mentions[].source`: `commit_message`, `pr_title`, `pr_body`, `issue_title`, `issue_body`, `issue_comment`, `code_comment`.
 - Mentions discovered within diffs/changed files are emitted as `source: code_comment` with `location.file` and `location.line` populated. There is no distinct `file_change` source.
 
 Mentions sources for GitHub Issues:
@@ -161,7 +161,7 @@ Mentions sources for GitHub Issues:
   - `issue.title` → entries with `source: "issue_title"`
   - `issue.body` → entries with `source: "issue_body"`
 
-These are included under `enriched.mentions` and are deduplicated by normalized target and location when applicable. If the same target appears in both title and body, only one entry is emitted.
+These are included under `enriched.mentions` and are deduplicated by normalized target and location on a per‑source basis. The same target may appear once for `issue_title` and once for `issue_body` when present in both.
 
 Note:
 
