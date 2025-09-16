@@ -89,7 +89,7 @@ Behavior:
   }
   ```
 
-  Note: Some older docs or validation notes may reference `reason: 'github_enrich_disabled'` for offline mode. The canonical offline reason is `flag:not_set`.
+  Note: Some older docs or validation notes may reference `reason: 'flag:not_set'` for offline mode. The canonical offline reason is `flag:not_set`.
 
 - Online enrichment: pass `--use-github` with a valid token to populate fields like `enriched.github.pr.mergeable_state`, `enriched.github.pr.files[]`, `enriched.github.branch_protection`, etc.
 - Missing token with `--use-github`: the CLI exits with code `3` (provider/network error) and prints an error message; no JSON is written.
