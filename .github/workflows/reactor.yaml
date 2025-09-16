@@ -2,6 +2,7 @@ name: Reactor
 on:
   push:
   pull_request:
+    types: [opened, reopened, ready_for_review]
   issue_comment:
   issues:
   workflow_dispatch:
