@@ -304,7 +304,7 @@ Offline vs token-missing notes:
     "github": {
       "provider": "github",
       "partial": true,
-      "reason": "github_enrich_disabled"
+      "reason": "flag:not_set"
     }
   }
 }
