@@ -145,7 +145,7 @@ Notes:
 - You don’t need to list JSX/TSX/YML explicitly; detection maps them to `js`/`ts`/`yaml` automatically.
   Examples:
 
-```bash
+````bash
 export GITHUB_TOKEN=...  # required for GitHub API lookups
 
 events enrich --in samples/pull_request.synchronize.json \
@@ -163,15 +163,33 @@ events enrich --in samples/pull_request.synchronize.json \
   --flag mentions.max_file_bytes=102400 \
   | jq '.enriched.mentions // [] | map(select(.source=="code_comment")) | length'
 
+## Mentions from GitHub Issues
+
+For `issues.*` payloads, `events enrich` extracts mentions from both the issue title and body when present.
+
+Example:
+
+```bash
+cat > /tmp/issue.json <<'JSON'
+{ "action": "opened", "issue": { "title": "Ping @developer-agent", "body": "Please review, @validator-agent" }, "repository": { "full_name": "a5c-ai/events" } }
+JSON
+
+events enrich --in /tmp/issue.json | jq '.enriched.mentions | map({source, target})'
+# → [{"source":"issue_title","target":"@developer-agent"}, {"source":"issue_body","target":"@validator-agent"}]
+````
+
 # With rules (composed events)
+
 events enrich --in samples/pull_request.synchronize.json \
-  --rules samples/rules/conflicts.yml \
-  | jq '(.composed // []) | map({key, reason})'
+ --rules samples/rules/conflicts.yml \
+ | jq '(.composed // []) | map({key, reason})'
 
 # JSON rules are also supported via the same `--rules` flag:
+
 events enrich --in samples/pull_request.synchronize.json \
-  --rules samples/rules/conflicts.json \
-  | jq '(.composed // []) | map({key, reason})'
+ --rules samples/rules/conflicts.json \
+ | jq '(.composed // []) | map({key, reason})'
+
 ```
 
 Mentions sources:
@@ -195,7 +213,7 @@ Note:
 - Programmatic API nuance: when using the SDK directly and `--use-github` semantics are requested without a token, some code paths may return a partial `enriched.github` with `reason: 'token:missing'` for testing with an injected Octokit. The CLI path exits with code `3` and does not emit JSON.
 - Redaction: CLI redacts sensitive keys and common secret patterns in output by default (see `src/utils/redact.ts`).
 
-````
+```
 
 Outputs:
 
@@ -206,7 +224,7 @@ Without network calls (mentions only):
 ```bash
 events enrich --in samples/push.json --out out.json
 jq '.enriched.mentions' out.json
-````
+```
 
 Include patch diffs explicitly (opt‑in):
 
