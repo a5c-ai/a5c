@@ -94,10 +94,8 @@ See: docs/specs/README.md#4.2-mentions-schema for full details.
   - `--flag mentions.scan.changed_files=<true|false>` (default: true)
   - `--flag mentions.max_file_bytes=<bytes>` (default: 200KB / 204800 bytes)
   - `--flag mentions.languages=<ext,...>` (optional list such as `ts,tsx,js,jsx,py,go,yaml`)
+  - See more: docs/cli/reference.md#events-enrich
   - `--use-github`: enable GitHub API enrichment (requires `GITHUB_TOKEN`)
-  - `--flag mentions.scan.changed_files=<true|false>`: enable scanning changed files for code-comment mentions (default: true)
-  - `--flag mentions.max_file_bytes=<bytes>`: max bytes per file for code-comment scanning (default: 204800)
-  - `--flag mentions.languages=js,ts,py`: optional allowlist of languages/extensions for code-comment scanning
   - `--select <paths>`: comma-separated dot paths to include in output
   - `--filter <expr>`: filter expression `path[=value]`; if not matching, exits with code 2 and no output
   - `--label <key=value...>`: attach labels to top‑level `labels[]`
