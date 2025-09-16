@@ -183,6 +183,7 @@ Behavior:
 
 - Redaction: payload is masked using the same rules as other commands (see `src/utils/redact.ts`). Sensitive keys and common secret patterns are redacted before emission.
 - Defaults: when `--sink` is omitted, `stdout` is used. When `--sink file` is set, `--out` is required; otherwise the command exits with code `1` and writes an error to stderr.
+- Auto-sink: if `--out` is provided without `--sink`, the sink is treated as `file`.
 
 Examples:
 
@@ -193,8 +194,18 @@ events emit --in samples/push.json
 # From stdin to stdout
 cat samples/push.json | events emit
 
-# To a file sink
+# Pipe from normalize
+events normalize --in samples/push.json | events emit
+
+# To a file sink (explicit)
 events emit --in samples/push.json --sink file --out out.json
+
+# To a file sink (implicit via --out)
+events emit --in samples/push.json --out out.json
+
+# Enrich then emit to artifact file
+events enrich --in samples/pr.json --out enriched.json \
+  && events emit --in enriched.json --sink file --out artifact.json
 ```
 
 Exit codes:
