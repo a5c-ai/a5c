@@ -124,6 +124,7 @@ Examples:
 
 - Offline enrichment sample (no `--use-github`): `docs/examples/enrich.offline.json` — minimal NE document without `enriched.github`.
 - Online enrichment sample (`--use-github` with token): `docs/examples/enrich.online.json` — includes `enriched.github.provider` and a minimal PR excerpt.
+  - CI escape hatch: set `A5C_EVENTS_AUTO_USE_GITHUB=true` to auto-enable GitHub enrichment when a token exists. Default remains offline unless the flag is explicitly provided.
 
 ## 5) Configuration
 
