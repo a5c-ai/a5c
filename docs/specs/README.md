@@ -48,6 +48,12 @@
 
 ### 4.1) GitHub Enrichment Details (MVP)
 
+Ownership semantics:
+
+- Per-file owners follow GitHub CODEOWNERS “last matching rule wins”.
+- For routing, enrichment also provides `owners_union` = sorted, de-duplicated union across all changed files.
+- A future toggle may allow choosing union vs. strict last-rule for routing targets.
+
 - commits (for push/pr): list last N commits with `{ sha, message, author {login,email}, committer {login}, stats {additions,deletions,total} }` and per-commit `files[]` with `{filename,status,additions,deletions,changes,patch?}`; configurable `max_commits` and `include_patch` (default false).
 - diffs: summary for event `{changed_files, additions, deletions}` plus `files[]` above. For large diffs, capture only filenames and stats unless explicitly enabled.
 - PR state: `{ number, draft, mergeable_state, has_conflicts: boolean, base, head, labels[], requested_reviewers[], requested_teams[] }`. Populate from GitHub API; `has_conflicts` derived from `mergeable_state in {"dirty","blocked"}`.
