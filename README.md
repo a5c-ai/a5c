@@ -53,10 +53,10 @@ Use a simple example, then see the CLI reference for the canonical flags and def
 # Disable scanning of changed files (code-comment mentions)
 events enrich --in ... --flag 'mentions.scan.changed_files=false'
 
-# Restrict code‑comment scanning to canonical language codes
-# Note: pass canonical codes used by the scanner (js, ts, py, go, yaml, md).
+# Restrict code‑comment scanning to canonical language IDs
+# Pass language IDs, not extensions: js, ts, py, go, java, c, cpp, sh, yaml, md.
 # Extensions are normalized internally for detection (.tsx→ts, .jsx→js, .yml→yaml),
-# but the allowlist compares codes.
+# but the allowlist compares the language IDs directly (values like .ts will not match).
 events enrich --in ... --flag "mentions.languages=ts,js"
 ```
 
