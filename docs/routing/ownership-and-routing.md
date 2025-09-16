@@ -17,49 +17,40 @@ docs/**             @a5c-ai/docs
 
 Tips:
 
-- Place more specific patterns lower; last match wins. (Order matters; the last matching rule per file takes precedence.)
+- Place more specific patterns higher; last match wins.
 - Prefer team handles over individuals.
 - Keep owners current to ensure accurate routing in CI and agent workflows.
 
-## Semantics: Union vs. Last-Rule
+## Semantics
 
-GitHub CODEOWNERS applies matching rules top-to-bottom per file; the last matching rule determines that file’s owners and thus review requirements.
+- GitHub CODEOWNERS (reference): for a given file, the last matching rule wins.
+- Enrichment here: compute `owners_union` = union of all owners across all changed files, then sort and de‑duplicate for routing.
 
-Event enrichment for routing computes both per-file owners and an `owners_union` across all changed files:
-
-- `enriched.github.pr.owners`: map of `file -> [owners]` using CODEOWNERS last-match per file.
-- `enriched.github.pr.owners_union`: sorted, de-duplicated union of all owners across changed files.
-
-Why union? Routing and notifications often need a superset of stakeholders for downstream agents (triage, review pings, labeling). Union minimizes surprise where multiple areas are touched.
-
-### Examples
-
-Example A (overlapping specific vs broad):
+Examples:
 
 ```ini
 # CODEOWNERS
 src/**          @team-src
-src/feature/**  @team-feature
+src/utils/**    @team-utils
 ```
 
-- File: `src/feature/util.ts` → per-file owners: `[@team-feature]` (last rule wins)
-- File: `src/common/helpers.ts` → per-file owners: `[@team-src]`
-- PR changes both → `owners_union = [@team-feature, @team-src]` (sorted, deduped)
-
-Example B (users and teams; markdown):
+- File: `src/app.ts` -> owners per file: `[@team-src]`
+- File: `src/utils/math.ts` -> owners per file: `[@team-utils]` (last rule wins for this file)
+- PR changes both files -> `owners_union = [@team-src, @team-utils]`
 
 ```ini
+# Overlapping with users and teams
 *.md            @docs-bot @a5c-ai/docs
 docs/**         @a5c-ai/docs
 ```
 
-- Files: `README.md`, `docs/guide.md` → union: `[@a5c-ai/docs, @docs-bot]`
+- Files: `README.md`, `docs/guide.md` -> union dedupes and sorts: `[@a5c-ai/docs, @docs-bot]`
 
 Rationale:
 
 - Routing favors broader notification to avoid missing stakeholders when multiple areas are touched.
-- Downstream agents can still implement stricter strategies if needed (e.g., use per-file last-rule owners only).
+- Downstream agents can still implement stricter strategies if needed (e.g., per-file last-rule owners).
 
-Future toggle (tracking): a configuration flag may allow switching between union-based routing and strict last-rule parity for PR-level owners.
+Future toggle (tracking):
 
-See also: `docs/specs/README.md` §4.1 for a concise specification note.
+- A configuration flag may allow switching between union-based routing and strict last-rule parity for PR-level owners.
