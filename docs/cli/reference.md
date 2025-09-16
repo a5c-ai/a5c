@@ -71,7 +71,7 @@ Enrich a normalized event (or raw GitHub payload) with repository and provider m
 Behavior:
 
 - No network calls are performed by default. In offline mode, `enriched.github = { provider: 'github', partial: true, reason: 'flag:not_set' }`.
-- Pass `--use-github` to enable GitHub API enrichment. If no token is configured, the CLI exits with code `3` (provider/network error) and prints an error.
+- Pass `--use-github` to enable GitHub API enrichment. If no token is configured, the CLI exits with code `3` (provider/network error). Programmatic usage of the enrich API returns `{ provider: 'github', partial: true, reason: 'token:missing' }` in this case.
 
 Usage:
 
@@ -91,13 +91,17 @@ events enrich --in FILE [--out FILE] [--rules FILE] \
   - Mentions scanning flags (code comments in changed files):
     - `mentions.scan.changed_files=true|false` (default: `true`) – enable/disable scanning code comments in changed files for `@mentions`
     - `mentions.max_file_bytes=<bytes>` (default: `204800`) – skip files larger than this many bytes when scanning
-    - `mentions.languages=<lang,...>` – optional allowlist of language codes to scan (e.g., `js,ts,py,go,yaml`). These are mapped from file extensions, for example: `.tsx` maps to `ts`, `.jsx` maps to `js`. When omitted, language/extension detection is used.
-    - Notes: Mentions found in file diffs or changed files are emitted with `source: code_comment` and include `location.file` and `location.line` when available.
+    - `mentions.languages=<lang,...>` – optional allowlist of language codes to scan (supported: `js,ts,py,go,java,c,cpp,sh,yaml,md`). When omitted, language is detected from filename extension. Note: extensions like `.tsx` and `.jsx` map to languages `ts` and `js`; use `js,ts` to include them.
 - `--use-github`: enable GitHub API enrichment; equivalent to `--flag use_github=true` (requires `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`). Without this flag, the CLI performs no network calls and sets `enriched.github = { provider: 'github', partial: true, reason: 'github_enrich_disabled' }`.
 - `--label KEY=VAL...`: labels to attach
 - `--select PATHS`: comma-separated dot paths to include in output
 - `--filter EXPR`: filter expression `path[=value]`; if it doesn't pass, exits with code `2`
 
+Mentions scanning (code comments in changed files):
+
+- `mentions.scan.changed_files=true|false` (default: `true`) – when `true`, scan changed files' patches for `@mentions` within code comments and add to `enriched.mentions[]` with `source="code_comment"` and `location` hints.
+- `mentions.max_file_bytes=<bytes>` (default: `200KB`) – skip scanning any single file patch larger than this cap.
+- `mentions.languages=lang1,lang2,...` (optional) – only scan files whose detected languages match one of these codes (e.g., `js,ts,yaml,md`). Use `js,ts` to include `.jsx/.tsx` files.
 Examples:
 
 ```bash
@@ -244,7 +248,7 @@ Exit codes:
   - Sensitive keys include: `token`, `secret`, `password`, `passwd`, `pwd`, `api_key`, `apikey`, `key`, `client_secret`, `access_token`, `refresh_token`, `private_key`, `ssh_key`, `authorization`, `auth`, `session`, `cookie`, `webhook_secret`.
   - Pattern masking includes (non-exhaustive): GitHub PATs (`ghp_`, `gho_`, `ghu_`, `ghs_`, `ghe_`), JWTs, `Bearer ...` headers, AWS `AKIA...`/`ASIA...` keys, Stripe `sk_live_`/`sk_test_`, Slack `xox...` tokens, and URL basic auth (`https://user:pass@host`).
 
-Offline vs token-missing examples:
+Offline vs token‑missing examples:
 Offline (no --use-github):
 
 ```json
@@ -253,7 +257,7 @@ Offline (no --use-github):
     "github": {
       "provider": "github",
       "partial": true,
-      "reason": "github_enrich_disabled"
+      "reason": "flag:not_set"
     }
   }
 }
@@ -266,7 +270,7 @@ With --use-github but token missing (exit code 3):
   "enriched": {
     "github": {
       "provider": "github",
-      "skipped": true,
+      "partial": true,
       "reason": "token:missing"
     }
   }
