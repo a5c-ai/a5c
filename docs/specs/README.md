@@ -63,7 +63,7 @@ Note: For routing, PR-level owners use a union-based `owners_union` across chang
   - target: `string` (raw mention, e.g., "@researcher-base-agent")
   - normalized_target: `string` (e.g., "researcher-base-agent")
   - kind: `agent|user|team|unknown`
-  - source: `commit_message|pr_title|pr_body|issue_comment|code_comment`
+  - source: `commit_message|pr_title|pr_body|issue_title|issue_body|issue_comment|code_comment`
     - Note: Mentions discovered within diffs/changed files are emitted as `source: code_comment` with `location.file` and `location.line` populated. A distinct `file_change` source is not used.
   - location: `{ file?: string, line?: number, commit_sha?: string, comment_id?: number }`
   - context: `string` short excerpt around the mention (<=140 chars)
