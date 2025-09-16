@@ -128,8 +128,8 @@ See also:
 
 Behavior:
 
-- Offline by default: without `--use-github`, no network calls occur. Output includes `enriched.github` with `partial=true` and `reason="github_enrich_disabled"`.
-- When `--use-github` is set but no token is configured, the CLI exits with code `3` (provider/network error) and prints an error. Use programmatic APIs with an injected Octokit for partial/offline testing if needed.
+- Offline by default: without `--use-github`, no network calls occur. Output includes `enriched.github = { provider: 'github', partial: true, reason: 'flag:not_set' }`.
+- When `--use-github` is set but no token is configured, the CLI exits with code `3` (provider/network error) and prints an error. Use programmatic APIs with an injected Octokit for testing scenarios if needed.
 
 Exit codes: `0` success, non‑zero on errors (invalid input, etc.).
 
@@ -280,7 +280,7 @@ export GITHUB_TOKEN=ghp_low_scope
 export A5C_AGENT_GITHUB_TOKEN=ghs_org_or_repo_scope
 events enrich --in samples/pull_request.synchronize.json --use-github | jq '.enriched.github.provider'
 
-# Missing token with --use-github: exits 3 and marks reason
+# Missing token with --use-github: exits 3
 unset GITHUB_TOKEN A5C_AGENT_GITHUB_TOKEN
 events enrich --in samples/pull_request.synchronize.json --use-github || echo $?
 # stderr: GitHub enrichment failed: ...
