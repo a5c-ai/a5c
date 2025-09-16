@@ -103,10 +103,10 @@ events enrich --in FILE [--out FILE] [--rules FILE] \
   - `commit_limit=<n>` (default: `50`) – limit commits fetched for PR/push
   - `file_limit=<n>` (default: `200`) – limit files per compare list
   - Mentions scanning flags (code comments in changed files) — canonical:
-    - `mentions.scan.changed_files=true|false` (default: `true`) – scan changed files for `@mentions` inside code comments
-    - `mentions.max_file_bytes=<bytes>` (default: `204800` ≈ 200KB) – skip files larger than this when scanning
-    - `mentions.languages=<ext,...>` – optional allowlist of file extensions to scan (e.g., `ts,tsx,js,jsx,py,go,yaml`). When omitted, detection is used.
-- `--use-github`: enable GitHub API enrichment; equivalent to `--flag use_github=true` (requires `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`). Without this flag, the CLI performs no network calls and sets `enriched.github = { provider: 'github', partial: true, reason: 'flag:not_set' }`.
+    - `mentions.scan.changed_files=true|false` (default: `true`) – scan changed files for `@mentions` inside code comments.
+    - `mentions.max_file_bytes=<bytes>` (default: `204800` ≈ 200KB) – per‑file byte cap; larger files are skipped.
+    - `mentions.languages=<ext,...>` – optional allowlist of file extensions (e.g., `ts,tsx,js,jsx,py,go,yaml`). When omitted, the scanner uses filename/heuristics; using `js,ts` also covers `jsx,tsx`.
+  - `--use-github`: enable GitHub API enrichment; equivalent to `--flag use_github=true` (requires `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`). Without this flag, the CLI performs no network calls and sets `enriched.github = { provider: 'github', partial: true, reason: 'flag:not_set' }`.
 - `--label KEY=VAL...`: labels to attach
 - `--select PATHS`: comma-separated dot paths to include in output
 - `--filter EXPR`: filter expression `path[=value]`; if it doesn't pass, exits with code `2`
@@ -114,8 +114,8 @@ events enrich --in FILE [--out FILE] [--rules FILE] \
 Mentions scanning (code comments in changed files):
 
 - `mentions.scan.changed_files=true|false` (default: `true`) – when `true`, scan changed files' patches for `@mentions` within code comments and add to `enriched.mentions[]` with `source="code_comment"` and `location` hints.
-- `mentions.max_file_bytes=<bytes>` (default: `200KB`) – skip scanning any single file patch larger than this cap.
-- `mentions.languages=lang1,lang2,...` (optional) – only scan files whose detected languages match one of these codes (e.g., `js,ts,yaml,md`). Use `js,ts` to include `.jsx/.tsx` files.
+- `mentions.max_file_bytes=<bytes>` (default: `204800` ≈ 200KB) – skip scanning any single file larger than this cap.
+- `mentions.languages=<ext,...>` (optional) – only scan files whose extensions match the allowlist (e.g., `ts,tsx,js,jsx,py,go,yaml`). Using `js,ts` also covers `.jsx/.tsx`.
   Examples:
 
 ```bash
