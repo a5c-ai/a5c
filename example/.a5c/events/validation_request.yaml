@@ -5,8 +5,7 @@ on:
 emit:
   pull_request_ready_for_review:
     type: ready_for_review
-    phase: validation
-    labels: [validation]
+    labels: []
     payload:
       original_event: ${{ event }}
       pr_ref: ${{ event.pull_request.head.ref }}
@@ -16,7 +15,6 @@ emit:
 on:
   pull_request_ready_for_review:
     labels: [validation]
-    phase: [validation]
 emit:
   validation_request:
     type: created
