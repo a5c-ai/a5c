@@ -3,12 +3,14 @@
 Start: 20250916T035500Z
 
 ## Goal
-Use  in offline GitHub enrichment; remove references to  across code, tests, goldens, and docs.
+
+Use `reason: 'github_enrich_disabled'` in offline GitHub enrichment; remove references to `flag:not_set` across code, tests, goldens, and docs.
 
 ## Plan
-- Update  offline reason.
-- Update tests:  expectations.
-- Update goldens: .
+
+- Update `src/enrich.ts` offline reason.
+- Update tests: expect `github_enrich_disabled`.
+- Update goldens: `reason: 'github_enrich_disabled'`.
 - Docs sweep: README, docs/cli/reference.md, user quickstart, validation notes.
 - Build and run tests; verify CLI command outputs new reason.
 
