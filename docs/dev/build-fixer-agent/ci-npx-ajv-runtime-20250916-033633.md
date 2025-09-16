@@ -15,3 +15,12 @@
 ## Notes
 
 Ajv is imported at runtime by `src/cli.ts` for `validate` command. It must be a runtime dependency for the published package.
+
+## Verification
+
+- Installed deps and built locally.
+- `node dist/cli.js --help` runs without Ajv module error.
+
+## Change Summary
+
+- Move `ajv` from devDependencies to dependencies.
