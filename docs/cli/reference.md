@@ -110,7 +110,7 @@ Behavior:
   }
   ```
 
-  Note: Some older docs or validation notes may reference a legacy offline reason value. The canonical offline reason is `flag:not_set`.
+  Note: Some older docs or validation notes may reference a legacy offline reason value. The canonical offline reason is `flag:not_set` and is treated as a stable contract across minor releases.
 
 - Online enrichment: pass `--use-github` with a valid token to populate fields like `enriched.github.pr.mergeable_state`, `enriched.github.pr.files[]`, `enriched.github.branch_protection`, etc.
 - Missing token with `--use-github`: the CLI exits with code `3` (provider/network error) and prints an error message; no JSON is written.
@@ -144,7 +144,7 @@ events enrich --in FILE [--out FILE] [--rules FILE] \
   - `mentions.max_file_bytes=<bytes>` (default: `204800`) – skip files larger than this many bytes when scanning
   - `mentions.languages=<ext,...>` – optional allowlist of file extensions to scan (e.g., `ts,tsx,js,jsx,py,go,yaml`). When omitted, language/extension detection is used.
   - Notes: Mentions found in file diffs or changed files are emitted with `source: code_comment` and include `location.file` and `location.line` when available.
-- `--use-github`: enable GitHub API enrichment; equivalent to `--flag use_github=true` (requires `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`). Without this flag, the CLI performs no network calls and the CLI uses a stub under `enriched.github` (see above). The exact `reason` value is implementation-defined and may evolve; current default is `flag:not_set`.
+- `--use-github`: enable GitHub API enrichment; equivalent to `--flag use_github=true` (requires `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`). Without this flag, the CLI performs no network calls and the CLI uses a stub under `enriched.github` (see above). The `reason` value for offline mode is canonical and stable across minor releases: `flag:not_set`.
 - `--label KEY=VAL...`: labels to attach
 - `--select PATHS`: comma-separated dot paths to include in output
 - `--filter EXPR`: filter expression `path[=value]`; if it doesn't pass, exits with code `2`
