@@ -1,6 +1,6 @@
 import type { NormalizedEvent, Mention } from "./types.js";
 import { readJSONFile, loadConfig } from "./config.js";
-import { extractMentions } from "./extractor.js";
+import { extractMentions, dedupeMentions } from "./extractor.js";
 import { isBinaryPatch } from "./codeComments.js";
 import { scanMentionsInCodeComments } from "./utils/commentScanner.js";
 import { evaluateRulesDetailed, loadRules } from "./rules.js";
@@ -468,6 +468,11 @@ export async function handleEnrich(opts: {
     }
   } catch {}
 
+  // De-duplicate mentions (per-source/location) before attaching to output
+  const normalizedMentions: Mention[] = dedupeMentions(
+    mentions.map((m) => normalizeCodeCommentLocation(m)),
+  );
+
   const output: NormalizedEvent = {
     ...(neShell as any),
     enriched: {
@@ -478,7 +483,7 @@ export async function handleEnrich(opts: {
         ...(neShell.enriched?.derived || {}),
         flags: opts.flags || {},
       },
-      ...(mentions.length ? { mentions } : {}),
+      ...(normalizedMentions.length ? { mentions: normalizedMentions } : {}),
     },
   };
 
