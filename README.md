@@ -1,85 +1,8 @@
-[![99% built by agents](https://img.shields.io/badge/99%25-built%20by%20agents-blue.svg)](https://a5c.ai)
+[![99% built by agents](https://img.shields.io/badge/99%25-built%20by%20agents-blue.svg)](https://a5c.ai)# @a5c-ai/events – Events SDK & CLINormalize and enrich GitHub (and other) events for agentic workflows. Use the CLI in CI or locally to turn raw webhook/Actions payloads into a compact, consistent schema that downstream agents and automations can trust.- Quick install via npm- Commands: `events mentions`, `events normalize`, `events enrich`, `events emit`, `events validate`- Output: JSON to stdout or file- Extensible via provider adapters and enrichers## Ownership & RoutingSee docs/routing/ownership-and-routing.md for how CODEOWNERS drives routing and how owners_union is used in enrichment.## Quick StartPrerequisites:- Node.js 20.x LTS (see `.nvmrc` for CI parity). - If you use `nvm`, run `nvm use` in the project root.Install:`bashnpm install @a5c-ai/events# or for CLI-only usagenpm install -g @a5c-ai/events`Try it:`bash# Normalize a payload filenpx @a5c-ai/events normalize --in samples/workflow_run.completed.json --out out.json# Inspect selected fieldsjq '.type, .repo.full_name, .provenance.workflow?.name' out.json# Validate against the NE schema (quiet on success)cat out.json | npx @a5c-ai/events validate --quiet`## CLI Reference### Mentions config (Quick Start)Control where and how mentions are scanned during `enrich`:`bash# Disable scanning changed files for code-comment mentionsevents enrich --in ... --flag 'mentions.scan.changed_files=false'# Limit per-file bytes when scanning code comments (default: 200KB / 204800 bytes)events enrich --in ... --flag 'mentions.max_file_bytes=65536'# Restrict code-comment scanning to specific languagesevents enrich --in ... --flag "mentions.languages=ts,js,md"`See: docs/specs/README.md#4.2-mentions-schema for full details.`events mentions`- Purpose: Extract @mentions from text (stdin) or a file.- Common flags: - `--source <kind>`: `pr_body|pr_title|commit_message|issue_comment` (default: `pr_body`) - `--file <path>`: read from file instead of stdin - `--window <n>`: context window size (default: 30) - `--known-agent <name...>`: known agent names to boost confidence`events normalize`- Purpose: Convert a raw provider payload into the normalized Event schema.- Common flags: - `--in <file>`: input JSON file (raw event) - `--out <file>`: write result to file (default: stdout)<<<<<<< HEAD - `--source <name>`: provenance (`action|webhook|cli`) [default: `cli`]======= - `--source <name>`: provenance (`action|webhook|cli`) - Tip: The CLI accepts `actions` as an input alias for convenience when running in GitHub Actions, but the persisted `provenance.source` is normalized to `action`. [default: `cli`]>>>>>>> origin/a5c/main
 
-# @a5c-ai/events – Events SDK & CLI
-
-Normalize and enrich GitHub (and other) events for agentic workflows. Use the CLI in CI or locally to turn raw webhook/Actions payloads into a compact, consistent schema that downstream agents and automations can trust.
-
-- Quick install via npm
-- Commands: `events mentions`, `events normalize`, `events enrich`, `events emit`, `events validate`
-- Output: JSON to stdout or file
-- Extensible via provider adapters and enrichers
-
-## Ownership & Routing
-
-See docs/routing/ownership-and-routing.md for how CODEOWNERS drives routing and how owners_union is used in enrichment.
-
-## Quick Start
-
-Prerequisites:
-
-- Node.js 20.x LTS (see `.nvmrc` for CI parity).
-  - If you use `nvm`, run `nvm use` in the project root.
-
-Install:
-
-```bash
-npm install @a5c-ai/events
-# or for CLI-only usage
-npm install -g @a5c-ai/events
-```
-
-Try it:
-
-```bash
-# Normalize a payload file
-npx @a5c-ai/events normalize --in samples/workflow_run.completed.json --out out.json
-
-# Inspect selected fields
-jq '.type, .repo.full_name, .provenance.workflow?.name' out.json
-
-# Validate against the NE schema (quiet on success)
-cat out.json | npx @a5c-ai/events validate --quiet
-```
-
-## CLI Reference
-
-### Mentions config (Quick Start)
-
-Control where and how mentions are scanned during `enrich`:
-
-```bash
-# Disable scanning changed files for code-comment mentions
-events enrich --in ... --flag 'mentions.scan.changed_files=false'
-
-# Limit per-file bytes when scanning code comments (default: 200KB / 204800 bytes)
-events enrich --in ... --flag 'mentions.max_file_bytes=65536'
-
-# Restrict code-comment scanning to specific languages
-events enrich --in ... --flag "mentions.languages=ts,js,md"
-```
-
-See: docs/specs/README.md#4.2-mentions-schema for full details.
-
-`events mentions`
-
-- Purpose: Extract @mentions from text (stdin) or a file.
-- Common flags:
-  - `--source <kind>`: `pr_body|pr_title|commit_message|issue_comment` (default: `pr_body`)
-  - `--file <path>`: read from file instead of stdin
-  - `--window <n>`: context window size (default: 30)
-  - `--known-agent <name...>`: known agent names to boost confidence
-
-`events normalize`
-
-- Purpose: Convert a raw provider payload into the normalized Event schema.
-- Common flags:
-  - `--in <file>`: input JSON file (raw event)
-  - `--out <file>`: write result to file (default: stdout)
-  - `--source <name>`: provenance (`action|webhook|cli`)
-    - Tip: The CLI accepts `actions` as an input alias for convenience when running in GitHub Actions, but the persisted `provenance.source` is normalized to `action`. [default: `cli`]
-  - `--select <paths>`: comma-separated dot paths to include in output
-  - `--filter <expr>`: filter expression `path[=value]`; if not matching, exits with code 2 and no output
-  - `--label <key=value...>`: attach labels to top‑level `labels[]` (repeatable)
+- `--select <paths>`: comma-separated dot paths to include in output
+- `--filter <expr>`: filter expression `path[=value]`; if not matching, exits with code 2 and no output
+- `--label <key=value...>`: attach labels to top‑level `labels[]` (repeatable)
 
 `events enrich`
 
@@ -182,7 +105,8 @@ GitHub Actions (normalize current run):
 - name: Normalize workflow_run
   run: |
     npx @a5c-ai/events normalize \
-      --source actions \
+      --source action \
+
       --in "$GITHUB_EVENT_PATH" \
       --out event.json
     # Note: --source actions is accepted as an alias; the stored value will be provenance.source: "action".
@@ -269,7 +193,6 @@ After the first successful upload, add a badge to this README:
 ```
 
 Replace the URL to match your VCS provider and repository if different. Private projects may require a tokenized badge; see Codecov docs.
-
 
 ### Auth tokens: precedence & redaction
 
