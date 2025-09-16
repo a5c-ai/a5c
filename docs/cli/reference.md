@@ -140,9 +140,9 @@ events enrich --in FILE [--out FILE] [--rules FILE] \
     - `mentions.scan.commit_messages=true|false` (default: `true`) – enable/disable scanning commit messages for `@mentions`
     - `mentions.scan.issue_comments=true|false` (default: `true`) – enable/disable scanning issue comments for `@mentions`
 - `--use-github`: enable GitHub API enrichment; equivalent to `--flag use_github=true` (requires `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`). Without this flag, the CLI performs no network calls and sets `enriched.github = { provider: 'github', partial: true, reason: 'flag:not_set' }`.
-    - `mentions.max_file_bytes=<bytes>` (default: `204800`) – skip files larger than this many bytes when scanning
-    - `mentions.languages=<ext,...>` – optional allowlist of file extensions to scan (e.g., `ts,tsx,js,jsx,py,go,yaml`). When omitted, language/extension detection is used.
-    - Notes: Mentions found in file diffs or changed files are emitted with `source: code_comment` and include `location.file` and `location.line` when available.
+  - `mentions.max_file_bytes=<bytes>` (default: `204800`) – skip files larger than this many bytes when scanning
+  - `mentions.languages=<ext,...>` – optional allowlist of file extensions to scan (e.g., `ts,tsx,js,jsx,py,go,yaml`). When omitted, language/extension detection is used.
+  - Notes: Mentions found in file diffs or changed files are emitted with `source: code_comment` and include `location.file` and `location.line` when available.
 - `--use-github`: enable GitHub API enrichment; equivalent to `--flag use_github=true` (requires `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`). Without this flag, the CLI performs no network calls and the CLI uses a stub under `enriched.github` (see above). The exact `reason` value is implementation-defined and may evolve; current default is `flag:not_set`.
 - `--label KEY=VAL...`: labels to attach
 - `--select PATHS`: comma-separated dot paths to include in output
@@ -305,16 +305,16 @@ jq '(.composed // []) | map({key, reason})'
 
 ### `events emit`
 
-Emit a JSON event to a sink (stdout or file). The payload is redacted before being written.
+Emit a JSON event to a sink (`stdout`, `file`, or `github`). The payload is redacted before being written or dispatched.
 
 Usage:
 
 ```bash
-events emit [--in FILE] [--sink <stdout|file>] [--out FILE]
+events emit [--in FILE] [--sink <stdout|file|github>] [--out FILE]
 ```
 
 - `--in FILE`: input JSON file (reads from stdin if omitted)
-- `--sink <name>`: sink name; `stdout` (default) or `file`
+- `--sink <name>`: sink name; `stdout` (default), `file`, or `github`
 - `--out FILE`: output file path (required when `--sink file`)
 
 Behavior:
@@ -322,6 +322,20 @@ Behavior:
 - Redaction: payload is masked using the same rules as other commands (see `src/utils/redact.ts`). Sensitive keys and common secret patterns are redacted before emission.
 - Defaults: when `--sink` is omitted, `stdout` is used. When `--sink file` is set, `--out` is required; otherwise the command exits with code `1` and writes an error to stderr.
 - Auto-sink: if `--out` is provided without `--sink`, the sink is treated as `file`.
+
+GitHub sink
+
+Dispatches a `repository_dispatch` event to the repository in `GITHUB_REPOSITORY`.
+
+- Required env:
+  - `GITHUB_TOKEN` (or `A5C_AGENT_GITHUB_TOKEN`) — token with `repo` scope that can call the Repository Dispatch API.
+  - `GITHUB_REPOSITORY` — target repository in `owner/repo` form.
+- Event mapping (per `src/emit.ts`):
+  - `event_type` is taken from `event.event_type || event.type || "custom"`.
+  - `client_payload` is taken from `event.client_payload || event.payload || event`.
+  - If the input is `{ events: [...] }`, each item is dispatched; otherwise, the single input object is dispatched once.
+- Redaction applies before dispatch. Ensure secrets aren't included; redaction masks common keys but cannot guarantee all sensitive data is removed.
+- Rate limits and permissions apply. The token must have permission on the target repo. Dispatches are best-effort; failures exit with code `1` and print an error.
 
 Examples:
 
@@ -344,12 +358,34 @@ events emit --in samples/push.json --out out.json
 # Enrich then emit to artifact file
 events enrich --in samples/pr.json --out enriched.json \
   && events emit --in enriched.json --sink file --out artifact.json
+
+# Dispatch to GitHub (repository_dispatch)
+export GITHUB_TOKEN=ghp_...                 # or A5C_AGENT_GITHUB_TOKEN
+export GITHUB_REPOSITORY=a5c-ai/events      # owner/repo
+
+# Minimal event (type inferred → "custom")
+events emit --in samples/push.json --sink github
+
+# Explicit event_type and client_payload
+cat > /tmp/dispatch.json << 'JSON'
+{ "event_type": "ci:notify", "client_payload": { "status": "ok", "run_id": 123 } }
+JSON
+events emit --in /tmp/dispatch.json --sink github
+
+# Batch dispatch (array under `events[]`)
+cat > /tmp/batch.json << 'JSON'
+{ "events": [
+  { "type": "ci:notify", "payload": { "status": "ok" } },
+  { "type": "ci:notify", "payload": { "status": "failed", "reason": "lint" } }
+]}
+JSON
+events emit --in /tmp/batch.json --sink github
 ```
 
 Exit codes:
 
 - `0`: success
-- `1`: error (I/O, JSON parse, or missing `--out` for file sink)
+- `1`: error (I/O, JSON parse, missing `--out` for file sink, or GitHub dispatch failure/missing env)
 
 ### `events validate`
 
