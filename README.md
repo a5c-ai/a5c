@@ -52,6 +52,12 @@ Use a simple example, then see the CLI reference for canonical flags and default
 ```bash
 # Disable scanning of changed files (code-comment mentions)
 events enrich --in ... --flag 'mentions.scan.changed_files=false'
+
+# Restrict code‑comment scanning to canonical language codes
+# Note: pass canonical codes used by the scanner (js, ts, py, go, yaml, md).
+# Extensions are normalized internally for detection (.tsx→ts, .jsx→js, .yml→yaml),
+# but the allowlist compares codes.
+events enrich --in ... --flag "mentions.languages=ts,js"
 ```
 
 Full reference and examples: docs/cli/reference.md#events-enrich
@@ -87,7 +93,7 @@ Full reference and examples: docs/cli/reference.md#events-enrich
 - `--flag include_patch=<true|false>`: include diff patches in files (default: false)
 - `--flag commit_limit=<n>`: max commits to include (default: 50)
 - `--flag file_limit=<n>`: max files to include (default: 200)
-- Mentions scanning flags are documented once in the CLI reference at `docs/cli/reference.md#events-enrich` and are the canonical source of truth for wording and defaults.
+- Mentions scanning flags are centralized in `docs/cli/reference.md` (see that section for canonical wording and defaults).
 - `--use-github`: enable GitHub API enrichment (requires `GITHUB_TOKEN`)
 - `--select <paths>`: comma-separated dot paths to include in output
 - `--filter <expr>`: filter expression `path[=value]`; if not matching, exits with code 2 and no output
@@ -95,9 +101,14 @@ Full reference and examples: docs/cli/reference.md#events-enrich
 
 #### Mentions flags
 
-For the authoritative list and defaults for Mentions controls during `enrich` (including `mentions.scan.changed_files`, `mentions.max_file_bytes`, and `mentions.languages`), see the CLI reference: `docs/cli/reference.md#events-enrich`.
+Common flags to control Mentions extraction during `enrich` (particularly for `source=code_comment` in changed files):
 
-Quick examples:
+- `--flag mentions.scan.changed_files=<true|false>` — enable scanning code comments in changed files for `@mentions` (default: `true`).
+- `--flag mentions.max_file_bytes=<bytes>` — per‑file size cap when scanning code comments (default: `200KB` / `204800`). Files larger than this are skipped.
+  - `--flag mentions.languages=<lang,...>` — optional allowlist of canonical language codes to scan (e.g., `js,ts,py,go,yaml,md`). When omitted, the scanner uses filename/heuristics.
+    - Mapping note: extensions are normalized to codes during detection (e.g., `.tsx → ts`, `.jsx → js`, `.yml → yaml`), but the filter list compares codes.
+
+Examples:
 
 ```bash
 # Disable scanning changed files for code‑comment mentions
@@ -106,14 +117,14 @@ events enrich --in samples/pull_request.synchronize.json \
 
 # Restrict to specific languages and lower the size cap
 events enrich --in samples/pull_request.synchronize.json \
-  --flag mentions.languages=ts,tsx,js \
+  --flag mentions.languages=ts,js \
   --flag mentions.max_file_bytes=102400
 ```
 
 See also:
 
 - Specs: `docs/specs/README.md#42-mentions-schema`
-- CLI reference: `docs/cli/reference.md#events-enrich`
+- CLI reference: `docs/cli/reference.md` (enrich > Mentions scanning flags)
 
 Behavior:
 
@@ -136,7 +147,7 @@ Limit scanned file size and restrict to TS/JS:
 ```bash
 events enrich --in samples/pull_request.synchronize.json \
   --flag mentions.max_file_bytes=102400 \
-  --flag mentions.languages=ts,tsx,js,jsx
+  --flag mentions.languages=ts,js
 ```
 
 ## Normalized Event Schema (MVP)
