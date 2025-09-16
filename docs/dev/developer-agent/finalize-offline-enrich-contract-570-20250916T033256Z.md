@@ -1,5 +1,4 @@
 [Note] Updated semantics: offline reason is `flag:not_set` (replaced prior `github_enrich_disabled`). See `docs/cli/reference.md` for canonical behavior.
-
 # Finalize offline GitHub enrichment contract — sync code and docs (Issue #570)
 
 ## Context
