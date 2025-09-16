@@ -112,6 +112,11 @@ Example mention from a code comment:
 }
 ```
 
+Examples:
+
+- Offline enrichment sample (no `--use-github`): `docs/examples/enrich.offline.json` — minimal NE document without `enriched.github`.
+- Online enrichment sample (`--use-github` with token): `docs/examples/enrich.online.json` — includes `enriched.github.provider` and a minimal PR excerpt.
+
 ## 5) Configuration
 
 - Env vars: `GITHUB_TOKEN` (or custom `A5C_AGENT_GITHUB_TOKEN`), debug flags, provider-specific tokens.

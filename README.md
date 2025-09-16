@@ -232,14 +232,19 @@ events normalize --in samples/pull_request.synchronize.json \
 jq '.type, .labels' out.json
 ```
 
-Enrichment (with GitHub lookups enabled):
+Enrichment (offline vs online):
 
 ```bash
+# Offline (default; no network calls)
+events enrich --in samples/pull_request.synchronize.json --out enriched.offline.json
+jq '.enriched.github // { partial: "offline" }' enriched.offline.json
+
+# Online (GitHub enrichment; requires token)
 export GITHUB_TOKEN=ghp_your_token_here
 events enrich --in samples/pull_request.synchronize.json \
   --flag include_patch=false --flag commit_limit=50 --flag file_limit=200 \
-  --use-github --out enriched.json
-jq '.enriched' enriched.json
+  --use-github --out enriched.online.json
+jq '.enriched.github.provider' enriched.online.json
 ```
 
 With rules (composed events):
@@ -250,6 +255,11 @@ events enrich --in samples/pull_request.synchronize.json \
   | jq '(.composed // []) | map({key, reason})'
   # note: `reason` may be omitted depending on rule configuration
 ```
+
+See also sample outputs:
+
+- docs/examples/enrich.offline.json
+- docs/examples/enrich.online.json
 
 ## Coverage (Optional)
 
