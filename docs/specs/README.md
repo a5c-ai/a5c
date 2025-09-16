@@ -31,7 +31,7 @@
   - ref: { name, type, sha, base?: sha, head?: sha }
     - ref.type enum: `branch | tag | pr | unknown`
     - Notes:
-      - pull_request events use `ref.type: "branch"` and populate `ref.base` and `ref.head` with the base and head branch names respectively.
+      - pull_request events currently emit branch semantics in code: `ref.type: "branch"` with `ref.base` and `ref.head` populated (see `src/providers/github/map.ts`). The schema allows `pr` for future flexibility, but normalization maps PRs to branch semantics today.
       - push/workflow_run typically use `ref.type: "branch"`; tags use `ref.type: "tag"`.
       - when the ref cannot be categorized, use `ref.type: "unknown"`.
   - actor: { id, login, type }
