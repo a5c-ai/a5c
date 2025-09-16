@@ -107,6 +107,8 @@ Common flags to control Mentions extraction during `enrich` (particularly for `s
 - `--flag mentions.max_file_bytes=<bytes>` — per‑file size cap when scanning code comments (default: `200KB` / `204800`). Files larger than this are skipped.
   - `--flag mentions.languages=<lang,...>` — optional allowlist of canonical language codes to scan (e.g., `js,ts,py,go,yaml,md`). When omitted, the scanner uses filename/heuristics.
     - Mapping note: extensions are normalized to codes during detection (e.g., `.tsx → ts`, `.jsx → js`, `.yml → yaml`), but the filter list compares codes.
+  - `--flag mentions.scan.commit_messages=<true|false>` — enable scanning commit messages for `@mentions` (default: `true`).
+  - `--flag mentions.scan.issue_comments=<true|false>` — enable scanning issue comment bodies for `@mentions` (default: `true`).
 
 Examples:
 
@@ -298,7 +300,7 @@ events enrich --in samples/pull_request.synchronize.json \
   | jq '.enriched.mentions // [] | map(select(.source=="code_comment")) | length'
 ```
 
-See also: CLI reference for flags and exit codes: `docs/cli/reference.md`.
+See also: CLI reference for flags and exit codes: `docs/cli/reference.md`. Cross‑link: `docs/cli/code-comment-mentions.md` and specs §4.2 in `docs/specs/README.md`.
 
 ### Validate against schema
 
