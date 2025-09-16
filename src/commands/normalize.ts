@@ -46,10 +46,6 @@ export async function runNormalize(opts: {
   }
 }
 // Command-layer wrapper to keep CLI thin
-function coerceSource(val?: string): string | undefined {
-  if (!val) return val;
-  return val === "actions" ? "action" : val;
-}
 
 export async function cmdNormalize(opts: {
   in?: string;
