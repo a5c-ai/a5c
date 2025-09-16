@@ -1,60 +1,17 @@
 {
-  "id": "online-demo-1",
+  "id": "example-online-1",
   "provider": "github",
   "type": "pull_request",
   "occurred_at": "2025-09-16T00:00:00Z",
-  "repo": {
-    "id": 1,
-    "name": "events",
-    "full_name": "a5c-ai/events",
-    "private": true
-  },
+  "repo": { "id": 1, "name": "events", "full_name": "a5c-ai/events", "private": true },
   "actor": { "id": 2, "login": "octocat", "type": "User" },
-  "payload": { "pull_request": { "number": 123 } },
-  "provenance": { "source": "cli" },
+  "payload": { "pull_request": { "number": 42 } },
   "enriched": {
     "github": {
       "provider": "github",
-      "partial": false,
-      "pr": {
-        "number": 123,
-        "draft": false,
-        "mergeable_state": "dirty",
-        "has_conflicts": true,
-        "base": "main",
-        "head": "feature/branch",
-        "labels": ["priority:low"],
-        "requested_reviewers": [],
-        "requested_teams": []
-      },
-      "diff": {
-        "changed_files": 3,
-        "additions": 42,
-        "deletions": 10,
-        "files": [
-          {
-            "filename": "src/index.ts",
-            "status": "modified",
-            "additions": 10,
-            "deletions": 2,
-            "changes": 12
-          },
-          {
-            "filename": "src/util.ts",
-            "status": "added",
-            "additions": 30,
-            "deletions": 0,
-            "changes": 30
-          },
-          {
-            "filename": "README.md",
-            "status": "modified",
-            "additions": 2,
-            "deletions": 8,
-            "changes": 10
-          }
-        ]
-      }
+      "pr": { "number": 42, "draft": false, "mergeable_state": "dirty", "has_conflicts": true },
+      "partial": false
     }
-  }
+  },
+  "provenance": { "source": "cli" }
 }

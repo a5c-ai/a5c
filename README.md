@@ -215,6 +215,13 @@ GitHub Actions (normalize current run):
       --in "$GITHUB_EVENT_PATH" \
       --out event.json
 jq '.type, .repo.full_name, .labels' event.json
+
+### Enrichment examples
+
+- Offline (no `enriched` block): `docs/examples/enrich.offline.json`
+- Online (includes minimal `enriched.github`): `docs/examples/enrich.online.json`
+
+Both examples conform to the NE schema (`docs/specs/ne.schema.json`) and are validated in CI.
 ```
 
 Local payload file:
