@@ -5,11 +5,11 @@ Started: 20250916T102426Z
 ## Context
 
 - File: docs/specs/README.md (§5 Configuration)
-- Problem: Duplicate and contradictory bullets for CLI flags /.
+- Problem: Duplicate and contradictory bullets for CLI flags --select/--filter.
 
 ## Plan
 
-1. Keep a single canonical bullet: implemented flags include and .
+1. Keep a single canonical bullet: implemented flags include --select and --filter.
 2. Remove duplicate/"planned" lines that contradict implementation.
 3. Add a pointer to CLI reference: docs/cli/reference.md.
 
