@@ -73,6 +73,21 @@ Notes:
 
 Enrich a normalized event (or raw GitHub payload) with repository and provider metadata.
 
+Recommended flow
+
+- Normalize first, then enrich. This produces predictable NE fields and avoids the minimal shell fallback when passing raw payloads directly to `enrich`.
+
+Example pipeline:
+
+```bash
+events normalize --in samples/pull_request.synchronize.json \
+  | events enrich --out enriched.json
+```
+
+See also:
+
+- Normalization reference: `docs/cli/reference.md#events-normalize` (including `--source actions` usage in GitHub Actions)
+
 Behavior:
 
 - Offline by default: no network calls without `--use-github`. Output includes a minimal stub under `enriched.github`:
@@ -94,7 +109,7 @@ Behavior:
   }
   ```
 
-  Note: Some older docs or validation notes may reference `reason: 'github_enrich_disabled'` for offline mode. The canonical offline reason is `flag:not_set`.
+  Note: Some older docs or validation notes may reference `reason: 'flag:not_set'` for offline mode. The canonical offline reason is `flag:not_set`.
 
 - Online enrichment: pass `--use-github` with a valid token to populate fields like `enriched.github.pr.mergeable_state`, `enriched.github.pr.files[]`, `enriched.github.branch_protection`, etc.
 - Missing token with `--use-github`: the CLI exits with code `3` (provider/network error) and prints an error message; no JSON is written.
@@ -114,8 +129,10 @@ events enrich --in FILE [--out FILE] [--rules FILE] \
   - `include_patch=true|false` (default: `false`) – include diff patches; when `false`, patches are removed. Defaulting to false avoids leaking secrets via diffs and keeps outputs small; enable only when required.
   - `commit_limit=<n>` (default: `50`) – limit commits fetched for PR/push
   - `file_limit=<n>` (default: `200`) – limit files per compare list
-  - Mentions scanning flags (code comments in changed files) — canonical:
-    - `mentions.scan.changed_files=true|false` (default: `true`) – scan changed files for `@mentions` inside code comments
+  - Mentions scanning flags:
+    - `mentions.scan.commit_messages=true|false` (default: `true`) – enable/disable scanning commit messages
+    - `mentions.scan.issue_comments=true|false` (default: `true`) – enable/disable scanning issue comment bodies
+    - `mentions.scan.changed_files=true|false` (default: `true`) – enable/disable scanning code comments in changed files for `@mentions`
     - `mentions.max_file_bytes=<bytes>` (default: `204800` ≈ 200KB) – skip files larger than this when scanning
     - `mentions.languages=<lang,...>` – optional allowlist of canonical language codes to scan. Accepted values are language IDs, not extensions: `js, ts, py, go, java, c, cpp, sh, yaml, md`.
       - Mapping note: extensions are normalized to codes during detection (e.g., `.tsx → ts`, `.jsx → js`, `.yml → yaml`), but the allowlist itself compares the language IDs directly. Dot‑prefixed values like `.ts` are not supported and will not match.
@@ -159,10 +176,17 @@ events enrich --in samples/pull_request.synchronize.json \
   --use-github \
   | jq '.enriched.github.pr.mergeable_state'
 
-# Mentions scanning controls (code comments in changed files)
+# Mentions scanning controls
 # Disable scanning entirely
 events enrich --in samples/pull_request.synchronize.json \
   --flag mentions.scan.changed_files=false | jq '.enriched.mentions // [] | length'
+
+# Disable commit and/or issue comment scanning
+events enrich --in samples/push.json \
+  --flag 'mentions.scan.commit_messages=false' | jq '.enriched.mentions // [] | map(select(.source=="commit_message")) | length'
+
+events enrich --in samples/issue_comment.created.json \
+  --flag 'mentions.scan.issue_comments=false' | jq '.enriched.mentions // [] | map(select(.source=="issue_comment")) | length'
 
 # Restrict by languages and cap bytes (use canonical language IDs; tsx/jsx map automatically)
 events enrich --in samples/pull_request.synchronize.json \
@@ -242,6 +266,14 @@ Without network calls (mentions only):
 events enrich --in samples/push.json --out out.json
 jq '.enriched.mentions' out.json
 ````
+
+Include patch diffs explicitly (opt‑in):
+
+```bash
+events enrich --in samples/pull_request.synchronize.json \
+  --use-github --flag include_patch=true \
+  | jq '.enriched.github.pr.files | map(has("patch")) | all'
+```
 
 Include patch diffs explicitly (opt‑in):
 
