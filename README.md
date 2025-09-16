@@ -81,7 +81,7 @@ Canonical reference and examples:
   - `--in <file>`: input JSON file (raw event)
   - `--out <file>`: write result to file (default: stdout)
   - `--source <name>`: provenance (`action|webhook|cli`) [default: `cli`]
-    - Alias: the CLI accepts `actions` as an input alias (e.g., in GitHub Actions); the stored value is normalized to `provenance.source: "action"`.
+    - Accepts `actions` as input alias and persists `provenance.source: "action"`.
   - `--select <paths>`: comma-separated dot paths to include in output
   - `--filter <expr>`: filter expression `path[=value]`; if not matching, exits with code 2 and no output
   - `--label <key=value...>`: attach labels to top‑level `labels[]` (repeatable)
@@ -194,7 +194,7 @@ Core fields returned by `normalize`:
 - `payload`: raw provider payload (object | array; verbatim). Note: payloads may be large; avoid printing the entire value in examples and prefer selecting specific fields with tools like `jq`.
 - `enriched`: `{ metadata, derived, correlations }`
 - `labels`: string array for routing (e.g., `env=staging`)
-- `provenance`: `{ source: action|webhook|cli, workflow? }` (no labels here)
+- `provenance`: `{ source: action|webhook|cli, workflow? }` (no labels here). Note: CLI accepts `--source actions` but normalizes to `action` in output.
 
 See the detailed specs for full schema and roadmap.
 
