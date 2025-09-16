@@ -31,7 +31,7 @@
   - ref: { name, type, sha, base?: sha, head?: sha }
     - ref.type enum: `branch | tag | pr | unknown`
     - Notes:
-      - pull_request events use `ref.type: "pr"` with `ref.base` and `ref.head` populated.
+      - pull_request events use `ref.type: "branch"` and populate `ref.base` and `ref.head` with the base and head branch names respectively.
       - push/workflow_run typically use `ref.type: "branch"`; tags use `ref.type: "tag"`.
       - when the ref cannot be categorized, use `ref.type: "unknown"`.
   - actor: { id, login, type }
