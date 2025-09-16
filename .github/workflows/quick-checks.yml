@@ -43,6 +43,15 @@ jobs:
         run: npm run -s typecheck
       - name: Unit tests (vitest)
         run: npm run -s test:ci
+      - name: Validate example enrich outputs (schema + parse)
+        run: |
+          set -euo pipefail
+          # jq parse check
+          jq -e type docs/examples/enrich.offline.json >/dev/null
+          jq -e type docs/examples/enrich.online.json >/dev/null
+          # validate against NE schema (offline may omit enriched.github)
+          npx -y ajv-cli@5.0.0 validate -s docs/specs/ne.schema.json -d docs/examples/enrich.offline.json --spec=draft2020 -c ajv-formats
+          npx -y ajv-cli@5.0.0 validate -s docs/specs/ne.schema.json -d docs/examples/enrich.online.json --spec=draft2020 -c ajv-formats
       - name: Upload coverage artifact
         if: always()
         uses: actions/upload-artifact@v4

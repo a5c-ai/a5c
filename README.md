@@ -1,5 +1,6 @@
 [![99% built by agents](https://img.shields.io/badge/99%25-built%20by%20agents-blue.svg)](https://a5c.ai) [![codecov](https://codecov.io/gh/a5c-ai/events/branch/a5c/main/graph/badge.svg)](https://app.codecov.io/gh/a5c-ai/events/tree/a5c/main)
 
+
 # @a5c-ai/events – Events SDK & CLI
 
 Normalize and enrich GitHub (and other) events for agentic workflows. Use the CLI in CI or locally to turn raw webhook/Actions payloads into a compact, consistent schema that downstream agents and automations can trust.
@@ -232,14 +233,19 @@ events normalize --in samples/pull_request.synchronize.json \
 jq '.type, .labels' out.json
 ```
 
-Enrichment (with GitHub lookups enabled):
+Enrichment (offline vs online):
 
 ```bash
+# Offline (default; no network calls)
+events enrich --in samples/pull_request.synchronize.json --out enriched.offline.json
+jq '.enriched.github // { partial: "offline" }' enriched.offline.json
+
+# Online (GitHub enrichment; requires token)
 export GITHUB_TOKEN=ghp_your_token_here
 events enrich --in samples/pull_request.synchronize.json \
   --flag include_patch=false --flag commit_limit=50 --flag file_limit=200 \
-  --use-github --out enriched.json
-jq '.enriched' enriched.json
+  --use-github --out enriched.online.json
+jq '.enriched.github.provider' enriched.online.json
 ```
 
 With rules (composed events):
@@ -250,6 +256,11 @@ events enrich --in samples/pull_request.synchronize.json \
   | jq '(.composed // []) | map({key, reason})'
   # note: `reason` may be omitted depending on rule configuration
 ```
+
+See also sample outputs:
+
+- docs/examples/enrich.offline.json
+- docs/examples/enrich.online.json
 
 ## Coverage (Optional)
 

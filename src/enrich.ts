@@ -345,7 +345,7 @@ export async function handleEnrich(opts: {
       github: githubEnrichment,
       metadata: { ...(neShell.enriched?.metadata || {}), rules: opts.rules },
       derived: {
-      ...(neShell.enriched?.derived || {}),
+        ...(neShell.enriched?.derived || {}),
         flags: opts.flags || {},
       },
       ...(normalizedMentions.length ? { mentions: normalizedMentions } : {}),
