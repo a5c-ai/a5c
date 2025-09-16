@@ -17,7 +17,7 @@ docs/**             @a5c-ai/docs
 
 Tips:
 
-- Place more specific patterns higher; last match wins.
+- Place more specific patterns lower; last match wins. (Order matters: the last matching rule per file takes precedence.)
 - Prefer team handles over individuals.
 - Keep owners current to ensure accurate routing in CI and agent workflows.
 

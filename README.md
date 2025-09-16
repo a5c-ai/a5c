@@ -52,6 +52,12 @@ Use a simple example, then see the CLI reference for the canonical flags and def
 ```bash
 # Disable scanning of changed files (code-comment mentions)
 events enrich --in ... --flag 'mentions.scan.changed_files=false'
+
+# Restrict code‑comment scanning to canonical language codes
+# Note: pass canonical codes used by the scanner (js, ts, py, go, yaml, md).
+# Extensions are normalized internally for detection (.tsx→ts, .jsx→js, .yml→yaml),
+# but the allowlist compares codes.
+events enrich --in ... --flag "mentions.languages=ts,js"
 ```
 
 Canonical reference and examples:
@@ -98,7 +104,7 @@ Canonical reference and examples:
 
 #### Mentions flags
 
-For flags and examples, see the canonical section:
+For flags and examples, see the canonical section in the CLI Reference:
 
 - docs/cli/reference.md#mentions-scanning-controls-code-comments-in-changed-files
 
@@ -114,6 +120,39 @@ Exit codes: `0` success, non‑zero on errors (invalid input, etc.).
 Examples are centralized in the CLI Reference:
 
 - docs/cli/reference.md#mentions-scanning-controls-code-comments-in-changed-files
+
+### Rules quick-start (composed events)
+
+Define a minimal rule in YAML and evaluate it with `enrich --rules` to emit composed events. This example matches the included PR sample (`samples/pull_request.synchronize.json`) which carries a `documentation` label.
+
+```bash
+# 1) Create a tiny rules file
+cat > rules.sample.yml <<'YAML'
+rules:
+  - name: pr_labeled_documentation
+    on: pull_request
+    when:
+      all:
+        - { path: "$.payload.pull_request.labels[*].name", contains: "documentation" }
+    emit:
+      key: pr_labeled_documentation
+      reason: "PR has documentation label"
+      targets: [developer-agent]
+YAML
+
+# 2) Enrich with rules and inspect composed outputs
+events enrich --in samples/pull_request.synchronize.json \
+  --rules rules.sample.yml \
+  | jq '(.composed // []) | map({key, reason})'
+```
+
+Notes:
+
+- Real‑world rules can combine predicates (`all/any/not`, `eq`, `in`, `contains`, `exists`) and project fields into `emit.payload`. See the richer sample at `samples/rules/conflicts.yml`.
+- When no rules match, `.composed` may be absent or `null`. Guard with `(.composed // [])` as shown.
+- Learn more:
+  - Specs §6.1: docs/specs/README.md#61-rule-engine-and-composed-events
+  - Full CLI options: docs/cli/reference.md
 
 ## Normalized Event Schema (MVP)
 
@@ -212,7 +251,7 @@ export GITHUB_TOKEN=ghp_low_scope
 export A5C_AGENT_GITHUB_TOKEN=ghs_org_or_repo_scope
 events enrich --in samples/pull_request.synchronize.json --use-github | jq '.enriched.github.provider'
 
-# Missing token with --use-github: exits 3 and marks reason
+# Missing token with --use-github: exits 3
 unset GITHUB_TOKEN A5C_AGENT_GITHUB_TOKEN
 events enrich --in samples/pull_request.synchronize.json --use-github || echo $?
 # stderr: GitHub enrichment failed: ...
