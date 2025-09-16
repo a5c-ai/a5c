@@ -27,7 +27,8 @@ EXCLUDE_REGEX='(^LICENSE$|^docs/|\.out$|^run\.log$|^run\.view\.err$|^actionlint$
 rm -f .editorconfig-checker.json || true
 
 # Resolve version: allow override via EDITORCONFIG_CHECKER_VERSION, default pinned
-EC_VERSION=${EDITORCONFIG_CHECKER_VERSION:-"3.3.0"}
+# Note: quote the default, not the variable expansion, to avoid literal quotes in value
+EC_VERSION="${EDITORCONFIG_CHECKER_VERSION:-3.3.0}"
 
 npx --yes "editorconfig-checker@${EC_VERSION}" \
   -color \
