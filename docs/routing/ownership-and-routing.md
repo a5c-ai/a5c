@@ -32,31 +32,32 @@ Event enrichment for routing computes both per-file owners and an `owners_union`
 
 Why union? Routing and notifications often need a superset of stakeholders for downstream agents (triage, review pings, labeling). Union minimizes surprise where multiple areas are touched.
 
-### Example
+### Examples
 
-CODEOWNERS:
+Example A (overlapping specific vs broad):
 
 ```ini
-# Specific feature area
-src/feature/**   @team-a
-# Broader ownership later in file
-src/**           @team-b
+# CODEOWNERS
+src/**          @team-src
+src/feature/**  @team-feature
 ```
 
-Changes in PR:
+- File: `src/feature/util.ts` → per-file owners: `[@team-feature]` (last rule wins)
+- File: `src/common/helpers.ts` → per-file owners: `[@team-src]`
+- PR changes both → `owners_union = [@team-feature, @team-src]` (sorted, deduped)
 
+Example B (users and teams; markdown):
+
+```ini
+*.md            @docs-bot @a5c-ai/docs
+docs/**         @a5c-ai/docs
 ```
-src/feature/util.ts
-src/common/helpers.ts
-```
 
-Per-file owners (last rule wins per file):
+- Files: `README.md`, `docs/guide.md` → union: `[@a5c-ai/docs, @docs-bot]`
 
-- `src/feature/util.ts` → `@team-a` (specific rule wins)
-- `src/common/helpers.ts` → `@team-b`
+Rationale:
 
-Union for routing:
+- Routing favors broader notification to avoid missing stakeholders when multiple areas are touched.
+- Downstream agents can still implement stricter strategies if needed (e.g., use per-file last-rule owners only).
 
-- `owners_union` → [`@team-a`, `@team-b`]
-
-Agents can mention or route to `owners_union` to ensure both teams are notified, while GitHub’s native reviewers still follow last-rule per file.
+Future toggle (tracking): a configuration flag may allow switching between union-based routing and strict last-rule parity for PR-level owners.

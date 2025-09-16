@@ -29,6 +29,11 @@
   - occurred_at: ISO timestamp
   - repo: { id, name, full_name, private, visibility }
   - ref: { name, type, sha, base?: sha, head?: sha }
+    - ref.type enum: `branch | tag | pr | unknown`
+    - Notes:
+      - pull_request events use `ref.type: "branch"` and populate `ref.base` and `ref.head` with the base and head branch names respectively.
+      - push/workflow_run typically use `ref.type: "branch"`; tags use `ref.type: "tag"`.
+      - when the ref cannot be categorized, use `ref.type: "unknown"`.
   - actor: { id, login, type }
   - payload: provider-native payload (raw)
   - enriched: { metadata: {}, derived: {}, correlations: {} }
@@ -148,9 +153,9 @@ Example mention from a code comment:
   - `reason?: string` (optional human-readable summary of matched criteria)
   - `labels?: string[]` additional routing labels
   - `targets?: string[]` optional list of intended agent recipients (by name)
-  - `payload?: any` projected fields from the source event
+  - `payload?: object | array | null` projected fields from the source event
 
-Schema: `docs/specs/ne.schema.json` includes an optional top-level `composed[]` array matching the structure above (each item requires `key`).
+Schema: `docs/specs/ne.schema.json` includes an optional top-level `composed[]` array matching the structure above (each item requires `key`). `composed[].payload` is constrained to `object | array | null`.
 
 Example rule (YAML):
 

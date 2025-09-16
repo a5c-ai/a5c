@@ -70,8 +70,22 @@ Enrich a normalized event (or raw GitHub payload) with repository and provider m
 
 Behavior:
 
-- No network calls are performed by default. In offline mode, `enriched.github = { provider: 'github', partial: true, reason: 'flag:not_set' }`.
-- Pass `--use-github` to enable GitHub API enrichment. If no token is configured, the CLI exits with code `3` (provider/network error) and prints an error; no JSON body is emitted.
+- Offline by default: no network calls without `--use-github`. Output includes a minimal stub under `enriched.github`:
+
+  ```json
+  {
+    "enriched": {
+      "github": {
+        "provider": "github",
+        "partial": true,
+        "reason": "flag:not_set"
+      }
+    }
+  }
+  ```
+
+- Online enrichment: pass `--use-github` with a valid token to populate fields like `enriched.github.pr.mergeable_state`, `enriched.github.pr.files[]`, `enriched.github.branch_protection`, etc.
+- Missing token with `--use-github`: the CLI exits with code `3` (provider/network error) and prints an error message; no JSON is written.
 
 Usage:
 
@@ -88,11 +102,10 @@ events enrich --in FILE [--out FILE] [--rules FILE] \
   - `include_patch=true|false` (default: `false`) – include diff patches; when `false`, patches are removed. Defaulting to false avoids leaking secrets via diffs and keeps outputs small; enable only when required.
   - `commit_limit=<n>` (default: `50`) – limit commits fetched for PR/push
   - `file_limit=<n>` (default: `200`) – limit files per compare list
-  - Mentions scanning flags (code comments in changed files):
-    - `mentions.scan.changed_files=true|false` (default: `true`) – enable/disable scanning code comments in changed files for `@mentions`
-    - `mentions.max_file_bytes=<bytes>` (default: `204800`) – skip files larger than this many bytes when scanning
-    - `mentions.languages=<ext,...>` – optional allowlist of file extensions to scan (e.g., `ts,tsx,js,jsx,py,go,yaml`). When omitted, language/extension detection is used.
-    - Notes: Mentions found in file diffs or changed files are emitted with `source: code_comment` and include `location.file` and `location.line` when available.
+  - Mentions scanning flags (code comments in changed files) — canonical:
+    - `mentions.scan.changed_files=true|false` (default: `true`) – scan changed files for `@mentions` inside code comments
+    - `mentions.max_file_bytes=<bytes>` (default: `204800` ≈ 200KB) – skip files larger than this when scanning
+    - `mentions.languages=<ext,...>` – optional allowlist of file extensions to scan (e.g., `ts,tsx,js,jsx,py,go,yaml`). When omitted, detection is used.
 - `--use-github`: enable GitHub API enrichment; equivalent to `--flag use_github=true` (requires `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`). Without this flag, the CLI performs no network calls and sets `enriched.github = { provider: 'github', partial: true, reason: 'flag:not_set' }`.
 - `--label KEY=VAL...`: labels to attach
 - `--select PATHS`: comma-separated dot paths to include in output
@@ -113,7 +126,7 @@ events enrich --in samples/pull_request.synchronize.json \
 events enrich --in samples/pull_request.synchronize.json \
   --flag mentions.scan.changed_files=false | jq '.enriched.mentions // [] | length'
 
-# Restrict by file types and cap bytes
+# Restrict by file types and cap bytes (example values)
 events enrich --in samples/pull_request.synchronize.json \
   --flag mentions.languages=ts,tsx,js \
   --flag mentions.max_file_bytes=102400 \
@@ -184,6 +197,7 @@ Behavior:
 
 - Redaction: payload is masked using the same rules as other commands (see `src/utils/redact.ts`). Sensitive keys and common secret patterns are redacted before emission.
 - Defaults: when `--sink` is omitted, `stdout` is used. When `--sink file` is set, `--out` is required; otherwise the command exits with code `1` and writes an error to stderr.
+- Auto-sink: if `--out` is provided without `--sink`, the sink is treated as `file`.
 
 Examples:
 
@@ -194,8 +208,18 @@ events emit --in samples/push.json
 # From stdin to stdout
 cat samples/push.json | events emit
 
-# To a file sink
+# Pipe from normalize
+events normalize --in samples/push.json | events emit
+
+# To a file sink (explicit)
 events emit --in samples/push.json --sink file --out out.json
+
+# To a file sink (implicit via --out)
+events emit --in samples/push.json --out out.json
+
+# Enrich then emit to artifact file
+events enrich --in samples/pr.json --out enriched.json \
+  && events emit --in enriched.json --sink file --out artifact.json
 ```
 
 Exit codes:
@@ -252,36 +276,10 @@ Exit codes:
   - Sensitive keys include: `token`, `secret`, `password`, `passwd`, `pwd`, `api_key`, `apikey`, `key`, `client_secret`, `access_token`, `refresh_token`, `private_key`, `ssh_key`, `authorization`, `auth`, `session`, `cookie`, `webhook_secret`.
   - Pattern masking includes (non-exhaustive): GitHub PATs (`ghp_`, `gho_`, `ghu_`, `ghs_`, `ghe_`), JWTs, `Bearer ...` headers, AWS `AKIA...`/`ASIA...` keys, Stripe `sk_live_`/`sk_test_`, Slack `xox...` tokens, and URL basic auth (`https://user:pass@host`).
 
-Offline vs token-missing examples:
-Offline (no --use-github):
+Offline vs token-missing notes:
 
-```json
-{
-  "enriched": {
-    "github": {
-      "provider": "github",
-      "partial": true,
-      "reason": "flag:not_set"
-    }
-  }
-}
-```
-
-With --use-github but token missing (exit code 3):
-
-Note: the CLI exits with code 3 and does not emit JSON. The following shape may appear in programmatic SDK usage (e.g., tests with an injected Octokit), not in CLI output:
-
-```jsonc
-{
-  "enriched": {
-    "github": {
-      "provider": "github",
-      "skipped": true,
-      "reason": "token:missing",
-    },
-  },
-}
-```
+- Offline (no `--use-github`): stub as shown above with `reason: 'flag:not_set'`; no network-derived fields.
+- With `--use-github` but token missing: exit code `3` and error to stderr; no JSON output by the CLI.
 
 References:
 

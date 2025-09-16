@@ -2,7 +2,12 @@
 
 ## Summary
 
-`docs/specs/README.md` describes `composed[].payload` as `any`, while `docs/specs/ne.schema.json` constrains it to `object | array | null`.
+Resolved: `docs/specs/README.md` now aligns with `docs/specs/ne.schema.json` — `composed[].payload` is `object | array | null`.
+
+Notes:
+
+- Source of truth remains the schema file.
+- Add docs lint to prevent regressions.
 
 ## Recommendation
 

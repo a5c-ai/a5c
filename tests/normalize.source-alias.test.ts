@@ -1,9 +1,12 @@
 import { describe, it, expect } from "vitest";
 import { runNormalize as runNormalizeImpl } from "../src/commands/normalize.js";
-import { spawnSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { resolve } from "node:path";
 
-describe("normalize --source alias coercion", () => {
+// Ensure that passing --source actions (plural) results in provenance.source==='action' (singular)
+// per the schema enum and product requirement in issue #566. Cover both API and CLI.
+
+describe("normalize --source actions alias", () => {
   it("API: coerces actions -> action in provenance", async () => {
     const { code, output } = await runNormalizeImpl({
       in: "samples/workflow_run.completed.json",
@@ -14,7 +17,7 @@ describe("normalize --source alias coercion", () => {
     expect(output?.provenance?.source).toBe("action");
   });
 
-  it("CLI: accepts --source actions and persists action", () => {
+  it("CLI (dev tsx): accepts --source actions and persists action", () => {
     const tsx = resolve("node_modules/.bin/tsx");
     const cli = resolve("src/cli.ts");
     const res = spawnSync(
@@ -23,9 +26,11 @@ describe("normalize --source alias coercion", () => {
         cli,
         "normalize",
         "--in",
-        "samples/workflow_run.completed.json",
+        "samples/push.json",
         "--source",
         "actions",
+        "--select",
+        "provenance.source",
       ],
       {
         encoding: "utf8",
@@ -37,6 +42,25 @@ describe("normalize --source alias coercion", () => {
       );
     }
     const obj = JSON.parse(res.stdout);
+    expect(obj.provenance?.source).toBe("action");
+  });
+
+  it("CLI (built): accepts --source actions and persists action", () => {
+    const out = execFileSync(
+      "node",
+      [
+        "dist/cli.js",
+        "normalize",
+        "--in",
+        "samples/push.json",
+        "--source",
+        "actions",
+        "--select",
+        "provenance.source",
+      ],
+      { encoding: "utf8" },
+    );
+    const obj = JSON.parse(out);
     expect(obj.provenance?.source).toBe("action");
   });
 });
