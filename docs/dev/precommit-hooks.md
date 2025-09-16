@@ -22,6 +22,18 @@ Run `npm install` once; Husky will install hooks automatically. Node >= 20 is re
 - Skip pre-commit: set `A5C_SKIP_PRECOMMIT=1` or `SKIP_PRECOMMIT=1` (legacy `SKIP_CHECKS=1` also works)
 - Skip pre-push: set `A5C_SKIP_PREPUSH=1` or `SKIP_PREPUSH=1`
 
+## Pre-push details
+
+- Runs `npm run typecheck` (no emit) to catch TypeScript issues quickly.
+- Attempts targeted tests via `npm run prepush` (uses `scripts/prepush-related.js`).
+- Falls back to `npm run prepush:full` which runs `vitest run` if related tests are not applicable.
+- Related scope considers changes since `origin/a5c/main` by default; override with `A5C_BASE_REF`.
+
+### Common failures and fixes
+- Type errors: run `npm run build` locally and fix the reported TS errors.
+- Failing tests: run `vitest related` for the files in the error output, or `npm run prepush:full` to reproduce.
+- If you need to bypass temporarily (e.g., WIP branch): `A5C_SKIP_PREPUSH=1 git push`.
+
 ## Speed tips
 
 - Keep commits small to reduce files linted by lint-staged.
