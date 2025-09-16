@@ -14,3 +14,17 @@
 ## Notes
 
 No code changes; docs-only.
+
+## Implementation
+
+- Updated `docs/routing/ownership-and-routing.md` tip:
+  - Now: "Place more specific patterns lower; last match wins. (Order matters; the last matching rule per file takes precedence.)"
+
+## Verification
+
+- Ran prettier via precommit hooks; docs formatting OK.
+- No code changes; no impact on tests.
+
+## PR
+
+- See PR https://github.com/a5c-ai/events/pull/657 (targets `a5c/main`).
