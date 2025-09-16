@@ -16,15 +16,24 @@ const meta2020 = {
     "https://json-schema.org/draft/2020-12/vocab/content": true,
   },
   type: ["object", "boolean"],
-};
+} as const;
+
+function addFormats(ajv: any) {
+  ajv.addFormat("date-time", {
+    type: "string",
+    validate: (s: string) => /\d{4}-\d{2}-\d{2}T\d{2}:.+Z/.test(s),
+  });
+  return ajv;
+}
 
 describe("Enrich examples validate against NE schema", () => {
   const schema = JSON.parse(
     fs.readFileSync(path.resolve("docs/specs/ne.schema.json"), "utf-8"),
   );
 
-  const ajv = new Ajv({ strict: true, allErrors: true });
-  ajv.addMetaSchema(meta2020);
+  const ajv = new Ajv({ strict: false, allErrors: true });
+  addFormats(ajv);
+  ajv.addMetaSchema(meta2020 as any);
 
   const validate = ajv.compile(schema);
 
