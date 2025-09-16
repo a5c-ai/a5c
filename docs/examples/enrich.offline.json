@@ -1,11 +1,16 @@
 {
-  "id": "example-offline-1",
+  "id": "offline-demo-1",
   "provider": "github",
   "type": "pull_request",
   "occurred_at": "2025-09-16T00:00:00Z",
-  "repo": { "id": 1, "name": "events", "full_name": "a5c-ai/events", "private": true },
+  "repo": {
+    "id": 1,
+    "name": "events",
+    "full_name": "a5c-ai/events",
+    "private": true
+  },
   "actor": { "id": 2, "login": "octocat", "type": "User" },
-  "payload": { "pull_request": { "number": 42 } },
+  "payload": { "pull_request": { "number": 123 } },
   "provenance": { "source": "cli" },
   "enriched": {
     "github": {

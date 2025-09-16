@@ -73,6 +73,11 @@ Examples:
 - Offline enrich (no `--use-github`): `docs/examples/enrich.offline.json`
 - Online enrich (`--use-github`): `docs/examples/enrich.online.json`
 
+Examples:
+
+- Offline enrich (no `--use-github`): `docs/examples/enrich.offline.json`
+- Online enrich (`--use-github`): `docs/examples/enrich.online.json`
+
 ### 4.2) Mentions Schema
 
 - mentions[] items have:
