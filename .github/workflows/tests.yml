@@ -105,7 +105,6 @@ jobs:
             junit.xml
           if-no-files-found: ignore
       # Keep a single Codecov upload (guarded by token)
-<<<<<<< HEAD
       - name: Validate observability example against schema
         if: always()
         run: |
@@ -176,8 +175,6 @@ jobs:
           path: |
             vitest-results.json
           if-no-files-found: ignore
-=======
->>>>>>> acdcf5f (docs(ci): optional Codecov upload + README badge (fixes #384))
       - name: Coverage summary
         if: always()
         run: |
