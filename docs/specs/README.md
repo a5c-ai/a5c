@@ -67,6 +67,11 @@ Ownership semantics:
   - Semantics: the PR‑level `owners_union` is the sorted, de‑duplicated union of all CODEOWNERS across changed files. This intentionally differs from GitHub’s per‑file evaluation (last matching rule wins). A future toggle may allow strict last‑rule parity at PR level.
 - mentions: see schema below; sources include commit messages, PR/issue title/body, latest issue_comment (event), and code comments in changed files using language-aware regexes for `@name` inside comments.
 
+Examples:
+
+- Offline enrich (no `--use-github`): `docs/examples/enrich.offline.json`
+- Online enrich (`--use-github`): `docs/examples/enrich.online.json`
+
 ### 4.2) Mentions Schema
 
 - mentions[] items have:

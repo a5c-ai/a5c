@@ -134,6 +134,11 @@ See also:
 - Specs: `docs/specs/README.md#42-mentions-schema`
 - CLI reference: `docs/cli/reference.md#events-enrich`
 
+Behavior:
+
+- Offline by default: without `--use-github`, no network calls occur. Output includes `enriched.github = { provider: 'github', partial: true, reason: 'flag:not_set' }`.
+- When `--use-github` is set but no token is configured, the CLI exits with code `3` (provider/network error) and prints an error. Use programmatic APIs with an injected Octokit for partial/offline testing if needed.
+
 Exit codes: `0` success, non‑zero on errors (invalid input, etc.).
 
 ### Mentions scanning examples
