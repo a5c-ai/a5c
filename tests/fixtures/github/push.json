@@ -2,17 +2,36 @@
   "ref": "refs/heads/a5c/main",
   "before": "1111111111111111111111111111111111111111",
   "after": "2222222222222222222222222222222222222222",
-  "repository": { "id": 1055826069, "name": "events", "full_name": "a5c-ai/events", "private": true },
+  "repository": {
+    "id": 1055826069,
+    "name": "events",
+    "full_name": "a5c-ai/events",
+    "private": true
+  },
   "pusher": { "name": "a5c-ai[bot]", "email": "agent@a5c.ai" },
   "sender": { "login": "a5c-ai[bot]", "type": "Bot", "id": 221166651 },
   "created": false,
   "deleted": false,
   "forced": false,
   "commits": [
-    {"id": "2222222222222222222222222222222222222222", "message": "chore: update docs", "timestamp": "2025-09-13T10:45:00Z"},
-    {"id": "3333333333333333333333333333333333333333", "message": "feat: add samples @developer-agent", "timestamp": "2025-09-13T10:46:00Z"},
-    {"id": "4444444444444444444444444444444444444444", "message": "fix: CI tweaks", "timestamp": "2025-09-13T10:47:00Z"}
+    {
+      "id": "2222222222222222222222222222222222222222",
+      "message": "chore: update docs",
+      "timestamp": "2025-09-13T10:45:00Z"
+    },
+    {
+      "id": "3333333333333333333333333333333333333333",
+      "message": "feat: add samples @developer-agent",
+      "timestamp": "2025-09-13T10:46:00Z"
+    },
+    {
+      "id": "4444444444444444444444444444444444444444",
+      "message": "fix: CI tweaks",
+      "timestamp": "2025-09-13T10:47:00Z"
+    }
   ],
-  "head_commit": {"id": "2222222222222222222222222222222222222222", "message": "chore: update docs"}
+  "head_commit": {
+    "id": "2222222222222222222222222222222222222222",
+    "message": "chore: update docs"
+  }
 }
-

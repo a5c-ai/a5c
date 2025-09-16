@@ -53,8 +53,15 @@ next-env.d.ts
 # temporary enrich outputs (including e2e sample artifacts)
 tmp-enrich-*.json
 **/tmp-enrich-*.json
+# generic tmp json artifacts from local/dev tests (keep explicit sample)
+tmp.*.json
+!tmp.cli.rules.sample.json
 # local generated helper files (should not be committed)
 .check_env
 .pr_comment.md
 # CLI outputs
 /out.json
+# artifacts cleaned by validator-agent
+a5c-ai-events-*.tgz
+out.enrich.json
+out.normalize.json

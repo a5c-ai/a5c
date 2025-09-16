@@ -1,6 +1,6 @@
 import type { NormalizedEvent, Mention } from "./types.js";
 import { readJSONFile, loadConfig } from "./config.js";
-import { extractMentions } from "./extractor.js";
+import { extractMentions, dedupeMentions } from "./extractor.js";
 import { isBinaryPatch } from "./codeComments.js";
 import { scanMentionsInCodeComments } from "./utils/commentScanner.js";
 import { evaluateRulesDetailed, loadRules } from "./rules.js";
@@ -92,7 +92,7 @@ export async function handleEnrich(opts: {
     githubEnrichment = {
       provider: "github",
       partial: true,
-      reason: "flag:not_set",
+      reason: "github_enrich_disabled",
     };
   } else if (!token && !opts.octokit) {
     githubEnrichment = {
@@ -185,6 +185,12 @@ export async function handleEnrich(opts: {
     if (pr?.body) mentions.push(...extractMentions(String(pr.body), "pr_body"));
     if (pr?.title)
       mentions.push(...extractMentions(String(pr.title), "pr_title"));
+    // Extract mentions from GitHub Issue events (title/body)
+    const issue = (baseEvent as any)?.issue;
+    if (issue?.title)
+      mentions.push(...extractMentions(String(issue.title), "issue_title"));
+    if (issue?.body)
+      mentions.push(...extractMentions(String(issue.body), "issue_body"));
     const commits = (baseEvent as any)?.commits;
     if (Array.isArray(commits) && scanCommitMessagesFlag) {
       for (const c of commits)
@@ -334,6 +340,11 @@ export async function handleEnrich(opts: {
     }
   } catch {}
 
+  // De-duplicate mentions (per-source/location) before attaching to output
+  const normalizedMentions: Mention[] = dedupeMentions(
+    mentions.map((m) => normalizeCodeCommentLocation(m)),
+  );
+
   const output: NormalizedEvent = {
     ...(neShell as any),
     enriched: {
@@ -344,7 +355,7 @@ export async function handleEnrich(opts: {
         ...(neShell.enriched?.derived || {}),
         flags: opts.flags || {},
       },
-      ...(mentions.length ? { mentions } : {}),
+      ...(normalizedMentions.length ? { mentions: normalizedMentions } : {}),
     },
   };
 

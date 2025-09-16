@@ -9,4 +9,3 @@
 - allows `Merge pull request ...` when `--allow-merge`
 
 These tests will harden the CI‑only script and prevent regressions.
-

@@ -11,6 +11,7 @@ Observed that `tests/enrichGithubEvent.test.js` is not executed by `vitest` beca
 As a result, JavaScript test files in `tests/` are ignored.
 
 Suggestions:
+
 - Prefer converting JS tests to TS (rename to `.ts`) to align with config; or
 - Adjust `vitest.config.ts` to include `*.js` test files, e.g., `include: ['test/**/*.{test,spec}.{ts,js}', 'tests/**/*.{test,spec}.{ts,js}']`, and remove the global `exclude: ['**/*.js', ...]`.
 
