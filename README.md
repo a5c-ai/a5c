@@ -17,7 +17,7 @@ See docs/routing/ownership-and-routing.md for how CODEOWNERS drives routing and 
 
 Prerequisites:
 
-- Node.js 20.x LTS. The repo includes an `.nvmrc` pinning Node 20 for local parity with CI.
+- Node.js 20.x LTS (see `.nvmrc` for CI parity).
   - If you use `nvm`, run `nvm use` in the project root.
 
 Install:
@@ -355,7 +355,7 @@ You can enrich with rules to emit composed events and validate the enriched outp
 # Enrich with rules to produce `.composed[]`
 events enrich --in samples/pull_request.synchronize.json   --rules samples/rules/conflicts.yml   --out enriched.json
 
-# Inspect composed events (guard for absence)
+# Inspect composed events (guard for absence; `reason` may be omitted)
 jq '(.composed // []) | map({key, reason})' enriched.json
 
 # Validate the enriched document against the NE schema (as‑is)
@@ -368,8 +368,8 @@ jq 'del(.composed)' enriched.json | events validate --schema docs/specs/ne.schem
 Notes:
 
 - `.composed` may be absent when no rules match. Use `(.composed // [])` in `jq`.
-- Validation uses the NE schema at `docs/specs/ne.schema.json`. The `composed` field is included in that schema and optional; strip it only if you want to validate the normalized‑only subset.
-- `payload` is `object | array` (verbatim) and `composed[].payload` may be `object | array | null`.
+- NE schema: `docs/specs/ne.schema.json` includes optional top‑level `composed`. `payload` is `object | array`; `composed[].payload` may be `object | array | null`.
+- `reason` is optional depending on rule configuration.
 
 ## Links
 

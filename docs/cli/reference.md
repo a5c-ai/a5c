@@ -148,6 +148,13 @@ events enrich --in samples/push.json --out out.json
 jq '.enriched.mentions' out.json
 ````
 
+Inspect composed if present:
+
+```bash
+# Given prior command output on stdin
+jq '(.composed // []) | map({key, reason})'
+```
+
 ### `events emit`
 
 Emit a JSON event to a sink (stdout or file). The payload is redacted before being written.
