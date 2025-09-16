@@ -104,10 +104,11 @@ function mapRepo(repo: GHRepo | undefined) {
 
 function mapRef(payload: any) {
   if (payload.pull_request) {
-    // NE schema update: treat PR ref as explicit 'pr' type for tests/spec
+    // For PR events, emit branch ref semantics.
+    // Use head ref as name; keep base/head fields for context.
     return {
       name: payload.pull_request.head?.ref,
-      type: "pr",
+      type: "branch",
       base: payload.pull_request.base?.ref,
       head: payload.pull_request.head?.ref,
     };
@@ -156,6 +157,11 @@ function mapActor(payload: any): GHUser | undefined {
   return { id: a.id, login: a.login || a.name, type: a.type || "User" };
 }
 
+function coerceSource(val?: string): string | undefined {
+  if (!val) return val;
+  return val === "actions" ? "action" : val;
+}
+
 export function mapToNE(
   payload: any,
   opts: { source?: string; labels?: string[] } = {},
@@ -183,7 +189,7 @@ export function mapToNE(
     actor,
     payload,
     labels: opts.labels || [],
-    provenance: { source: (opts.source as any) || "cli" },
+    provenance: { source: (coerceSource(opts.source) as any) || "cli" },
   };
   // Optional workflow provenance enrichment when workflow_run is present
   if (payload?.workflow_run) {
