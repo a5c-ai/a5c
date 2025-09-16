@@ -44,7 +44,7 @@ jobs:
           NPM_CONFIG_USERCONFIG: ${{ env.NPM_CONFIG_USERCONFIG }}
         run: |
           # Use project .npmrc so only @a5c-ai scope hits GPR; others resolve from npmjs
-          npx -y @a5c-ai/events@latest --help
+          npx -y @a5c-ai/events@a5c-main --help || npx -y @a5c-ai/events@latest --help
 
       - name: Run npx package version
         env:
@@ -53,13 +53,16 @@ jobs:
         run: |
           node -v
           npm -v
-          npx -y @a5c-ai/events@latest --version || true
+          npx -y @a5c-ai/events@a5c-main --version || npx -y @a5c-ai/events@latest --version || true
 
       - name: Smoke – normalize sample payload
         env:
           NODE_AUTH_TOKEN: ${{ secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
           NPM_CONFIG_USERCONFIG: ${{ env.NPM_CONFIG_USERCONFIG }}
         run: |
+          npx -y @a5c-ai/events@a5c-main normalize \
+            --in samples/workflow_run.completed.json \
+            --out out.normalize.json || \
           npx -y @a5c-ai/events@latest normalize \
             --in samples/workflow_run.completed.json \
             --out out.normalize.json
@@ -72,6 +75,9 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
           NPM_CONFIG_USERCONFIG: ${{ env.NPM_CONFIG_USERCONFIG }}
         run: |
+          npx -y @a5c-ai/events@a5c-main enrich \
+            --in samples/pull_request.synchronize.json \
+            --out out.enrich.json || \
           npx -y @a5c-ai/events@latest enrich \
             --in samples/pull_request.synchronize.json \
             --out out.enrich.json
