@@ -90,7 +90,7 @@ function inferRef(p?: AnyObj): AnyObj | undefined {
     const pr = p.pull_request;
     return {
       name: pr.head?.ref,
-      type: "pr",
+      type: "branch",
       head: pr.head?.ref,
       base: pr.base?.ref,
     };
