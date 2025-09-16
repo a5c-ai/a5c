@@ -1,30 +1,30 @@
-export const DEFAULT_MASK = 'REDACTED'
+export const DEFAULT_MASK = "REDACTED";
 
 // Common sensitive key substrings to match case-insensitively
 export const DEFAULT_SENSITIVE_KEYS = [
-  'token',
-  'secret',
-  'password',
-  'passwd',
-  'pwd',
-  'api_key',
-  'apikey',
-  'client_secret',
-  'access_token',
-  'refresh_token',
-  'private_key',
-  'ssh_key',
-  'db_password',
-  'db_pass',
-  'jwt',
-  'bearer',
-  'credential',
-  'authorization',
-  'auth',
-  'session',
-  'cookie',
-  'webhook_secret',
-]
+  "token",
+  "secret",
+  "password",
+  "passwd",
+  "pwd",
+  "api_key",
+  "apikey",
+  "client_secret",
+  "access_token",
+  "refresh_token",
+  "private_key",
+  "ssh_key",
+  "db_password",
+  "db_pass",
+  "jwt",
+  "bearer",
+  "credential",
+  "authorization",
+  "auth",
+  "session",
+  "cookie",
+  "webhook_secret",
+];
 
 // Regexes for common secret patterns
 export const DEFAULT_PATTERNS: RegExp[] = [
@@ -45,64 +45,71 @@ export const DEFAULT_PATTERNS: RegExp[] = [
   /xox[abprs]-[A-Za-z0-9-]{10,}/g,
   // URL basic auth: https://user:pass@host
   /https?:\/\/[A-Za-z0-9._%-]+:[^@\s]+@/g,
-]
+];
 
 export type RedactOptions = {
-  mask?: string
-  sensitiveKeys?: string[]
-  patterns?: RegExp[]
-}
+  mask?: string;
+  sensitiveKeys?: string[];
+  patterns?: RegExp[];
+};
 
 function isPlainObject(val: unknown): val is Record<string, unknown> {
-  return !!val && typeof val === 'object' && !Array.isArray(val)
+  return !!val && typeof val === "object" && !Array.isArray(val);
 }
 
 export function redactString(input: string, opts: RedactOptions = {}): string {
-  if (typeof input !== 'string') return input as unknown as string
-  const mask = opts.mask ?? DEFAULT_MASK
-  const patterns = opts.patterns ?? DEFAULT_PATTERNS
-  let out = input
+  if (typeof input !== "string") return input as unknown as string;
+  const mask = opts.mask ?? DEFAULT_MASK;
+  const patterns = opts.patterns ?? DEFAULT_PATTERNS;
+  let out = input;
   for (const re of patterns) {
     try {
-      out = out.replace(re, mask)
+      out = out.replace(re, mask);
     } catch {
       // ignore
     }
   }
-  return out
+  return out;
 }
 
 export function redactObject<T = unknown>(obj: T, opts: RedactOptions = {}): T {
-  const mask = opts.mask ?? DEFAULT_MASK
-  const sensitiveKeys = (opts.sensitiveKeys ?? DEFAULT_SENSITIVE_KEYS).map((k) => k.toLowerCase())
-  const patterns = opts.patterns ?? DEFAULT_PATTERNS
-  const seen = new WeakSet<object>()
+  const mask = opts.mask ?? DEFAULT_MASK;
+  const sensitiveKeys = (opts.sensitiveKeys ?? DEFAULT_SENSITIVE_KEYS).map(
+    (k) => k.toLowerCase(),
+  );
+  const patterns = opts.patterns ?? DEFAULT_PATTERNS;
+  const seen = new WeakSet<object>();
 
   function walk(value: unknown): unknown {
-    if (typeof value === 'string') return redactString(value, { mask, patterns })
-    if (Array.isArray(value)) return value.map(walk)
+    if (typeof value === "string")
+      return redactString(value, { mask, patterns });
+    if (Array.isArray(value)) return value.map(walk);
     if (isPlainObject(value)) {
-      if (seen.has(value)) return value
-      seen.add(value)
-      const out: Record<string, unknown> = {}
+      if (seen.has(value)) return value;
+      seen.add(value);
+      const out: Record<string, unknown> = {};
       for (const [k, v] of Object.entries(value)) {
-        const lower = k.toLowerCase()
-        const isSensitive = sensitiveKeys.some((sk) => lower.includes(sk))
-        if (isSensitive) out[k] = mask
-        else if (typeof v === 'string') out[k] = redactString(v, { mask, patterns })
-        else out[k] = walk(v)
+        const lower = k.toLowerCase();
+        const isSensitive = sensitiveKeys.some((sk) => lower.includes(sk));
+        if (isSensitive) out[k] = mask;
+        else if (typeof v === "string")
+          out[k] = redactString(v, { mask, patterns });
+        else out[k] = walk(v);
       }
-      return out
+      return out;
     }
-    return value
+    return value;
   }
 
-  return walk(obj) as T
+  return walk(obj) as T;
 }
 
-export function redactEnv(env: NodeJS.ProcessEnv = process.env, opts: RedactOptions = {}) {
-  const clone = { ...env }
-  return redactObject(clone, opts)
+export function redactEnv(
+  env: NodeJS.ProcessEnv = process.env,
+  opts: RedactOptions = {},
+) {
+  const clone = { ...env };
+  return redactObject(clone, opts);
 }
 
 export function buildRedactor(opts: RedactOptions = {}) {
@@ -111,5 +118,5 @@ export function buildRedactor(opts: RedactOptions = {}) {
     redactString: (s: string) => redactString(s, opts),
     redactObject: <T = unknown>(o: T) => redactObject<T>(o, opts),
     redactEnv: (e?: NodeJS.ProcessEnv) => redactEnv(e, opts),
-  }
+  };
 }

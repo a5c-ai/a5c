@@ -6,4 +6,3 @@
   - Sensitive keys matched case-insensitively: `token`, `secret`, `password`, `api_key`, `client_secret`, `access_token`, ...
 
 Regression tests were added under `tests/` to validate behavior.
-

@@ -1,15 +1,20 @@
 #!/usr/bin/env node
-import fs from 'node:fs';
-import path from 'node:path';
-import Ajv2020 from 'ajv/dist/2020.js';
-import addFormats from 'ajv-formats';
+import fs from "node:fs";
+import path from "node:path";
+import Ajv2020 from "ajv/dist/2020.js";
+import addFormats from "ajv-formats";
 
 const root = process.cwd();
-const schemaPath = path.join(root, 'docs', 'specs', 'observability.schema.json');
-const examplePath = path.join(root, 'docs', 'examples', 'observability.json');
+const schemaPath = path.join(
+  root,
+  "docs",
+  "specs",
+  "observability.schema.json",
+);
+const examplePath = path.join(root, "docs", "examples", "observability.json");
 
 function loadJSON(p) {
-  return JSON.parse(fs.readFileSync(p, 'utf8'));
+  return JSON.parse(fs.readFileSync(p, "utf8"));
 }
 
 function main() {
@@ -20,11 +25,11 @@ function main() {
   const validate = ajv.compile(schema);
   const valid = validate(example);
   if (!valid) {
-    console.error('observability.json example does not match schema');
+    console.error("observability.json example does not match schema");
     console.error(JSON.stringify(validate.errors, null, 2));
     process.exit(1);
   }
-  console.log('observability example is valid against schema v0.1');
+  console.log("observability example is valid against schema v0.1");
 }
 
 main();

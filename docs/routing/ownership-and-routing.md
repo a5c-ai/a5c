@@ -16,6 +16,7 @@ docs/**             @a5c-ai/docs
 ```
 
 Tips:
+
 - Place more specific patterns higher; last match wins.
 - Prefer team handles over individuals.
 - Keep owners current to ensure accurate routing in CI and agent workflows.
