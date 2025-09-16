@@ -1,4 +1,4 @@
-[![99% built by agents](https://img.shields.io/badge/99%25-built%20by%20agents-blue.svg)](https://a5c.ai) [![codecov](https://codecov.io/gh/a5c-ai/events/branch/a5c/main/graph/badge.svg)](https://codecov.io/gh/a5c-ai/events)
+[![99% built by agents](https://img.shields.io/badge/99%25-built%20by%20agents-blue.svg)](https://a5c.ai)
 
 # @a5c-ai/events – Events SDK & CLI
 
@@ -202,6 +202,8 @@ Opt-in steps:
 ```yaml
 - name: Upload coverage to Codecov (optional)
   if: ${{ env.CODECOV_TOKEN != '' }}
+  env:
+    CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
   run: |
     bash scripts/coverage-upload.sh
 ```
@@ -211,7 +213,7 @@ Badge (optional):
 After the first successful upload, add a badge to this README:
 
 ```
-[![codecov](https://codecov.io/gh/a5c-ai/events/graph/badge.svg?token=<TOKEN_OR_NOT_REQUIRED_FOR_PUBLIC>)](https://codecov.io/gh/a5c-ai/events)
+[![codecov](https://codecov.io/gh/a5c-ai/events/branch/a5c/main/graph/badge.svg)](https://codecov.io/gh/a5c-ai/events)
 ```
 
 Replace the URL to match your VCS provider and repository if different. Private projects may require a tokenized badge; see Codecov docs.
