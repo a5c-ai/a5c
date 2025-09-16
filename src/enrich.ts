@@ -179,6 +179,11 @@ export async function handleEnrich(opts: {
     if (pr?.body) mentions.push(...extractMentions(String(pr.body), "pr_body"));
     if (pr?.title)
       mentions.push(...extractMentions(String(pr.title), "pr_title"));
+    const issue = (baseEvent as any)?.issue;
+    if (issue?.title)
+      mentions.push(...extractMentions(String(issue.title), "issue_title"));
+    if (issue?.body)
+      mentions.push(...extractMentions(String(issue.body), "issue_body"));
     const commits = (baseEvent as any)?.commits;
     if (Array.isArray(commits)) {
       for (const c of commits)

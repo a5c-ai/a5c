@@ -157,6 +157,11 @@ function mapActor(payload: any): GHUser | undefined {
   return { id: a.id, login: a.login || a.name, type: a.type || "User" };
 }
 
+function coerceSource(val?: string): string | undefined {
+  if (!val) return val;
+  return val === "actions" ? "action" : val;
+}
+
 export function mapToNE(
   payload: any,
   opts: { source?: string; labels?: string[] } = {},
@@ -184,7 +189,7 @@ export function mapToNE(
     actor,
     payload,
     labels: opts.labels || [],
-    provenance: { source: (opts.source as any) || "cli" },
+    provenance: { source: (coerceSource(opts.source) as any) || "cli" },
   };
   // Optional workflow provenance enrichment when workflow_run is present
   if (payload?.workflow_run) {

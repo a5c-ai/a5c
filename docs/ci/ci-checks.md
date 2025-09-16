@@ -70,24 +70,23 @@ Heavier/longer gates run on protected branches to keep PRs snappy while maintain
 
 ## Coverage Upload (Codecov)
 
-Default (recommended): Use the GitHub Action and guard on the presence of a token. Configure a repository secret `CODECOV_TOKEN` and add a step after coverage is generated (`coverage/lcov.info`). Example:
+Default (recommended) — use the Codecov GitHub Action in CI and gate on a secret/variable (aligns with repo workflows):
 
 ```yaml
+env:
+  CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN || vars.CODECOV_TOKEN || '' }}
+
 - name: Upload coverage to Codecov (optional)
-  if: ${{ secrets.CODECOV_TOKEN != '' }}
+  if: env.CODECOV_TOKEN != ''
   uses: codecov/codecov-action@v4
   with:
-    token: ${{ secrets.CODECOV_TOKEN }}
+    token: ${{ env.CODECOV_TOKEN }}
     files: coverage/lcov.info
-    # flags: pr|push (optional)
+    flags: pr
     fail_ci_if_error: false
 ```
 
-Notes
-
-- Workflows in this repo (`tests.yml`, `quick-checks.yml`, `pr-tests.yml`) already follow the Action-based approach.
-- Avoid duplication: Do not use both an Action and a script uploader in the same workflow/job; pick one.
-- Alternative: For local or non-Actions CI, a script-based uploader can be used instead of the Action.
+Alternative — script/uploader for local or non–GitHub Actions CI. Do not combine both methods in the same workflow to avoid duplicate uploads.
 
 ## Commit Hygiene (PR)
 
