@@ -213,8 +213,8 @@ events enrich --in samples/pull_request.synchronize.json \
 
 See also:
 
-- Specs §6.1 Rule Engine and Composed Events: `docs/specs/README.md#61-rule-engine-and-composed-events`
-- Full CLI reference: `docs/cli/reference.md`
+- [Specs §6.1 Rule Engine and Composed Events](docs/specs/README.md#61-rule-engine-and-composed-events)
+- [Full CLI reference](docs/cli/reference.md)
 
 ## Coverage (Optional)
 
