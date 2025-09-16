@@ -194,15 +194,19 @@ events enrich --in samples/pull_request.synchronize.json \
 
 CI can upload coverage to Codecov and show a badge in this README. Uploads are disabled by default and only run when a token is configured.
 
-Default (recommended) — GitHub Action in CI:
+Default (recommended) — GitHub Action in CI (env‑gated to match our workflows):
 
 ```yaml
-# Example step in a job that generates coverage/lcov.info
+# Example snippet in a job that generates coverage/lcov.info
+env:
+  # Prefer repo/org Secret; fall back to repo/org Variable if provided
+  CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN || vars.CODECOV_TOKEN || '' }}
+
 - name: Upload coverage to Codecov (optional)
-  if: ${{ secrets.CODECOV_TOKEN != '' }}
+  if: env.CODECOV_TOKEN != ''
   uses: codecov/codecov-action@v4
   with:
-    token: ${{ secrets.CODECOV_TOKEN }}
+    token: ${{ env.CODECOV_TOKEN }}
     files: coverage/lcov.info
     flags: pr
     fail_ci_if_error: false

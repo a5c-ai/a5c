@@ -18,14 +18,17 @@ This repo uses a fast/slow split for CI to keep PR feedback under a few minutes 
 
 ### Coverage Upload
 
-Default (recommended) — use the Codecov GitHub Action in CI and gate on a secret:
+Default (recommended) — use the Codecov GitHub Action in CI and gate on a secret/variable (aligns with repo workflows):
 
 ```yaml
+env:
+  CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN || vars.CODECOV_TOKEN || '' }}
+
 - name: Upload coverage to Codecov (optional)
-  if: ${{ secrets.CODECOV_TOKEN != '' }}
+  if: env.CODECOV_TOKEN != ''
   uses: codecov/codecov-action@v4
   with:
-    token: ${{ secrets.CODECOV_TOKEN }}
+    token: ${{ env.CODECOV_TOKEN }}
     files: coverage/lcov.info
     flags: pr
     fail_ci_if_error: false
