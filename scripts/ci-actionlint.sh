@@ -13,14 +13,36 @@ if [[ ! -d "$WORKFLOWS_DIR" ]]; then
   exit 0
 fi
 
+# Mode: advisory (default) vs strict (fail on findings)
+# Accept values like: true/1/yes to enable strict mode
+REQUIRE_ACTIONLINT_RAW=${REQUIRE_ACTIONLINT:-""}
+to_lower() { echo "$1" | tr '[:upper:]' '[:lower:]'; }
+REQUIRE_ACTIONLINT_NORM=$(to_lower "$REQUIRE_ACTIONLINT_RAW")
+if [[ "$REQUIRE_ACTIONLINT_NORM" == "true" || "$REQUIRE_ACTIONLINT_NORM" == "1" || "$REQUIRE_ACTIONLINT_NORM" == "yes" ]]; then
+  STRICT=1
+else
+  STRICT=0
+fi
+
+if [[ "$STRICT" -eq 1 ]]; then
+  echo "::notice title=actionlint mode::Strict mode enabled via REQUIRE_ACTIONLINT=$REQUIRE_ACTIONLINT_RAW"
+else
+  echo "::notice title=actionlint mode::Advisory mode (default). Set REQUIRE_ACTIONLINT=true to fail on findings."
+fi
+
 run_actionlint_binary() {
   echo "Using actionlint binary installer"
   if bash <(curl -s https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash) >/dev/null 2>&1; then
     if ./actionlint -color; then
       return 0
     else
-      echo "::warning::actionlint found issues. Proceeding without failing CI." >&2
-      return 0
+      if [[ "$STRICT" -eq 1 ]]; then
+        echo "::error title=actionlint::Found issues and REQUIRE_ACTIONLINT=true — failing." >&2
+        return 2
+      else
+        echo "::warning::actionlint found issues. Proceeding without failing CI (advisory mode)." >&2
+        return 0
+      fi
     fi
   fi
   return 1
@@ -41,10 +63,20 @@ if command -v docker >/dev/null 2>&1; then
   if run_actionlint_docker; then
     exit 0
   else
-    echo "::warning::actionlint via Docker failed. Proceeding without failing CI." >&2
-    exit 0
+    if [[ "$STRICT" -eq 1 ]]; then
+      echo "::error::actionlint via Docker failed to run. REQUIRE_ACTIONLINT=true set; failing." >&2
+      exit 1
+    else
+      echo "::warning::actionlint via Docker failed. Proceeding without failing CI (advisory mode)." >&2
+      exit 0
+    fi
   fi
 fi
 
-echo "::notice::actionlint not available (no curl or docker). Skipping." >&2
-exit 0
+if [[ "$STRICT" -eq 1 ]]; then
+  echo "::error::actionlint not available (no curl or docker) while REQUIRE_ACTIONLINT=true; failing." >&2
+  exit 1
+else
+  echo "::notice::actionlint not available (no curl or docker). Skipping (advisory mode)." >&2
+  exit 0
+fi
