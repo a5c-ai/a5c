@@ -16,6 +16,3 @@
 ## Checklist
 
 - [ ] Emit `schema_version` in obs-summary and obs-collector
-- [ ] Add JSON Schema and example
-- [ ] Link docs and README
-- [ ] Optionally POST to external URL when configured

@@ -66,6 +66,13 @@ Ownership semantics:
 - owners: resolved code owners per changed file and union at PR level.
   - Semantics: the PR‑level `owners_union` is the sorted, de‑duplicated union of all CODEOWNERS across changed files. This intentionally differs from GitHub’s per‑file evaluation (last matching rule wins). A future toggle may allow strict last‑rule parity at PR level.
 - mentions: see schema below; sources include commit messages, PR/issue title/body, latest issue_comment (event), and code comments in changed files using language-aware regexes for `@name` inside comments.
+  Examples: see `docs/examples/enrich.offline.json` (offline; includes `enriched.github` with `partial=true` and `reason: "flag:not_set"`) and
+  `docs/examples/enrich.online.json` (minimal representative `enriched.github`). Both validate against `docs/specs/ne.schema.json`.
+
+Examples:
+
+- Offline enrich (no `--use-github`): `docs/examples/enrich.offline.json` (stub with `enriched.github.partial=true`, `reason: "flag:not_set"`)
+- Online enrich (`--use-github`): `docs/examples/enrich.online.json`
 
 ### 4.2) Mentions Schema
 
@@ -82,6 +89,8 @@ Ownership semantics:
 Configuration (aligns with CLI and README):
 
 - `mentions.scan.changed_files`: `true|false` (default: true) — scan changed files for `@...` in code comments.
+- `mentions.scan.commit_messages`: `true|false` (default: true) — scan commit messages for mentions.
+- `mentions.scan.issue_comments`: `true|false` (default: true) — scan issue comment bodies for mentions.
 - `mentions.max_file_bytes`: number of bytes cap per file (default: 204800 bytes ≈ 200KB)
 - `mentions.languages`: optional allowlist of canonical language codes to scan (e.g., `js,ts,py,go,yaml,md`). When omitted, detection is used.
   - Mapping note: extensions are normalized to codes during detection (e.g., `.tsx → ts`, `.jsx → js`, `.yml → yaml`), but the allowlist compares codes.
@@ -109,7 +118,7 @@ Example mention from a code comment:
 
 - Env vars: `GITHUB_TOKEN` (or custom `A5C_AGENT_GITHUB_TOKEN`), debug flags, provider-specific tokens.
 - Sources: prefer GitHub Actions runtime env and `secrets.*` and `vars.*` as in existing workflows.
-- CLI flags (implemented): `--in file.json`, `--out out.json`, `--label key=value`, `--select paths`, `--filter expr`.
+- CLI flags (implemented): `--in file.json`, `--out out.json`, `--label key=value`, `--select paths`, `--filter expr`. See CLI reference: `docs/cli/reference.md`.
 - Provider adapters: `providers/github`, stub interfaces for others. Auto-detect when running in Actions.
 
 ### 5.1) Environment Variables and Precedence
