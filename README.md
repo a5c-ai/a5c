@@ -59,7 +59,8 @@ events enrich --in ... --flag 'mentions.max_file_bytes=65536'
 # Restrict code-comment scanning to specific languages
 events enrich --in ... --flag "mentions.languages=ts,js,md"
 
-# Control which textual sources are scanned for @mentions during enrichment
+# Control which textual sources are scanned for @mentions during enrichment (commit messages and issue comments).
+# For code-comment scanning details, see `docs/cli/code-comment-mentions.md`.
 events enrich --in ... --flag 'mentions.scan.commit_messages=false'
 events enrich --in ... --flag 'mentions.scan.issue_comments=false'
 ```
