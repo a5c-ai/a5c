@@ -59,6 +59,7 @@ export async function cmdNormalize(opts: {
   // Resolve input path
   let inPath = opts.in;
   const normalizedSource = coerceSource(opts.source);
+  // If source is GitHub Actions (alias or canonical), default to GITHUB_EVENT_PATH
   if (!inPath && String(normalizedSource) === "action") {
     inPath = process.env.GITHUB_EVENT_PATH;
     if (!inPath)
