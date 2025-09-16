@@ -5,7 +5,7 @@ import { extractMentions } from "./extractor.js";
 import type { ExtractorOptions, MentionSource } from "./types.js";
 import { loadConfig, writeJSONFile } from "./config.js";
 import { cmdNormalize } from "./commands/normalize.js";
-import { cmdEnrich } from "./commands/enrich.js";
+import { handleEnrich } from "./enrich.js";
 import { handleEmit } from "./emit.js";
 import { redactObject } from "./utils/redact.js";
 import path from "node:path";
@@ -143,14 +143,13 @@ program
     const labels = Object.entries(cmdOpts.label || {}).map(
       ([k, v]) => `${k}=${v}`,
     );
-    const { code, output, errorMessage } = await cmdEnrich({
+    const { code, output } = await handleEnrich({
       in: cmdOpts.in,
       labels,
       rules: cmdOpts.rules,
       flags,
     });
     if (code !== 0 || !output) {
-      if (errorMessage) process.stderr.write(errorMessage + "\n");
       return process.exit(code || 1);
     }
     const { selectFields, parseFilter, passesFilter } = await import(

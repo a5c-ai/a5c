@@ -32,13 +32,13 @@ jobs:
           registry-url: "https://npm.pkg.github.com"
       - name: Install
         run: |
-          if [ -f package-lock.json ]; then 
+          if [ -f package-lock.json ]; then
             echo "Attempting clean install via npm ci..."
             if ! npm ci; then
               echo "npm ci failed (likely lockfile mismatch). Falling back to npm install to update lockfile..."
               npm install
             fi
-          else 
+          else
             npm install
           fi
       - name: Build
@@ -84,5 +84,24 @@ jobs:
             echo "Version already exists on npmjs, skipping publish."
             exit 0
           fi
-          # Publish to npmjs overriding package publishConfig registry
+          # Temporarily override project .npmrc to ensure scoped package publishes to npmjs (not GitHub Packages)
+          BACKUP_NPMRC=false
+          if [ -f .npmrc ]; then
+            mv .npmrc .npmrc.gpr
+            BACKUP_NPMRC=true
+          fi
+          cat > .npmrc <<'NPMRC'
+          fund=false
+          audit=false
+          save-exact=true
+          //registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}
+          @a5c-ai:registry=https://registry.npmjs.org/
+          NPMRC
+          echo "Auth check against npmjs: $(npm whoami --registry=https://registry.npmjs.org || echo 'not authenticated')"
+          # Publish to npmjs overriding any publishConfig registry
           npm publish --registry=https://registry.npmjs.org --access public
+          # Restore original .npmrc if it existed
+          if [ "$BACKUP_NPMRC" = true ]; then
+            rm -f .npmrc
+            mv .npmrc.gpr .npmrc
+          fi

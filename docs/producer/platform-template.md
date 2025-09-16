@@ -12,7 +12,7 @@
 
 **Transform your repository into an intelligent development environment with AI agents**
 
-*Work with specialized AI agents that handle tasks, review code, fix builds, and implement features through GitHub Issues and Pull Requests.*
+_Work with specialized AI agents that handle tasks, review code, fix builds, and implement features through GitHub Issues and Pull Requests._
 
 </div>
 
@@ -23,15 +23,17 @@
 <div align="center">
 
 ### 🆕 Starting a New Project?
+
 **Use our pre-configured template repository**
 
 [![Use Template](https://img.shields.io/badge/🚀_Use_a5c_Template-New_Project-brightgreen?style=for-the-badge&logo=github)](https://github.com/a5c-ai/seed-generic/generate)
 
-*Get started in minutes with a fully configured a5c environment*
+_Get started in minutes with a fully configured a5c environment_
 
 ---
 
 ### 📁 Have an Existing Project?
+
 **Add a5c agents to your current repository**
 
 </div>
@@ -41,8 +43,9 @@
 > **Note:** These steps are for adding a5c to an existing repository. For new projects, use the template above.
 
 1. **📋 Add Configuration Files to Your Existing Repository**
-   
+
    **Create `.github/workflows/a5c.yml`:**
+
    ```yaml
    name: a5c AI Agents
    on:
@@ -54,7 +57,7 @@
        types: [opened, edited, synchronize]
      pull_request_review_comment:
        types: [created, edited]
-   
+
    jobs:
      a5c:
        runs-on: ubuntu-latest
@@ -71,17 +74,18 @@
              azure-project: ${{ vars.AZURE_OPENAI_PROJECT_NAME }}
              gemini-key: ${{ secrets.GEMINI_API_KEY }}
    ```
-   
+
    **Create `.a5c/config.yml`:**
+
    ```yaml
    version: "1.0"
    # Example user configuration for A5C Runner
    # This file overrides settings from the built-in default configuration
-   # Uncomment and modify the sections you want to customize   
-   
+   # Uncomment and modify the sections you want to customize
+
    # Override default settings
    # mcp_config_path: ".a5c/custom-mcps.json"
-   
+
    # Override file processing settings
    # file_processing:
    #   include_patterns:
@@ -94,9 +98,9 @@
    #     - "*.test.*"
    remote_agents:
      enabled: true
-     cache_timeout: 120  # 2 hours
+     cache_timeout: 120 # 2 hours
      retry_attempts: 5
-     retry_delay: 2000   # 2 seconds
+     retry_delay: 2000 # 2 seconds
      sources:
        individual:
          - uri: "https://raw.githubusercontent.com/a5c-ai/registry/main/agents/development/team-installer-agent.agent.md"
@@ -106,20 +110,20 @@
    #   enabled: true
    #   max_agents_in_context: 15
    #   include_same_directory: true
-   
+
    # Override prompt URI settings
    # prompt_uri:
    #   cache_timeout: 120
    #   retry_attempts: 5
-   #   retry_delay: 2000 
+   #   retry_delay: 2000
    ```
 
 2. **🔧 Configure GitHub Permissions**
-   
+
    **Settings → Actions → General:**
    - ✅ Select **"Read and write permissions"**
    - ✅ Check **"Allow GitHub Actions to create and approve pull requests"**
-   
+
    **Settings → General:**
    - ✅ Enable **"Issues"**
    - ✅ Enable **"Actions"**
@@ -130,32 +134,37 @@
    - ✅ Settings → Member privileges → Make yourself visible
 
 3. **🔑 Add AI Provider Secrets**
-   
+
    Go to **Settings → Secrets and variables → Actions** and add:
-   
-   | Provider | Secret | Variable |
-   |----------|--------|----------|
-   | **OpenAI** | `OPENAI_API_KEY` | `A5C_CLI_TOOL=codex` |
-   | **Claude** | `ANTHROPIC_API_KEY` | `A5C_CLI_TOOL=claude` |
+
+   | Provider         | Secret                 | Variable                   |
+   | ---------------- | ---------------------- | -------------------------- |
+   | **OpenAI**       | `OPENAI_API_KEY`       | `A5C_CLI_TOOL=codex`       |
+   | **Claude**       | `ANTHROPIC_API_KEY`    | `A5C_CLI_TOOL=claude`      |
    | **Azure OpenAI** | `AZURE_OPENAI_API_KEY` | `A5C_CLI_TOOL=azure_codex` |
-   | **Gemini** | `GEMINI_API_KEY` | `A5C_CLI_TOOL=gemini` |
+   | **Gemini**       | `GEMINI_API_KEY`       | `A5C_CLI_TOOL=gemini`      |
 
 4. **🎯 Activate Your Team**
-   
+
    # Important - in the Issues and PRs, the "@" sign has to be attached to the name of the agent
-   for example: 
+
+   for example:
+
    ```markdown
    @agent-name
    ```
 
    Create these initial issues:
+
    ```markdown
    # Issue 1: Seed the Project
+
    @ project-seeder-agent start, the initial description is in the project description.
    ```
-   
+
    ```markdown
    # Issue 2: Install Team
+
    @ team-installer-agent Install all the relevant missing agent from the registry.
    ```
 
@@ -163,16 +172,16 @@
 
 ## 🤖 Your AI Development Team
 
-| Agent | Purpose | Example Usage |
-|-------|---------|---------------|
-| 🏗️ **team-installer-agent** | Installs & configures new agents | `@ team-installer-agent add security-reviewer` |
-| 👨‍💻 **developer-agent** | Feature development & coding | `@ developer-agent add user authentication` |
-| 🎯 **producer-agent** | Project coordination & planning | `@ producer-agent create project roadmap` |
-| ✅ **validator-agent** | Code quality & testing | `@ validator-agent review this PR` |
-| 🔧 **build-fixer-agent** | CI/CD & build issues | `@ build-fixer-agent fix failing tests` |
-| 📝 **content-writer-agent** | Documentation & content | `@ content-writer-agent update API docs` |
-| 🤝 **conflict-resolver-agent** | Merge conflicts & disputes | `@ conflict-resolver-agent resolve conflicts` |
-| ☁️ **azure-sre-engineer-agent** | Infrastructure & DevOps | `@ azure-sre-engineer-agent setup CI pipeline` |
+| Agent                           | Purpose                          | Example Usage                                  |
+| ------------------------------- | -------------------------------- | ---------------------------------------------- |
+| 🏗️ **team-installer-agent**     | Installs & configures new agents | `@ team-installer-agent add security-reviewer` |
+| 👨‍💻 **developer-agent**          | Feature development & coding     | `@ developer-agent add user authentication`    |
+| 🎯 **producer-agent**           | Project coordination & planning  | `@ producer-agent create project roadmap`      |
+| ✅ **validator-agent**          | Code quality & testing           | `@ validator-agent review this PR`             |
+| 🔧 **build-fixer-agent**        | CI/CD & build issues             | `@ build-fixer-agent fix failing tests`        |
+| 📝 **content-writer-agent**     | Documentation & content          | `@ content-writer-agent update API docs`       |
+| 🤝 **conflict-resolver-agent**  | Merge conflicts & disputes       | `@ conflict-resolver-agent resolve conflicts`  |
+| ☁️ **azure-sre-engineer-agent** | Infrastructure & DevOps          | `@ azure-sre-engineer-agent setup CI pipeline` |
 
 ---
 
@@ -201,10 +210,12 @@ graph LR
 ## 💡 Example Workflows
 
 ### Add a New Feature
+
 ```markdown
 @ developer-agent
 
 Create a user authentication system with:
+
 - Email/password login
 - JWT tokens for session management
 - Password reset functionality
@@ -214,15 +225,17 @@ Follow security best practices and add comprehensive tests.
 ```
 
 ### Fix a Build Issue
+
 ```markdown
 @ build-fixer-agent
 
-The CI pipeline is failing on the `test:integration` step. 
+The CI pipeline is failing on the `test:integration` step.
 The error mentions database connection issues in the test environment.
 Please investigate and fix the test configuration.
 ```
 
 ### Create Documentation
+
 ```markdown
 @ content-writer-agent
 
@@ -266,11 +279,13 @@ Complex projects may cost $20-50. Set usage limits in your AI provider dashboard
    ```
 
 ### High API Costs?
+
 - Set usage limits in your AI provider dashboard
 - Use more specific issue descriptions to reduce iteration
 - Review and approve PRs promptly to avoid re-work
 
 ### Build Failures?
+
 - Tag `@ build-fixer-agent` in the failing PR or create a new issue
 - Check Actions tab for detailed error logs
 - Agents will automatically retry failed builds
@@ -292,6 +307,7 @@ Complex projects may cost $20-50. Set usage limits in your AI provider dashboard
 ## 🤝 Contributing
 
 This template is part of the a5c ecosystem. To contribute:
+
 1. Fork this repository
 2. Make your improvements
 3. Submit a pull request
@@ -303,7 +319,7 @@ This template is part of the a5c ecosystem. To contribute:
 
 ## 🎉 Welcome to the Future of Development
 
-**Your repository is now *alive***
+**Your repository is now _alive_**
 
 Issues become tasks • Pull requests become conversations • Code becomes collaborative
 
@@ -313,6 +329,6 @@ Issues become tasks • Pull requests become conversations • Code becomes coll
 
 ---
 
-*Built with ❤️ by the a5c community*
+_Built with ❤️ by the a5c community_
 
 </div>
