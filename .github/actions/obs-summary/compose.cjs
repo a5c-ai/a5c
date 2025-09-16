@@ -65,10 +65,12 @@ try {
         const meta = a.meta || {};
         const attempts = Number(meta.retryCount || meta.retries || 0);
         const duration = a.duration ?? null;
+        // Ensure duration_ms is an integer per schema (or null)
+        const durationMs = typeof duration === 'number' ? Math.round(duration) : null;
         all.push({
           fullName: a.fullName || a.title || '',
           status: a.status,
-          duration_ms: typeof duration === 'number' ? duration : null,
+          duration_ms: durationMs,
           retries: attempts,
         });
       }

@@ -192,7 +192,7 @@ events enrich --in samples/pull_request.synchronize.json \
 
 ## Coverage (Optional)
 
-You can optionally upload coverage to Codecov and show a badge. This repo does not enable uploads by default.
+You can optionally upload coverage to Codecov. This repo does not enable uploads by default.
 
 Opt-in steps:
 
@@ -217,6 +217,7 @@ After the first successful upload, add a badge to this README:
 ```
 
 Replace the URL to match your VCS provider and repository if different. Private projects may require a tokenized badge; see Codecov docs.
+
 
 ### Auth tokens: precedence & redaction
 
@@ -319,7 +320,7 @@ See `docs/specs/README.md` for examples and behavior-driven test outlines. Add y
           node-version: 20
       ```
   - CI runs lint and typecheck on PRs; see `.github/workflows/lint.yml` and `.github/workflows/typecheck.yml`.
-  - Local pre-commit enforces whitespace/newline hygiene, lint, and typecheck; see `docs/contributing/README.md#pre-commit-checks`.
+- Local pre-commit enforces staged-file hygiene and runs lint-staged (ESLint + Prettier); see `docs/dev/precommit-hooks.md`. Conventional commits are validated via Husky + commitlint; see `docs/contributing/git-commits.md`.
 - Minimal Node types + commander; TypeScript configured in `tsconfig.json`
 
 ### Node.js Version Policy

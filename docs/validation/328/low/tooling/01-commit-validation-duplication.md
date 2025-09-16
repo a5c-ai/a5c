@@ -1,6 +1,7 @@
 # [Low] Tooling - Duplicate commit validation workflows
 
 Two PR commit validation workflows exist:
+
 - `.github/workflows/commitlint.yml` (uses `commitlint` with repo config)
 - `.github/workflows/commit-hygiene.yml` (uses `scripts/commit-verify.ts`)
 

@@ -10,5 +10,5 @@ Warnings:
 - `tests/normalize.schema.test.ts:5:10` — `read` is defined but never used
 
 Notes:
-- Kept as documentation only; no behavior impact. Consider removing unused variables or prefixing with `_` where intentional.
 
+- Kept as documentation only; no behavior impact. Consider removing unused variables or prefixing with `_` where intentional.

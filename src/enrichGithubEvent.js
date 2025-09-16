@@ -16,9 +16,16 @@ function pick(obj, keys) {
 
 async function getCodeOwners(octokit, { owner, repo }) {
   try {
-    const res = await octokit.repos.getContent({ owner, repo, path: ".github/CODEOWNERS" });
+    const res = await octokit.repos.getContent({
+      owner,
+      repo,
+      path: ".github/CODEOWNERS",
+    });
     if (Array.isArray(res.data)) return [];
-    const content = Buffer.from(res.data.content, res.data.encoding || "base64").toString("utf8");
+    const content = Buffer.from(
+      res.data.content,
+      res.data.encoding || "base64",
+    ).toString("utf8");
     const rules = [];
     for (const line of content.split(/\r?\n/)) {
       const t = line.trim();
@@ -26,7 +33,12 @@ async function getCodeOwners(octokit, { owner, repo }) {
       const parts = t.split(/\s+/);
       const pattern = parts.shift();
       const owners = parts.filter(Boolean);
-      if (pattern && owners.length) rules.push({ pattern, owners, mm: new Minimatch(pattern, { dot: true }) });
+      if (pattern && owners.length)
+        rules.push({
+          pattern,
+          owners,
+          mm: new Minimatch(pattern, { dot: true }),
+        });
     }
     return rules;
   } catch (e) {
@@ -39,7 +51,8 @@ function resolveOwnersForFiles(rules, files) {
   const map = {};
   for (const f of files) {
     const owners = new Set();
-    for (const r of rules) if (r.mm.match(f)) r.owners.forEach((o) => owners.add(o));
+    for (const r of rules)
+      if (r.mm.match(f)) r.owners.forEach((o) => owners.add(o));
     map[f] = Array.from(owners);
   }
   return map;
@@ -52,8 +65,13 @@ async function withRetry(fn, { retries = 2, waitMs = 500 } = {}) {
       return await fn();
     } catch (e) {
       const status = e.status || e.response?.status;
-      if (status === 403 && e.response?.headers?.["x-ratelimit-remaining"] === "0") {
-        const reset = Number(e.response?.headers?.["x-ratelimit-reset"]) * 1000 || Date.now() + 60_000;
+      if (
+        status === 403 &&
+        e.response?.headers?.["x-ratelimit-remaining"] === "0"
+      ) {
+        const reset =
+          Number(e.response?.headers?.["x-ratelimit-reset"]) * 1000 ||
+          Date.now() + 60_000;
         const delay = Math.max(reset - Date.now(), waitMs);
         await sleep(delay);
       } else if (attempt < retries) {
@@ -75,13 +93,26 @@ export async function enrichGithubEvent(event, opts) {
   } = opts || {};
   const octokit = opts?.octokit || createOctokit(token);
 
-  const repoInfo = event.repository || event.pull_request?.base?.repo || event.workflow_run?.repository;
+  const repoInfo =
+    event.repository ||
+    event.pull_request?.base?.repo ||
+    event.workflow_run?.repository;
   if (!repoInfo) throw new Error("repository info missing on event");
-  const [owner, repo] = repoInfo.full_name ? repoInfo.full_name.split("/") : [repoInfo.owner.login, repoInfo.name];
+  const [owner, repo] = repoInfo.full_name
+    ? repoInfo.full_name.split("/")
+    : [repoInfo.owner.login, repoInfo.name];
 
   const codeOwnerRules = await getCodeOwners(octokit, { owner, repo });
 
-  const enriched = { _enrichment: { provider: "github", owner, repo, partial: false, errors: [] } };
+  const enriched = {
+    _enrichment: {
+      provider: "github",
+      owner,
+      repo,
+      partial: false,
+      errors: [],
+    },
+  };
 
   if (event.pull_request) {
     const pr = event.pull_request;
@@ -91,12 +122,23 @@ export async function enrichGithubEvent(event, opts) {
     // PR details including files
     const [prRes, filesRes] = await Promise.all([
       withRetry(() => octokit.pulls.get(base)),
-      withRetry(() => octokit.paginate(octokit.pulls.listFiles, { ...base, per_page: 100 }))
+      withRetry(() =>
+        octokit.paginate(octokit.pulls.listFiles, { ...base, per_page: 100 }),
+      ),
     ]);
 
     const prData = prRes.data;
     const files = filesRes.slice(0, fileLimit).map((f) => {
-      const keys = ["filename","status","additions","deletions","changes","sha","blob_url","raw_url"];
+      const keys = [
+        "filename",
+        "status",
+        "additions",
+        "deletions",
+        "changes",
+        "sha",
+        "blob_url",
+        "raw_url",
+      ];
       if (includePatch && f.patch) keys.push("patch");
       return pick(f, keys);
     });
@@ -105,10 +147,12 @@ export async function enrichGithubEvent(event, opts) {
     const prCheck = await withRetry(() => octokit.pulls.get({ ...base }));
 
     // Commits summary
-    const commits = await withRetry(() => octokit.paginate(octokit.pulls.listCommits, { ...base, per_page: 100 }));
-    const commitsSlice = commits.slice(0, commitLimit).map((c) => pick(c, [
-      "sha","commit","author","committer","parents"
-    ]));
+    const commits = await withRetry(() =>
+      octokit.paginate(octokit.pulls.listCommits, { ...base, per_page: 100 }),
+    );
+    const commitsSlice = commits
+      .slice(0, commitLimit)
+      .map((c) => pick(c, ["sha", "commit", "author", "committer", "parents"]));
 
     const changedFiles = files.map((f) => f.filename);
     const ownersMap = resolveOwnersForFiles(codeOwnerRules, changedFiles);
@@ -120,9 +164,12 @@ export async function enrichGithubEvent(event, opts) {
     }
     const ownersUnion = Array.from(ownersUnionSet).sort();
     const mergeableState = prCheck.data.mergeable_state;
-    const hasConflicts = mergeableState === "dirty" || mergeableState === "blocked";
+    const hasConflicts =
+      mergeableState === "dirty" || mergeableState === "blocked";
     // Labels and review requests
-    const prLabels = Array.isArray(prData.labels) ? prData.labels.map((l) => l?.name).filter(Boolean) : [];
+    const prLabels = Array.isArray(prData.labels)
+      ? prData.labels.map((l) => l?.name).filter(Boolean)
+      : [];
     const requestedReviewers = Array.isArray(prData.requested_reviewers)
       ? prData.requested_reviewers.map((u) => u?.login).filter(Boolean)
       : [];
@@ -150,30 +197,54 @@ export async function enrichGithubEvent(event, opts) {
       commits: commitsSlice,
       files,
       owners: ownersMap,
-      ...(ownersUnion.length ? { owners_union: ownersUnion } : { owners_union: [] })
+      ...(ownersUnion.length
+        ? { owners_union: ownersUnion }
+        : { owners_union: [] }),
     };
 
     // Branch protection
     try {
-      const bp = await withRetry(() => octokit.repos.getBranchProtection({ owner, repo, branch: prData.base.ref }));
+      const bp = await withRetry(() =>
+        octokit.repos.getBranchProtection({
+          owner,
+          repo,
+          branch: prData.base.ref,
+        }),
+      );
       const bpData = bp?.data ?? bp;
       // Project key flags when available
       const flags = {};
       try {
         const rpr = bpData?.required_pull_request_reviews;
         if (rpr && typeof rpr === "object") {
-          if (rpr.dismiss_stale_reviews != null) flags.dismiss_stale_reviews = !!rpr.dismiss_stale_reviews;
-          if (rpr.required_approving_review_count != null) flags.required_approvals = Number(rpr.required_approving_review_count);
+          if (rpr.dismiss_stale_reviews != null)
+            flags.dismiss_stale_reviews = !!rpr.dismiss_stale_reviews;
+          if (rpr.required_approving_review_count != null)
+            flags.required_approvals = Number(
+              rpr.required_approving_review_count,
+            );
         }
         const rlh = bpData?.required_linear_history;
-        if (rlh && typeof rlh === "object" && "enabled" in rlh) flags.linear_history = !!rlh.enabled;
+        if (rlh && typeof rlh === "object" && "enabled" in rlh)
+          flags.linear_history = !!rlh.enabled;
         const rsc = bpData?.required_status_checks;
-        if (rsc && typeof rsc === "object") flags.has_required_status_checks = true;
+        if (rsc && typeof rsc === "object")
+          flags.has_required_status_checks = true;
       } catch {}
-      enriched._enrichment.branch_protection = { protected: true, data: bpData, ...(Object.keys(flags).length ? { flags } : {}) };
+      enriched._enrichment.branch_protection = {
+        protected: true,
+        data: bpData,
+        ...(Object.keys(flags).length ? { flags } : {}),
+      };
     } catch (e) {
-      enriched._enrichment.branch_protection = { protected: false, partial: true };
-      enriched._enrichment.errors.push({ scope: "branch_protection", status: e.status || 0 });
+      enriched._enrichment.branch_protection = {
+        protected: false,
+        partial: true,
+      };
+      enriched._enrichment.errors.push({
+        scope: "branch_protection",
+        status: e.status || 0,
+      });
       enriched._enrichment.partial = true;
     }
   } else if (event.commits || event.head_commit || event.ref) {
@@ -182,21 +253,51 @@ export async function enrichGithubEvent(event, opts) {
     const after = event.after;
     if (before && after) {
       try {
-        const comp = await withRetry(() => octokit.repos.compareCommits({ owner, repo, base: before, head: after }));
+        const comp = await withRetry(() =>
+          octokit.repos.compareCommits({
+            owner,
+            repo,
+            base: before,
+            head: after,
+          }),
+        );
         const files = (comp.data.files || []).slice(0, fileLimit).map((f) => {
-          const keys = ["filename","status","additions","deletions","changes","sha","blob_url","raw_url"];
+          const keys = [
+            "filename",
+            "status",
+            "additions",
+            "deletions",
+            "changes",
+            "sha",
+            "blob_url",
+            "raw_url",
+          ];
           if (includePatch && f.patch) keys.push("patch");
           return pick(f, keys);
         });
-        const commits = (comp.data.commits || []).slice(0, commitLimit).map((c) => pick(c, ["sha","commit","author","committer","parents"]));
-        const ownersMap = resolveOwnersForFiles(codeOwnerRules, files.map((f) => f.filename));
+        const commits = (comp.data.commits || [])
+          .slice(0, commitLimit)
+          .map((c) =>
+            pick(c, ["sha", "commit", "author", "committer", "parents"]),
+          );
+        const ownersMap = resolveOwnersForFiles(
+          codeOwnerRules,
+          files.map((f) => f.filename),
+        );
         enriched._enrichment.push = {
-          before, after, total_commits: comp.data.total_commits,
-          files, commits, owners: ownersMap
+          before,
+          after,
+          total_commits: comp.data.total_commits,
+          files,
+          commits,
+          owners: ownersMap,
         };
       } catch (e) {
         enriched._enrichment.partial = true;
-        enriched._enrichment.errors.push({ scope: "compare", status: e.status || 0 });
+        enriched._enrichment.errors.push({
+          scope: "compare",
+          status: e.status || 0,
+        });
       }
     }
   }

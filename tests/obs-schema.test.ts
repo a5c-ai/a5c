@@ -8,7 +8,7 @@ describe("observability schema v0.1", () => {
   it("validates docs/examples/observability.json", () => {
     const schemaPath = path.join(
       process.cwd(),
-      "docs/schemas/observability.schema.json",
+      "docs/specs/observability.schema.json",
     );
     const examplePath = path.join(
       process.cwd(),

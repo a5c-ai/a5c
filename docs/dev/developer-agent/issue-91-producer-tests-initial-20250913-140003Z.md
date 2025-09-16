@@ -4,6 +4,7 @@
 - Branch: feat/producer-tests-issue91
 
 Plan:
+
 - Align vitest include patterns for TS tests
 - Add CLI smoke tests for normalize/enrich using samples
 - Verify locally with npm test
