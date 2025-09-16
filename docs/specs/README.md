@@ -49,7 +49,8 @@
 
 - derived: diff stats, changed files globs, semantic commit parsing, conventional commit scope; commit logs and PR/push diffs; PR conflict status.
 - correlations: link workflow_run -> commit -> PR -> issues; map failures to responsible code owners; associate deployments with releases.
-- mentions: extract `@agent`/`@user` mentions across commit messages, PR/issue titles + bodies, issue_comment, and changed files (code comments) with location context.
+  – mentions: extract `@agent`/`@user` mentions across commit messages, PR/issue titles + bodies, issue_comment, and changed files (code comments) with location context.
+  - Language filtering: `mentions.languages` is an optional allowlist using canonical language IDs (e.g., `js,ts,py,go,java,c,cpp,sh,yaml,md`). For convenience, common extensions (with or without a leading dot) are accepted and normalized to IDs (e.g., `.tsx → ts`, `.jsx → js`, `.yml → yaml`).
 - scoring: compute risk/impact scores for events (MVP optional).
 
 ### 4.1) GitHub Enrichment Details (MVP)
