@@ -7,4 +7,3 @@ Category: documentation
 - In `docs/observability.md`, add a short "Artifact schema" subsection marking the schema as experimental with `schema_version: 0.1` and stability notes for iteration.
 
 Rationale: A concrete example reduces ambiguity and accelerates tooling adoption across repos.
-

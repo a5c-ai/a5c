@@ -2,7 +2,7 @@
 
 Minor lint warnings remain in this branch. Non‑blocking but should be cleaned up for code health.
 
-- src/codeComments.ts: '_' is defined but never used (@typescript-eslint/no-unused-vars)
+- src/codeComments.ts: '\_' is defined but never used (@typescript-eslint/no-unused-vars)
 - src/enrich.ts: 'evaluateRules' is defined but never used (@typescript-eslint/no-unused-vars)
 - tests/ne.schema.compile.test.ts: Unused eslint-disable directive
 - tests/normalize.schema.test.ts: 'read' is defined but never used

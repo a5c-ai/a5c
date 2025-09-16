@@ -1,2 +1,4 @@
-export { enrichGithubEvent as default, enrichGithubEvent } from '../../enrichGithubEvent.js'
-
+export {
+  enrichGithubEvent as default,
+  enrichGithubEvent,
+} from "../../enrichGithubEvent.js";

@@ -1,10 +1,22 @@
 module.exports = {
-  extends: ['@commitlint/config-conventional'],
+  extends: ["@commitlint/config-conventional"],
+  // Allow a single leading emoji (and optional space) before the type
+  parserPreset: {
+    parserOpts: {
+      headerPattern:
+        /^(?:[^\p{L}\p{N}]+\s*)?(?<type>build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(?:\((?<scope>[^)]+)\))?(?<breaking>!)?: (?<subject>.+)$/u,
+      // Map capture groups including the optional breaking (!) marker
+      headerCorrespondence: ["type", "scope", "breaking", "subject"],
+    },
+  },
   rules: {
     // Keep subject flexible; rely on type/scope validity
-    'subject-case': [0],
-    'scope-case': [2, 'always', 'kebab-case'],
+    "subject-case": [0],
+    "scope-case": [2, "always", "kebab-case"],
     // Align with scripts/commit-verify.ts which doesn't limit header length
-    'header-max-length': [0],
+    "header-max-length": [0],
+    // Allow rich release notes and auto-generated footers in commits included in PR ranges
+    "body-max-line-length": [0],
+    "footer-max-line-length": [0],
   },
 };

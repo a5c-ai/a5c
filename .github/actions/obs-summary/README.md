@@ -2,7 +2,9 @@
 
 Aggregates basic job metadata with optional coverage and cache metrics, writes a human-readable step summary, and outputs `observability.json` that is uploaded as an artifact.
 
-## Usage
+> Node behavior: This composite executes Node.js inline scripts (via `node -e`) and ensures Node inside the composite using `actions/setup-node@v4` with a default version of `20`. You can override via the `with.node-version` input, or optionally pre-setup Node earlier in your job if you prefer explicit control.
+
+## Usage (internal Node setup by default)
 
 ```yaml
 - name: Observability summary
@@ -13,7 +15,7 @@ Aggregates basic job metadata with optional coverage and cache metrics, writes a
     OBS_FILE: observability.json # optional
     VALIDATE_OBS_SCHEMA: "true" # optional, warn-only validation
     # Optional cache inputs (example: setup-node cache hit)
-    # From actions/setup-node@v4 with id: setup-node
+    # From actions/setup-node@v4 with id: setup-node (if you add it yourself)
     # Boolean-like strings supported: true/1/yes/y
     CACHE_NODE_HIT: ${{ steps.setup-node.outputs.cache-hit }}
     # Optional job conclusion (e.g., pass through from job.status)
@@ -28,6 +30,21 @@ Aggregates basic job metadata with optional coverage and cache metrics, writes a
     BRANCH_REF: ${{ github.ref }}
     # Optional; used for duration computation
     RUN_STARTED_AT: ${{ github.run_started_at }}
+```
+
+Optional: pre‑setup Node earlier in the job (if you want to control the Node toolchain yourself):
+
+```yaml
+- name: Setup Node.js (optional)
+  id: setup-node
+  uses: actions/setup-node@v4
+  with:
+    node-version: 20
+
+- name: Observability summary
+  uses: ./.github/actions/obs-summary
+  with:
+    node-version: 20 # keep in sync if overriding
 ```
 
 Notes:

@@ -1,12 +1,19 @@
 #!/usr/bin/env node
 // Copy runtime JS assets that tsc does not emit (e.g., src/*.js) into dist
 // Keeps TypeScript config strict (no allowJs) while ensuring CLI can import JS helpers.
-import fs from 'node:fs';
-import path from 'node:path';
+import fs from "node:fs";
+import path from "node:path";
 
-const ROOT = path.resolve(path.join(import.meta.url.startsWith('file:') ? new URL('.', import.meta.url).pathname : '.', '..'));
-const SRC = path.join(ROOT, 'src');
-const DIST = path.join(ROOT, 'dist');
+const ROOT = path.resolve(
+  path.join(
+    import.meta.url.startsWith("file:")
+      ? new URL(".", import.meta.url).pathname
+      : ".",
+    "..",
+  ),
+);
+const SRC = path.join(ROOT, "src");
+const DIST = path.join(ROOT, "dist");
 
 function walk(dir) {
   const entries = fs.readdirSync(dir, { withFileTypes: true });
@@ -30,7 +37,7 @@ function relToDist(p) {
 
 try {
   const all = walk(SRC);
-  const jsFiles = all.filter((f) => f.endsWith('.js'));
+  const jsFiles = all.filter((f) => f.endsWith(".js"));
   for (const src of jsFiles) {
     const dest = relToDist(src);
     ensureDir(path.dirname(dest));
@@ -41,6 +48,6 @@ try {
   }
   process.exit(0);
 } catch (e) {
-  console.error('[build-post] Failed copying JS assets:', e?.message || e);
+  console.error("[build-post] Failed copying JS assets:", e?.message || e);
   process.exit(1);
 }

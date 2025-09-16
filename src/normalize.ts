@@ -1,1 +1,1 @@
-export { runNormalize as handleNormalize } from './commands/normalize.js'
+export { runNormalize as handleNormalize } from "./commands/normalize.js";

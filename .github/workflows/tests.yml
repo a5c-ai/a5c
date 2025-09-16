@@ -104,6 +104,7 @@ jobs:
           path: |
             junit.xml
           if-no-files-found: ignore
+      # Keep a single Codecov upload (guarded by token)
       - name: Validate observability example against schema
         if: always()
         run: |

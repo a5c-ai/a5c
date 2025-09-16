@@ -61,7 +61,7 @@
   },
   "ref": {
     "name": "feat/samples-fixtures-issue48",
-    "type": "pr",
+    "type": "branch",
     "head": "feat/samples-fixtures-issue48",
     "base": "a5c/main"
   },
