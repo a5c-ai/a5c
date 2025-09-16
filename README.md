@@ -58,7 +58,7 @@ events enrich --in ... --flag 'mentions.max_file_bytes=65536'
 events enrich --in ... --flag "mentions.languages=ts,js,md"
 ```
 
-See: docs/specs/README.md#4.2-mentions-schema for full details.
+See: docs/specs/README.md#42-mentions-schema for full details.
 
 `events mentions`
 
@@ -122,7 +122,7 @@ events enrich --in samples/pull_request.synchronize.json \
 
 See also:
 
-- Specs: `docs/specs/README.md#4.2-mentions-schema`
+- Specs: `docs/specs/README.md#42-mentions-schema`
 - CLI reference: `docs/cli/reference.md` (enrich > Mentions scanning flags)
 
 Behavior:
