@@ -40,14 +40,7 @@ export async function handleEnrich(opts: {
     200 * 1024,
   );
   const langFilterRawFlag = (opts.flags as any)?.["mentions.languages"] as any;
-  const languageFiltersFlag = Array.isArray(langFilterRawFlag)
-    ? (langFilterRawFlag as string[])
-    : typeof langFilterRawFlag === "string" && langFilterRawFlag.length
-      ? String(langFilterRawFlag)
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean)
-      : undefined;
+  const languageFiltersFlag = normalizeLanguageFilters(langFilterRawFlag);
 
   const cfg = loadConfig();
   const token = cfg.githubToken;
@@ -399,6 +392,70 @@ function toBool(v: any): boolean {
   if (v == null) return false;
   const s = String(v).toLowerCase();
   return s === "1" || s === "true" || s === "yes" || s === "on";
+}
+
+// Normalize mentions.languages input: accept canonical codes (js,ts,py,go,java,c,cpp,sh,yaml,md)
+// and common extensions (tsx->ts, jsx->js, yml->yaml, leading dots ignored). Case-insensitive.
+function normalizeLanguageFilters(raw: unknown): string[] | undefined {
+  const CANON = new Set([
+    "js",
+    "ts",
+    "py",
+    "go",
+    "java",
+    "c",
+    "cpp",
+    "sh",
+    "yaml",
+    "md",
+  ]);
+  const EXT_MAP: Record<string, string> = {
+    tsx: "ts",
+    jsx: "js",
+    yml: "yaml",
+    // also allow passing extensions with dots
+    ".ts": "ts",
+    ".tsx": "ts",
+    ".js": "js",
+    ".jsx": "js",
+    ".yml": "yaml",
+    ".yaml": "yaml",
+    ".md": "md",
+    ".markdown": "md",
+    ".c": "c",
+    ".h": "c",
+    ".cc": "cpp",
+    ".cpp": "cpp",
+    ".cxx": "cpp",
+    ".hpp": "cpp",
+    ".hh": "cpp",
+    ".sh": "sh",
+    ".bash": "sh",
+    ".zsh": "sh",
+    ".py": "py",
+    ".go": "go",
+    ".java": "java",
+    ".mjs": "js",
+    ".cjs": "js",
+  };
+  const arr: string[] = Array.isArray(raw)
+    ? (raw as string[])
+    : typeof raw === "string" && raw.length
+      ? String(raw).split(",")
+      : [];
+  const out: string[] = [];
+  for (const item of arr) {
+    const k = String(item).trim();
+    if (!k) continue;
+    const lower = k.toLowerCase();
+    if (CANON.has(lower)) {
+      out.push(lower);
+      continue;
+    }
+    const mapped = EXT_MAP[lower] ?? EXT_MAP[lower.replace(/^\./, "")];
+    if (mapped && CANON.has(mapped)) out.push(mapped);
+  }
+  return out.length ? Array.from(new Set(out)) : undefined;
 }
 
 function toInt(v: any, d = 0): number {
