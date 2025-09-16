@@ -149,9 +149,9 @@ Example mention from a code comment:
   - `reason?: string` (optional human-readable summary of matched criteria)
   - `labels?: string[]` additional routing labels
   - `targets?: string[]` optional list of intended agent recipients (by name)
-  - `payload?: any` projected fields from the source event
+  - `payload?: object | array | null` projected fields from the source event
 
-Schema: `docs/specs/ne.schema.json` includes an optional top-level `composed[]` array matching the structure above (each item requires `key`).
+Schema: `docs/specs/ne.schema.json` includes an optional top-level `composed[]` array matching the structure above (each item requires `key`). `composed[].payload` is constrained to `object | array | null`.
 
 Example rule (YAML):
 
