@@ -156,7 +156,7 @@ program
         );
         return process.exit(3);
       }
-    } catch (_) {
+    } catch {
       // If config loading fails, proceed and let downstream logic handle errors
     }
     const labels = Object.entries(cmdOpts.label || {}).map(
