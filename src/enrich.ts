@@ -178,7 +178,7 @@ export async function handleEnrich(opts: {
     if (pr?.body) mentions.push(...extractMentions(String(pr.body), "pr_body"));
     if (pr?.title)
       mentions.push(...extractMentions(String(pr.title), "pr_title"));
-    // Extract mentions from GitHub Issue events (title/body)
+    // Issue title/body mentions (issues.* events)
     const issue = (baseEvent as any)?.issue;
     if (issue?.title)
       mentions.push(...extractMentions(String(issue.title), "issue_title"));
@@ -345,7 +345,7 @@ export async function handleEnrich(opts: {
       github: githubEnrichment,
       metadata: { ...(neShell.enriched?.metadata || {}), rules: opts.rules },
       derived: {
-        ...(neShell.enriched?.derived || {}),
+      ...(neShell.enriched?.derived || {}),
         flags: opts.flags || {},
       },
       ...(normalizedMentions.length ? { mentions: normalizedMentions } : {}),
