@@ -1,18 +1,1 @@
-[
-  {
-    "key": "conflict_in_pr_with_low_priority_label",
-    "when": {
-      "all": [
-        {
-          "path": "payload.pull_request.mergeable_state",
-          "in": ["dirty", "blocked"]
-        },
-        {
-          "path": "payload.pull_request.labels[0].name",
-          "contains": "priority:low"
-        }
-      ]
-    },
-    "targets": ["developer-agent"]
-  }
-]
+[{"key":"conflict_in_pr_with_low_priority_label","when":{"all":[{"path":"payload.pull_request.mergeable_state","in":["dirty","blocked"]},{"path":"payload.pull_request.labels[0].name","contains":"priority:low"}]},"targets":["developer-agent"]}]

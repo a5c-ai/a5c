@@ -14,8 +14,62 @@ This repo uses a fast/slow split for CI to keep PR feedback under a few minutes 
   - `npm run test:ci` (vitest with coverage)
   - Artifacts: `coverage/lcov.info`, `coverage/coverage-summary.json`
   - Step summary: Coverage table appended to the job summary
+  - Optional Codecov upload: prefer `codecov/codecov-action@v4` guarded by a token
+
+### Coverage Upload
+
+Default (recommended) — use the Codecov GitHub Action in CI and gate on a secret/variable (aligns with repo workflows):
+
+```yaml
+env:
+  CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN || vars.CODECOV_TOKEN || '' }}
+
+- name: Upload coverage to Codecov (optional)
+  if: env.CODECOV_TOKEN != ''
+  uses: codecov/codecov-action@v4
+  with:
+    token: ${{ env.CODECOV_TOKEN }}
+    files: coverage/lcov.info
+    flags: pr
+    fail_ci_if_error: false
+```
+
+Alternative — script/uploader for local or non–GitHub Actions CI. Do not combine both methods in the same workflow to avoid duplicate uploads.
 
 Recommended as a required PR check.
+
+### Example Validation
+
+Validate that a normalized example matches the NE schema. CI uses `ajv-cli` with pinned versions, and gracefully falls back to the built-in validator to avoid network flakiness.
+
+Copy/paste to run locally with ajv-cli (Draft 2020-12 + formats):
+
+```
+# produce an example NE json
+npm run build --silent
+node dist/cli.js normalize \
+  --in samples/workflow_run.completed.json \
+  --out /tmp/out.ne.json
+
+# validate with ajv-cli v5 and ajv-formats v3 (pinned)
+npx -y ajv-cli@5.0.0 validate \
+  -s docs/specs/ne.schema.json \
+  -d /tmp/out.ne.json \
+  --spec=draft2020 \
+  -c ajv-formats@3.0.1
+```
+
+Local alternative using the built-in CLI (no network dependency):
+
+```
+npm run build --silent
+node dist/cli.js validate \
+  --in /tmp/out.ne.json \
+  --schema docs/specs/ne.schema.json \
+  --quiet
+```
+
+Tip: `npm run validate:examples` runs both checks locally.
 
 ## Lint (PR)
 
@@ -47,45 +101,25 @@ Runs independently to surface TS errors early across supported Node versions. Qu
 
 Heavier/longer gates run on protected branches to keep PRs snappy while maintaining strong guarantees before merge/deploy.
 
-## Coverage Upload (Optional: Codecov)
+## Coverage Upload (Codecov)
 
-You can optionally upload coverage to Codecov and display a badge. Uploads are disabled by default and only run when a token is configured.
-
-Prerequisites
-
-- Create a Codecov project for this repository.
-- Add a repository Secret or Variable named `CODECOV_TOKEN`.
-
-Script
-
-- Use `scripts/coverage-upload.sh`. It:
-  - No-ops if `CODECOV_TOKEN` is not set or `coverage/lcov.info` is missing.
-  - Uploads using Codecov's bash uploader from `https://codecov.io/bash`.
-  - Never fails the build if token is missing or file is absent (script exits 0).
-
-Enable in Tests workflow (example snippet)
-
-Add a step after tests to upload coverage. Do not commit this change unless your org opts in.
+Default (recommended) — use the Codecov GitHub Action in CI and gate on a secret/variable (aligns with repo workflows):
 
 ```yaml
+env:
+  CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN || vars.CODECOV_TOKEN || '' }}
+
 - name: Upload coverage to Codecov (optional)
-  if: ${{ env.CODECOV_TOKEN != '' }}
-  env:
-    CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-  run: |
-    bash scripts/coverage-upload.sh
+  if: env.CODECOV_TOKEN != ''
+  uses: codecov/codecov-action@v4
+  with:
+    token: ${{ env.CODECOV_TOKEN }}
+    files: coverage/lcov.info
+    flags: pr
+    fail_ci_if_error: false
 ```
 
-Optional environment variables:
-
-- `CODECOV_FLAGS`: e.g., `tests,vitest`
-- `CODECOV_BUILD`: build identifier (commit SHA or run id)
-- `CODECOV_URL`: override the uploader host for self-hosted instances
-- `CODECOV_DRY`: set to `1` to print the upload command and skip execution
-
-Badge (README)
-
-See README for an optional badge snippet when enabled.
+Alternative — script/uploader for local or non–GitHub Actions CI. Do not combine both methods in the same workflow to avoid duplicate uploads.
 
 ## Commit Hygiene (PR)
 
