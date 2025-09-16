@@ -93,7 +93,7 @@ Full reference and examples: docs/cli/reference.md#events-enrich
 - `--flag include_patch=<true|false>`: include diff patches in files (default: false)
 - `--flag commit_limit=<n>`: max commits to include (default: 50)
 - `--flag file_limit=<n>`: max files to include (default: 200)
-- Mentions scanning flags are centralized in `docs/cli/reference.md` (see that section for canonical wording and defaults).
+- Mentions scanning flags are centralized in `docs/cli/reference.md#events-enrich` (canonical wording and defaults).
 - `--use-github`: enable GitHub API enrichment (requires `GITHUB_TOKEN`)
 - `--select <paths>`: comma-separated dot paths to include in output
 - `--filter <expr>`: filter expression `path[=value]`; if not matching, exits with code 2 and no output
@@ -124,7 +124,7 @@ events enrich --in samples/pull_request.synchronize.json \
 See also:
 
 - Specs: `docs/specs/README.md#42-mentions-schema`
-- CLI reference: `docs/cli/reference.md` (enrich > Mentions scanning flags)
+- CLI reference: `docs/cli/reference.md#events-enrich`
 
 Behavior:
 
