@@ -14,7 +14,7 @@ Goal: Ensure CLI reference uses the canonical offline enrich reason `flag:not_se
 
 ## Progress
 
-Initialized branch and dev log.
+- Initialized branch and dev log.
 
 ## Results
 
