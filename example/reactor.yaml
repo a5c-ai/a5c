@@ -18,22 +18,28 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Run Reactor
-        uses: a5c-ai/reactor@main
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          github_event: ${{ github.event }}
-      - name: Emit event
+      - name: Enrich and run reactor with actual github context
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+          NPM_CONFIG_USERCONFIG: ${{ env.NPM_CONFIG_USERCONFIG }}
+          GITHUB_TOKEN: ${{ secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
-          echo "Emitting event"
-          # emit a repository_dispatch event
-          echo "Emitting repository_dispatch event"
-          # prepare the json data file, include the original event data
-          cat <<EOF > json_data.json
-          {
-            "event_type": "create-feature",
-            "client_payload": ${{ toJson(github.event) }}
-          }
-          EOF
-          curl -X POST -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" -H "Content-Type: application/json" -d "@json_data.json" "https://api.github.com/repos/${{ github.repository }}/dispatches"
-          echo "Reacting..."
+          npx -y "$A5C_PKG_SPEC" enrich \
+            --in "$GITHUB_EVENT_PATH" \
+            --out out.enrich.json \
+            --use-github
+          # enriched structure exists
+          jq -e '.enriched and .payload and (.labels // []) != null' out.enrich.json >/dev/null
+          cat out.enrich.json
+          npx -y "$A5C_PKG_SPEC" reactor \
+            --in out.enrich.json \
+            --out out.reactor.json \
+            --file example/.a5c/events/reactor.yaml
+          # list of events to emit
+          jq -r '.events[]' out.reactor.json
+          cat out.reactor.json
+          # emit the events using the CLI (repository_dispatch)
+          npx -y "$A5C_PKG_SPEC" emit \
+            --in out.reactor.json \
+            --sink github
+          echo "Done emitting events via emit command"

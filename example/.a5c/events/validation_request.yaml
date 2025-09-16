@@ -1,0 +1,28 @@
+---
+on:
+  pull_request:
+    types: [synchronize, ready_for_review]
+emit:
+  pull_request_ready_for_review:
+    type: ready_for_review
+    phase: validation
+    labels: [validation]
+    payload:
+      original_event: ${{ event }}
+      pr_ref: ${{ event.pull_request.head.ref }}
+      base_ref: ${{ event.pull_request.base.ref }}
+      pull_request: ${{ event.pull_request }}
+---
+on:
+  pull_request_ready_for_review:
+    labels: [validation]
+    phase: [validation]
+emit:
+  validation_request:
+    type: created
+    phase: validation
+    labels: [validation]
+    payload:
+      original_event: ${{ event.original_event }}
+      pull_request: ${{ event.pull_request }}
+      ref: ${{ event.ref }}

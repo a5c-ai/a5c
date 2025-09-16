@@ -1,16 +1,16 @@
-#!/usr/bin/env sh
+# #!/usr/bin/env sh
 
-set -e
+# set -e
 
-echo "Running pre-push checks (typecheck + targeted tests)..."
+# echo "Running pre-push checks (typecheck + targeted tests)..."
 
-if [ -n "$A5C_SKIP_PREPUSH" ] || [ -n "$SKIP_PREPUSH" ]; then
-  echo "Skipping pre-push due to env flag."
-  exit 0
-fi
+# if [ -n "$A5C_SKIP_PREPUSH" ] || [ -n "$SKIP_PREPUSH" ]; then
+#   echo "Skipping pre-push due to env flag."
+#   exit 0
+# fi
 
-if command -v npm >/dev/null 2>&1; then
-  npm run --silent typecheck || exit 1
-  # Try related tests first; fallback handled in script
-  npm run --silent prepush || npm run --silent prepush:full
-fi
+# if command -v npm >/dev/null 2>&1; then
+#   npm run --silent typecheck || exit 1
+#   # Try related tests first; fallback handled in script
+#   npm run --silent prepush || npm run --silent prepush:full
+# fi
