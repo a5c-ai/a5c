@@ -87,11 +87,8 @@ describe("handleEnrich", () => {
     expect(gh).toBeTruthy();
     expect(gh.partial).toBeTruthy();
     expect(gh.reason).toBe("flag:not_set");
-    // minimal contract: in offline mode, network-only aggregates like branch_protection or PR compare may be absent
-    // Ensure we didn't accidentally populate fields that imply network fetches
-    expect(
-      gh.branch_protection == null || gh.branch_protection.partial === true,
-    ).toBe(true);
+    // Offline contract: no PR details fetched from network should be present
+    expect(gh.pr?.number).toBeUndefined();
   });
 
   it("includes patch fields when explicitly enabled (include_patch=true)", async () => {
