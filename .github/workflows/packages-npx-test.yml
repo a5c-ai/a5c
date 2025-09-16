@@ -3,6 +3,37 @@ name: Packages Npx Test
 on:
   push:
     branches: [a5c/main]
+  pull_request:
+    branches: [a5c/main]
+    types:
+      [
+        opened,
+        synchronize,
+        reopened,
+        ready_for_review,
+        edited,
+        labeled,
+        unlabeled,
+        closed,
+      ]
+  repository_dispatch:
+    types: [packages-npx-test]
+  issue_comment:
+    types: [created, edited, deleted]
+  issues:
+    types:
+      [
+        opened,
+        edited,
+        deleted,
+        labeled,
+        unlabeled,
+        closed,
+        reopened,
+        assigned,
+        unassigned,
+      ]
+
   workflow_dispatch: {}
 
 permissions:
