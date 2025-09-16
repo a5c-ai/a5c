@@ -49,7 +49,8 @@
 
 - derived: diff stats, changed files globs, semantic commit parsing, conventional commit scope; commit logs and PR/push diffs; PR conflict status.
 - correlations: link workflow_run -> commit -> PR -> issues; map failures to responsible code owners; associate deployments with releases.
-- mentions: extract `@agent`/`@user` mentions across commit messages, PR/issue titles + bodies, issue_comment, and changed files (code comments) with location context.
+  – mentions: extract `@agent`/`@user` mentions across commit messages, PR/issue titles + bodies, issue_comment, and changed files (code comments) with location context.
+  - Language filtering: `mentions.languages` is an optional allowlist using canonical language IDs (e.g., `js,ts,py,go,java,c,cpp,sh,yaml,md`). For convenience, common extensions (with or without a leading dot) are accepted and normalized to IDs (e.g., `.tsx → ts`, `.jsx → js`, `.yml → yaml`).
 - scoring: compute risk/impact scores for events (MVP optional).
 
 ### 4.1) GitHub Enrichment Details (MVP)
@@ -98,8 +99,7 @@ Configuration (aligns with CLI and README):
 
 - `mentions.scan.changed_files`: `true|false` (default: true) — scan changed files for `@...` in code comments.
 - `mentions.max_file_bytes`: number of bytes cap per file (default: 204800 bytes ≈ 200KB)
-- `mentions.languages`: optional allowlist of canonical language codes to scan (e.g., `js,ts,py,go,yaml,md`). When omitted, detection is used.
-  - Mapping note: extensions are normalized to codes during detection (e.g., `.tsx → ts`, `.jsx → js`, `.yml → yaml`), but the allowlist compares codes.
+- `mentions.languages`: optional allowlist of languages to scan (e.g., `js,ts,py,go,yaml,md`). Accepts canonical IDs and common extensions (leading dot optional); values are normalized to IDs. When omitted, detection is used. Examples: `.tsx → ts`, `.jsx → js`, `.yml → yaml`.
 
 See also:
 
@@ -124,6 +124,7 @@ Examples:
 
 - Offline enrichment sample (no `--use-github`): `docs/examples/enrich.offline.json` — minimal NE document without `enriched.github`.
 - Online enrichment sample (`--use-github` with token): `docs/examples/enrich.online.json` — includes `enriched.github.provider` and a minimal PR excerpt.
+  - CI escape hatch: set `A5C_EVENTS_AUTO_USE_GITHUB=true` to auto-enable GitHub enrichment when a token exists. Default remains offline unless the flag is explicitly provided.
 
 ## 5) Configuration
 

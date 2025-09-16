@@ -286,4 +286,42 @@ describe("E2E: mentions flags — code comment scanning", () => {
     if (prev.G === undefined) delete process.env.GITHUB_TOKEN;
     else process.env.GITHUB_TOKEN = prev.G!;
   });
+
+  it("language allowlist: extensions normalize → .tsx and .ts map to ts", async () => {
+    const prev = {
+      A: process.env.A5C_AGENT_GITHUB_TOKEN,
+      G: process.env.GITHUB_TOKEN,
+    };
+    process.env.A5C_AGENT_GITHUB_TOKEN = "test-token";
+    const event = makePullRequestEvent();
+    const inFile = writeJsonTmp(event);
+    const octo = makeMockOctokit({ bigFileBytes: 5000 });
+
+    // Using a mix of extension forms; normalization should accept and map them to IDs
+    const { output } = await handleEnrich({
+      in: inFile,
+      flags: {
+        use_github: "true",
+        include_patch: "false",
+        "mentions.languages": ".tsx,.ts,.yml",
+      },
+      labels: [],
+      rules: undefined,
+      octokit: octo,
+    });
+    const mentions: any[] = (output as any).enriched?.mentions || [];
+    // Only TypeScript (ts) and YAML should be allowed; our mock only exposes .ts and .js
+    const nonAllowed = mentions.filter((m) =>
+      (m.location as any)?.file?.endsWith(".js"),
+    );
+    expect(nonAllowed.length).toBe(0);
+    const allowedTs = mentions.filter((m) =>
+      (m.location as any)?.file?.endsWith(".ts"),
+    );
+    expect(allowedTs.length).toBeGreaterThan(0);
+    if (prev.A === undefined) delete process.env.A5C_AGENT_GITHUB_TOKEN;
+    else process.env.A5C_AGENT_GITHUB_TOKEN = prev.A!;
+    if (prev.G === undefined) delete process.env.GITHUB_TOKEN;
+    else process.env.GITHUB_TOKEN = prev.G!;
+  });
 });
