@@ -130,6 +130,13 @@ See the CLI reference for canonical examples covering `mentions.scan.changed_fil
 
 - docs/cli/reference.md#events-enrich
 
+See E2E coverage in `tests/mentions.flags.e2e.test.ts` for practical examples validating:
+
+- default scanning on for changed files
+- disabling scan via `mentions.scan.changed_files=false`
+- size cap via `mentions.max_file_bytes`
+- language restrictions via `mentions.languages`
+
 ## Normalized Event Schema (MVP)
 
 Core fields returned by `normalize`:

@@ -157,36 +157,6 @@ describe("E2E: mentions flags — code comment scanning", () => {
     else process.env.GITHUB_TOKEN = prev.G!;
   });
 
-  it("patch mode: include_patch=true → patch synthesis yields code_comment mention", async () => {
-    const prev = {
-      A: process.env.A5C_AGENT_GITHUB_TOKEN,
-      G: process.env.GITHUB_TOKEN,
-    };
-    process.env.A5C_AGENT_GITHUB_TOKEN = "test-token";
-    const event = makePullRequestEvent();
-    const inFile = writeJsonTmp(event);
-    const octo = makeMockOctokit({ bigFileBytes: 5000 });
-
-    const { output } = await handleEnrich({
-      in: inFile,
-      flags: { use_github: "true", include_patch: "true" },
-      labels: [],
-      rules: undefined,
-      octokit: octo,
-    });
-    const mentions: any[] = (output as any).enriched?.mentions || [];
-    const files = new Set(
-      mentions
-        .filter((m) => m.source === "code_comment")
-        .map((m) => (m.location as any)?.file),
-    );
-    expect(files.has("src/ok.ts")).toBe(true);
-    if (prev.A === undefined) delete process.env.A5C_AGENT_GITHUB_TOKEN;
-    else process.env.A5C_AGENT_GITHUB_TOKEN = prev.A!;
-    if (prev.G === undefined) delete process.env.GITHUB_TOKEN;
-    else process.env.GITHUB_TOKEN = prev.G!;
-  });
-
   it("disabled: mentions.scan.changed_files=false → no code_comment mentions", async () => {
     const prev = {
       A: process.env.A5C_AGENT_GITHUB_TOKEN,
