@@ -9,7 +9,8 @@ import { handleEnrich } from "./enrich.js";
 import { handleEmit } from "./emit.js";
 import { redactObject } from "./utils/redact.js";
 import path from "node:path";
-import Ajv from "ajv";
+// Avoid loading heavy JSON Schema validator unless needed
+// Ajv is required only for the `validate` command; lazy-load it inside the action.
 
 const program = new Command();
 program
@@ -202,6 +203,7 @@ program
   .option("--quiet", "print nothing on success, only errors", false)
   .action(async (cmdOpts: any) => {
     try {
+      const { default: Ajv } = await import("ajv");
       const inputStr = cmdOpts.in
         ? fs.readFileSync(path.resolve(cmdOpts.in), "utf8")
         : fs.readFileSync(0, "utf8");
