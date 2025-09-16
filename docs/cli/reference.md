@@ -195,7 +195,7 @@ Note:
 - Programmatic API nuance: when using the SDK directly and `--use-github` semantics are requested without a token, some code paths may return a partial `enriched.github` with `reason: 'token:missing'` for testing with an injected Octokit. The CLI path exits with code `3` and does not emit JSON.
 - Redaction: CLI redacts sensitive keys and common secret patterns in output by default (see `src/utils/redact.ts`).
 
-````
+```
 
 Outputs:
 
@@ -206,7 +206,7 @@ Without network calls (mentions only):
 ```bash
 events enrich --in samples/push.json --out out.json
 jq '.enriched.mentions' out.json
-````
+```
 
 Include patch diffs explicitly (opt‑in):
 
