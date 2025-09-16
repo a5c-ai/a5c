@@ -474,10 +474,15 @@ Enrichment (with GitHub lookups enabled):
 
 ```bash
 export GITHUB_TOKEN=ghp_your_token_here
+# Default include_patch is false; enable it explicitly only if you need diff bodies
 events enrich --in samples/pull_request.synchronize.json \
-  --flag include_patch=false --flag commit_limit=50 --flag file_limit=200 \
+  --flag commit_limit=50 --flag file_limit=200 \
   --use-github --out enriched.json
 jq '.enriched' enriched.json
+
+# To include patch diffs, opt in explicitly:
+events enrich --in samples/pull_request.synchronize.json \
+  --flag include_patch=true --use-github | jq '.enriched.github.pr.files[0].patch'
 ```
 
 With rules (composed events):
