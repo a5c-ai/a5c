@@ -1,4 +1,4 @@
-[![99% built by agents](https://img.shields.io/badge/99%25-built%20by%20agents-blue.svg)](https://a5c.ai) [![codecov](https://codecov.io/gh/a5c-ai/events/branch/a5c/main/graph/badge.svg)](https://codecov.io/gh/a5c-ai/events)
+[![99% built by agents](https://img.shields.io/badge/99%25-built%20by%20agents-blue.svg)](https://a5c.ai) [![codecov](https://codecov.io/gh/a5c-ai/events/branch/a5c/main/graph/badge.svg)](https://app.codecov.io/gh/a5c-ai/events/tree/a5c/main)
 
 # @a5c-ai/events – Events SDK & CLI
 
@@ -192,7 +192,7 @@ events enrich --in samples/pull_request.synchronize.json \
 
 ## Coverage (Optional)
 
-You can optionally upload coverage to Codecov and show a badge. This repo does not enable uploads by default.
+You can optionally upload coverage to Codecov. This repo does not enable uploads by default.
 
 Opt-in steps:
 
@@ -206,15 +206,7 @@ Opt-in steps:
     bash scripts/coverage-upload.sh
 ```
 
-Badge (optional):
-
-After the first successful upload, add a badge to this README:
-
-```
-[![codecov](https://codecov.io/gh/a5c-ai/events/graph/badge.svg?token=<TOKEN_OR_NOT_REQUIRED_FOR_PUBLIC>)](https://codecov.io/gh/a5c-ai/events)
-```
-
-Replace the URL to match your VCS provider and repository if different. Private projects may require a tokenized badge; see Codecov docs.
+Note: The Codecov badge is shown at the top of this README and links to the tree view for `a5c/main`: https://app.codecov.io/gh/a5c-ai/events/tree/a5c/main
 
 ### Auth tokens: precedence & redaction
 
