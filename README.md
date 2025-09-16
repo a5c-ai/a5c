@@ -17,8 +17,8 @@ See docs/routing/ownership-and-routing.md for how CODEOWNERS drives routing and 
 
 Prerequisites:
 
-- Node.js 20+ (LTS recommended). The repo includes an `.nvmrc` pinning Node 20 for local parity with CI.
-- Node.js 20+ (LTS recommended). See `.nvmrc` for the canonical version used in CI.
+- Node.js 20.x LTS. The repo includes an `.nvmrc` pinning Node 20 for local parity with CI.
+  - If you use `nvm`, run `nvm use` in the project root.
 
 Install:
 
@@ -42,6 +42,23 @@ cat out.json | npx @a5c-ai/events validate --quiet
 ```
 
 ## CLI Reference
+
+### Mentions config (Quick Start)
+
+Control where and how mentions are scanned during `enrich`:
+
+```bash
+# Disable scanning changed files for code-comment mentions
+events enrich --in ... --flag 'mentions.scan.changed_files=false'
+
+# Limit per-file bytes when scanning code comments (default: 200KB / 204800 bytes)
+events enrich --in ... --flag 'mentions.max_file_bytes=65536'
+
+# Restrict code-comment scanning to specific languages
+events enrich --in ... --flag "mentions.languages=ts,js,md"
+```
+
+See: docs/specs/README.md#4.2-mentions-schema for full details.
 
 `events mentions`
 
@@ -75,11 +92,11 @@ cat out.json | npx @a5c-ai/events validate --quiet
 - `--flag file_limit=<n>`: max files to include (default: 200)
 - Mentions scanning (code comments in changed files):
   - `--flag mentions.scan.changed_files=<true|false>` (default: true)
-  - `--flag mentions.max_file_bytes=<bytes>` (default: 200KB)
+  - `--flag mentions.max_file_bytes=<bytes>` (default: 200KB / 204800 bytes)
   - `--flag mentions.languages=<ext,...>` (optional list such as `ts,tsx,js,jsx,py,go,yaml`)
   - `--use-github`: enable GitHub API enrichment (requires `GITHUB_TOKEN`)
   - `--flag mentions.scan.changed_files=<true|false>`: enable scanning changed files for code-comment mentions (default: true)
-  - `--flag mentions.max_file_bytes=<bytes>`: max bytes per file for code-comment scanning (default: 200000)
+  - `--flag mentions.max_file_bytes=<bytes>`: max bytes per file for code-comment scanning (default: 204800)
   - `--flag mentions.languages=js,ts,py`: optional allowlist of languages/extensions for code-comment scanning
   - `--select <paths>`: comma-separated dot paths to include in output
   - `--filter <expr>`: filter expression `path[=value]`; if not matching, exits with code 2 and no output
@@ -127,6 +144,11 @@ Core fields returned by `normalize`:
 
 See the detailed specs for full schema and roadmap.
 
+Notes:
+
+- Example outputs may omit or truncate large `payload` bodies to keep docs readable.
+- The optional `composed[].payload` allows `object | array | null` (from enrichment/rules). See `docs/specs/ne.schema.json`.
+
 ## Examples
 
 GitHub Actions (normalize current run):
@@ -170,16 +192,29 @@ events enrich --in samples/pull_request.synchronize.json \
 
 ## Coverage (Optional)
 
-CI can upload coverage to Codecov and show a badge in this README. Uploads are disabled by default and only run when a token is configured.
+You can optionally upload coverage to Codecov and show a badge. This repo does not enable uploads by default.
 
-- Add a repo Secret or Variable named `CODECOV_TOKEN`.
-- When present, the following workflows upload `coverage/lcov.info` using `codecov/codecov-action@v4`:
-  - `.github/workflows/tests.yml` (push on `a5c/main` and `main`)
-  - `.github/workflows/quick-checks.yml` (PRs)
-  - `.github/workflows/pr-tests.yml` (PRs)
-- If the token is absent, the Codecov step is skipped and CI remains green.
+Opt-in steps:
 
-Badge note: If your Codecov project is public, the badge works without a token parameter. For private projects, configure the Codecov badge as appropriate for your org and visibility.
+- Create a Codecov project for this repository and add a repo Secret or Variable named `CODECOV_TOKEN`.
+- Add the following step to your tests workflow after coverage is generated:
+
+```yaml
+- name: Upload coverage to Codecov (optional)
+  if: ${{ env.CODECOV_TOKEN != '' }}
+  run: |
+    bash scripts/coverage-upload.sh
+```
+
+Badge (optional):
+
+After the first successful upload, add a badge to this README:
+
+```
+[![codecov](https://codecov.io/gh/a5c-ai/events/graph/badge.svg?token=<TOKEN_OR_NOT_REQUIRED_FOR_PUBLIC>)](https://codecov.io/gh/a5c-ai/events)
+```
+
+Replace the URL to match your VCS provider and repository if different. Private projects may require a tokenized badge; see Codecov docs.
 
 ### Auth tokens: precedence & redaction
 
@@ -285,13 +320,15 @@ This project targets Node 20 LTS by default:
 
 - Engines: `"node": ">=20"` in `package.json`
 - Local: `.nvmrc` pins Node 20
-- CI: workflows use `actions/setup-node@v4` with `node-version-file: .nvmrc`
+- CI: workflows use `actions/setup-node@v4` with `node-version-file: '.nvmrc'`
 
 Typecheck CI runs a matrix on Node 20 and 22 to catch version-specific type issues, but build/tests default to Node 20.
 
 ### Commit conventions
 
 We follow Conventional Commits. Local commit messages are validated with Husky + commitlint, and PRs run a commitlint check. See `docs/contributing/git-commits.md`.
+
+For local hooks and skip flags, see `docs/dev/precommit-hooks.md` and the pre-commit section in `CONTRIBUTING.md`.
 
 To use the commit message template locally:
 
@@ -312,28 +349,27 @@ This repository initially used a generic a5c platform README. That content now l
 
 ### Composed + Validate (Walkthrough)
 
-You can enrich with rules to emit composed events, then validate the enriched output against the NE schema. The NE schema includes an optional top‑level `composed` array; enriched outputs validate as‑is. If you want to validate only the normalized core (without composed), you may optionally strip `composed` for that purpose.
+You can enrich with rules to emit composed events and validate the enriched output against the NE schema. The `composed` field is part of the NE schema and optional; enriched documents validate as‑is. If you want to validate just the normalized subset, you may drop `.composed` before validation.
 
 ```bash
 # Enrich with rules to produce `.composed[]`
-events enrich --in samples/pull_request.synchronize.json \
-  --rules samples/rules/conflicts.yml \
-  --out enriched.json
+events enrich --in samples/pull_request.synchronize.json   --rules samples/rules/conflicts.yml   --out enriched.json
 
 # Inspect composed events (guard for absence)
 jq '(.composed // []) | map({key, reason})' enriched.json
 
-# Validate the enriched document against the NE schema (no need to drop `.composed`)
+# Validate the enriched document against the NE schema (as‑is)
 events validate --in enriched.json --schema docs/specs/ne.schema.json --quiet
 
-# Optional: validate the normalized-only subset by removing `.composed`
+# Option: validate the normalized‑only subset (drop `.composed`)
 jq 'del(.composed)' enriched.json | events validate --schema docs/specs/ne.schema.json --quiet
 ```
 
 Notes:
 
 - `.composed` may be absent when no rules match. Use `(.composed // [])` in `jq`.
-- NE schema: `docs/specs/ne.schema.json` includes optional top‑level `composed`. `composed[].payload` may be `object | array | null`.
+- Validation uses the NE schema at `docs/specs/ne.schema.json`. The `composed` field is included in that schema and optional; strip it only if you want to validate the normalized‑only subset.
+- `payload` is `object | array` (verbatim) and `composed[].payload` may be `object | array | null`.
 
 ## Links
 

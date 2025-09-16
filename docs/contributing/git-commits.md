@@ -22,7 +22,7 @@ Examples:
 
 ## Validation
 
-- Local: Husky `commit-msg` hook runs commitlint.
+- Local: Husky `commit-msg` hook runs commitlint via `npx commitlint --edit "$1"` (see `.husky/commit-msg`). Rules live in `commitlint.config.cjs` and extend `@commitlint/config-conventional`.
 - CI: PR check validates all commit messages.
 
 ## Template

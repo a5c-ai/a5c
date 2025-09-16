@@ -70,7 +70,7 @@ Enrich a normalized event (or raw GitHub payload) with repository and provider m
 Behavior:
 
 - No network calls are performed by default. In offline mode, `enriched.github = { provider: 'github', partial: true, reason: 'github_enrich_disabled' }`.
-- Pass `--use-github` to enable GitHub API enrichment. If no token is configured, the CLI exits with code `3` (provider/network error) and prints an error. Programmatic APIs may return a stub `{ provider: 'github', skipped: true, reason: 'token:missing', partial: true }` when an Octokit is injected for tests.
+- Pass `--use-github` to enable GitHub API enrichment. If no token is configured, the CLI exits with code `3` (provider/network error) and prints an error. When `--use-github` is set but no token is configured, the CLI returns exit code 3 and documents the state as `{ provider: 'github', skipped: true, reason: 'token:missing' }`.
 
 Usage:
 
@@ -120,6 +120,11 @@ events enrich --in samples/pull_request.synchronize.json \
 # With rules (composed events)
 events enrich --in samples/pull_request.synchronize.json \
   --rules samples/rules/conflicts.yml \
+  | jq '(.composed // []) | map({key, reason})'
+
+# JSON rules are also supported via the same `--rules` flag:
+events enrich --in samples/pull_request.synchronize.json \
+  --rules samples/rules/conflicts.json \
   | jq '(.composed // []) | map({key, reason})'
 ```
 
@@ -220,7 +225,7 @@ Exit codes:
 - `0`: success
 - `1`: generic error (unexpected failure writing output, etc.)
 - `2`: input/validation error (missing `--in` where required, invalid/parse errors, filter mismatch, missing `GITHUB_EVENT_PATH` when `--source actions`)
-- `3`: provider/network error (only when `--use-github` is requested and API calls fail)
+- `3`: provider/network error (only when `--use-github` is requested and API calls fail or token is missing)
 
 ## Notes
 
@@ -228,6 +233,40 @@ Exit codes:
 - Redaction: CLI redacts sensitive keys and common secret patterns in output by default (see `src/utils/redact.ts`).
   - Sensitive keys include: `token`, `secret`, `password`, `passwd`, `pwd`, `api_key`, `apikey`, `key`, `client_secret`, `access_token`, `refresh_token`, `private_key`, `ssh_key`, `authorization`, `auth`, `session`, `cookie`, `webhook_secret`.
   - Pattern masking includes (non-exhaustive): GitHub PATs (`ghp_`, `gho_`, `ghu_`, `ghs_`, `ghe_`), JWTs, `Bearer ...` headers, AWS `AKIA...`/`ASIA...` keys, Stripe `sk_live_`/`sk_test_`, Slack `xox...` tokens, and URL basic auth (`https://user:pass@host`).
+
+Offline vs token-missing examples:
+Offline (no --use-github):
+
+```json
+{
+  "enriched": {
+    "github": {
+      "provider": "github",
+      "partial": true,
+      "reason": "github_enrich_disabled"
+    }
+  }
+}
+```
+
+With --use-github but token missing (exit code 3):
+
+```json
+{
+  "enriched": {
+    "github": {
+      "provider": "github",
+      "skipped": true,
+      "reason": "token:missing"
+    }
+  }
+}
+```
+
+References:
+
+- Specs §5.1 environment precedence: docs/specs/README.md#51-environment-variables-and-precedence
+- Tests: tests/enrich.basic.test.ts and goldens under tests/fixtures/goldens/\*.enrich.json
 
 - Tests: See `test/config.loadConfig.test.ts`, `test/redact.test.ts`, `test/enrich.redaction.test.ts`, `test/config.precedence.test.ts`, and additional cases under `tests/` for coverage and regression fixtures.
 - Large payloads: JSON is read/written from files/stdin/stdout; providers may add streaming in future.

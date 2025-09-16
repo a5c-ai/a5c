@@ -13,7 +13,7 @@ jobs:
           fetch-depth: 0
       - name: Create a feature branch from a5c/main
         run: |
-          git checkout a5c/main          
+          git checkout a5c/main
           git checkout -b feature/${{ github.event.client_payload.feature_slug_name }}-${{ github.event.client_payload.event_id }}
           # pass the feature slug name and event id to the agent
           echo "feature_slug_name=${{ github.event.client_payload.feature_slug_name }}" >> $GITHUB_ENV
