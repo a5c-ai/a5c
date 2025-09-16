@@ -57,7 +57,7 @@
     "github": {
       "provider": "github",
       "partial": true,
-      "reason": "flag:not_set"
+      "reason": "github_enrich_disabled"
     },
     "metadata": {},
     "derived": {

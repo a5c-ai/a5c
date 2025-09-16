@@ -86,7 +86,7 @@ export async function handleEnrich(opts: {
     githubEnrichment = {
       provider: "github",
       partial: true,
-      reason: "flag:not_set",
+      reason: "github_enrich_disabled",
     };
   } else if (!token && !opts.octokit) {
     githubEnrichment = {
@@ -179,6 +179,7 @@ export async function handleEnrich(opts: {
     if (pr?.body) mentions.push(...extractMentions(String(pr.body), "pr_body"));
     if (pr?.title)
       mentions.push(...extractMentions(String(pr.title), "pr_title"));
+    // Extract mentions from GitHub Issue events (title/body)
     const issue = (baseEvent as any)?.issue;
     if (issue?.title)
       mentions.push(...extractMentions(String(issue.title), "issue_title"));
