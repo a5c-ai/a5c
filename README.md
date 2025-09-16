@@ -56,6 +56,10 @@ events enrich --in ... --flag 'mentions.max_file_bytes=65536'
 
 # Restrict code-comment scanning to specific languages
 events enrich --in ... --flag "mentions.languages=ts,js,md"
+
+# Disable commit message and/or issue comment scanning
+events enrich --in ... --flag 'mentions.scan.commit_messages=false'
+events enrich --in ... --flag 'mentions.scan.issue_comments=false'
 ```
 
 See: docs/specs/README.md#4.2-mentions-schema for full details.
@@ -96,6 +100,8 @@ See: docs/specs/README.md#4.2-mentions-schema for full details.
   - `--flag mentions.languages=<ext,...>` (optional list such as `ts,tsx,js,jsx,py,go,yaml`)
   - `--use-github`: enable GitHub API enrichment (requires `GITHUB_TOKEN`)
   - `--flag mentions.scan.changed_files=<true|false>`: enable scanning changed files for code-comment mentions (default: true)
+  - `--flag mentions.scan.commit_messages=<true|false>`: enable scanning commit messages for mentions (default: true)
+  - `--flag mentions.scan.issue_comments=<true|false>`: enable scanning issue_comment bodies for mentions (default: true)
   - `--flag mentions.max_file_bytes=<bytes>`: max bytes per file for code-comment scanning (default: 204800)
   - `--flag mentions.languages=js,ts,py`: optional allowlist of languages/extensions for code-comment scanning
   - `--select <paths>`: comma-separated dot paths to include in output
@@ -231,7 +237,7 @@ events enrich --in samples/pull_request.synchronize.json \
   | jq '.enriched.mentions // [] | map(select(.source=="code_comment")) | length'
 ```
 
-See also: CLI reference for flags and exit codes: `docs/cli/reference.md`.
+See also: CLI reference for flags and exit codes: `docs/cli/reference.md`. Cross‑link: `docs/cli/code-comment-mentions.md` and specs §4.2 in `docs/specs/README.md`.
 
 ### Validate against schema
 

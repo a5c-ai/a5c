@@ -89,6 +89,8 @@ events enrich --in FILE [--out FILE] [--rules FILE] \
   - `file_limit=<n>` (default: `200`) – limit files per compare list
   - Mentions scanning flags (code comments in changed files):
     - `mentions.scan.changed_files=true|false` (default: `true`) – enable/disable scanning code comments in changed files for `@mentions`
+    - `mentions.scan.commit_messages=true|false` (default: `true`) – enable/disable scanning commit messages for `@mentions`
+    - `mentions.scan.issue_comments=true|false` (default: `true`) – enable/disable scanning issue comments for `@mentions`
     - `mentions.max_file_bytes=<bytes>` (default: `204800`) – skip files larger than this many bytes when scanning
     - `mentions.languages=<ext,...>` – optional allowlist of file extensions to scan (e.g., `ts,tsx,js,jsx,py,go,yaml`). When omitted, language/extension detection is used.
 - `--use-github`: enable GitHub API enrichment; equivalent to `--flag use_github=true` (requires `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`). Without this flag, the CLI performs no network calls and sets `enriched.github = { provider: 'github', partial: true, reason: 'github_enrich_disabled' }`.
@@ -272,3 +274,8 @@ References:
 - Large payloads: JSON is read/written from files/stdin/stdout; providers may add streaming in future.
 
 See also: `docs/specs/README.md`. Technical specs reference for token precedence: `docs/producer/phases/technical-specs/tech-stack.md`.
+
+# Disable commit message and issue comment scanning
+
+events enrich --in samples/push.json --flag 'mentions.scan.commit_messages=false'
+events enrich --in samples/issue_comment.created.json --flag 'mentions.scan.issue_comments=false'
