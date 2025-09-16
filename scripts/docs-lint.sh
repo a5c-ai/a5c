@@ -7,7 +7,8 @@ set -euo pipefail
 ROOT_DIR=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
 cd "$ROOT_DIR"
 
-violations=$(rg -n --no-heading --color never "composed\[\]\.payload\s*[:=]\s*any|composed[^\n]*any\b" docs README.md || true)
+# Flag only the explicit outdated phrasing in the same line as composed[].payload
+violations=$(rg -n --no-heading --color never "composed\[\]\.payload[^\n]*\bany\b" docs README.md || true)
 
 if [[ -n "$violations" ]]; then
   echo "[docs-lint] Found outdated 'any' references for composed[].payload:" >&2
@@ -20,4 +21,3 @@ if [[ -n "$violations" ]]; then
 else
   echo "[docs-lint] OK — no outdated 'any' references found."
 fi
-
