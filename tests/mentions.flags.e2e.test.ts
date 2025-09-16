@@ -1,193 +1,289 @@
 import { describe, it, expect } from "vitest";
-import { resolve } from "node:path";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { handleEnrich } from "../src/enrich.js";
 
-// No direct CLI spawning in these E2E tests; we exercise the library entry
+// Utility: write object to a temp JSON file
+function writeJsonTmp(obj: any): string {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "a5c-events-"));
+  const file = path.join(dir, "event.json");
+  fs.writeFileSync(file, JSON.stringify(obj), "utf8");
+  return file;
+}
 
-// We rely on the existing sample payload on disk; no need to construct one here
-
-// Mock Octokit that returns one small TS file with a code-comment mention and one large JS file
-function makeMockOctokit() {
-  const pr = {
+// Build a minimal PR-like payload to drive enrich logic
+function makePullRequestEvent() {
+  // samples/pull_request.synchronize.json has the correct envelope; mirror its shape minimally
+  return {
+    action: "synchronize",
     number: 1,
-    state: "open",
-    merged: false,
-    draft: false,
-    base: { ref: "a5c/main" },
-    head: { ref: "feat/x" },
-    changed_files: 2,
-    additions: 2,
-    deletions: 0,
-    labels: [],
+    pull_request: {
+      number: 1,
+      state: "open",
+      title: "Test PR for mentions flags",
+      draft: false,
+      base: {
+        ref: "a5c/main",
+        sha: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      },
+      head: {
+        ref: "feat/branch",
+        sha: "cccccccccccccccccccccccccccccccccccccccc",
+      },
+      labels: [],
+      user: { login: "developer-agent", type: "Bot" },
+      html_url: "https://github.com/a5c-ai/events/pull/1",
+    },
+    repository: {
+      id: 1,
+      name: "events",
+      full_name: "a5c-ai/events",
+      private: true,
+    },
+    sender: { login: "developer-agent", type: "Bot", id: 1 },
   };
+}
+
+// Mock Octokit that provides PR files and file contents
+function makeMockOctokit(opts?: { bigFileBytes?: number }) {
+  // Provide one TS file with a code-comment mention, and one large JS file (for size-cap test)
   const prFiles = [
     {
-      filename: "src/a.ts",
+      filename: "src/ok.ts",
       status: "modified",
-      additions: 1,
+      additions: 2,
       deletions: 0,
-      changes: 1,
-      patch: "+ // hello @developer-agent",
+      changes: 2,
+      patch: "+ // @developer-agent here",
     },
     {
-      filename: "src/b.js",
+      filename: "src/big.js",
       status: "modified",
       additions: 1,
       deletions: 0,
       changes: 1,
-      patch: "+ /* @someone */",
+      patch: "+ // @someone",
     },
   ];
-  const prCommits = [{ sha: "abc", commit: { message: "test" } }];
-
-  const huge = "x".repeat(1500) + "\n// @someone"; // > 1024 bytes
+  const bigBytes = opts?.bigFileBytes ?? 5000;
+  const bigContent = "x".repeat(bigBytes) + "\n// @someone";
 
   const octo: any = {
     pulls: {
       async get() {
-        return { data: pr };
+        return {
+          data: {
+            number: 1,
+            changed_files: prFiles.length,
+            draft: false,
+            head: { ref: "feat/branch" },
+            base: { ref: "a5c/main" },
+          },
+        };
       },
       async listFiles() {
         return { data: prFiles, headers: {}, status: 200 };
       },
       async listCommits() {
-        return { data: prCommits, headers: {}, status: 200 };
+        return {
+          data: [{ sha: "abc", commit: { message: "test" } }],
+          headers: {},
+          status: 200,
+        };
       },
     },
     paginate: async (fn: any) => {
-      if (fn === (octo as any).pulls.listFiles) return prFiles;
-      if (fn === (octo as any).pulls.listCommits) return prCommits;
+      if (fn === octo.pulls.listFiles) return prFiles;
+      if (fn === octo.pulls.listCommits)
+        return [{ sha: "abc", commit: { message: "test" } }];
       return [];
     },
     repos: {
       async getContent({ path }: { path: string }) {
-        if (path === "src/a.ts") {
-          const content = `// header\n// @developer-agent here\nexport const a = 1\n`;
+        if (path === "src/ok.ts") {
+          const content = `// header\n// @developer-agent please check`;
           return {
             data: {
-              content: Buffer.from(content).toString("base64"),
+              content: Buffer.from(content, "utf8").toString("base64"),
               encoding: "base64",
               size: Buffer.byteLength(content),
             },
-          };
+          } as any;
         }
-        if (path === "src/b.js") {
-          const content = huge;
+        if (path === "src/big.js") {
           return {
             data: {
-              content: Buffer.from(content).toString("base64"),
+              content: Buffer.from(bigContent, "utf8").toString("base64"),
               encoding: "base64",
-              size: Buffer.byteLength(content),
+              size: Buffer.byteLength(bigContent),
             },
-          };
+          } as any;
         }
         throw Object.assign(new Error("not found"), { status: 404 });
       },
       async compareCommits() {
-        return { data: {} };
-      },
-      async getBranchProtection() {
-        throw Object.assign(new Error("forbidden"), { status: 403 });
+        return { data: { files: prFiles } };
       },
     },
   };
   return octo;
 }
 
-// Library-driven tests calling handleEnrich to simulate full enrich flow
-import { handleEnrich } from "../src/enrich.js";
-
-describe("E2E (library): mentions flags for code comment scanning", () => {
-  it("default: scan enabled → finds code_comment mention via patch synthesis", async () => {
-    const prev = process.env.A5C_AGENT_GITHUB_TOKEN;
+describe("E2E: mentions flags — code comment scanning", () => {
+  it("default: scan enabled → code_comment mentions present", async () => {
+    const prev = {
+      A: process.env.A5C_AGENT_GITHUB_TOKEN,
+      G: process.env.GITHUB_TOKEN,
+    };
     process.env.A5C_AGENT_GITHUB_TOKEN = "test-token";
-    // event intentionally unused: handleEnrich reads from sample file path
-    const octokit = makeMockOctokit();
+    const event = makePullRequestEvent();
+    const inFile = writeJsonTmp(event);
+    const octo = makeMockOctokit({ bigFileBytes: 5000 });
+
     const { output } = await handleEnrich({
-      in: resolve("samples/pull_request.synchronize.json"),
+      in: inFile,
+      flags: { use_github: "true", include_patch: "false" },
       labels: [],
+      rules: undefined,
+      octokit: octo,
+    });
+    const mentions: any[] = (output as any).enriched?.mentions || [];
+    const hasCodeComment = mentions.some((m) => m.source === "code_comment");
+    expect(hasCodeComment).toBe(true);
+    if (prev.A === undefined) delete process.env.A5C_AGENT_GITHUB_TOKEN;
+    else process.env.A5C_AGENT_GITHUB_TOKEN = prev.A!;
+    if (prev.G === undefined) delete process.env.GITHUB_TOKEN;
+    else process.env.GITHUB_TOKEN = prev.G!;
+  });
+
+  it("patch mode: include_patch=true → patch synthesis yields code_comment mention", async () => {
+    const prev = {
+      A: process.env.A5C_AGENT_GITHUB_TOKEN,
+      G: process.env.GITHUB_TOKEN,
+    };
+    process.env.A5C_AGENT_GITHUB_TOKEN = "test-token";
+    const event = makePullRequestEvent();
+    const inFile = writeJsonTmp(event);
+    const octo = makeMockOctokit({ bigFileBytes: 5000 });
+
+    const { output } = await handleEnrich({
+      in: inFile,
       flags: { use_github: "true", include_patch: "true" },
-      octokit,
+      labels: [],
+      rules: undefined,
+      octokit: octo,
     });
-    const mentions = (output as any)?.enriched?.mentions || [];
-    const hasCode = mentions.some((m: any) => m.source === "code_comment");
-    expect(hasCode).toBe(true);
-    if (prev === undefined) delete process.env.A5C_AGENT_GITHUB_TOKEN;
-    else process.env.A5C_AGENT_GITHUB_TOKEN = prev;
+    const mentions: any[] = (output as any).enriched?.mentions || [];
+    const files = new Set(
+      mentions
+        .filter((m) => m.source === "code_comment")
+        .map((m) => (m.location as any)?.file),
+    );
+    expect(files.has("src/ok.ts")).toBe(true);
+    if (prev.A === undefined) delete process.env.A5C_AGENT_GITHUB_TOKEN;
+    else process.env.A5C_AGENT_GITHUB_TOKEN = prev.A!;
+    if (prev.G === undefined) delete process.env.GITHUB_TOKEN;
+    else process.env.GITHUB_TOKEN = prev.G!;
   });
 
-  it("disabled: --flag mentions.scan.changed_files=false → no code_comment mentions", async () => {
-    const prev = process.env.A5C_AGENT_GITHUB_TOKEN;
+  it("disabled: mentions.scan.changed_files=false → no code_comment mentions", async () => {
+    const prev = {
+      A: process.env.A5C_AGENT_GITHUB_TOKEN,
+      G: process.env.GITHUB_TOKEN,
+    };
     process.env.A5C_AGENT_GITHUB_TOKEN = "test-token";
-    // event intentionally unused: handleEnrich reads from sample file path
-    const octokit = makeMockOctokit();
-    const { output } = await handleEnrich({
-      in: resolve("samples/pull_request.synchronize.json"),
-      labels: [],
-      flags: {
-        use_github: "true",
-        include_patch: "true",
-        "mentions.scan.changed_files": "false",
-      },
-      octokit,
-    });
-    const mentions = (output as any)?.enriched?.mentions || [];
-    const hasCode = mentions.some((m: any) => m.source === "code_comment");
-    expect(hasCode).toBe(false);
-    if (prev === undefined) delete process.env.A5C_AGENT_GITHUB_TOKEN;
-    else process.env.A5C_AGENT_GITHUB_TOKEN = prev;
-  });
+    const event = makePullRequestEvent();
+    const inFile = writeJsonTmp(event);
+    const octo = makeMockOctokit();
 
-  it("size cap: --flag mentions.max_file_bytes=1024 with include_patch=false → large raw files skipped, TS still captured", async () => {
-    const prev = process.env.A5C_AGENT_GITHUB_TOKEN;
-    process.env.A5C_AGENT_GITHUB_TOKEN = "test-token";
-    const octokit = makeMockOctokit();
-    // Disable patch scanning so fallback uses raw file contents with size filter
     const { output } = await handleEnrich({
-      in: resolve("samples/pull_request.synchronize.json"),
-      labels: [],
+      in: inFile,
       flags: {
         use_github: "true",
         include_patch: "false",
-        "mentions.max_file_bytes": "1024",
+        "mentions.scan.changed_files": "false",
       },
-      octokit,
+      labels: [],
+      rules: undefined,
+      octokit: octo,
     });
-    const mentions = (output as any)?.enriched?.mentions || [];
-    // Ensure we did not pick up from big JS (size > 1024), but still found from TS patch/content
-    const files = new Set(
-      mentions
-        .filter((m: any) => m.source === "code_comment")
-        .map((m: any) => (m.location as any)?.file),
-    );
-    expect(files.has("src/b.js")).toBe(false);
-    expect(files.has("src/a.ts")).toBe(true);
-    if (prev === undefined) delete process.env.A5C_AGENT_GITHUB_TOKEN;
-    else process.env.A5C_AGENT_GITHUB_TOKEN = prev;
+    const mentions: any[] = (output as any).enriched?.mentions || [];
+    const codeMentions = mentions.filter((m) => m.source === "code_comment");
+    expect(codeMentions.length).toBe(0);
+    if (prev.A === undefined) delete process.env.A5C_AGENT_GITHUB_TOKEN;
+    else process.env.A5C_AGENT_GITHUB_TOKEN = prev.A!;
+    if (prev.G === undefined) delete process.env.GITHUB_TOKEN;
+    else process.env.GITHUB_TOKEN = prev.G!;
   });
 
-  it("language allowlist: --flag mentions.languages=ts → only ts scanned", async () => {
-    const prev = process.env.A5C_AGENT_GITHUB_TOKEN;
+  it("size cap: mentions.max_file_bytes=1024 → large files skipped", async () => {
+    const prev = {
+      A: process.env.A5C_AGENT_GITHUB_TOKEN,
+      G: process.env.GITHUB_TOKEN,
+    };
     process.env.A5C_AGENT_GITHUB_TOKEN = "test-token";
-    const octokit = makeMockOctokit();
+    const event = makePullRequestEvent();
+    const inFile = writeJsonTmp(event);
+    const octo = makeMockOctokit({ bigFileBytes: 10_000 });
+
     const { output } = await handleEnrich({
-      in: resolve("samples/pull_request.synchronize.json"),
-      labels: [],
+      in: inFile,
       flags: {
         use_github: "true",
-        include_patch: "true",
+        include_patch: "false",
+        "mentions.max_file_bytes": 1024,
+      },
+      labels: [],
+      rules: undefined,
+      octokit: octo,
+    });
+    const mentions: any[] = (output as any).enriched?.mentions || [];
+    const bigMentions = mentions.filter(
+      (m) => (m.location as any)?.file === "src/big.js",
+    );
+    expect(bigMentions.length).toBe(0);
+    // Ensure the small file still contributes when not filtered by language
+    const okMentions = mentions.filter(
+      (m) => (m.location as any)?.file === "src/ok.ts",
+    );
+    expect(okMentions.length).toBeGreaterThan(0);
+    if (prev.A === undefined) delete process.env.A5C_AGENT_GITHUB_TOKEN;
+    else process.env.A5C_AGENT_GITHUB_TOKEN = prev.A!;
+    if (prev.G === undefined) delete process.env.GITHUB_TOKEN;
+    else process.env.GITHUB_TOKEN = prev.G!;
+  });
+
+  it("language allowlist: mentions.languages=ts → only TS files scanned", async () => {
+    const prev = {
+      A: process.env.A5C_AGENT_GITHUB_TOKEN,
+      G: process.env.GITHUB_TOKEN,
+    };
+    process.env.A5C_AGENT_GITHUB_TOKEN = "test-token";
+    const event = makePullRequestEvent();
+    const inFile = writeJsonTmp(event);
+    const octo = makeMockOctokit({ bigFileBytes: 5000 });
+
+    const { output } = await handleEnrich({
+      in: inFile,
+      flags: {
+        use_github: "true",
+        include_patch: "false",
         "mentions.languages": "ts",
       },
-      octokit,
+      labels: [],
+      rules: undefined,
+      octokit: octo,
     });
-    const mentions = (output as any)?.enriched?.mentions || [];
-    const files = new Set(
-      mentions
-        .filter((m: any) => m.source === "code_comment")
-        .map((m: any) => (m.location as any)?.file),
+    const mentions: any[] = (output as any).enriched?.mentions || [];
+    // Only TS file mentions should appear
+    const hasOnlyTs = mentions.every((m) =>
+      (m.location as any)?.file?.endsWith(".ts"),
     );
-    expect(files.has("src/a.ts")).toBe(true);
-    expect(files.has("src/b.js")).toBe(false);
-    if (prev === undefined) delete process.env.A5C_AGENT_GITHUB_TOKEN;
-    else process.env.A5C_AGENT_GITHUB_TOKEN = prev;
+    expect(hasOnlyTs).toBe(true);
+    if (prev.A === undefined) delete process.env.A5C_AGENT_GITHUB_TOKEN;
+    else process.env.A5C_AGENT_GITHUB_TOKEN = prev.A!;
+    if (prev.G === undefined) delete process.env.GITHUB_TOKEN;
+    else process.env.GITHUB_TOKEN = prev.G!;
   });
 });

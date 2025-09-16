@@ -72,7 +72,7 @@
         "name": { "type": "string" },
         "type": {
           "anyOf": [
-            { "type": "string", "enum": ["branch", "tag", "pr", "unknown"] },
+            { "type": "string", "enum": ["branch", "tag", "unknown"] },
             { "type": "null" }
           ]
         },
