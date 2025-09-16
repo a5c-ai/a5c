@@ -58,6 +58,11 @@ events normalize --in samples/workflow_run.completed.json \
 
 # Gate output via filter (exit 2 if not matched)
 events normalize --in samples/workflow_run.completed.json --filter 'type=workflow_run'
+
+# Non-matching filter exits with code 2 (no output)
+events normalize --in samples/workflow_run.completed.json \
+  --filter 'type=push' >/dev/null || echo $?
+# prints: 2
 ```
 
 Notes:
@@ -149,6 +154,11 @@ events enrich --in samples/pull_request.synchronize.json \
 events enrich --in samples/pull_request.synchronize.json \
   --rules samples/rules/conflicts.json \
   | jq '(.composed // []) | map({key, reason})'
+
+# Non-matching filter exits with code 2 (no output)
+events enrich --in samples/pull_request.synchronize.json \
+  --filter 'type=push' >/dev/null || echo $?
+# prints: 2
 ```
 
 Mentions sources:

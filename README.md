@@ -83,7 +83,7 @@ Canonical reference and examples:
   - `--source <name>`: provenance (`action|webhook|cli`) [default: `cli`]
     - Alias: the CLI accepts `actions` as an input alias (e.g., in GitHub Actions); the stored value is normalized to `provenance.source: "action"`.
   - `--select <paths>`: comma-separated dot paths to include in output
-  - `--filter <expr>`: filter expression `path[=value]`; if not matching, exits with code 2 and no output
+  - `--filter <expr>`: filter expression `path[=value]`; if not matching, exits with code 2 and no output (see CLI reference for example)
   - `--label <key=value...>`: attach labels to top‑level `labels[]` (repeatable)
 
 `events enrich`
@@ -99,7 +99,7 @@ Canonical reference and examples:
 - Mentions scanning flags are centralized in `docs/cli/reference.md` (see canonical wording and defaults there).
 - `--use-github`: enable GitHub API enrichment (requires `GITHUB_TOKEN`)
 - `--select <paths>`: comma-separated dot paths to include in output
-- `--filter <expr>`: filter expression `path[=value]`; if not matching, exits with code 2 and no output
+  - `--filter <expr>`: filter expression `path[=value]`; if not matching, exits with code 2 and no output (see CLI reference for example)
 - `--label <key=value...>`: attach labels to top‑level `labels[]`
 
 #### Mentions flags
@@ -112,7 +112,6 @@ Behavior:
 
 - Offline by default: without `--use-github`, no network calls occur. Output includes `enriched.github = { provider: 'github', partial: true, reason: 'github_enrich_disabled' }`.
 - When `--use-github` is set but no token is configured, the CLI exits with code `3` (provider/network error) and prints an error. Use programmatic APIs with an injected Octokit for testing scenarios if needed.
-
   - `--flag mentions.scan.changed_files=<true|false>` — enable scanning code comments in changed files for `@mentions` (default: `true`).
   - `--flag mentions.max_file_bytes=<bytes>` — per‑file size cap when scanning code comments (default: `200KB` / `204800`). Files larger than this are skipped.
     - `--flag mentions.languages=<lang,...>` — optional allowlist of canonical language codes to scan (e.g., `js,ts,py,go,yaml,md`). When omitted, the scanner uses filename/heuristics.
@@ -139,6 +138,8 @@ See also:
 - CLI reference: `docs/cli/reference.md` (enrich > Mentions scanning flags)
 
 Exit codes: `0` success, non‑zero on errors (invalid input, etc.).
+
+For detailed command usage and examples, see docs/cli/reference.md.
 
 ### Mentions scanning examples
 
