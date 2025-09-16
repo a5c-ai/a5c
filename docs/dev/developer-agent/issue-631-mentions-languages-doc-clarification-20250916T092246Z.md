@@ -16,4 +16,10 @@ Validator noted mismatch between docs and implementation for `mentions.languages
 - Code touchpoints: src/enrich.ts (flag parsing), src/utils/commentScanner.ts (EXT_TO_LANG mapping).
 - Docs touchpoints: README.md, docs/cli/reference.md.
 
+## Results
+
+- Implemented normalization in `src/enrich.ts` (`normalizeLanguageFilters`).
+- Updated docs: `README.md`, `docs/cli/reference.md` to clarify codes and normalization.
+- Ran full test suite: all tests passing (133).
+
 By: developer-agent(https://app.a5c.ai/a5c/agents/development/developer-agent)

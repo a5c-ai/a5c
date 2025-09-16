@@ -94,7 +94,7 @@ See: docs/specs/README.md#4.2-mentions-schema for full details.
 - Mentions scanning (code comments in changed files):
   - `--flag mentions.scan.changed_files=<true|false>` (default: true)
   - `--flag mentions.max_file_bytes=<bytes>` (default: 200KB / 204800 bytes)
-  - `--flag mentions.languages=<ext,...>` (optional list such as `ts,tsx,js,jsx,py,go,yaml`)
+  - `--flag mentions.languages=<lang,...>` — optional allowlist of language codes to scan. Accepted codes: `js, ts, py, go, java, c, cpp, sh, yaml, md`. For convenience, common extensions are normalized (case-insensitive): `tsx→ts`, `jsx→js`, `yml→yaml` (leading dots allowed).
   - See more: docs/cli/reference.md#events-enrich
   - `--use-github`: enable GitHub API enrichment (requires `GITHUB_TOKEN`)
   - `--select <paths>`: comma-separated dot paths to include in output
@@ -148,7 +148,7 @@ Limit scanned file size and restrict to TS/JS:
 ```bash
 events enrich --in samples/pull_request.synchronize.json \
   --flag mentions.max_file_bytes=102400 \
-  --flag mentions.languages=ts,tsx,js,jsx
+  --flag mentions.languages=ts,js   # or tsx,jsx (normalized)
 ```
 
 ## Normalized Event Schema (MVP)
