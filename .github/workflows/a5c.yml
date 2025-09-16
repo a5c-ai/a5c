@@ -95,6 +95,7 @@ on:
         Commit Hygiene,
         Docs Lint,
         Release,
+        Docs Lint,
       ]
 
   # Manual Triggers
