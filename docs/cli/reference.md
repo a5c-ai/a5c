@@ -93,6 +93,11 @@ events enrich --in FILE [--out FILE] [--rules FILE] \
     - `mentions.max_file_bytes=<bytes>` (default: `204800`) – skip files larger than this many bytes when scanning
     - `mentions.languages=<ext,...>` – optional allowlist of file extensions to scan (e.g., `ts,tsx,js,jsx,py,go,yaml`). When omitted, language/extension detection is used.
     - Notes: Mentions found in file diffs or changed files are emitted with `source: code_comment` and include `location.file` and `location.line` when available.
+- Mentions sources scanned without network calls include:
+  - `pr_title`, `pr_body` when `payload.pull_request` exists
+  - `issue_title`, `issue_body` when `payload.issue` exists
+  - `commit_message` from `payload.commits[].message` on push events
+  - `issue_comment` from the latest `payload.comment.body` on comment events
 - `--use-github`: enable GitHub API enrichment; equivalent to `--flag use_github=true` (requires `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`). Without this flag, the CLI performs no network calls and sets `enriched.github = { provider: 'github', partial: true, reason: 'github_enrich_disabled' }`.
 - `--label KEY=VAL...`: labels to attach
 - `--select PATHS`: comma-separated dot paths to include in output
@@ -127,6 +132,15 @@ events enrich --in samples/pull_request.synchronize.json \
 events enrich --in samples/pull_request.synchronize.json \
   --rules samples/rules/conflicts.json \
   | jq '(.composed // []) | map({key, reason})'
+```
+
+Issue events (title/body mentions):
+
+```bash
+# Scan mentions from a GitHub issues.opened payload (offline; no token needed)
+events enrich --in tests/fixtures/github/issues.opened.json \
+  | jq '.enriched.mentions // [] | map({source, normalized_target})'
+# Expected sources may include: issue_title, issue_body
 ```
 
 Note:
