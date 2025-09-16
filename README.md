@@ -566,7 +566,7 @@ After the first successful upload, add a badge to this README:
 [![codecov](https://codecov.io/gh/a5c-ai/events/branch/a5c/main/graph/badge.svg)](https://codecov.io/gh/a5c-ai/events)
 ```
 
-Adjust the badge target for your repository or branch as needed. Private projects may require a tokenized badge per Codecov docs.
+Adjust the badge URL to match your repository/branch (and VCS provider) as needed. Private projects may require a tokenized badge; see Codecov documentation.
 
 ### Auth tokens: precedence & redaction
 
