@@ -266,21 +266,7 @@ Offline (no --use-github):
 }
 ```
 
-With --use-github but token missing (exit code 3):
-
-Note: the CLI exits with code 3 and does not emit JSON. The following shape may appear in programmatic SDK usage (e.g., tests with an injected Octokit), not in CLI output:
-
-```jsonc
-{
-  "enriched": {
-    "github": {
-      "provider": "github",
-      "skipped": true,
-      "reason": "token:missing",
-    },
-  },
-}
-```
+With --use-github but token missing (exit code 3): the CLI exits with status `3` and prints an error to stderr; no JSON is emitted.
 
 References:
 
