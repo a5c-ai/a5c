@@ -214,11 +214,15 @@ jobs:
             echo "No coverage summary found; skipping PR feedback." >&2
             exit 0
           fi
-          # Read vitest thresholds from config (hardcode fallback)
-          LINES_T=60
-          BRANCHES_T=55
-          FUNCS_T=60
-          STMTS_T=60
+          # Read thresholds from scripts/coverage-thresholds.json when present; fallback to defaults
+          if [ -f scripts/coverage-thresholds.json ]; then
+            read -r LINES_T BRANCHES_T FUNCS_T STMTS_T < <(jq -r '[.lines,.branches,.functions,.statements] | @tsv' scripts/coverage-thresholds.json)
+          else
+            LINES_T=60
+            BRANCHES_T=55
+            FUNCS_T=60
+            STMTS_T=60
+          fi
           # Parse actuals
           node -e '
             const fs = require("fs");
