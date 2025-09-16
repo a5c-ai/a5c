@@ -87,7 +87,7 @@ Full reference and examples: docs/cli/reference.md#events-enrich
 - `--flag include_patch=<true|false>`: include diff patches in files (default: false)
 - `--flag commit_limit=<n>`: max commits to include (default: 50)
 - `--flag file_limit=<n>`: max files to include (default: 200)
-- Mentions scanning flags are centralized in `docs/cli/reference.md#events-enrich` (canonical wording and defaults).
+- Mentions scanning flags are documented once in the CLI reference at `docs/cli/reference.md#events-enrich` and are the canonical source of truth for wording and defaults.
 - `--use-github`: enable GitHub API enrichment (requires `GITHUB_TOKEN`)
 - `--select <paths>`: comma-separated dot paths to include in output
 - `--filter <expr>`: filter expression `path[=value]`; if not matching, exits with code 2 and no output
@@ -95,13 +95,9 @@ Full reference and examples: docs/cli/reference.md#events-enrich
 
 #### Mentions flags
 
-Common flags to control Mentions extraction during `enrich` (particularly for `source=code_comment` in changed files):
+For the authoritative list and defaults for Mentions controls during `enrich` (including `mentions.scan.changed_files`, `mentions.max_file_bytes`, and `mentions.languages`), see the CLI reference: `docs/cli/reference.md#events-enrich`.
 
-- `--flag mentions.scan.changed_files=<true|false>` — enable scanning code comments in changed files for `@mentions` (default: `true`).
-- `--flag mentions.max_file_bytes=<bytes>` — per‑file size cap when scanning code comments (default: `200KB` / `204800`). Files larger than this are skipped.
-- `--flag mentions.languages=<ext,...>` — optional allowlist of file extensions to scan (e.g., `ts,tsx,js,jsx,py,go,yaml`). When omitted, the scanner uses filename/heuristics.
-
-Examples:
+Quick examples:
 
 ```bash
 # Disable scanning changed files for code‑comment mentions
