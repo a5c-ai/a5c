@@ -290,7 +290,7 @@ Exit codes:
 Offline vs token-missing notes:
 
 - Offline (no `--use-github`): stub as shown above with `reason: 'github_enrich_disabled'`; no network-derived fields.
-- With `--use-github` but token missing: exit code `3` and error to stderr; no JSON output by the CLI.
+- With `--use-github` but token missing: exit code `3` and error to stderr; no JSON output by the CLI. See `tests/cli.exit-codes.test.ts` for coverage of this behavior.
 
 References:
 
