@@ -1,0 +1,32 @@
+name: Docs Lint
+
+on:
+  pull_request:
+    branches: [a5c/main]
+    paths:
+      - 'docs/**'
+      - 'README.md'
+      - 'scripts/docs-lint.sh'
+  push:
+    branches: [a5c/main]
+    paths:
+      - 'docs/**'
+      - 'README.md'
+      - 'scripts/docs-lint.sh'
+
+jobs:
+  docs-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+      - name: Install ripgrep
+        run: sudo apt-get update && sudo apt-get install -y ripgrep
+      - name: Run docs linter
+        run: |
+          bash scripts/docs-lint.sh
+
