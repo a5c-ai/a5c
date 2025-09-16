@@ -17,6 +17,49 @@ docs/**             @a5c-ai/docs
 
 Tips:
 
-- Place more specific patterns higher; last match wins.
+- Place more specific patterns lower; last match wins. (Order matters; the last matching rule per file takes precedence.)
 - Prefer team handles over individuals.
 - Keep owners current to ensure accurate routing in CI and agent workflows.
+
+## Semantics: Union vs. Last-Rule
+
+GitHub CODEOWNERS applies matching rules top-to-bottom per file; the last matching rule determines that file’s owners and thus review requirements.
+
+Event enrichment for routing computes both per-file owners and an `owners_union` across all changed files:
+
+- `enriched.github.pr.owners`: map of `file -> [owners]` using CODEOWNERS last-match per file.
+- `enriched.github.pr.owners_union`: sorted, de-duplicated union of all owners across changed files.
+
+Why union? Routing and notifications often need a superset of stakeholders for downstream agents (triage, review pings, labeling). Union minimizes surprise where multiple areas are touched.
+
+### Examples
+
+Example A (overlapping specific vs broad):
+
+```ini
+# CODEOWNERS
+src/**          @team-src
+src/feature/**  @team-feature
+```
+
+- File: `src/feature/util.ts` → per-file owners: `[@team-feature]` (last rule wins)
+- File: `src/common/helpers.ts` → per-file owners: `[@team-src]`
+- PR changes both → `owners_union = [@team-feature, @team-src]` (sorted, deduped)
+
+Example B (users and teams; markdown):
+
+```ini
+*.md            @docs-bot @a5c-ai/docs
+docs/**         @a5c-ai/docs
+```
+
+- Files: `README.md`, `docs/guide.md` → union: `[@a5c-ai/docs, @docs-bot]`
+
+Rationale:
+
+- Routing favors broader notification to avoid missing stakeholders when multiple areas are touched.
+- Downstream agents can still implement stricter strategies if needed (e.g., use per-file last-rule owners only).
+
+Future toggle (tracking): a configuration flag may allow switching between union-based routing and strict last-rule parity for PR-level owners.
+
+See also: `docs/specs/README.md` §4.1 for a concise specification note.

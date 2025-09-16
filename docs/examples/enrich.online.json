@@ -1,0 +1,61 @@
+{
+  "id": "evt-124",
+  "provider": "github",
+  "type": "pull_request",
+  "occurred_at": "2025-09-15T12:05:00Z",
+  "repo": {
+    "id": 1055826069,
+    "name": "events",
+    "full_name": "a5c-ai/events",
+    "private": true
+  },
+  "actor": { "id": 221166651, "login": "a5c-ai[bot]", "type": "Bot" },
+  "payload": { "pull_request": { "number": 567, "title": "Update docs" } },
+  "provenance": { "source": "cli" },
+  "labels": ["docs", "example"],
+  "enriched": {
+    "github": {
+      "provider": "github",
+      "partial": false,
+      "pr": {
+        "number": 567,
+        "draft": false,
+        "mergeable_state": "dirty",
+        "has_conflicts": true,
+        "base": "main",
+        "head": "feature/branch",
+        "labels": ["priority:low"],
+        "requested_reviewers": [],
+        "requested_teams": []
+      },
+      "diff": {
+        "changed_files": 3,
+        "additions": 42,
+        "deletions": 10,
+        "files": [
+          {
+            "filename": "src/index.ts",
+            "status": "modified",
+            "additions": 10,
+            "deletions": 2,
+            "changes": 12
+          },
+          {
+            "filename": "src/util.ts",
+            "status": "added",
+            "additions": 30,
+            "deletions": 0,
+            "changes": 30
+          },
+          {
+            "filename": "README.md",
+            "status": "modified",
+            "additions": 2,
+            "deletions": 8,
+            "changes": 10
+          }
+        ]
+      }
+    }
+  }
+}
