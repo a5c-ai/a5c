@@ -78,13 +78,17 @@ Ownership semantics:
   - context: `string` short excerpt around the mention (<=140 chars)
   - confidence: `0..1` (parser confidence, esp. for code_comment extraction)
 
-Configuration:
+Configuration (aligns with CLI and README):
 
-- `mentions.scan.changed_files`: `true|false` (default true) — scan changed files for `@...` in code comments.
-- `mentions.scan.commit_messages`: `true|false` (default true)
-- `mentions.scan.issue_comments`: `true|false` (default true)
-- `mentions.max_file_bytes`: bytes cap per file (default 200KB)
-- `mentions.languages`: opt-in list for code-comment scanning; default detects via filename.
+- `mentions.scan.changed_files`: `true|false` (default: true) — scan changed files for `@...` in code comments.
+- `mentions.max_file_bytes`: number of bytes cap per file (default: 204800 bytes ≈ 200KB)
+- `mentions.languages`: optional allowlist of canonical language codes to scan (e.g., `js,ts,py,go,yaml,md`). When omitted, detection is used.
+  - Mapping note: extensions are normalized to codes during detection (e.g., `.tsx → ts`, `.jsx → js`, `.yml → yaml`), but the allowlist compares codes.
+
+See also:
+
+- CLI details and examples: `docs/cli/reference.md#events-enrich`.
+- Root README quick reference: `README.md#mentions-scanning-examples`.
 
 Example mention from a code comment:
 
@@ -104,10 +108,7 @@ Example mention from a code comment:
 
 - Env vars: `GITHUB_TOKEN` (or custom `A5C_AGENT_GITHUB_TOKEN`), debug flags, provider-specific tokens.
 - Sources: prefer GitHub Actions runtime env and `secrets.*` and `vars.*` as in existing workflows.
-- CLI flags (implemented): `--in file.json` (webhook sample), `--out out.json`, `--label key=value`, `--select paths`, `--filter expr` expr`.
-- CLI flags (implemented): `--in file.json` (webhook sample), `--out out.json`, `--label key=value`.
-- CLI flags (planned/not yet implemented): `--select fields`, `--filter expr`.
-- CLI flags (implemented): `--in file.json` (webhook sample), `--out out.json`, `--label key=value`, `--select paths`, `--filter expr` expr`.
+- CLI flags (implemented): `--in file.json`, `--out out.json`, `--label key=value`, `--select paths`, `--filter expr`.
 - Provider adapters: `providers/github`, stub interfaces for others. Auto-detect when running in Actions.
 
 ### 5.1) Environment Variables and Precedence
