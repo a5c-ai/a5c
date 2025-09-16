@@ -1,20 +1,22 @@
-export type MentionKind = 'agent' | 'user' | 'team' | 'unknown';
+export type MentionKind = "agent" | "user" | "team" | "unknown";
 
 export type MentionSource =
-  | 'commit_message'
-  | 'pr_body'
-  | 'pr_title'
-  | 'issue_body'
-  | 'issue_title'
-  | 'issue_comment'
-  | 'code_comment';
+  | "commit_message"
+  | "pr_body"
+  | "pr_title"
+  | "issue_body"
+  | "issue_title"
+  | "issue_comment"
+  | "code_comment";
 
 export interface Mention {
   target: string;
   normalized_target: string;
   kind: MentionKind;
   source: MentionSource;
-  location?: { file?: string; line?: number; commit_sha?: string; comment_id?: number } | string; // object (preferred) or legacy string
+  location?:
+    | { file?: string; line?: number; commit_sha?: string; comment_id?: number }
+    | string; // object (preferred) or legacy string
   context: string; // excerpt around the mention
   confidence: number; // 0..1
 }
@@ -38,11 +40,11 @@ export interface NormalizedEvent {
     name: string;
     full_name: string;
     private?: boolean;
-    visibility?: 'public' | 'private' | 'internal' | null;
+    visibility?: "public" | "private" | "internal" | null;
   };
   ref?: {
     name?: string;
-    type?: 'branch' | 'tag' | 'unknown' | null;
+    type?: "branch" | "tag" | "unknown" | null;
     sha?: string;
     base?: string;
     head?: string;

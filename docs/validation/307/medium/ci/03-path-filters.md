@@ -7,10 +7,10 @@ on:
   pull_request:
     branches: [a5c/main, main]
     paths:
-      - 'src/**'
-      - 'tsconfig*.json'
-      - 'package.json'
-      - '.github/workflows/typecheck.yml'
+      - "src/**"
+      - "tsconfig*.json"
+      - "package.json"
+      - ".github/workflows/typecheck.yml"
 ```
 
 This is non-blocking and can be tuned based on repo cadence.

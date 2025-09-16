@@ -8,8 +8,9 @@ Context: During validation, `npm run lint` surfaced warnings for unused `eslint-
 Why: Unused disables can hide real issues later and add noise to CI.
 
 Suggested fix:
+
 - Remove the unused `eslint-disable` comments in the two files above.
 
 Notes:
-- Not blocking; warnings only. Address when touching these files next.
 
+- Not blocking; warnings only. Address when touching these files next.

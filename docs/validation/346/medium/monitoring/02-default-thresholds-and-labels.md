@@ -8,4 +8,3 @@ Category: monitoring
 - Add a mapping table example: signal -> action (comment, label, issue, assignee).
 
 Rationale: Concrete defaults speed up consistent adoption and keep MVP actionable.
-

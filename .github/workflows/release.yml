@@ -29,8 +29,9 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: "npm"
-          registry-url: "https://npm.pkg.github.com"
       - name: Install
+        env:
+          HUSKY: 0
         run: |
           if [ -f package-lock.json ]; then
             echo "Attempting clean install via npm ci..."
@@ -41,6 +42,12 @@ jobs:
           else
             npm install
           fi
+      - name: Setup Node.js for GitHub Packages (a5c/main only)
+        if: github.ref == 'refs/heads/a5c/main'
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          registry-url: "https://npm.pkg.github.com"
       - name: Build
         run: npm run -s build
       - name: Release (a5c/main prerelease)
@@ -84,5 +91,24 @@ jobs:
             echo "Version already exists on npmjs, skipping publish."
             exit 0
           fi
-          # Publish to npmjs overriding package publishConfig registry
+          # Temporarily override project .npmrc to ensure scoped package publishes to npmjs (not GitHub Packages)
+          BACKUP_NPMRC=false
+          if [ -f .npmrc ]; then
+            mv .npmrc .npmrc.gpr
+            BACKUP_NPMRC=true
+          fi
+          cat > .npmrc <<'NPMRC'
+          fund=false
+          audit=false
+          save-exact=true
+          //registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}
+          @a5c-ai:registry=https://registry.npmjs.org/
+          NPMRC
+          echo "Auth check against npmjs: $(npm whoami --registry=https://registry.npmjs.org || echo 'not authenticated')"
+          # Publish to npmjs overriding any publishConfig registry
           npm publish --registry=https://registry.npmjs.org --access public
+          # Restore original .npmrc if it existed
+          if [ "$BACKUP_NPMRC" = true ]; then
+            rm -f .npmrc
+            mv .npmrc.gpr .npmrc
+          fi

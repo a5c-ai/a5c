@@ -104,10 +104,11 @@ function mapRepo(repo: GHRepo | undefined) {
 
 function mapRef(payload: any) {
   if (payload.pull_request) {
-    // NE schema update: treat PR ref as explicit 'pr' type for tests/spec
+    // For PR events, emit branch ref semantics.
+    // Use head ref as name; keep base/head fields for context.
     return {
       name: payload.pull_request.head?.ref,
-      type: "pr",
+      type: "branch",
       base: payload.pull_request.base?.ref,
       head: payload.pull_request.head?.ref,
     };

@@ -37,13 +37,14 @@ Normalize a raw provider payload into the NE schema.
 Usage:
 
 ```bash
-events normalize [--in FILE] [--out FILE] [--source <actions|webhook|cli>] \
+events normalize [--in FILE] [--out FILE] [--source <action|webhook|cli>] \
   [--label KEY=VAL...] [--select PATHS] [--filter EXPR]
 ```
 
 - `--in FILE`: path to a JSON webhook payload
 - `--out FILE`: write result JSON (stdout if omitted)
-- `--source <name>`: provenance source (`actions|webhook|cli`) [default: `cli`]
+- `--source <name>`: provenance source (`action|webhook|cli`) [default: `cli`]
+  - Alias: the CLI also accepts `actions` as input for convenience (e.g., in GitHub Actions). It is normalized and persisted as `provenance.source: "action"`.
 - `--label KEY=VAL...`: attach labels to top‑level `labels[]` (repeatable)
 - `--select PATHS`: comma‑separated dot paths to include in output (e.g., `type,repo.full_name`)
 - `--filter EXPR`: filter expression `path[=value]`; if it doesn't pass, exits with code `2`
@@ -69,8 +70,8 @@ Enrich a normalized event (or raw GitHub payload) with repository and provider m
 
 Behavior:
 
-- No network calls are performed by default. In offline mode, `enriched.github = { provider: 'github', partial: true, reason: 'github_enrich_disabled' }`.
-- Pass `--use-github` to enable GitHub API enrichment. If no token is configured, the CLI exits with code `3` (provider/network error) and prints an error. When `--use-github` is set but no token is configured, the CLI returns exit code 3 and documents the state as `{ provider: 'github', skipped: true, reason: 'token:missing' }`.
+- No network calls are performed by default. In offline mode, `enriched.github = { provider: 'github', partial: true, reason: 'flag:not_set' }`.
+- Pass `--use-github` to enable GitHub API enrichment. If no token is configured, the CLI exits with code `3` (provider/network error) and prints an error.
 
 Usage:
 
@@ -91,6 +92,7 @@ events enrich --in FILE [--out FILE] [--rules FILE] \
     - `mentions.scan.changed_files=true|false` (default: `true`) – enable/disable scanning code comments in changed files for `@mentions`
     - `mentions.max_file_bytes=<bytes>` (default: `204800`) – skip files larger than this many bytes when scanning
     - `mentions.languages=<ext,...>` – optional allowlist of file extensions to scan (e.g., `ts,tsx,js,jsx,py,go,yaml`). When omitted, language/extension detection is used.
+    - Notes: Mentions found in file diffs or changed files are emitted with `source: code_comment` and include `location.file` and `location.line` when available.
 - `--use-github`: enable GitHub API enrichment; equivalent to `--flag use_github=true` (requires `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`). Without this flag, the CLI performs no network calls and sets `enriched.github = { provider: 'github', partial: true, reason: 'github_enrich_disabled' }`.
 - `--label KEY=VAL...`: labels to attach
 - `--select PATHS`: comma-separated dot paths to include in output
@@ -103,7 +105,6 @@ export GITHUB_TOKEN=...  # required for GitHub API lookups
 
 events enrich --in samples/pull_request.synchronize.json \
   --use-github \
-  --flag include_patch=false \
   | jq '.enriched.github.pr.mergeable_state'
 
 # Mentions scanning controls (code comments in changed files)
@@ -133,6 +134,7 @@ Note:
 - `.composed` may be absent or `null` when no rules match. Guard with `(.composed // [])` as above.
 - The `reason` field may be omitted depending on rule configuration. See specs §6.1 for composed events structure: `docs/specs/README.md#61-rule-engine-and-composed-events`.
 - Token precedence: runtime prefers `A5C_AGENT_GITHUB_TOKEN` over `GITHUB_TOKEN` when both are set (see `src/config.ts`).
+- Programmatic API nuance: when using the SDK directly and `--use-github` semantics are requested without a token, some code paths may return a partial `enriched.github` with `reason: 'token:missing'` for testing with an injected Octokit. The CLI path exits with code `3` instead of emitting JSON.
 - Redaction: CLI redacts sensitive keys and common secret patterns in output by default (see `src/utils/redact.ts`).
 
 ````
@@ -147,6 +149,21 @@ Without network calls (mentions only):
 events enrich --in samples/push.json --out out.json
 jq '.enriched.mentions' out.json
 ````
+
+Include patch diffs explicitly (opt‑in):
+
+```bash
+events enrich --in samples/pull_request.synchronize.json \
+  --use-github --flag include_patch=true \
+  | jq '.enriched.github.pr.files | map(has("patch")) | all'
+```
+
+Inspect composed if present:
+
+```bash
+# Given prior command output on stdin
+jq '(.composed // []) | map({key, reason})'
+```
 
 ### `events emit`
 

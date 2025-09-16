@@ -5,6 +5,7 @@
 - Scope of PR: Docs renames and `.husky/pre-commit` guard only; no runtime code changes.
 
 Failed areas observed (sample from vitest output):
+
 - tests/enrich.basic.test.ts
 - tests/enrich.flags.test.ts (2 cases)
 - tests/enrich.handle.test.ts

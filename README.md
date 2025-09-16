@@ -1,4 +1,4 @@
-[![99% built by agents](https://img.shields.io/badge/99%25-built%20by%20agents-blue.svg)](https://a5c.ai) [![codecov](https://codecov.io/gh/a5c-ai/events/branch/a5c/main/graph/badge.svg)](https://codecov.io/gh/a5c-ai/events)
+[![99% built by agents](https://img.shields.io/badge/99%25-built%20by%20agents-blue.svg)](https://a5c.ai)
 
 # @a5c-ai/events – Events SDK & CLI
 
@@ -17,7 +17,7 @@ See docs/routing/ownership-and-routing.md for how CODEOWNERS drives routing and 
 
 Prerequisites:
 
-- Node.js 20.x LTS. The repo includes an `.nvmrc` pinning Node 20 for local parity with CI.
+- Node.js 20.x LTS (see `.nvmrc` for CI parity).
   - If you use `nvm`, run `nvm use` in the project root.
 
 Install:
@@ -75,7 +75,8 @@ See: docs/specs/README.md#4.2-mentions-schema for full details.
 - Common flags:
   - `--in <file>`: input JSON file (raw event)
   - `--out <file>`: write result to file (default: stdout)
-  - `--source <name>`: provenance (`actions|webhook|cli`) [default: `cli`]
+  - `--source <name>`: provenance (`action|webhook|cli`)
+    - Tip: The CLI accepts `actions` as an input alias for convenience when running in GitHub Actions, but the persisted `provenance.source` is normalized to `action`. [default: `cli`]
   - `--select <paths>`: comma-separated dot paths to include in output
   - `--filter <expr>`: filter expression `path[=value]`; if not matching, exits with code 2 and no output
   - `--label <key=value...>`: attach labels to top‑level `labels[]` (repeatable)
@@ -94,20 +95,44 @@ See: docs/specs/README.md#4.2-mentions-schema for full details.
   - `--flag mentions.scan.changed_files=<true|false>` (default: true)
   - `--flag mentions.max_file_bytes=<bytes>` (default: 200KB / 204800 bytes)
   - `--flag mentions.languages=<ext,...>` (optional list such as `ts,tsx,js,jsx,py,go,yaml`)
+  - See more: docs/cli/reference.md#events-enrich
   - `--use-github`: enable GitHub API enrichment (requires `GITHUB_TOKEN`)
-  - `--flag mentions.scan.changed_files=<true|false>`: enable scanning changed files for code-comment mentions (default: true)
-  - `--flag mentions.max_file_bytes=<bytes>`: max bytes per file for code-comment scanning (default: 204800)
-  - `--flag mentions.languages=js,ts,py`: optional allowlist of languages/extensions for code-comment scanning
   - `--select <paths>`: comma-separated dot paths to include in output
   - `--filter <expr>`: filter expression `path[=value]`; if not matching, exits with code 2 and no output
   - `--label <key=value...>`: attach labels to top‑level `labels[]`
 
 Behavior:
 
-- Offline by default: without `--use-github`, no network calls occur. Output includes `enriched.github` with `partial=true` and `reason="github_enrich_disabled"`.
+- Offline by default: without `--use-github`, no network calls occur. Output includes `enriched.github` with `partial=true` and `reason="flag:not_set"`.
 - When `--use-github` is set but no token is configured, the CLI exits with code `3` (provider/network error) and prints an error. Use programmatic APIs with an injected Octokit for partial/offline testing if needed.
 
 Exit codes: `0` success, non‑zero on errors (invalid input, etc.).
+
+#### Offline GitHub enrichment
+
+When you do not pass `--use-github`, enrichment runs fully offline and stubs the GitHub section to avoid implying data that was not fetched.
+
+Example (excerpt):
+
+```jsonc
+{
+  "enriched": {
+    "github": {
+      "provider": "github",
+      "partial": true,
+      "reason": "flag:not_set",
+    },
+  },
+}
+```
+
+With `--use-github` and a valid token, fields are populated. For example:
+
+```bash
+events enrich --in samples/pull_request.synchronize.json --use-github | jq '.enriched.github.pr.mergeable_state'
+```
+
+If you pass `--use-github` without a token, the CLI exits with code `3` and prints a clear error to stderr. The programmatic API may return a partial object with `reason: "token:missing"`, but the CLI does not emit JSON on this error.
 
 ### Mentions scanning examples
 
@@ -144,6 +169,11 @@ Core fields returned by `normalize`:
 
 See the detailed specs for full schema and roadmap.
 
+Notes:
+
+- Example outputs may omit or truncate large `payload` bodies to keep docs readable.
+- The optional `composed[].payload` allows `object | array | null` (from enrichment/rules). See `docs/specs/ne.schema.json`.
+
 ## Examples
 
 GitHub Actions (normalize current run):
@@ -155,6 +185,7 @@ GitHub Actions (normalize current run):
       --source actions \
       --in "$GITHUB_EVENT_PATH" \
       --out event.json
+    # Note: --source actions is accepted as an alias; the stored value will be provenance.source: "action".
 jq '.type, .repo.full_name, .labels' event.json
 ```
 
@@ -170,10 +201,15 @@ Enrichment (with GitHub lookups enabled):
 
 ```bash
 export GITHUB_TOKEN=ghp_your_token_here
+# Default include_patch is false; enable it explicitly only if you need diff bodies
 events enrich --in samples/pull_request.synchronize.json \
-  --flag include_patch=false --flag commit_limit=50 --flag file_limit=200 \
+  --flag commit_limit=50 --flag file_limit=200 \
   --use-github --out enriched.json
 jq '.enriched' enriched.json
+
+# To include patch diffs, opt in explicitly:
+events enrich --in samples/pull_request.synchronize.json \
+  --flag include_patch=true --use-github | jq '.enriched.github.pr.files[0].patch'
 ```
 
 With rules (composed events):
@@ -185,18 +221,59 @@ events enrich --in samples/pull_request.synchronize.json \
   # note: `reason` may be omitted depending on rule configuration
 ```
 
+### Rules quick-start
+
+Evaluate simple YAML/JSON rules during enrichment to emit composed events (`.composed[]`). This enables lightweight routing/triggers without extra services.
+
+Minimal example using included samples:
+
+```bash
+# Offline mode (no GitHub API). May yield no matches if PR state
+# like mergeability cannot be determined without API lookups.
+events enrich --in samples/pull_request.synchronize.json \
+  --rules samples/rules/conflicts.yml \
+  | jq '(.composed // []) | map({key, labels})'
+
+# Recommended: enable GitHub lookups for PR rules using PR state
+export GITHUB_TOKEN=ghp_your_token_here
+events enrich --in samples/pull_request.synchronize.json \
+  --use-github \
+  --rules samples/rules/conflicts.yml \
+  | jq '(.composed // []) | map({key, reason, labels})'
+```
+
+See also:
+
+- [Specs §6.1 Rule Engine and Composed Events](docs/specs/README.md#61-rule-engine-and-composed-events)
+- [Full CLI reference](docs/cli/reference.md)
+
 ## Coverage (Optional)
 
-CI can upload coverage to Codecov and show a badge in this README. Uploads are disabled by default and only run when a token is configured.
+You can optionally upload coverage to Codecov. This repo does not enable uploads by default.
 
-- Add a repo Secret or Variable named `CODECOV_TOKEN`.
-- When present, the following workflows upload `coverage/lcov.info` using `codecov/codecov-action@v4`:
-  - `.github/workflows/tests.yml` (push on `a5c/main` and `main`)
-  - `.github/workflows/quick-checks.yml` (PRs)
-  - `.github/workflows/pr-tests.yml` (PRs)
-- If the token is absent, the Codecov step is skipped and CI remains green.
+Opt-in steps:
 
-Badge note: If your Codecov project is public, the badge works without a token parameter. For private projects, configure the Codecov badge as appropriate for your org and visibility.
+- Create a Codecov project for this repository and add a repo Secret or Variable named `CODECOV_TOKEN`.
+- Add the following step to your tests workflow after coverage is generated:
+
+```yaml
+- name: Upload coverage to Codecov (optional)
+  if: ${{ env.CODECOV_TOKEN != '' }}
+  env:
+    CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+  run: |
+    bash scripts/coverage-upload.sh
+```
+
+Badge (optional):
+
+After the first successful upload, add a badge to this README:
+
+```
+[![codecov](https://codecov.io/gh/a5c-ai/events/branch/a5c/main/graph/badge.svg)](https://codecov.io/gh/a5c-ai/events)
+```
+
+Replace the URL to match your VCS provider and repository if different. Private projects may require a tokenized badge; see Codecov docs.
 
 ### Auth tokens: precedence & redaction
 
@@ -291,9 +368,15 @@ See `docs/specs/README.md` for examples and behavior-driven test outlines. Add y
 - Build: `npm run build`
 - Dev CLI: `npm run dev` (runs `src/cli.ts` via tsx)
 - Lint/Typecheck/Format: `npm run lint` / `npm run typecheck` / `npm run format`
-  - CI Observability: see `.github/actions/obs-summary` composite action which writes a job summary and uploads `observability.json`. The composite sets up Node (`actions/setup-node@v4`) with default Node 20; override with `with.node-version` if needed. Example usage lives in `.github/workflows/tests.yml`.
+  - CI Observability: see `.github/actions/obs-summary` and `.github/actions/obs-collector` composite actions which write a job summary and upload `observability.json`. Both composites set up Node via `actions/setup-node@v4` with default Node 20; override with `with.node-version` if needed. Example usage lives in `.github/workflows/tests.yml`.
+    - Node requirement: the composites under `.github/actions/obs-*` execute Node inline scripts and ensure Node internally. You can optionally pre‑setup Node in your job if you want to control the toolchain:
+      ```yaml
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      ```
   - CI runs lint and typecheck on PRs; see `.github/workflows/lint.yml` and `.github/workflows/typecheck.yml`.
-  - Local pre-commit enforces whitespace/newline hygiene, lint, and typecheck; see `docs/contributing/README.md#pre-commit-checks`.
+- Local pre-commit enforces staged-file hygiene and runs lint-staged (ESLint + Prettier); see `docs/dev/precommit-hooks.md`. Conventional commits are validated via Husky + commitlint; see `docs/contributing/git-commits.md`.
 - Minimal Node types + commander; TypeScript configured in `tsconfig.json`
 
 ### Node.js Version Policy
@@ -309,6 +392,8 @@ Typecheck CI runs a matrix on Node 20 and 22 to catch version-specific type issu
 ### Commit conventions
 
 We follow Conventional Commits. Local commit messages are validated with Husky + commitlint, and PRs run a commitlint check. See `docs/contributing/git-commits.md`.
+
+For local hooks and skip flags, see `docs/dev/precommit-hooks.md` and the pre-commit section in `CONTRIBUTING.md`.
 
 To use the commit message template locally:
 
@@ -329,28 +414,27 @@ This repository initially used a generic a5c platform README. That content now l
 
 ### Composed + Validate (Walkthrough)
 
-You can enrich with rules to emit composed events, then validate the enriched output against the NE schema. The NE schema includes an optional top‑level `composed` array; enriched outputs validate as‑is. If you want to validate only the normalized core (without composed), you may optionally strip `composed` for that purpose.
+You can enrich with rules to emit composed events and validate the enriched output against the NE schema. The `composed` field is part of the NE schema and optional; enriched documents validate as‑is. If you want to validate just the normalized subset, you may drop `.composed` before validation.
 
 ```bash
 # Enrich with rules to produce `.composed[]`
-events enrich --in samples/pull_request.synchronize.json \
-  --rules samples/rules/conflicts.yml \
-  --out enriched.json
+events enrich --in samples/pull_request.synchronize.json   --rules samples/rules/conflicts.yml   --out enriched.json
 
-# Inspect composed events (guard for absence)
+# Inspect composed events (guard for absence; `reason` may be omitted)
 jq '(.composed // []) | map({key, reason})' enriched.json
 
-# Validate the enriched document against the NE schema (no need to drop `.composed`)
+# Validate the enriched document against the NE schema (as‑is)
 events validate --in enriched.json --schema docs/specs/ne.schema.json --quiet
 
-# Optional: validate the normalized-only subset by removing `.composed`
+# Option: validate the normalized‑only subset (drop `.composed`)
 jq 'del(.composed)' enriched.json | events validate --schema docs/specs/ne.schema.json --quiet
 ```
 
 Notes:
 
 - `.composed` may be absent when no rules match. Use `(.composed // [])` in `jq`.
-- NE schema: `docs/specs/ne.schema.json` includes optional top‑level `composed`. `composed[].payload` may be `object | array | null`.
+- NE schema: `docs/specs/ne.schema.json` includes optional top‑level `composed`. `payload` is `object | array`; `composed[].payload` may be `object | array | null`.
+- `reason` is optional depending on rule configuration.
 
 ## Links
 

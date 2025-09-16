@@ -58,3 +58,7 @@ tmp-enrich-*.json
 .pr_comment.md
 # CLI outputs
 /out.json
+# artifacts cleaned by validator-agent
+a5c-ai-events-*.tgz
+out.enrich.json
+out.normalize.json

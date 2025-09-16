@@ -6,10 +6,14 @@ export function normalizeTarget(raw: string): string {
   return raw.trim().toLowerCase();
 }
 
-export function inferKind(target: string, knownAgents?: string[]): 'agent' | 'user' | 'team' | 'unknown' {
+export function inferKind(
+  target: string,
+  knownAgents?: string[],
+): "agent" | "user" | "team" | "unknown" {
   const t = normalizeTarget(target);
-  if (knownAgents && knownAgents.map((a) => a.toLowerCase()).includes(t)) return 'agent';
-  if (t.endsWith('-agent')) return 'agent';
-  if (t.includes('/')) return 'team';
-  return 'unknown';
+  if (knownAgents && knownAgents.map((a) => a.toLowerCase()).includes(t))
+    return "agent";
+  if (t.endsWith("-agent")) return "agent";
+  if (t.includes("/")) return "team";
+  return "unknown";
 }

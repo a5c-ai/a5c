@@ -22,26 +22,31 @@ jq '.repo.full_name, .type, .provenance.workflow?.name' event.json
 ```
 
 ## Input Sources
+
 - `--in file.json`: path to a raw webhook payload
 - `--source actions`: read from Actions runtime env and `GITHUB_EVENT_PATH`
 
 ## Output Control
+
 - `--select`: pick fields to print
 - `--label key=value`: add labels to `labels[]`
 
 ## Examples
 
 - Pull Request event normalization:
+
 ```bash
 events normalize --in samples/pull_request.synchronize.json | jq '.type, .ref.head'
 ```
 
 - Push event normalization:
+
 ```bash
 events normalize --in samples/push.json | jq '.ref.name, .ref.type, .ref.sha'
 ```
 
 ## Tests and Fixtures
+
 - Place sample payloads under `samples/` (e.g., `workflow_run.completed.json`, `pull_request.synchronize.json`, `push.json`, `issue_comment.created.json`).
 - Unit tests should:
   - Map fields per this doc
