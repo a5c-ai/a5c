@@ -99,7 +99,7 @@ describe("handleEnrich", () => {
       }
     }
   });
-  it("offline mode: always attaches stub with reason github_enrich_disabled", async () => {
+  it("offline mode: attaches stub with reason flag:not_set", async () => {
     const res = await handleEnrich({
       in: "samples/pull_request.synchronize.json",
       labels: [],
@@ -109,7 +109,7 @@ describe("handleEnrich", () => {
     const gh = (res.output.enriched as any)?.github;
     expect(gh).toBeTruthy();
     expect(gh.partial).toBeTruthy();
-    expect(gh.reason).toBe("github_enrich_disabled");
+    expect(gh.reason).toBe("flag:not_set");
     // Offline contract: no PR details fetched from network should be present
     expect(gh.pr?.number).toBeUndefined();
   });
