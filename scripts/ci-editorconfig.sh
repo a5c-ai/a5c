@@ -30,7 +30,13 @@ rm -f .editorconfig-checker.json || true
 # Note: quote the default, not the variable expansion, to avoid literal quotes in value
 EC_VERSION="${EDITORCONFIG_CHECKER_VERSION:-3.3.0}"
 
+# Detect support for github-actions formatter (older versions may not support -format)
+FORMAT_ARGS=""
+if npx --yes "editorconfig-checker@${EC_VERSION}" -help 2>&1 | grep -q -- "-format"; then
+  FORMAT_ARGS="-format github-actions"
+fi
+
+# Execute. Avoid forcing color: older versions only support -no-color.
 npx --yes "editorconfig-checker@${EC_VERSION}" \
-  -color \
-  -format github-actions \
+  ${FORMAT_ARGS} \
   -exclude "$EXCLUDE_REGEX" || exit $?
