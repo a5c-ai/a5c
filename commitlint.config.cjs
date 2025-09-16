@@ -15,5 +15,8 @@ module.exports = {
     "scope-case": [2, "always", "kebab-case"],
     // Align with scripts/commit-verify.ts which doesn't limit header length
     "header-max-length": [0],
+    // Allow rich release notes and auto-generated footers in commits included in PR ranges
+    "body-max-line-length": [0],
+    "footer-max-line-length": [0],
   },
 };
