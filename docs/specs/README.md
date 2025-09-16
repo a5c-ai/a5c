@@ -48,6 +48,8 @@
 
 ### 4.1) GitHub Enrichment Details (MVP)
 
+Note: For routing, PR-level owners use a union-based `owners_union` across changed files (sorted, deduplicated). GitHub's last-match-per-file semantics still apply when resolving per-file owners. A future flag may allow switching strategies.
+
 - commits (for push/pr): list last N commits with `{ sha, message, author {login,email}, committer {login}, stats {additions,deletions,total} }` and per-commit `files[]` with `{filename,status,additions,deletions,changes,patch?}`; configurable `max_commits` and `include_patch` (default false).
 - diffs: summary for event `{changed_files, additions, deletions}` plus `files[]` above. For large diffs, capture only filenames and stats unless explicitly enabled.
 - PR state: `{ number, draft, mergeable_state, has_conflicts: boolean, base, head, labels[], requested_reviewers[], requested_teams[] }`. Populate from GitHub API; `has_conflicts` derived from `mergeable_state in {"dirty","blocked"}`.
