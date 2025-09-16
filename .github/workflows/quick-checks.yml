@@ -37,6 +37,8 @@ jobs:
       - name: Lint (filenames)
         run: npm run -s lint:filenames
       - name: Validate GitHub Workflows (actionlint)
+        env:
+          REQUIRE_ACTIONLINT: ${{ vars.REQUIRE_ACTIONLINT || '' }}
         run: |
           bash scripts/ci-actionlint.sh
       - name: Check EditorConfig compliance
