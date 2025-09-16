@@ -45,20 +45,14 @@ cat out.json | npx @a5c-ai/events validate --quiet
 
 ### Mentions config (Quick Start)
 
-Control where and how mentions are scanned during `enrich`:
+Use a simple example, then see the CLI reference for canonical flags and defaults:
 
 ```bash
-# Disable scanning changed files for code-comment mentions
+# Disable scanning of changed files (code-comment mentions)
 events enrich --in ... --flag 'mentions.scan.changed_files=false'
-
-# Limit per-file bytes when scanning code comments (default: 200KB / 204800 bytes)
-events enrich --in ... --flag 'mentions.max_file_bytes=65536'
-
-# Restrict code-comment scanning to specific languages
-events enrich --in ... --flag "mentions.languages=ts,js,md"
 ```
 
-See: docs/specs/README.md#4.2-mentions-schema for full details.
+Full reference and examples: docs/cli/reference.md#events-enrich
 
 `events mentions`
 
@@ -75,7 +69,8 @@ See: docs/specs/README.md#4.2-mentions-schema for full details.
 - Common flags:
   - `--in <file>`: input JSON file (raw event)
   - `--out <file>`: write result to file (default: stdout)
-  - `--source <name>`: provenance (`actions|webhook|cli`) [default: `cli`]
+  - `--source <name>`: provenance (`action|webhook|cli`) [default: `cli`]
+    - Alias: the CLI accepts `actions` as an input alias (e.g., in GitHub Actions); the stored value is normalized to `provenance.source: "action"`.
   - `--select <paths>`: comma-separated dot paths to include in output
   - `--filter <expr>`: filter expression `path[=value]`; if not matching, exits with code 2 and no output
   - `--label <key=value...>`: attach labels to top‑level `labels[]` (repeatable)
@@ -86,18 +81,12 @@ See: docs/specs/README.md#4.2-mentions-schema for full details.
 - Common flags:
   - `--in <file>`: normalized event JSON (or raw payload; NE shell will be created)
   - `--out <file>`: write enriched result
-  - `--rules <file>`: rules file path (yaml/json)
+- `--rules <file>`: rules file path (yaml/json)
 - `--flag include_patch=<true|false>`: include diff patches in files (default: false)
 - `--flag commit_limit=<n>`: max commits to include (default: 50)
 - `--flag file_limit=<n>`: max files to include (default: 200)
-- Mentions scanning (code comments in changed files):
-  - `--flag mentions.scan.changed_files=<true|false>` (default: true)
-  - `--flag mentions.max_file_bytes=<bytes>` (default: 200KB / 204800 bytes)
-  - `--flag mentions.languages=<ext,...>` (optional list such as `ts,tsx,js,jsx,py,go,yaml`)
+- Mentions scanning flags are centralized in `docs/cli/reference.md` (see that section for canonical wording and defaults).
   - `--use-github`: enable GitHub API enrichment (requires `GITHUB_TOKEN`)
-  - `--flag mentions.scan.changed_files=<true|false>`: enable scanning changed files for code-comment mentions (default: true)
-  - `--flag mentions.max_file_bytes=<bytes>`: max bytes per file for code-comment scanning (default: 204800)
-  - `--flag mentions.languages=js,ts,py`: optional allowlist of languages/extensions for code-comment scanning
   - `--select <paths>`: comma-separated dot paths to include in output
   - `--filter <expr>`: filter expression `path[=value]`; if not matching, exits with code 2 and no output
   - `--label <key=value...>`: attach labels to top‑level `labels[]`
@@ -105,26 +94,15 @@ See: docs/specs/README.md#4.2-mentions-schema for full details.
 Behavior:
 
 - Offline by default: without `--use-github`, no network calls occur. Output includes `enriched.github = { provider: 'github', partial: true, reason: 'flag:not_set' }`.
-- When `--use-github` is set but no token is configured, the CLI exits with code `3` (provider/network error) and prints an error.
+- When `--use-github` is set but no token is configured, the CLI exits with code `3` (provider/network error) and prints an error. Use programmatic APIs with an injected Octokit for testing scenarios if needed.
 
 Exit codes: `0` success, non‑zero on errors (invalid input, etc.).
 
 ### Mentions scanning examples
 
-Disable scanning changed files for code-comment mentions:
+See the CLI reference for canonical examples covering `mentions.scan.changed_files`, `mentions.max_file_bytes`, and `mentions.languages`:
 
-```bash
-events enrich --in samples/pull_request.synchronize.json \
-  --flag mentions.scan.changed_files=false
-```
-
-Limit scanned file size and restrict to TS/JS:
-
-```bash
-events enrich --in samples/pull_request.synchronize.json \
-  --flag mentions.max_file_bytes=102400 \
-  --flag mentions.languages=ts,tsx,js,jsx
-```
+- docs/cli/reference.md#events-enrich
 
 ## Normalized Event Schema (MVP)
 

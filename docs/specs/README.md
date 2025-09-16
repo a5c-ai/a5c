@@ -20,7 +20,8 @@
 ## 3) Event Sources, Types, and Normalization Model
 
 - Sources: GitHub (Actions, webhooks), other VCS/providers via adapters.
-- Core types: repo, ref, commit, workflow_run, job, step, pr, issue, comment, release, deployment, check_run, alert.
+- Core types: repo, ref, commit, workflow_run, job, step, pull_request, issue, issue_comment, release, deployment, check_run, alert.
+- Note: GitHub webhook event name issues maps to NE value issue (singular), and GitHub webhook issue_comment maps directly to NE value issue_comment. See docs/specs/notes/issue-type-alignment.md.
 - Normalized Event (NE) schema (MVP):
   - id: provider-unique id
   - provider: "github"
@@ -60,7 +61,8 @@
   - target: `string` (raw mention, e.g., "@researcher-base-agent")
   - normalized_target: `string` (e.g., "researcher-base-agent")
   - kind: `agent|user|team|unknown`
-  - source: `commit_message|pr_title|pr_body|issue_comment|code_comment|file_change`
+  - source: `commit_message|pr_title|pr_body|issue_comment|code_comment`
+    - Note: Mentions discovered within diffs/changed files are emitted as `source: code_comment` with `location.file` and `location.line` populated. A distinct `file_change` source is not used.
   - location: `{ file?: string, line?: number, commit_sha?: string, comment_id?: number }`
   - context: `string` short excerpt around the mention (<=140 chars)
   - confidence: `0..1` (parser confidence, esp. for code_comment extraction)
@@ -70,7 +72,7 @@ Configuration:
 - `mentions.scan.changed_files`: `true|false` (default true) — scan changed files for `@...` in code comments.
 - `mentions.scan.commit_messages`: `true|false` (default true)
 - `mentions.scan.issue_comments`: `true|false` (default true)
-- `mentions.max_file_bytes`: bytes cap per file (default 200KB)
+- `mentions.max_file_bytes`: bytes cap per file (default 200KB / 204800 bytes)
 - `mentions.languages`: opt-in list for code-comment scanning; default detects via filename.
 
 Example mention from a code comment:
@@ -91,10 +93,8 @@ Example mention from a code comment:
 
 - Env vars: `GITHUB_TOKEN` (or custom `A5C_AGENT_GITHUB_TOKEN`), debug flags, provider-specific tokens.
 - Sources: prefer GitHub Actions runtime env and `secrets.*` and `vars.*` as in existing workflows.
-- CLI flags (implemented): `--in file.json` (webhook sample), `--out out.json`, `--label key=value`, `--select paths`, `--filter expr` expr`.
-- CLI flags (implemented): `--in file.json` (webhook sample), `--out out.json`, `--label key=value`.
-- CLI flags (planned/not yet implemented): `--select fields`, `--filter expr`.
-- CLI flags (implemented): `--in file.json` (webhook sample), `--out out.json`, `--label key=value`, `--select paths`, `--filter expr` expr`.
+- CLI flags (overview, implemented): `--in file.json` (webhook sample), `--out out.json`, `--label key=value`, `--select paths`, `--filter expr`. See CLI Reference for full details.
+- Mentions scanning flags (via `events enrich --flag KEY=VAL`): see §4.2 [Mentions Schema](#42-mentions-schema) and [CLI: events enrich](../cli/reference.md#events-enrich). Quick examples also in [README](../../README.md#cli-reference).
 - Provider adapters: `providers/github`, stub interfaces for others. Auto-detect when running in Actions.
 
 ### 5.1) Environment Variables and Precedence
