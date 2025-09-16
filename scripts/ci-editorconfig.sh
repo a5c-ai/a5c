@@ -12,4 +12,19 @@ if ! [ -f .editorconfig ]; then
   exit 0
 fi
 
-npx --yes editorconfig-checker@latest -color -format github-actions || exit $?
+# Exclude non-source and generated/log files that don't need strict EditorConfig conformance
+# - LICENSE: preserve upstream formatting
+# - docs/dev/**: development logs/plans produced by agents
+# - *.out, run.log, run.view.err: local/output logs
+# - actionlint: bundled binary
+# Also exclude docs and all Markdown files to avoid false positives on prose/code fences
+# Note: use single backslashes in regex; passed as-is to the tool
+EXCLUDE_REGEX='(^LICENSE$|^docs/|\.out$|^run\.log$|^run\.view\.err$|^actionlint$|\.md$|^tmp\.|^\.editorconfig-checker\.json$)'
+
+# Ensure stray config file from local/dev does not affect CI
+rm -f .editorconfig-checker.json || true
+
+npx --yes editorconfig-checker@latest \
+  -color \
+  -format github-actions \
+  -exclude "$EXCLUDE_REGEX" || exit $?

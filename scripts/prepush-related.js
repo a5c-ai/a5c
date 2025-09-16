@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /*
- Runs related tests for changed files since upstream default.
- Falls back to full test run on errors or no related files.
- Skips in CI when A5C_SKIP_PREPUSH or SKIP_PREPUSH set.
+  Runs related tests for changed files since upstream default.
+  Falls back to full test run on errors or no related files.
+  Skips in CI when A5C_SKIP_PREPUSH or SKIP_PREPUSH set.
 */
 import { execSync } from "node:child_process";
 

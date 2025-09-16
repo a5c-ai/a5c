@@ -76,7 +76,7 @@ jobs:
             echo "$out"
             # Retry only on transient GitHub/Network errors
             if [[ $attempts -lt $max_attempts ]] && \
-               echo "$out" | grep -Eiq '(5[0-9]{2}|Bad Gateway|ECONNRESET|ETIMEDOUT|ENETUNREACH|socket hang up|rate limit|Service Unavailable)'; then
+              echo "$out" | grep -Eiq '(5[0-9]{2}|Bad Gateway|ECONNRESET|ETIMEDOUT|ENETUNREACH|socket hang up|rate limit|Service Unavailable)'; then
               echo "Transient error detected. Sleeping ${backoff}s before retry..."
               sleep "$backoff"
               backoff=$((backoff*2))
@@ -108,7 +108,7 @@ jobs:
             rc=$?
             echo "$out"
             if [[ $attempts -lt $max_attempts ]] && \
-               echo "$out" | grep -Eiq '(5[0-9]{2}|Bad Gateway|ECONNRESET|ETIMEDOUT|ENETUNREACH|socket hang up|rate limit|Service Unavailable)'; then
+              echo "$out" | grep -Eiq '(5[0-9]{2}|Bad Gateway|ECONNRESET|ETIMEDOUT|ENETUNREACH|socket hang up|rate limit|Service Unavailable)'; then
               echo "Transient error detected. Sleeping ${backoff}s before retry..."
               sleep "$backoff"
               backoff=$((backoff*2))
