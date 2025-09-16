@@ -104,6 +104,39 @@ See the CLI reference for canonical examples covering `mentions.scan.changed_fil
 
 - docs/cli/reference.md#events-enrich
 
+### Rules quick-start (composed events)
+
+Define a minimal rule in YAML and evaluate it with `enrich --rules` to emit composed events. This example matches the included PR sample (`samples/pull_request.synchronize.json`) which carries a `documentation` label.
+
+```bash
+# 1) Create a tiny rules file
+cat > rules.sample.yml <<'YAML'
+rules:
+  - name: pr_labeled_documentation
+    on: pull_request
+    when:
+      all:
+        - { path: "$.payload.pull_request.labels[*].name", contains: "documentation" }
+    emit:
+      key: pr_labeled_documentation
+      reason: "PR has documentation label"
+      targets: [developer-agent]
+YAML
+
+# 2) Enrich with rules and inspect composed outputs
+events enrich --in samples/pull_request.synchronize.json \
+  --rules rules.sample.yml \
+  | jq '(.composed // []) | map({key, reason})'
+```
+
+Notes:
+
+- Real‑world rules can combine predicates (`all/any/not`, `eq`, `in`, `contains`, `exists`) and project fields into `emit.payload`. See the richer sample at `samples/rules/conflicts.yml`.
+- When no rules match, `.composed` may be absent or `null`. Guard with `(.composed // [])` as shown.
+- Learn more:
+  - Specs §6.1: docs/specs/README.md#6.1-rule-engine-and-composed-events
+  - Full CLI options: docs/cli/reference.md
+
 ## Normalized Event Schema (MVP)
 
 Core fields returned by `normalize`:
