@@ -29,6 +29,12 @@ export async function handleEnrich(opts: {
   const scanChangedFilesFlag = toBool(
     (opts.flags as any)?.["mentions.scan.changed_files"] ?? true,
   );
+  const scanCommitMessagesFlag = toBool(
+    (opts.flags as any)?.["mentions.scan.commit_messages"] ?? true,
+  );
+  const scanIssueCommentsFlag = toBool(
+    (opts.flags as any)?.["mentions.scan.issue_comments"] ?? true,
+  );
   const maxFileBytesFlag = toInt(
     (opts.flags as any)?.["mentions.max_file_bytes"],
     200 * 1024,
@@ -42,13 +48,7 @@ export async function handleEnrich(opts: {
           .map((s) => s.trim())
           .filter(Boolean)
       : undefined;
-  // New flags per specs §4.2 — default true when absent
-  const scanCommitMessagesFlag = toBool(
-    (opts.flags as any)?.["mentions.scan.commit_messages"] ?? true,
-  );
-  const scanIssueCommentsFlag = toBool(
-    (opts.flags as any)?.["mentions.scan.issue_comments"] ?? true,
-  );
+  // Flags above gate scanning of commit messages and issue comments (default true when absent)
 
   const cfg = loadConfig();
   const token = cfg.githubToken;
@@ -192,23 +192,17 @@ export async function handleEnrich(opts: {
       mentions.push(...extractMentions(String(issue.title), "issue_title"));
     if (issue?.body)
       mentions.push(...extractMentions(String(issue.body), "issue_body"));
-    // Gate commit message scanning by flag
-    if (scanCommitMessagesFlag) {
-      const commits = (baseEvent as any)?.commits;
-      if (Array.isArray(commits)) {
-        for (const c of commits)
-          if (c?.message)
-            mentions.push(
-              ...extractMentions(String(c.message), "commit_message"),
-            );
-      }
+    const commits = (baseEvent as any)?.commits;
+    if (Array.isArray(commits) && scanCommitMessagesFlag) {
+      for (const c of commits)
+        if (c?.message)
+          mentions.push(
+            ...extractMentions(String(c.message), "commit_message"),
+          );
     }
-    // Gate issue comment body scanning by flag
-    if (scanIssueCommentsFlag) {
-      const commentBody = (baseEvent as any)?.comment?.body;
-      if (commentBody)
-        mentions.push(...extractMentions(String(commentBody), "issue_comment"));
-    }
+    const commentBody = (baseEvent as any)?.comment?.body;
+    if (commentBody && scanIssueCommentsFlag)
+      mentions.push(...extractMentions(String(commentBody), "issue_comment"));
   } catch {}
 
   // Code comment mention scanning in changed files
