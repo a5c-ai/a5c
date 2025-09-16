@@ -70,7 +70,7 @@ Enrich a normalized event (or raw GitHub payload) with repository and provider m
 
 Behavior:
 
-- No network calls are performed by default. In offline mode, `enriched.github = { provider: 'github', partial: true, reason: 'flag:not_set' }`.
+- No network calls are performed by default. In offline mode, `enriched.github = { provider: 'github', partial: true, reason: 'github_enrich_disabled' }`.
 - Pass `--use-github` to enable GitHub API enrichment. If no token is configured, the CLI exits with code `3` (provider/network error) and prints an error.
 
 Usage:

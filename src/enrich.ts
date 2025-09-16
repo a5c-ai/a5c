@@ -86,7 +86,7 @@ export async function handleEnrich(opts: {
     githubEnrichment = {
       provider: "github",
       partial: true,
-      reason: "flag:not_set",
+      reason: "github_enrich_disabled",
     };
   } else if (!token && !opts.octokit) {
     githubEnrichment = {
