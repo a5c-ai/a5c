@@ -44,7 +44,8 @@ jobs:
           NPM_CONFIG_USERCONFIG: ${{ env.NPM_CONFIG_USERCONFIG }}
         run: |
           # Use project .npmrc so only @a5c-ai scope hits GPR; others resolve from npmjs
-          npx -y @a5c-ai/events@latest --help
+          # Prefer a5c-main dist-tag to test latest pre-prod build on GPR
+          npx -y @a5c-ai/events@a5c-main --help
 
       - name: Run npx package version
         env:
@@ -53,14 +54,14 @@ jobs:
         run: |
           node -v
           npm -v
-          npx -y @a5c-ai/events@latest --version || true
+          npx -y @a5c-ai/events@a5c-main --version || true
 
       - name: Smoke – normalize sample payload
         env:
           NODE_AUTH_TOKEN: ${{ secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
           NPM_CONFIG_USERCONFIG: ${{ env.NPM_CONFIG_USERCONFIG }}
         run: |
-          npx -y @a5c-ai/events@latest normalize \
+          npx -y @a5c-ai/events@a5c-main normalize \
             --in samples/workflow_run.completed.json \
             --out out.normalize.json
           # basic shape checks
@@ -72,7 +73,7 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
           NPM_CONFIG_USERCONFIG: ${{ env.NPM_CONFIG_USERCONFIG }}
         run: |
-          npx -y @a5c-ai/events@latest enrich \
+          npx -y @a5c-ai/events@a5c-main enrich \
             --in samples/pull_request.synchronize.json \
             --out out.enrich.json
           # enriched structure exists

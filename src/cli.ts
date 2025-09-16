@@ -8,8 +8,27 @@ import { cmdNormalize } from "./commands/normalize.js";
 import { cmdEnrich } from "./commands/enrich.js";
 import { handleEmit } from "./emit.js";
 import { redactObject } from "./utils/redact.js";
+import type { ErrorObject } from "ajv";
 import path from "node:path";
-import Ajv from "ajv";
+// Lazy-load Ajv only in commands that need it to avoid requiring it
+// at process start when installed via npx (keeps core CLI usable if Ajv
+// is not present in minimal environments)
+let _Ajv: any | undefined;
+async function getAjvCtor() {
+  if (_Ajv) return _Ajv;
+  try {
+    const m = await import("ajv");
+    _Ajv = (m as any).default || m;
+    return _Ajv;
+  } catch (e: unknown) {
+    // Surface a clearer message when Ajv is missing
+    const err = new Error(
+      "Ajv is required for validate-related commands. Please install ajv as a dependency.",
+    );
+    (err as any).cause = e;
+    throw err;
+  }
+}
 
 const program = new Command();
 program
@@ -210,6 +229,7 @@ program
       const schema = JSON.parse(
         fs.readFileSync(path.resolve(cmdOpts.schema), "utf8"),
       );
+      const Ajv = await getAjvCtor();
       const ajv = new Ajv({ strict: false, allErrors: true });
       // Inline minimal 2020-12 meta-schema so Ajv can compile referenced schema
       const meta2020 = {
@@ -237,11 +257,11 @@ program
       const validate = ajv.compile(schema);
       const ok = validate(data);
       if (!ok) {
-        const errs = validate.errors || [];
+        const errs = (validate.errors || []) as ErrorObject[];
         const out = {
           valid: false,
           errorCount: errs.length,
-          errors: errs.map((e) => ({
+          errors: errs.map((e: ErrorObject) => ({
             instancePath: e.instancePath,
             schemaPath: e.schemaPath,
             message: e.message,
