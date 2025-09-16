@@ -105,7 +105,6 @@ export GITHUB_TOKEN=...  # required for GitHub API lookups
 
 events enrich --in samples/pull_request.synchronize.json \
   --use-github \
-  --flag include_patch=false \
   | jq '.enriched.github.pr.mergeable_state'
 
 # Mentions scanning controls (code comments in changed files)
@@ -150,6 +149,14 @@ Without network calls (mentions only):
 events enrich --in samples/push.json --out out.json
 jq '.enriched.mentions' out.json
 ````
+
+Include patch diffs explicitly (opt‑in):
+
+```bash
+events enrich --in samples/pull_request.synchronize.json \
+  --use-github --flag include_patch=true \
+  | jq '.enriched.github.pr.files | map(has("patch")) | all'
+```
 
 Inspect composed if present:
 
