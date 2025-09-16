@@ -58,6 +58,11 @@ events normalize --in samples/workflow_run.completed.json \
 
 # Gate output via filter (exit 2 if not matched)
 events normalize --in samples/workflow_run.completed.json --filter 'type=workflow_run'
+
+# Non-matching filter exits with code 2 (no output)
+events normalize --in samples/workflow_run.completed.json \
+  --filter 'type=push' >/dev/null || echo $?
+# prints: 2
 ```
 
 Notes:
@@ -85,8 +90,30 @@ See also:
 
 Behavior:
 
-- Offline by default (no network calls). The CLI emits a stub under `enriched.github` with `{ provider: 'github', partial: true, reason: 'flag:not_set' }`. Minimal examples may omit `enriched.github` entirely; both shapes validate against the NE schema. See `docs/examples/enrich.offline.stub.json`.
 - Pass `--use-github` to enable GitHub API enrichment. If no token is configured, the CLI exits with code `3` (provider/network error) and prints an error (no JSON is emitted by the CLI path).
+- Offline by default: no network calls without `--use-github`. Output includes a minimal stub under `enriched.github`:
+
+> Offline states
+
+- Offline (flag not set): `enriched.github = { provider: 'github', partial: true, reason: 'flag:not_set' }`
+- Requested but missing token: `reason: 'token:missing'` and the CLI exits with code `3` (no JSON output).
+
+  ```json
+  {
+    "enriched": {
+      "github": {
+        "provider": "github",
+        "partial": true,
+        "reason": "flag:not_set"
+      }
+    }
+  }
+  ```
+
+  Note: Some older docs or validation notes may reference a legacy offline reason value. The canonical offline reason is `flag:not_set`.
+
+- Online enrichment: pass `--use-github` with a valid token to populate fields like `enriched.github.pr.mergeable_state`, `enriched.github.pr.files[]`, `enriched.github.branch_protection`, etc.
+- Missing token with `--use-github`: the CLI exits with code `3` (provider/network error) and prints an error message; no JSON is written.
 
 Usage:
 
@@ -189,16 +216,26 @@ events enrich --in /tmp/issue.json | jq '.enriched.mentions | map({source, targe
 
 # With rules (composed events)
 
+```bash
 events enrich --in samples/pull_request.synchronize.json \
- --rules samples/rules/conflicts.yml \
- | jq '(.composed // []) | map({key, reason})'
+  --rules samples/rules/conflicts.yml \
+  | jq '(.composed // []) | map({key, reason})'
+```
 
 # JSON rules are also supported via the same `--rules` flag:
 
+```bash
 events enrich --in samples/pull_request.synchronize.json \
- --rules samples/rules/conflicts.json \
- | jq '(.composed // []) | map({key, reason})'
+  --rules samples/rules/conflicts.json \
+  | jq '(.composed // []) | map({key, reason})'
+```
 
+# Non-matching filter exits with code 2 (no output)
+
+```bash
+events enrich --in samples/pull_request.synchronize.json \
+  --filter 'type=push' >/dev/null || echo $?
+# prints: 2
 ```
 
 Mentions sources:
@@ -222,7 +259,7 @@ Note:
 - Programmatic API nuance: when using the SDK directly and `--use-github` semantics are requested without a token, some code paths may return a partial `enriched.github` with `reason: 'token:missing'` for testing with an injected Octokit. The CLI path exits with code `3` and does not emit JSON.
 - Redaction: CLI redacts sensitive keys and common secret patterns in output by default (see `src/utils/redact.ts`).
 
-```
+````
 
 Outputs:
 
@@ -233,7 +270,7 @@ Without network calls (mentions only):
 ```bash
 events enrich --in samples/push.json --out out.json
 jq '.enriched.mentions' out.json
-```
+````
 
 Include patch diffs explicitly (opt‑in):
 

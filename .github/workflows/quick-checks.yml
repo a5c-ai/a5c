@@ -20,6 +20,9 @@ jobs:
     env:
       # Optional Codecov token; when empty, upload step is skipped
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN || vars.CODECOV_TOKEN || '' }}
+      # Pinned validator tools used for example validation
+      AJV_CLI_VERSION: "5.0.0" # ajv-cli v5 (Ajv v8, Draft 2020-12)
+      AJV_FORMATS_VERSION: "3.0.1" # ajv-formats v3 for Ajv v8
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -49,6 +52,37 @@ jobs:
             --in docs/examples/enrich.offline.stub.json \
             --schema docs/specs/ne.schema.json \
             --quiet
+      - name: Example validation (NE schema) — ajv-cli with fallback
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Build CLI if not already built by previous steps
+          npm run -s build
+          # Produce a sample NE JSON from a known fixture
+          node dist/cli.js normalize \
+            --in samples/workflow_run.completed.json \
+            --out /tmp/out.ne.json
+          echo "Attempting ajv-cli@${AJV_CLI_VERSION} validation (ajv-formats)"
+          if ! npx -y ajv-cli@"${AJV_CLI_VERSION}" validate \
+              -s docs/specs/ne.schema.json \
+              -d /tmp/out.ne.json \
+              --spec=draft2020 \
+              -c ajv-formats; then
+            echo "ajv-cli unavailable or failed; falling back to built-in CLI validator"
+            node dist/cli.js validate \
+              --in /tmp/out.ne.json \
+              --schema docs/specs/ne.schema.json \
+              --quiet
+          fi
+      - name: Validate example enrich outputs (schema + parse)
+        run: |
+          set -euo pipefail
+          # jq parse check
+          jq -e type docs/examples/enrich.offline.json >/dev/null
+          jq -e type docs/examples/enrich.online.json >/dev/null
+          # validate against NE schema (offline may omit enriched.github)
+          npx -y ajv-cli@5.0.0 validate -s docs/specs/ne.schema.json -d docs/examples/enrich.offline.json --spec=draft2020 -c ajv-formats
+          npx -y ajv-cli@5.0.0 validate -s docs/specs/ne.schema.json -d docs/examples/enrich.online.json --spec=draft2020 -c ajv-formats
       - name: Upload coverage artifact
         if: always()
         uses: actions/upload-artifact@v4
@@ -95,3 +129,26 @@ jobs:
           flags: pr
           fail_ci_if_error: false
           verbose: true
+
+  docs-lint:
+    name: Docs Lint (banned phrases)
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check for banned phrase in docs
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Scanning markdown docs for banned phrase: composed[].payload := any"
+          # Search only markdown in README.md and docs/**, exclude code/tests and the JSON schema file
+          if rg -n -S \
+            -g '!src/**' -g '!test/**' -g '!tests/**' \
+            -g 'README.md' -g 'docs/**' -g '*.md' \
+            -g '!docs/specs/ne.schema.json' \
+            'composed\[\]\.payload\s*[:=]\s*any' ; then
+            echo "::error title=Docs Lint Failed::Found banned phrase 'composed[].payload: any' in docs. Update to 'object | array | null'."
+            exit 1
+          else
+            echo "No banned phrases found."
+          fi
