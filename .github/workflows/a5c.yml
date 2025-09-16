@@ -187,10 +187,8 @@ jobs:
             success)
               curl -fsS -m 10 --retry 3 --retry-connrefused "$PING" || true
               ;;
-            cancelled)
-              curl -fsS -m 10 --retry 3 --retry-connrefused "$PING/cancel" || true
-              ;;
             *)
+              # Treat non-success (including cancelled) as failure ping
               curl -fsS -m 10 --retry 3 --retry-connrefused "$PING/fail" || true
               ;;
           esac

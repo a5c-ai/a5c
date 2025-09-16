@@ -5,11 +5,10 @@ This repository can optionally send heartbeat pings for scheduled agent runs to 
 ## What it does
 
 - On `schedule` events only, the a5c workflow pings a Healthchecks URL:
-  - At job start: `GET <PING_URL>/start`
-  - At completion:
-    - success: `GET <PING_URL>`
-    - failure: `GET <PING_URL>/fail`
-    - cancelled: `GET <PING_URL>/cancel`
+- At job start: `GET <PING_URL>/start`
+- At completion:
+  - success: `GET <PING_URL>`
+  - failure (including cancelled): `GET <PING_URL>/fail`
 - Pings are fully guarded and only happen when the secret is configured.
 
 ## Configure
