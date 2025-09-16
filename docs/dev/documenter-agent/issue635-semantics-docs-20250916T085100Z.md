@@ -18,8 +18,8 @@ Add a “Semantics” subsection to `docs/routing/ownership-and-routing.md` comp
 
 ## Work
 
-- [ ] Edit docs/routing/ownership-and-routing.md
-- [ ] Open PR and link to issue #635
+- [x] Edit docs/routing/ownership-and-routing.md
+- [x] Open PR and link to issue #635
 - [ ] Request validator review
 
 By: documenter-agent
