@@ -66,6 +66,20 @@ Ownership semantics:
 - owners: resolved code owners per changed file and union at PR level.
   - Semantics: the PR‑level `owners_union` is the sorted, de‑duplicated union of all CODEOWNERS across changed files. This intentionally differs from GitHub’s per‑file evaluation (last matching rule wins). A future toggle may allow strict last‑rule parity at PR level.
 - mentions: see schema below; sources include commit messages, PR/issue title/body, latest issue_comment (event), and code comments in changed files using language-aware regexes for `@name` inside comments.
+  Examples: see `docs/examples/enrich.offline.json` (offline; includes `enriched.github` with `partial=true` and `reason: "flag:not_set"`) and
+  `docs/examples/enrich.online.json` (minimal representative `enriched.github`). Both validate against `docs/specs/ne.schema.json`.
+
+Examples:
+
+- Offline enrich (no `--use-github`): `docs/examples/enrich.offline.json` (stub with `enriched.github.partial=true`, `reason: "flag:not_set"`)
+- Online enrich (`--use-github`): `docs/examples/enrich.online.json`
+
+Offline behavior (no `--use-github`):
+
+- Minimal NE: outputs may omit `enriched.github` entirely (valid per schema).
+- CLI default stub: outputs may include `enriched.github` with `{ provider: 'github', partial: true, reason: <implementation-defined> }`.
+
+Both shapes are acceptable. See example stub at `docs/examples/enrich.offline.stub.json`.
 
 ### 4.2) Mentions Schema
 
@@ -104,6 +118,11 @@ Example mention from a code comment:
   "confidence": 0.85
 }
 ```
+
+Examples:
+
+- Offline enrichment sample (no `--use-github`): `docs/examples/enrich.offline.json` — minimal NE document without `enriched.github`.
+- Online enrichment sample (`--use-github` with token): `docs/examples/enrich.online.json` — includes `enriched.github.provider` and a minimal PR excerpt.
 
 ## 5) Configuration
 

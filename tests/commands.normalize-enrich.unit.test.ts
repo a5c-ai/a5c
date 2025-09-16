@@ -56,4 +56,22 @@ describe("commands unit", () => {
     expect(output?.type).toBe("pull_request");
     expect(output?.enriched?.github).toBeTruthy();
   });
+
+  it("cmdNormalize maps source alias 'actions' -> persisted 'action'", async () => {
+    const tmpdir = fs.mkdtempSync(path.join(os.tmpdir(), "events-test-"));
+    const file = path.join(tmpdir, "input.json");
+    fs.writeFileSync(
+      file,
+      JSON.stringify({
+        workflow_run: { id: 3, updated_at: "2024-06-01T00:00:00Z" },
+        repository: { id: 1, name: "events", full_name: "a5c-ai/events" },
+      }),
+    );
+    const { code, output } = (await cmdNormalize({
+      in: file,
+      source: "actions",
+    })) as any;
+    expect(code).toBe(0);
+    expect(output?.provenance?.source).toBe("action");
+  });
 });

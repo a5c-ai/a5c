@@ -6,6 +6,7 @@ import type { ExtractorOptions, MentionSource } from "./types.js";
 import { loadConfig, writeJSONFile } from "./config.js";
 import { cmdNormalize } from "./commands/normalize.js";
 import { handleEnrich } from "./enrich.js";
+import { handleReactor } from "./reactor.js";
 import { handleEmit } from "./emit.js";
 import { redactObject } from "./utils/redact.js";
 import path from "node:path";
@@ -59,7 +60,7 @@ program
   .addOption(
     new Option(
       "--source <name>",
-      "source name (action|webhook|cli); accepts 'actions' as alias of 'action'",
+      "source name (action|webhook|cli); accepts 'actions' as input alias; persists 'action'",
     ).default("cli"),
   )
   .option("--select <paths>", "comma-separated dot paths to include in output")
@@ -117,36 +118,40 @@ program
   .option("--flag <key=value...>", "enrichment flags", collectKeyValue, {})
   .option(
     "--use-github",
-    "enable GitHub API enrichment (requires GITHUB_TOKEN)",
+    "enable GitHub API enrichment (requires token; A5C_AGENT_GITHUB_TOKEN preferred). On missing token, exits with code 3",
   )
   .option("--select <paths>", "comma-separated dot paths to include in output")
   .option("--filter <expr>", "filter expression path[=value] to gate output")
   .option("--label <key=value...>", "labels to attach", collectKeyValue, [])
   .action(async (cmdOpts: any) => {
-    const flags = { ...(cmdOpts.flag || {}) };
-    if (cmdOpts.useGithub || cmdOpts["use-github"]) flags.use_github = "true";
-    // Guard: if --use-github is requested but no token available, exit 3 with a clear message
-    try {
-      const cfg = loadConfig();
-      const token = cfg.githubToken;
-      if (
-        (flags.use_github === true ||
-          String(flags.use_github).toLowerCase() === "true") &&
-        !token
-      ) {
-        process.stderr.write(
-          "GitHub enrichment failed: token is required when --use-github is set\n",
-        );
-        return process.exit(3);
-      }
-    } catch (_) {
-      // If config loading fails, proceed and let downstream logic handle errors
+    const flags = { ...(cmdOpts.flag || {}) } as Record<string, any>;
+    // Default input: $GITHUB_EVENT_PATH if --in not provided
+    const envIn = process.env.GITHUB_EVENT_PATH;
+    const inPath: string | undefined = cmdOpts.in || envIn || undefined;
+    if (!inPath) {
+      process.stderr.write(
+        "enrich: missing input; provide --in or set GITHUB_EVENT_PATH\n",
+      );
+      return process.exit(2);
     }
+
+    // Determine default --use-github behavior: enable when token exists unless explicitly disabled
+    const cfg = loadConfig();
+    const token = cfg.githubToken;
+    const explicitUseGithub = !!(cmdOpts.useGithub || cmdOpts["use-github"]);
+    const requestedUseGithub = explicitUseGithub || !!token;
+    if (requestedUseGithub && !token && explicitUseGithub) {
+      process.stderr.write(
+        "GitHub enrichment failed: token is required when --use-github is set\n",
+      );
+      return process.exit(3);
+    }
+    if (requestedUseGithub && token) flags.use_github = "true";
     const labels = Object.entries(cmdOpts.label || {}).map(
       ([k, v]) => `${k}=${v}`,
     );
     const { code, output } = await handleEnrich({
-      in: cmdOpts.in,
+      in: inPath,
       labels,
       rules: cmdOpts.rules,
       flags,
@@ -186,7 +191,7 @@ program
   .description("Emit an event to a sink (stdout or file)")
   .option("--in <file>", "input JSON file path (default: stdin)")
   .option("--out <file>", "output JSON file path (for file sink)")
-  .option("--sink <name>", "sink name (stdout|file)")
+  .option("--sink <name>", "sink name (stdout|file|github)")
   .action(async (cmdOpts: any) => {
     const { code, output } = await handleEmit({
       in: cmdOpts.in,
@@ -194,6 +199,40 @@ program
       sink: cmdOpts.sink,
     });
     process.exit(code);
+  });
+
+program
+  .command("reactor")
+  .description(
+    "Apply reactor rules to produce custom events (stdin->stdout by default)",
+  )
+  .option("--in <file>", "input JSON file path (default: stdin)")
+  .option(
+    "--out <file>",
+    "output JSON file path (default: stdout; contains {events: [...]})",
+  )
+  .option(
+    "--file <path>",
+    "reactor rules file path (yaml), default .a5c/events/reactor.yaml",
+  )
+  .action(async (cmdOpts: any) => {
+    try {
+      const { code, output, errorMessage } = await handleReactor({
+        in: cmdOpts.in,
+        out: cmdOpts.out,
+        file: cmdOpts.file,
+      });
+      if (code !== 0) {
+        if (errorMessage) process.stderr.write(errorMessage + "\n");
+        return process.exit(code);
+      }
+      if (cmdOpts.out) writeJSONFile(cmdOpts.out, output);
+      else process.stdout.write(JSON.stringify(output, null, 2) + "\n");
+      process.exit(0);
+    } catch (e: any) {
+      process.stderr.write(String(e?.message || e) + "\n");
+      process.exit(1);
+    }
   });
 
 program

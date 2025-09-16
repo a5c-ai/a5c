@@ -1,4 +1,29 @@
 import { defineConfig } from "vitest/config";
+import fs from "fs";
+import path from "path";
+
+function loadCoverageThresholds() {
+  try {
+    const p = path.resolve(process.cwd(), "scripts", "coverage-thresholds.json");
+    if (fs.existsSync(p)) {
+      const json = JSON.parse(fs.readFileSync(p, "utf8"));
+      const toInt = (v: any, d: number) => {
+        const n = Number(v);
+        return Number.isFinite(n) ? n : d;
+      };
+      return {
+        lines: toInt(json.lines, 60),
+        branches: toInt(json.branches, 55),
+        functions: toInt(json.functions, 60),
+        statements: toInt(json.statements, 60),
+      } as const;
+    }
+  } catch {}
+  // Fallback to existing defaults (non-breaking)
+  return { lines: 60, branches: 55, functions: 60, statements: 60 } as const;
+}
+
+const THRESHOLDS = loadCoverageThresholds();
 
 export default defineConfig({
   test: {
@@ -29,10 +54,10 @@ export default defineConfig({
         "coverage/**",
       ],
       thresholds: {
-        lines: 60,
-        branches: 55,
-        functions: 60,
-        statements: 60,
+        lines: THRESHOLDS.lines,
+        branches: THRESHOLDS.branches,
+        functions: THRESHOLDS.functions,
+        statements: THRESHOLDS.statements,
       },
     },
     // Include both TS and legacy JS tests (issue #251)
