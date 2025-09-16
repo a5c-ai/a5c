@@ -11,9 +11,9 @@ Normalize and enrich GitHub (and other) events for agentic workflows. Use the CL
 
 ## Ownership & Routing
 
-See `docs/routing/ownership-and-routing.md` for how CODEOWNERS drives routing and how `owners_union` is used in enrichment.
+Semantics: enrichment computes `owners_union` as the sorted, de‑duplicated union of all CODEOWNERS across changed files. This differs from GitHub’s per‑file evaluation where the last matching rule wins. We use union semantics to enable broader, safer routing.
 
-Note: For routing, this project computes a per-PR `owners_union` as the sorted, de-duplicated union of all owners across changed files. This intentionally differs from GitHub CODEOWNERS evaluation where the last matching rule wins for a single file. See the routing doc for examples and rationale.
+Learn more and see examples in `docs/routing/ownership-and-routing.md` (Semantics).
 
 ## Quick Start
 
