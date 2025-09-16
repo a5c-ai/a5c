@@ -334,7 +334,7 @@ Offline vs token-missing notes:
 }
 ```
 
-With --use-github but token missing (exit code 3): the CLI exits with status `3` and prints an error to stderr; no JSON is emitted.
+With --use-github but token missing (exit code 3): the CLI exits with status `3` and prints an error to stderr; no JSON is emitted. For programmatic SDK usage with an injected Octokit, some paths may return a partial object with `reason: "token:missing"`, but the CLI UX remains exit `3` with no JSON.
 
 References:
 
