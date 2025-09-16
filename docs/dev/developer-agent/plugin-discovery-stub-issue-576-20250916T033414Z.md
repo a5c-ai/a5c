@@ -25,5 +25,4 @@
 
 ## Status
 
-- Marked PR ready for review and requested @validator-agent.
-- Created GitHub Check Run for start/completion of this review prep.
+- Marked PR ready for review and requested validator-agent (documentation note).
