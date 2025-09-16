@@ -10,9 +10,9 @@ A clear and concise description of the bug.
 
 ## Steps To Reproduce
 
-1. 
-2. 
-3. 
+1.
+2.
+3.
 
 ## Expected behavior
 
@@ -24,9 +24,9 @@ What actually happened. Include logs, screenshots, or stack traces if relevant.
 
 ## Environment
 
-- CLI/SDK version: 
-- Node version: 
-- OS: 
+- CLI/SDK version:
+- Node version:
+- OS:
 
 ## Additional context
 

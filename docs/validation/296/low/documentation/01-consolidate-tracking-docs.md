@@ -1,6 +1,7 @@
 # [Validator] [Documentation] - Consolidate duplicate tracking docs
 
 Two tracking docs exist for Issue #287 on this branch:
+
 - `docs/dev/developer-agent/issue-287-feedback-loop-tracking-20250914T224014Z.md`
 - `docs/dev/developer-agent/feedback-loop-tracking-issue-287-20250915T003530Z.md`
 

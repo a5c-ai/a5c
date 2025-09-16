@@ -3,6 +3,7 @@
 Operational and product metrics to validate the MVP. Targets reflect `docs/specs/README.md#8-performance-targets-and-constraints` and BDD outlines.
 
 ## Performance
+
 - Normalization latency (p50/p95)
   - Target: <200ms p50 simple payloads; <2s p95 large `workflow_run`.
   - Measure: `/usr/bin/time -f "%E %M" npx @a5c-ai/events normalize --in payload.json > /dev/null`.
@@ -20,6 +21,7 @@ Operational and product metrics to validate the MVP. Targets reflect `docs/specs
   - Measure: `wc -c out.json`.
 
 ## Quality
+
 - Mention extraction precision/recall
   - Target: ≥0.95 precision, ≥0.90 recall on labeled samples.
   - Measure: compare `enriched.mentions[]` to ground truth fixtures.
@@ -31,6 +33,7 @@ Operational and product metrics to validate the MVP. Targets reflect `docs/specs
   - Measure: secret scanners over logs/artifacts in CI.
 
 ## Process
+
 - Build success rate
   - Target: ≥99% over rolling 30 days.
 - Lint/format cleanliness
@@ -39,6 +42,7 @@ Operational and product metrics to validate the MVP. Targets reflect `docs/specs
   - Target: Specs and examples updated every release; no file older than 2 releases without review tag.
 
 ## Example Commands
+
 ```bash
 # Normalize a sample
 npx @a5c-ai/events normalize --in samples/workflow_run.completed.json --out out.json
@@ -51,6 +55,7 @@ jq '.enriched.github.pr.has_conflicts' out.json
 ```
 
 ## Links
+
 - Specs: docs/specs/README.md
 - Acceptance tests: docs/specs/README.md#9-acceptance-tests-bdd-outline
 - Performance: docs/specs/README.md#8-performance-targets-and-constraints

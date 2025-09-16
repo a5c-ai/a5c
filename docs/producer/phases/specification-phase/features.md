@@ -30,10 +30,12 @@ This catalog lists MVP features for the Events SDK/CLI and links each item to th
   - See: docs/specs/README.md#12-examples and docs/specs/README.md#9-acceptance-tests-bdd-outline
 
 ## Non‑Goals (Phase 1)
+
 - Long‑running service or UI dashboards.
 - Multi‑tenant orchestration.
 - Non‑GitHub providers beyond adapter stubs.
 
 ## Notes
+
 - Keep output artifacts small by default; allow opting into heavy diffs/patches.
 - Make adapters and enrichment hooks pluggable from the start.

@@ -6,6 +6,7 @@ Category: linting
 `scripts/precommit.sh` uses `grep -P` to detect trailing whitespace. `-P` (PCRE) is not universally available (e.g., default macOS/BSD grep lacks it), which can break local commits for contributors.
 
 Suggested fix:
+
 - Replace the check with a more portable alternative, e.g.:
 
 ```sh
