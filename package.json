@@ -18,7 +18,7 @@
   },
   "scripts": {
     "pretest": "npm run build",
-    "prepare": "husky && npm run build",
+    "prepare": "node scripts/install.js",
     "clean": "rimraf dist .turbo .vitest coverage",
     "build": "tsc -p tsconfig.build.json && node scripts/build-post.js",
     "build:clean": "rimraf dist && npm run build",
@@ -41,7 +41,8 @@
   "files": [
     "dist",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "scripts/install.js"
   ],
   "publishConfig": {
     "access": "public"
