@@ -105,7 +105,8 @@ events enrich --in FILE [--out FILE] [--rules FILE] \
   - Mentions scanning flags (code comments in changed files) — canonical:
     - `mentions.scan.changed_files=true|false` (default: `true`) – scan changed files for `@mentions` inside code comments
     - `mentions.max_file_bytes=<bytes>` (default: `204800` ≈ 200KB) – skip files larger than this when scanning
-    - `mentions.languages=<ext,...>` – optional allowlist of file extensions to scan (e.g., `ts,tsx,js,jsx,py,go,yaml`). When omitted, detection is used.
+    - `mentions.languages=<code,...>` – optional allowlist of language codes to scan (e.g., `js,ts,py,go,yaml,md`). When omitted, detection is used.
+      - Note: Pass language codes, not raw extensions. Common extensions map internally: `tsx→ts`, `jsx→js`, `mjs/cjs→js`, `yml→yaml`, `markdown→md`.
 - `--use-github`: enable GitHub API enrichment; equivalent to `--flag use_github=true` (requires `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`). Without this flag, the CLI performs no network calls and sets `enriched.github = { provider: 'github', partial: true, reason: 'flag:not_set' }`.
 - `--label KEY=VAL...`: labels to attach
 - `--select PATHS`: comma-separated dot paths to include in output
@@ -126,9 +127,9 @@ events enrich --in samples/pull_request.synchronize.json \
 events enrich --in samples/pull_request.synchronize.json \
   --flag mentions.scan.changed_files=false | jq '.enriched.mentions // [] | length'
 
-# Restrict by file types and cap bytes (example values)
+# Restrict by language codes and cap bytes (example values)
 events enrich --in samples/pull_request.synchronize.json \
-  --flag mentions.languages=ts,tsx,js \
+  --flag mentions.languages=ts,js \
   --flag mentions.max_file_bytes=102400 \
   | jq '.enriched.mentions // [] | map(select(.source=="code_comment")) | length'
 

@@ -51,7 +51,8 @@ These control code-comment mention scanning performed by `events enrich`:
 
 - `--flag mentions.scan.changed_files=<true|false>` (default: `true`) — enable/disable scanning of changed files for `@mentions` inside code comments.
 - `--flag mentions.max_file_bytes=<bytes>` (default: `204800`) — skip files larger than this many bytes when scanning code comments.
-- `--flag mentions.languages=<ext,...>` — optional allowlist of file extensions to scan (for example: `ts,tsx,js,jsx,py,go,yaml`). When omitted, filename/heuristics are used.
+- `--flag mentions.languages=<code,...>` — optional allowlist of language codes to scan (e.g., `js,ts,py,go,yaml,md`). When omitted, filename/heuristics are used.
+  - Note: Pass language codes, not raw extensions. Common extensions map internally: `tsx→ts`, `jsx→js`, `mjs/cjs→js`, `yml→yaml`, `markdown→md`.
 
 Examples:
 
@@ -111,7 +112,6 @@ Full reference and examples: docs/cli/reference.md#events-enrich
 - `--flag include_patch=<true|false>`: include diff patches in files (default: false)
 - `--flag commit_limit=<n>`: max commits to include (default: 50)
 - `--flag file_limit=<n>`: max files to include (default: 200)
-- Mentions scanning flags are centralized in `docs/cli/reference.md` (see that section for canonical wording and defaults).
 - Mentions scanning flags are centralized in `docs/cli/reference.md` (see that section for canonical wording and defaults).
 - `--use-github`: enable GitHub API enrichment (requires `GITHUB_TOKEN`)
 - `--select <paths>`: comma-separated dot paths to include in output
