@@ -119,8 +119,22 @@ Full reference and examples: docs/cli/reference.md#events-enrich
 
 Behavior:
 
-- Offline by default: without `--use-github`, no network calls occur. Output includes `enriched.github` with `partial=true` and `reason="flag:not_set"`.
-- When `--use-github` is set but no token is configured, the CLI exits with code `3` (provider/network error) and prints an error. Use programmatic APIs with an injected Octokit for partial/offline testing if needed.
+- Offline by default: without `--use-github`, no network calls occur. Output includes a minimal stub under `enriched.github`:
+
+  ```json
+  {
+    "enriched": {
+      "github": {
+        "provider": "github",
+        "partial": true,
+        "reason": "flag:not_set"
+      }
+    }
+  }
+  ```
+
+- Online with `--use-github` and a valid token: enrichment populates fields like `enriched.github.pr.mergeable_state`, `enriched.github.pr.files[]`, and `enriched.github.branch_protection`.
+- With `--use-github` but token missing: the CLI exits with code `3` and writes an error (no JSON output). For SDK tests with an injected Octokit, a partial object with `reason: "token:missing"` may appear programmatically, but not via the CLI.
 
 Exit codes: `0` success, non‑zero on errors (invalid input, etc.).
 
