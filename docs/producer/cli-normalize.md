@@ -24,7 +24,10 @@ jq '.repo.full_name, .type, .provenance.workflow?.name' event.json
 ## Input Sources
 
 - `--in file.json`: path to a raw webhook payload
-- `--source actions`: read from Actions runtime env and `GITHUB_EVENT_PATH`
+- `--source actions`: read from Actions runtime env and `GITHUB_EVENT_PATH`.
+  Note: the CLI accepts `actions` as an input alias and normalizes the stored
+  value to `provenance.source: "action"` to match the NE schema
+  (`docs/specs/ne.schema.json`).
 
 ## Output Control
 
