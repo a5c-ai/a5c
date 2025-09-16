@@ -268,6 +268,14 @@ events enrich --in samples/pull_request.synchronize.json \
   | jq '.enriched.github.pr.files | map(has("patch")) | all'
 ```
 
+Include patch diffs explicitly (opt‑in):
+
+```bash
+events enrich --in samples/pull_request.synchronize.json \
+  --use-github --flag include_patch=true \
+  | jq '.enriched.github.pr.files | map(has("patch")) | all'
+```
+
 Inspect composed if present:
 
 ```bash
