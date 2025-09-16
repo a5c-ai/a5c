@@ -72,13 +72,18 @@ Behavior:
 
 - Offline by default: no network calls without `--use-github`. Output includes a minimal stub under `enriched.github`:
 
+> Offline states
+
+- Offline (flag not set): `enriched.github = { provider: 'github', partial: true, reason: 'flag:not_set' }`
+- Requested but missing token: `reason: 'token:missing'` and the CLI exits with code `3` (no JSON output).
+
   ```json
   {
     "enriched": {
       "github": {
         "provider": "github",
         "partial": true,
-        "reason": "github_enrich_disabled"
+        "reason": "flag:not_set"
       }
     }
   }
@@ -109,7 +114,7 @@ events enrich --in FILE [--out FILE] [--rules FILE] \
       - Mapping note: extensions are normalized to codes during detection (e.g., `.tsx → ts`, `.jsx → js`, `.yml → yaml`), but the allowlist itself compares the language IDs directly. Dot‑prefixed values like `.ts` are not supported and will not match.
     - `mentions.scan.commit_messages=true|false` (default: `true`) – enable/disable scanning commit messages for `@mentions`
     - `mentions.scan.issue_comments=true|false` (default: `true`) – enable/disable scanning issue comments for `@mentions`
-- `--use-github`: enable GitHub API enrichment; equivalent to `--flag use_github=true` (requires `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`). Without this flag, the CLI performs no network calls and sets `enriched.github = { provider: 'github', partial: true, reason: 'github_enrich_disabled' }`.
+- `--use-github`: enable GitHub API enrichment; equivalent to `--flag use_github=true` (requires `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`). Without this flag, the CLI performs no network calls and sets `enriched.github = { provider: 'github', partial: true, reason: 'flag:not_set' }`.
 - `--label KEY=VAL...`: labels to attach
 - `--select PATHS`: comma-separated dot paths to include in output
 - `--filter EXPR`: filter expression `path[=value]`; if it doesn't pass, exits with code `2`
@@ -323,7 +328,7 @@ Offline vs token-missing notes:
     "github": {
       "provider": "github",
       "partial": true,
-      "reason": "github_enrich_disabled"
+      "reason": "flag:not_set"
     }
   }
 }
