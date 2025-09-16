@@ -327,16 +327,6 @@ events enrich --in samples/pull_request.synchronize.json --use-github || echo $?
 # stderr: GitHub enrichment failed: ...
 # exit code: 3
 
-# Mentions scanning controls for code comments
-# Disable scanning of changed files
-events enrich --in samples/pull_request.synchronize.json \
-  --flag mentions.scan.changed_files=false | jq '.enriched.mentions // [] | length'
-
-# Restrict to selected languages and reduce size cap
-events enrich --in samples/pull_request.synchronize.json \
-  --flag mentions.languages=ts,js \
-  --flag mentions.max_file_bytes=102400 \
-  | jq '.enriched.mentions // [] | map(select(.source=="code_comment")) | length'
 ```
 
 See also: CLI reference for flags and exit codes: `docs/cli/reference.md`.
