@@ -37,6 +37,7 @@
     "release": "semantic-release",
     "lint:filenames": "node scripts/lint-filenames.cjs",
     "validate:obs:file": "ajv compile -s docs/specs/observability.schema.json --spec=draft2020 -c ajv-formats",
+    "validate:examples": "npm run -s build && node dist/cli.js normalize --in samples/workflow_run.completed.json --out /tmp/out.ne.json && (npx -y ajv-cli@5.0.0 validate -s docs/specs/ne.schema.json -d /tmp/out.ne.json --spec=draft2020 -c ajv-formats@3.0.1 || node dist/cli.js validate --in /tmp/out.ne.json --schema docs/specs/ne.schema.json --quiet)",
     "commit:prepare": "npx --yes husky && echo 'husky installed'"
   },
   "files": [
