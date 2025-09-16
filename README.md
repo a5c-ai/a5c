@@ -309,7 +309,7 @@ See `docs/specs/README.md` for examples and behavior-driven test outlines. Add y
           node-version: 20
       ```
   - CI runs lint and typecheck on PRs; see `.github/workflows/lint.yml` and `.github/workflows/typecheck.yml`.
-  - Local pre-commit enforces whitespace/newline hygiene, lint, and typecheck; see `docs/contributing/README.md#pre-commit-checks`.
+- Local pre-commit enforces staged-file hygiene and runs lint-staged (ESLint + Prettier); see `docs/dev/precommit-hooks.md`. Conventional commits are validated via Husky + commitlint; see `docs/contributing/git-commits.md`.
 - Minimal Node types + commander; TypeScript configured in `tsconfig.json`
 
 ### Node.js Version Policy
