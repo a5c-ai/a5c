@@ -2,19 +2,16 @@
 
 ### Context
 
-Provider adapter `src/providers/github/map.ts` maps `pull_request` events with `ref.type: "branch"`. The primary normalizer `src/providers/github/normalize.ts` (used by CLI and tests) emits `ref.type: "pr"` for pull requests, and tests assert this shape.
+Provider adapter `src/providers/github/map.ts` maps `pull_request` events with `ref.type: "branch"`. The primary normalizer aligns to the same semantics — `ref.type: "branch"` for pull requests.
 
 ### Why it matters
 
-- Inconsistent `ref.type` between normalizer and provider adapter can confuse downstream rules/filters relying on the NE schema enum which includes `pr` for PR refs.
-- Aligning both paths prevents subtle behavior differences depending on which entry point is used.
+- Inconsistent `ref.type` between normalizer and provider adapter previously caused confusion. NE schema no longer includes `"pr"` in the `ref.type` enum. Aligning both paths prevents subtle behavior differences depending on which entry point is used.
 
 ### Suggested change
 
-- Update `mapRef()` in `src/providers/github/map.ts` so that when `payload.pull_request` is present it sets:
-  - `type: "pr"`
-  - keep existing `head`, `base`, and optionally `sha` fields.
-- Add/extend a unit test for provider adapter path if applicable, asserting `ref.type === "pr"` on `pull_request`.
+- Ensure `mapRef()` in `src/providers/github/map.ts` sets `type: "branch"` and preserves `head`/`base` from the PR payload.
+- Tests should assert `ref.type === "branch"` for `pull_request` events.
 
 ### Priority
 
