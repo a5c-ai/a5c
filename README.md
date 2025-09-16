@@ -45,8 +45,6 @@ cat out.json | npx @a5c-ai/events validate --quiet
 
 ## CLI Reference
 
-
-
 ### Mentions config (Quick Start)
 
 Use a simple example, then see the CLI reference for canonical flags and defaults:
@@ -54,6 +52,12 @@ Use a simple example, then see the CLI reference for canonical flags and default
 ```bash
 # Disable scanning of changed files (code-comment mentions)
 events enrich --in ... --flag 'mentions.scan.changed_files=false'
+
+# Restrict code‑comment scanning to canonical language codes
+# Note: pass canonical codes used by the scanner (js, ts, py, go, yaml, md).
+# Extensions are normalized internally for detection (.tsx→ts, .jsx→js, .yml→yaml),
+# but the allowlist compares codes.
+events enrich --in ... --flag "mentions.languages=ts,js"
 ```
 
 Full reference and examples: docs/cli/reference.md#events-enrich
@@ -101,7 +105,8 @@ Common flags to control Mentions extraction during `enrich` (particularly for `s
 
 - `--flag mentions.scan.changed_files=<true|false>` — enable scanning code comments in changed files for `@mentions` (default: `true`).
 - `--flag mentions.max_file_bytes=<bytes>` — per‑file size cap when scanning code comments (default: `200KB` / `204800`). Files larger than this are skipped.
-- `--flag mentions.languages=<ext,...>` — optional allowlist of file extensions to scan (e.g., `ts,tsx,js,jsx,py,go,yaml`). When omitted, the scanner uses filename/heuristics.
+  - `--flag mentions.languages=<lang,...>` — optional allowlist of canonical language codes to scan (e.g., `js,ts,py,go,yaml,md`). When omitted, the scanner uses filename/heuristics.
+    - Mapping note: extensions are normalized to codes during detection (e.g., `.tsx → ts`, `.jsx → js`, `.yml → yaml`), but the filter list compares codes.
 
 Examples:
 
@@ -112,7 +117,7 @@ events enrich --in samples/pull_request.synchronize.json \
 
 # Restrict to specific languages and lower the size cap
 events enrich --in samples/pull_request.synchronize.json \
-  --flag mentions.languages=ts,tsx,js \
+  --flag mentions.languages=ts,js \
   --flag mentions.max_file_bytes=102400
 ```
 
@@ -123,8 +128,8 @@ See also:
 
 Behavior:
 
-- Offline by default: without `--use-github`, no network calls occur. Output includes `enriched.github` with `partial=true` and `reason="github_enrich_disabled"`.
-- When `--use-github` is set but no token is configured, the CLI exits with code `3` (provider/network error) and prints an error. Use programmatic APIs with an injected Octokit for partial/offline testing if needed.
+- Offline by default: without `--use-github`, no network calls occur. Output includes `enriched.github = { provider: 'github', partial: true, reason: 'flag:not_set' }`.
+- When `--use-github` is set but no token is configured, the CLI exits with code `3` (provider/network error) and prints an error. Use programmatic APIs with an injected Octokit for testing scenarios if needed.
 
 Exit codes: `0` success, non‑zero on errors (invalid input, etc.).
 
@@ -142,8 +147,41 @@ Limit scanned file size and restrict to TS/JS:
 ```bash
 events enrich --in samples/pull_request.synchronize.json \
   --flag mentions.max_file_bytes=102400 \
-  --flag mentions.languages=ts,tsx,js,jsx
+  --flag mentions.languages=ts,js
 ```
+
+### Rules quick-start (composed events)
+
+Define a minimal rule in YAML and evaluate it with `enrich --rules` to emit composed events. This example matches the included PR sample (`samples/pull_request.synchronize.json`) which carries a `documentation` label.
+
+```bash
+# 1) Create a tiny rules file
+cat > rules.sample.yml <<'YAML'
+rules:
+  - name: pr_labeled_documentation
+    on: pull_request
+    when:
+      all:
+        - { path: "$.payload.pull_request.labels[*].name", contains: "documentation" }
+    emit:
+      key: pr_labeled_documentation
+      reason: "PR has documentation label"
+      targets: [developer-agent]
+YAML
+
+# 2) Enrich with rules and inspect composed outputs
+events enrich --in samples/pull_request.synchronize.json \
+  --rules rules.sample.yml \
+  | jq '(.composed // []) | map({key, reason})'
+```
+
+Notes:
+
+- Real‑world rules can combine predicates (`all/any/not`, `eq`, `in`, `contains`, `exists`) and project fields into `emit.payload`. See the richer sample at `samples/rules/conflicts.yml`.
+- When no rules match, `.composed` may be absent or `null`. Guard with `(.composed // [])` as shown.
+- Learn more:
+  - Specs §6.1: docs/specs/README.md#61-rule-engine-and-composed-events
+  - Full CLI options: docs/cli/reference.md
 
 ## Normalized Event Schema (MVP)
 
@@ -242,7 +280,7 @@ export GITHUB_TOKEN=ghp_low_scope
 export A5C_AGENT_GITHUB_TOKEN=ghs_org_or_repo_scope
 events enrich --in samples/pull_request.synchronize.json --use-github | jq '.enriched.github.provider'
 
-# Missing token with --use-github: exits 3 and marks reason
+# Missing token with --use-github: exits 3
 unset GITHUB_TOKEN A5C_AGENT_GITHUB_TOKEN
 events enrich --in samples/pull_request.synchronize.json --use-github || echo $?
 # stderr: GitHub enrichment failed: ...
