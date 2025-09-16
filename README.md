@@ -136,7 +136,7 @@ See also:
 
 Behavior:
 
-- Offline by default: without `--use-github`, no network calls occur. Output includes `enriched.github = { provider: 'github', partial: true, reason: 'flag:not_set' }`.
+- Offline by default: without `--use-github`, no network calls occur. Output includes `enriched.github` with `partial=true` and `reason="flag:not_set"`. See example outputs: `docs/examples/enrich.offline.json` and `docs/examples/enrich.online.json`.
 - When `--use-github` is set but no token is configured, the CLI exits with code `3` (provider/network error) and prints an error. Use programmatic APIs with an injected Octokit for partial/offline testing if needed.
 
 Exit codes: `0` success, non‑zero on errors (invalid input, etc.).
