@@ -1,6 +1,5 @@
 [![99% built by agents](https://img.shields.io/badge/99%25-built%20by%20agents-blue.svg)](https://a5c.ai) [![codecov](https://codecov.io/gh/a5c-ai/events/branch/a5c/main/graph/badge.svg)](https://app.codecov.io/gh/a5c-ai/events/tree/a5c/main)
 
-
 # @a5c-ai/events – Events SDK & CLI
 
 Normalize and enrich GitHub (and other) events for agentic workflows. Use the CLI in CI or locally to turn raw webhook/Actions payloads into a compact, consistent schema that downstream agents and automations can trust.
@@ -43,6 +42,14 @@ jq '.type, .repo.full_name, .provenance.workflow?.name' out.json
 # Validate against the NE schema (quiet on success)
 cat out.json | npx @a5c-ai/events validate --quiet
 ```
+
+## CI Checks
+
+For CI guidance and required checks, see `docs/ci/ci-checks.md`.
+
+- Quick checks run on pull requests for fast feedback (lint, typecheck, tests with coverage).
+- Heavier gates (build, full tests) run on push to protected branches.
+- Branch semantics: `a5c/main` is the development/staging branch; `main` is production.
 
 ## CLI Reference
 
@@ -176,7 +183,7 @@ If you pass `--use-github` without a token, the CLI exits with code `3` and prin
 Notes:
 
 - Minimal offline examples may omit `enriched.github`. Both shapes validate against the NE schema. See also: `docs/examples/enrich.offline.stub.json`.
-For detailed command usage and examples, see docs/cli/reference.md.
+  For detailed command usage and examples, see docs/cli/reference.md.
 
 ### Mentions scanning examples
 
