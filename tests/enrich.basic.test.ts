@@ -87,6 +87,8 @@ describe("handleEnrich", () => {
     expect(gh).toBeTruthy();
     expect(gh.partial).toBeTruthy();
     expect(gh.reason).toBe("flag:not_set");
+    // Offline contract: no PR details fetched from network should be present
+    expect(gh.pr?.number).toBeUndefined();
   });
 
   it("includes patch fields when explicitly enabled (include_patch=true)", async () => {

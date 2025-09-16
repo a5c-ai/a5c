@@ -7,11 +7,13 @@
 - Update tests to remove contradictory expectations and update golden fixtures.
 
 ## Plan
+
 1. Update `src/enrich.ts` offline branch to `partial/github_enrich_disabled`.
 2. Update `tests/enrich.basic.test.ts` to expect the unified shape.
 3. Update goldens under `tests/fixtures/goldens/*.enrich.json` accordingly.
 4. Run tests locally and adjust if needed.
 
 ## Notes
+
 - CLI path (`src/commands/enrich.ts`) already uses `partial/github_enrich_disabled` for offline mode and `github_token_missing` when token is missing.
 - README documents the `partial/github_enrich_disabled` offline behavior.

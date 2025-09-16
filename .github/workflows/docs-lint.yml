@@ -1,0 +1,35 @@
+name: Docs Lint
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - "docs/**"
+      - "README.md"
+      - ".github/workflows/docs-lint.yml"
+      - "scripts/docs-lint.sh"
+  push:
+    branches: [a5c/main]
+    paths:
+      - "docs/**"
+      - "README.md"
+      - ".github/workflows/docs-lint.yml"
+      - "scripts/docs-lint.sh"
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+      - name: Make script executable
+        run: chmod +x scripts/docs-lint.sh
+      - name: Run docs lint
+        run: ./scripts/docs-lint.sh

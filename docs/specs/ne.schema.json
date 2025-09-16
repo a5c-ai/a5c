@@ -15,8 +15,15 @@
   ],
   "additionalProperties": false,
   "properties": {
-    "id": { "type": "string", "description": "Provider-unique identifier for this event" },
-    "provider": { "type": "string", "enum": ["github"], "description": "Event source provider" },
+    "id": {
+      "type": "string",
+      "description": "Provider-unique identifier for this event"
+    },
+    "provider": {
+      "type": "string",
+      "enum": ["github"],
+      "description": "Event source provider"
+    },
     "type": {
       "type": "string",
       "enum": [
@@ -35,7 +42,11 @@
       ],
       "description": "Core normalized type"
     },
-    "occurred_at": { "type": "string", "format": "date-time", "description": "ISO timestamp for the event occurrence" },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO timestamp for the event occurrence"
+    },
     "repo": {
       "type": "object",
       "required": ["id", "name", "full_name"],
@@ -61,7 +72,7 @@
         "name": { "type": "string" },
         "type": {
           "anyOf": [
-            { "type": "string", "enum": ["branch", "tag", "pr", "unknown"] },
+            { "type": "string", "enum": ["branch", "tag", "unknown"] },
             { "type": "null" }
           ]
         },
@@ -82,10 +93,7 @@
     },
     "payload": {
       "description": "Provider-native payload (raw)",
-      "anyOf": [
-        { "type": "object" },
-        { "type": "array" }
-      ]
+      "anyOf": [{ "type": "object" }, { "type": "array" }]
     },
     "enriched": {
       "type": "object",
@@ -110,16 +118,12 @@
           "properties": {
             "name": { "type": "string" },
             "run_id": {
-              "anyOf": [
-                { "type": "integer" },
-                { "type": "string" }
-              ]
+              "anyOf": [{ "type": "integer" }, { "type": "string" }]
             }
           }
         }
       }
-    }
-    ,
+    },
     "composed": {
       "description": "Optional composed events emitted by rules; see specs §6.1",
       "type": "array",
@@ -128,8 +132,14 @@
         "additionalProperties": false,
         "required": ["key"],
         "properties": {
-          "key": { "type": "string", "description": "Machine-friendly identifier for the composed event" },
-          "reason": { "type": ["string", "null"], "description": "Optional human-readable reason derived from matched criteria" },
+          "key": {
+            "type": "string",
+            "description": "Machine-friendly identifier for the composed event"
+          },
+          "reason": {
+            "type": ["string", "null"],
+            "description": "Optional human-readable reason derived from matched criteria"
+          },
           "targets": {
             "type": "array",
             "items": { "type": "string" },
@@ -142,7 +152,11 @@
           },
           "payload": {
             "description": "Optional payload projected from the source event",
-            "anyOf": [ { "type": "object" }, { "type": "array" }, { "type": "null" } ]
+            "anyOf": [
+              { "type": "object" },
+              { "type": "array" },
+              { "type": "null" }
+            ]
           }
         }
       }

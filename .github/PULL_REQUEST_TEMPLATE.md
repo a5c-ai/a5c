@@ -3,7 +3,7 @@
 Describe the change and intent. Link context and references.
 
 - Issue: fixes #
-- Related: 
+- Related:
 
 # ✅ Checklist
 

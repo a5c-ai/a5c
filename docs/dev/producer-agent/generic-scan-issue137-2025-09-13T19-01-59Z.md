@@ -1,6 +1,7 @@
 # Producer – Generic Scan Results (Issue #137)
 
 ## Summary of Current State
+
 - Specs present and detailed: `docs/specs/README.md`, NE schema at `docs/specs/ne.schema.json`, technical specs scaffolded under `docs/producer/phases/technical-specs/*`.
 - CLI implemented with `normalize`, `enrich`, and `mentions`. Basic tests pass (`npm test`).
 - GitHub enrichment implemented in `src/enrichGithubEvent.js` with owners resolution, commits/files, and branch protection; wired via `handleEnrich`.
@@ -8,25 +9,27 @@
 - Phase tracking indicates Specification Phase.
 
 ## Gaps vs. Specs
-1) Mentions in code comments and file changes
+
+1. Mentions in code comments and file changes
    - Spec calls for scanning code comments and changed files for `@agent` mentions; current implementation only scans PR title/body, commit messages, and issue comments. No code-comment/file scanning yet.
 
-2) Composed events and rule engine scaffold
+2. Composed events and rule engine scaffold
    - Spec section 6.1 references rule engine and composed events (`enrich --rules`), but implementation stores `rules` path only into metadata. No evaluation or composed outputs.
 
-3) CLI UX flags consistency
+3. CLI UX flags consistency
    - Spec lists flags like `--select`, `--filter`, and `--label`. `normalize` supports `--label` but lacks `--select` and `--filter`; `enrich` lacks `--select` filter and selection. Examples in specs reference these.
 
-4) Token precedence and env probing
+4. Token precedence and env probing
    - Spec emphasizes token precedence and Actions env awareness. Config reads `A5C_AGENT_GITHUB_TOKEN` or `GITHUB_TOKEN`, but workflows/docs on precedence may need tests/docs enforcement.
 
-5) Performance and limits
+5. Performance and limits
    - Defaults implemented (commitLimit=50, fileLimit=200). Need tests to cover include_patch false/true flows and large diffs behavior per spec.
 
-6) Phase checklist sync
+6. Phase checklist sync
    - Specification Phase checklist exists but not fully synced to current code/tests; needs update and possibly move to next phase when criteria met.
 
 ## Proposed Issues
+
 - [Producer] Mentions – Add code comment and changed-files scanning
   - Description: Extend extractor to parse code comments (language-aware heuristics) and integrate into enrich pipeline when files are available from PR/push enrichment.
   - Acceptance Criteria:
