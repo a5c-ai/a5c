@@ -85,8 +85,12 @@ See also:
 
 Behavior:
 
-- Offline by default (no network calls). The CLI emits a stub under `enriched.github` with `{ provider: 'github', partial: true, reason: 'flag:not_set' }`. Minimal examples may omit `enriched.github` entirely; both shapes validate against the NE schema. See `docs/examples/enrich.offline.stub.json`.
-- Pass `--use-github` to enable GitHub API enrichment. If no token is configured, the CLI exits with code `3` (provider/network error) and prints an error (no JSON is emitted by the CLI path).
+- Offline by default (no network calls). Two acceptable offline shapes validate against the NE schema:
+  - Minimal NE may omit `enriched.github` entirely.
+  - CLI offline stub emits `enriched.github = { provider: 'github', partial: true, reason: 'flag:not_set' }`.
+    See `docs/examples/enrich.offline.stub.json` for a canonical stub example.
+- Online enrichment: pass `--use-github` to enable GitHub API lookups and populate fields like `enriched.github.pr.mergeable_state`, `enriched.github.pr.files[]`, and `enriched.github.branch_protection`.
+- Missing token with `--use-github`: the CLI exits with code `3` (provider/network error) and prints an error; no JSON is emitted by the CLI path. Some programmatic SDK paths may surface a partial object with `reason: 'token:missing'` when using an injected Octokit for tests, but the CLI behavior is to exit with code `3`.
 
 Usage:
 
@@ -113,9 +117,9 @@ events enrich --in FILE [--out FILE] [--rules FILE] \
     - `mentions.scan.commit_messages=true|false` (default: `true`) – enable/disable scanning commit messages for `@mentions`
     - `mentions.scan.issue_comments=true|false` (default: `true`) – enable/disable scanning issue comments for `@mentions`
 - `--use-github`: enable GitHub API enrichment; equivalent to `--flag use_github=true` (requires `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`). Without this flag, the CLI performs no network calls and sets `enriched.github = { provider: 'github', partial: true, reason: 'flag:not_set' }`.
-    - `mentions.max_file_bytes=<bytes>` (default: `204800`) – skip files larger than this many bytes when scanning
-    - `mentions.languages=<ext,...>` – optional allowlist of file extensions to scan (e.g., `ts,tsx,js,jsx,py,go,yaml`). When omitted, language/extension detection is used.
-    - Notes: Mentions found in file diffs or changed files are emitted with `source: code_comment` and include `location.file` and `location.line` when available.
+  - `mentions.max_file_bytes=<bytes>` (default: `204800`) – skip files larger than this many bytes when scanning
+  - `mentions.languages=<ext,...>` – optional allowlist of file extensions to scan (e.g., `ts,tsx,js,jsx,py,go,yaml`). When omitted, language/extension detection is used.
+  - Notes: Mentions found in file diffs or changed files are emitted with `source: code_comment` and include `location.file` and `location.line` when available.
 - `--use-github`: enable GitHub API enrichment; equivalent to `--flag use_github=true` (requires `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`). Without this flag, the CLI performs no network calls and the CLI uses a stub under `enriched.github` (see above). The exact `reason` value is implementation-defined and may evolve; current default is `flag:not_set`.
 - `--label KEY=VAL...`: labels to attach
 - `--select PATHS`: comma-separated dot paths to include in output
