@@ -1,3 +1,5 @@
+[Note] Updated semantics: offline reason is `flag:not_set` (replaced prior `github_enrich_disabled`). See `docs/cli/reference.md` for canonical behavior.
+
 # Fix: offline GitHub enrichment test reason alignment
 
 Issue: #652

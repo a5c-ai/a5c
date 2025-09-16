@@ -1,3 +1,5 @@
+[Note] Updated semantics: offline reason is `flag:not_set` (replaced prior `github_enrich_disabled`). See `docs/cli/reference.md` for canonical behavior.
+
 # Enrich CLI offline stub + token-missing tests (issue #552)
 
 Scope: Add CLI test to assert offline GitHub enrichment stub shape and keep existing token-missing exit code test behavior.
