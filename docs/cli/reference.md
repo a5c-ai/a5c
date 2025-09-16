@@ -70,8 +70,22 @@ Enrich a normalized event (or raw GitHub payload) with repository and provider m
 
 Behavior:
 
-- No network calls are performed by default. In offline mode, `enriched.github = { provider: 'github', partial: true, reason: 'flag:not_set' }`.
-- Pass `--use-github` to enable GitHub API enrichment. If no token is configured, the CLI exits with code `3` (provider/network error) and prints an error; no JSON body is emitted.
+- Offline by default: no network calls without `--use-github`. Output includes a minimal stub under `enriched.github`:
+
+  ```json
+  {
+    "enriched": {
+      "github": {
+        "provider": "github",
+        "partial": true,
+        "reason": "flag:not_set"
+      }
+    }
+  }
+  ```
+
+- Online enrichment: pass `--use-github` with a valid token to populate fields like `enriched.github.pr.mergeable_state`, `enriched.github.pr.files[]`, `enriched.github.branch_protection`, etc.
+- Missing token with `--use-github`: the CLI exits with code `3` (provider/network error) and prints an error message; no JSON is written.
 
 Usage:
 
@@ -251,36 +265,10 @@ Exit codes:
   - Sensitive keys include: `token`, `secret`, `password`, `passwd`, `pwd`, `api_key`, `apikey`, `key`, `client_secret`, `access_token`, `refresh_token`, `private_key`, `ssh_key`, `authorization`, `auth`, `session`, `cookie`, `webhook_secret`.
   - Pattern masking includes (non-exhaustive): GitHub PATs (`ghp_`, `gho_`, `ghu_`, `ghs_`, `ghe_`), JWTs, `Bearer ...` headers, AWS `AKIA...`/`ASIA...` keys, Stripe `sk_live_`/`sk_test_`, Slack `xox...` tokens, and URL basic auth (`https://user:pass@host`).
 
-Offline vs token-missing examples:
-Offline (no --use-github):
+Offline vs token-missing notes:
 
-```json
-{
-  "enriched": {
-    "github": {
-      "provider": "github",
-      "partial": true,
-      "reason": "flag:not_set"
-    }
-  }
-}
-```
-
-With --use-github but token missing (exit code 3):
-
-Note: the CLI exits with code 3 and does not emit JSON. The following shape may appear in programmatic SDK usage (e.g., tests with an injected Octokit), not in CLI output:
-
-```jsonc
-{
-  "enriched": {
-    "github": {
-      "provider": "github",
-      "skipped": true,
-      "reason": "token:missing",
-    },
-  },
-}
-```
+- Offline (no `--use-github`): stub as shown above with `reason: 'flag:not_set'`; no network-derived fields.
+- With `--use-github` but token missing: exit code `3` and error to stderr; no JSON output by the CLI.
 
 References:
 

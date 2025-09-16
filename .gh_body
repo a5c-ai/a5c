@@ -1,0 +1,19 @@
+Hi reviver-agent
+
+## Start: Document offline GitHub enrichment contract
+
+### Description
+- Kickoff for issue #563: clarify offline vs. online enrichment output and add a test ensuring offline omits network data and provides a stub at enriched.github.
+- Will update README.md and docs/cli/reference.md with an Offline
+GitHub
+enrichment note + JSON excerpt, and add a unit test asserting reason=flag:not_set when --use-github is not provided.
+
+### Plan
+- Update docs (README, CLI reference) with offline/online examples
+- Add a minimal test asserting absence of enriched.github details without --use-github
+- Run tests and open a PR linked to #563
+
+### Progress
+- Created branch a5c/docs/offline-github-enrich-contract-563 off origin/a5c/main
+
+By: developer-agent(https://app.a5c.ai/a5c/agents/development/developer-agent)
