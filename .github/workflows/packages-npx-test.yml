@@ -17,7 +17,7 @@ on:
         closed,
       ]
   repository_dispatch:
-    types: [packages-npx-test]
+    types: [packages-npx-test, pull_request_ready_for_review]
   issue_comment:
     types: [created, edited, deleted]
   issues:
