@@ -7,7 +7,7 @@ Branch: docs/validate-composed-payload-union-565
 
 - Fix specs doc wording to match schema (object | array | null).
 - Update validation note doc to reflect current truth.
-- Add CI docs-lint to flag `composed[].payload: any` in docs.
+- Add CI docs-lint to flag the banned phrase for mis-typing `composed[].payload` as any in docs.
 
 ## Notes
 
