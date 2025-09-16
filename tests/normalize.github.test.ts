@@ -40,8 +40,8 @@ describe("GitHub normalization", () => {
     });
     expect(ev.type).toBe("pull_request");
     expect(ev.repo?.full_name).toBe("a5c-ai/events");
-    // NE schema enumerates ref.type including 'pr' for pull requests
-    expect(ev.ref?.type).toBe("pr");
+    // For PR events, ref.type should align to branch semantics
+    expect(ev.ref?.type).toBe("branch");
     expect(ev.ref?.head).toBe("feat/samples-fixtures-issue48");
     expect(ev.ref?.base).toBe("a5c/main");
     expect(ev.actor?.login).toBe("tmuskal");
