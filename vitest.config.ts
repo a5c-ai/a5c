@@ -4,7 +4,11 @@ import path from "path";
 
 function loadCoverageThresholds() {
   try {
-    const p = path.resolve(process.cwd(), "scripts", "coverage-thresholds.json");
+    const p = path.resolve(
+      process.cwd(),
+      "scripts",
+      "coverage-thresholds.json",
+    );
     if (fs.existsSync(p)) {
       const json = JSON.parse(fs.readFileSync(p, "utf8"));
       const toInt = (v: any, d: number) => {
