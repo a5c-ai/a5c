@@ -68,45 +68,26 @@ Runs independently to surface TS errors early across supported Node versions. Qu
 
 Heavier/longer gates run on protected branches to keep PRs snappy while maintaining strong guarantees before merge/deploy.
 
-## Coverage Upload (Optional: Codecov)
+## Coverage Upload (Codecov)
 
-You can optionally upload coverage to Codecov and display a badge. Uploads are disabled by default and only run when a token is configured.
-
-Prerequisites
-
-- Create a Codecov project for this repository.
-- Add a repository Secret or Variable named `CODECOV_TOKEN`.
-
-Script
-
-- Use `scripts/coverage-upload.sh`. It:
-  - No-ops if `CODECOV_TOKEN` is not set or `coverage/lcov.info` is missing.
-  - Uploads using Codecov's bash uploader from `https://codecov.io/bash`.
-  - Never fails the build if token is missing or file is absent (script exits 0).
-
-Enable in Tests workflow (example snippet)
-
-Add a step after tests to upload coverage. Do not commit this change unless your org opts in.
+Default (recommended): Use the GitHub Action and guard on the presence of a token. Configure a repository secret `CODECOV_TOKEN` and add a step after coverage is generated (`coverage/lcov.info`). Example:
 
 ```yaml
 - name: Upload coverage to Codecov (optional)
-  if: ${{ env.CODECOV_TOKEN != '' }}
-  env:
-    CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-  run: |
-    bash scripts/coverage-upload.sh
+  if: ${{ secrets.CODECOV_TOKEN != '' }}
+  uses: codecov/codecov-action@v4
+  with:
+    token: ${{ secrets.CODECOV_TOKEN }}
+    files: coverage/lcov.info
+    # flags: pr|push (optional)
+    fail_ci_if_error: false
 ```
 
-Optional environment variables:
+Notes
 
-- `CODECOV_FLAGS`: e.g., `tests,vitest`
-- `CODECOV_BUILD`: build identifier (commit SHA or run id)
-- `CODECOV_URL`: override the uploader host for self-hosted instances
-- `CODECOV_DRY`: set to `1` to print the upload command and skip execution
-
-Badge (README)
-
-See README for an optional badge snippet when enabled.
+- Workflows in this repo (`tests.yml`, `quick-checks.yml`, `pr-tests.yml`) already follow the Action-based approach.
+- Avoid duplication: Do not use both an Action and a script uploader in the same workflow/job; pick one.
+- Alternative: For local or non-Actions CI, a script-based uploader can be used instead of the Action.
 
 ## Commit Hygiene (PR)
 

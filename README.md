@@ -244,23 +244,32 @@ See also:
 
 ## Coverage (Optional)
 
-You can optionally upload coverage to Codecov. This repo does not enable uploads by default.
+Default (recommended) — GitHub Action
 
-Opt-in steps:
-
-- Create a Codecov project for this repository and add a repo Secret or Variable named `CODECOV_TOKEN`.
-- Add the following step to your tests workflow after coverage is generated:
+- Prefer the official Action in CI. Add a repo secret named `CODECOV_TOKEN` and include a guarded step after tests generate `coverage/lcov.info`:
 
 ```yaml
 - name: Upload coverage to Codecov (optional)
-  if: ${{ env.CODECOV_TOKEN != '' }}
-  env:
-    CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-  run: |
-    bash scripts/coverage-upload.sh
+  if: ${{ secrets.CODECOV_TOKEN != '' }}
+  uses: codecov/codecov-action@v4
+  with:
+    token: ${{ secrets.CODECOV_TOKEN }}
+    files: coverage/lcov.info
+    # flags: pr|push (optional)
+    fail_ci_if_error: false
 ```
 
-Badge (optional):
+- Existing workflows already follow this Action-based approach and will upload when a token is present:
+  - `.github/workflows/tests.yml` (push on `a5c/main` and `main`)
+  - `.github/workflows/quick-checks.yml` (PRs)
+  - `.github/workflows/pr-tests.yml` (PRs)
+- If the token is absent, the step is skipped and CI remains green.
+
+Alternative — Script-based uploader
+
+- For local runs or non-GitHub CI, you may use a script uploader. If your setup includes a helper script (for example, `scripts/coverage-upload.sh`), call it after tests. Do not combine the script and the Action in the same workflow to avoid duplicate uploads.
+
+Badge (optional)
 
 After the first successful upload, add a badge to this README:
 
@@ -268,8 +277,7 @@ After the first successful upload, add a badge to this README:
 [![codecov](https://codecov.io/gh/a5c-ai/events/branch/a5c/main/graph/badge.svg)](https://codecov.io/gh/a5c-ai/events)
 ```
 
-Replace the URL to match your VCS provider and repository if different. Private projects may require a tokenized badge; see Codecov docs.
-
+Adjust the badge target for your repository or branch as needed. Private projects may require a tokenized badge per Codecov docs.
 
 ### Auth tokens: precedence & redaction
 
