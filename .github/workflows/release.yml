@@ -134,14 +134,8 @@ jobs:
           VERSION=$(node -p "require('./package.json').version")
           NAME=$(node -p "require('./package.json').name")
           echo "Attempt publish ${NAME}@${VERSION} to registry.npmjs.org"
-          
-          # Fast pre-check (can be stale due to npm propagation); best-effort only
-          if npm view "${NAME}@${VERSION}" version --registry=https://registry.npmjs.org > /dev/null 2>&1; then
-            echo "Version already exists on npmjs, skipping publish."
-            exit 0
-          fi
 
-          # Temporarily override project .npmrc to ensure scoped package publishes to npmjs (not GitHub Packages)
+          # Temporarily override project .npmrc to ensure scoped package uses npmjs (not GitHub Packages)
           BACKUP_NPMRC=false
           if [ -f .npmrc ]; then
             mv .npmrc .npmrc.gpr
@@ -167,6 +161,12 @@ jobs:
           NPMRC
 
           echo "Auth check against npmjs: $(npm whoami --registry=https://registry.npmjs.org || echo 'not authenticated')"
+
+          # Pre-check after forcing scope registry to npmjs (robust against scoped registry overrides)
+          if npm view "${NAME}@${VERSION}" version --registry=https://registry.npmjs.org > /dev/null 2>&1; then
+            echo "Version ${NAME}@${VERSION} already exists on npmjs, skipping publish."
+            exit 0
+          fi
 
           # Retry helper for transient errors; treat already-published conflicts as success
           attempts=0
