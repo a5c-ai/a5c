@@ -15,7 +15,7 @@
 - [x] Acceptance tests (BDD) outlined (see docs/specs/README.md#9-acceptance-tests-bdd-outline)
 - [x] Non-goals and phased roadmap documented (see docs/specs/README.md#10-out-of-scope-and-phased-roadmap)
 - [x] Normalized Event schema present (see docs/specs/ne.schema.json)
-- [x] Sample payloads available (see samples/*.json)
+- [x] Sample payloads available (see samples/\*.json)
 - [ ] Formal sign-offs captured (Producer + Developer) — pending
 
 ## Transition Criteria → Development Phase
@@ -31,4 +31,5 @@ To proceed to Development Phase, all must be true:
 Status: Criteria satisfied except formal approvals. Proceeding to open Development Phase with checklist while awaiting approvals.
 
 Artifacts:
+
 - Development Phase checklist: [../development-phase/checklist.md](../development-phase/checklist.md)

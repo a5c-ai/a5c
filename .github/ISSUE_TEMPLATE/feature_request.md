@@ -18,8 +18,8 @@ Other solutions or features you've considered.
 
 ## Impact
 
-- Affected packages/areas: 
-- CI considerations (build, tests): 
+- Affected packages/areas:
+- CI considerations (build, tests):
 
 ## Additional context
 

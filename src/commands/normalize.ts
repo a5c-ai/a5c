@@ -55,6 +55,9 @@ export async function cmdNormalize(opts: {
   source?: string;
   labels?: string[];
 }): Promise<{ code: number; output?: NormalizedEvent; errorMessage?: string }> {
+  // Normalize source alias: accept "actions" as input, persist as "action"
+  const normalizedSource =
+    String(opts.source || "") === "actions" ? "action" : opts.source;
   // Resolve input path
   let inPath = opts.in;
   const normalizedSource = coerceSource(opts.source);

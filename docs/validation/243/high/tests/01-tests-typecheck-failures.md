@@ -26,4 +26,3 @@ Rationale
 - Keeping `typecheck` green improves DX and CI signal quality, independent of build.
 
 Status: Non-blocking for this PR; document as tech-debt.
-

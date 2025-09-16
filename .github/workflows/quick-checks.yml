@@ -37,16 +37,6 @@ jobs:
         run: npm run -s typecheck
       - name: Unit tests (vitest)
         run: npm run -s test:ci
-      - name: Upload coverage to Codecov (optional)
-        if: env.CODECOV_TOKEN != ''
-        uses: codecov/codecov-action@v4
-        with:
-          token: ${{ env.CODECOV_TOKEN }}
-          files: |
-            coverage/lcov.info
-          flags: pr
-          fail_ci_if_error: false
-          verbose: true
       - name: Upload coverage artifact
         if: always()
         uses: actions/upload-artifact@v4
@@ -83,10 +73,13 @@ jobs:
             echo "coverage/coverage-summary.json not found; ensure vitest json-summary reporter is enabled" >> "$GITHUB_STEP_SUMMARY";
           fi
       - name: Upload to Codecov (optional)
+        # Upload to Codecov only when CODECOV_TOKEN is configured
         if: env.CODECOV_TOKEN != ''
         uses: codecov/codecov-action@v4
         with:
-          files: coverage/lcov.info
-          token: ${{ secrets.CODECOV_TOKEN }}
+          token: ${{ env.CODECOV_TOKEN }}
+          files: |
+            coverage/lcov.info
           flags: pr
           fail_ci_if_error: false
+          verbose: true

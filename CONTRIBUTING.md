@@ -23,19 +23,37 @@ Notes:
 
 ## Commit Message Validation (Local)
 
-We include a Husky `commit-msg` hook that validates your commit message via `scripts/commit-verify.ts`. If a commit is rejected, adjust the message to match the format above.
+We include a Husky `commit-msg` hook that validates your commit message using Commitlint. The hook calls `npx commitlint --edit "$1"` as defined in `.husky/commit-msg` and reads rules from `commitlint.config.cjs` (extends `@commitlint/config-conventional`). If a commit is rejected, adjust the message to match the format above. See also `docs/contributing/git-commits.md`.
 
 ## Commit Hygiene and Pre-commit Hook
 
-We enforce fast pre-commit checks to keep `main` and `a5c/main` healthy:
+We enforce fast pre-commit checks to keep branches healthy. The Husky pre-commit hook delegates to `scripts/precommit.sh`, which runs:
 
 - Filename guard: blocks Windows-invalid `:` in staged filenames.
-- Staged file hygiene: trailing whitespace and end-of-file newline checks.
-- Lint and typecheck: runs `npm run lint` and `npm run typecheck`.
-  - Note: typecheck is source-focused to stay fast.
-- Tests: runs Vitest. If possible, runs related tests for changed files via `scripts/prepush-related.js`; otherwise runs `vitest run --passWithNoTests`.
+- Staged file hygiene: trailing whitespace and end-of-file newline checks (`git diff --cached --check`).
+- Lint-staged: runs ESLint/Prettier only on staged files per `package.json` `lint-staged` config.
 
-The hook is implemented in `scripts/precommit.sh` and invoked from `.husky/pre-commit`.
+Current lint-staged configuration (see `package.json`):
+
+```
+{
+  "lint-staged": {
+    "src/**/*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier -w"
+    ],
+    "{test,tests}/**/*.{ts,tsx,js}": [
+      "eslint --fix --max-warnings=0",
+      "prettier -w"
+    ],
+    "**/*.{md,json,yml,yaml}": [
+      "prettier -w"
+    ]
+  }
+}
+```
+
+Pre-push checks run TypeScript typecheck and tests (see `.husky/pre-push`).
 
 ### Husky setup (prepare-based)
 
@@ -63,7 +81,7 @@ SKIP_PRECOMMIT=1 git commit -m "wip: bypass pre-commit"
 A5C_SKIP_PRECOMMIT=1 git commit -m "wip: bypass pre-commit"
 ```
 
-Please follow up with a separate commit to address lint/typecheck/test issues.
+The script also recognizes the legacy `SKIP_CHECKS=1`. Use the explicit vars above when possible. Please follow up with a separate commit to address issues.
 
 ### Running Checks Manually
 
