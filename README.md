@@ -53,11 +53,19 @@ Use a simple example, then see the CLI reference for the canonical flags and def
 # Disable scanning of changed files (code-comment mentions)
 events enrich --in ... --flag 'mentions.scan.changed_files=false'
 
+# Limit per-file bytes when scanning code comments (default: 200KB / 204800 bytes)
+events enrich --in ... --flag 'mentions.max_file_bytes=65536'
+
 # Restrict code‑comment scanning to canonical language IDs
 # Pass language IDs, not extensions: js, ts, py, go, java, c, cpp, sh, yaml, md.
 # Extensions are normalized internally for detection (.tsx→ts, .jsx→js, .yml→yaml),
 # but the allowlist compares the language IDs directly (values like .ts will not match).
 events enrich --in ... --flag "mentions.languages=ts,js"
+
+# Control which textual sources are scanned for @mentions during enrichment (commit messages and issue comments).
+# For code-comment scanning details, see `docs/cli/code-comment-mentions.md`.
+events enrich --in ... --flag 'mentions.scan.commit_messages=false'
+events enrich --in ... --flag 'mentions.scan.issue_comments=false'
 ```
 
 Canonical reference and examples:
@@ -126,13 +134,8 @@ Behavior:
 - Offline by default: without `--use-github`, no network calls occur. Output includes `enriched.github = { provider: 'github', partial: true, reason: 'flag:not_set' }`.
 - When `--use-github` is set but no token is configured, the CLI exits with code `3` (provider/network error) and prints an error. Use programmatic APIs with an injected Octokit for testing scenarios if needed.
   - `--flag mentions.scan.changed_files=<true|false>` — enable scanning code comments in changed files for `@mentions` (default: `true`).
-  - `--flag mentions.max_file_bytes=<bytes>` — per‑file size cap when scanning code comments (default: `200KB` / `204800`). Files larger than this are skipped.
-    - `--flag mentions.languages=<lang,...>` — optional allowlist of canonical language codes to scan (e.g., `js,ts,py,go,yaml,md`). When omitted, the scanner uses filename/heuristics.
-      - Mapping note: extensions are normalized to codes during detection (e.g., `.tsx → ts`, `.jsx → js`, `.yml → yaml`), but the filter list compares codes.
-    - `--flag mentions.scan.commit_messages=<true|false>` — enable scanning commit messages for `@mentions` (default: `true`).
-    - `--flag mentions.scan.issue_comments=<true|false>` — enable scanning issue comment bodies for `@mentions` (default: `true`).
-
-Quick examples:
+  - `--flag mentions.max_file_bytes=<bytes>` — per‑file size cap when scanning code comments (default: `200KB` / `204800`). Files larger than this are skipped. - `--flag mentions.languages=<lang,...>` — optional allowlist of canonical language codes to scan (e.g., `js,ts,py,go,yaml,md`). When omitted, the scanner uses filename/heuristics. - Mapping note: extensions are normalized to codes during detection (e.g., `.tsx → ts`, `.jsx → js`, `.yml → yaml`), but the filter list compares codes. - `--flag mentions.scan.commit_messages=<true|false>` — enable scanning commit messages for `@mentions` (default: `true`). - `--flag mentions.scan.issue_comments=<true|false>` — enable scanning issue comment bodies for `@mentions` (default: `true`).
+    Quick examples:
 
 ```bash
 # Disable scanning changed files for code‑comment mentions
@@ -149,8 +152,6 @@ See also:
 
 - Specs: `docs/specs/README.md#42-mentions-schema`
 - CLI reference: `docs/cli/reference.md#events-enrich`
-
-- Behavior:
 
 - Offline by default: without `--use-github`, no network calls occur. Output includes `enriched.github` with `partial=true` and `reason="flag:not_set"`. See example outputs: `docs/examples/enrich.offline.json` and `docs/examples/enrich.online.json`.
 - When `--use-github` is set but no token is configured, the CLI exits with code `3` (provider/network error) and prints an error; no JSON is emitted. For programmatic SDK usage and tests with an injected Octokit, a partial structure with `reason: "token:missing"` may be returned, but the CLI UX is exit `3`.
