@@ -80,7 +80,7 @@ Configuration:
 - `mentions.scan.commit_messages`: `true|false` (default true)
 - `mentions.scan.issue_comments`: `true|false` (default true)
 - `mentions.max_file_bytes`: bytes cap per file (default 200KB / 204800 bytes)
-- `mentions.languages`: opt-in list for code-comment scanning; default detects via filename.
+- `mentions.languages`: opt-in list for code-comment scanning; default detects via filename. Pass language codes (e.g., `js,ts,py,go,yaml,md`). Common extensions map internally (e.g., `tsx→ts`, `jsx→js`, `yml→yaml`, `markdown→md`).
 
 Example mention from a code comment:
 
