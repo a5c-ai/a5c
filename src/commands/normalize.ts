@@ -45,6 +45,11 @@ export async function runNormalize(opts: {
   }
 }
 // Command-layer wrapper to keep CLI thin
+function coerceSource(val?: string): string | undefined {
+  if (!val) return val;
+  return val === "actions" ? "action" : val;
+}
+
 export async function cmdNormalize(opts: {
   in?: string;
   source?: string;
@@ -52,7 +57,8 @@ export async function cmdNormalize(opts: {
 }): Promise<{ code: number; output?: NormalizedEvent; errorMessage?: string }> {
   // Resolve input path
   let inPath = opts.in;
-  if (!inPath && String(opts.source) === "actions") {
+  const normalizedSource = coerceSource(opts.source);
+  if (!inPath && String(normalizedSource) === "action") {
     inPath = process.env.GITHUB_EVENT_PATH;
     if (!inPath)
       return {
@@ -63,13 +69,13 @@ export async function cmdNormalize(opts: {
   if (!inPath)
     return {
       code: 2,
-      errorMessage: "Missing required --in FILE (or use --source actions)",
+      errorMessage: "Missing required --in FILE (or use --source action)",
     };
 
   try {
     const payload = readJSONFile<any>(inPath);
     const output = mapToNE(payload || {}, {
-      source: opts.source,
+      source: normalizedSource,
       labels: opts.labels,
     });
     return { code: 0, output };

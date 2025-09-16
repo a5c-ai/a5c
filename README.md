@@ -75,7 +75,7 @@ See: docs/specs/README.md#4.2-mentions-schema for full details.
 - Common flags:
   - `--in <file>`: input JSON file (raw event)
   - `--out <file>`: write result to file (default: stdout)
-  - `--source <name>`: provenance (`actions|webhook|cli`) [default: `cli`]
+  - `--source <name>`: provenance (`action|webhook|cli`) [default: `cli`]
   - `--select <paths>`: comma-separated dot paths to include in output
   - `--filter <expr>`: filter expression `path[=value]`; if not matching, exits with code 2 and no output
   - `--label <key=value...>`: attach labels to top‑level `labels[]` (repeatable)
@@ -152,7 +152,7 @@ GitHub Actions (normalize current run):
 - name: Normalize workflow_run
   run: |
     npx @a5c-ai/events normalize \
-      --source actions \
+      --source action \
       --in "$GITHUB_EVENT_PATH" \
       --out event.json
 jq '.type, .repo.full_name, .labels' event.json
