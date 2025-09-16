@@ -9,6 +9,11 @@ concurrency:
   group: pr-tests-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
 jobs:
   vitest:
     name: Unit Tests (PR)
@@ -48,3 +53,88 @@ jobs:
           flags: pr
           fail_ci_if_error: false
           verbose: true
+      - name: "PR feedback: coverage thresholds -> comment + labels"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ ! -f coverage/coverage-summary.json ]; then
+            echo "No coverage summary found; skipping PR feedback." >&2
+            exit 0
+          fi
+          # Read thresholds from single source JSON (fallback to defaults)
+          if [ -f scripts/coverage-thresholds.json ]; then
+            read -r LINES_T BRANCHES_T FUNCS_T STMTS_T < <(jq -r '[.lines,.branches,.functions,.statements] | @tsv' scripts/coverage-thresholds.json)
+          else
+            LINES_T=60
+            BRANCHES_T=55
+            FUNCS_T=60
+            STMTS_T=60
+          fi
+          # Parse actuals
+          node -e '
+            const fs = require("fs");
+            const sum = JSON.parse(fs.readFileSync("coverage/coverage-summary.json","utf8"));
+            const t = sum.total || {};
+            const pct = {
+              lines: Number((t.lines?.pct ?? 0).toFixed(2)),
+              branches: Number((t.branches?.pct ?? 0).toFixed(2)),
+              functions: Number((t.functions?.pct ?? 0).toFixed(2)),
+              statements: Number((t.statements?.pct ?? 0).toFixed(2)),
+            };
+            fs.writeFileSync("/tmp/cov.json", JSON.stringify(pct));
+          '
+          read -r LINES_P BRANCHES_P FUNCS_P STMTS_P < <(jq -r '[.lines,.branches,.functions,.statements] | @tsv' /tmp/cov.json)
+          FAILS=()
+          cmp() { awk -v a="$1" -v b="$2" 'BEGIN{ if (a+0 < b+0) exit 1; else exit 0 }'; }
+          cmp "$LINES_P" "$LINES_T" || FAILS+=("lines")
+          cmp "$BRANCHES_P" "$BRANCHES_T" || FAILS+=("branches")
+          cmp "$FUNCS_P" "$FUNCS_T" || FAILS+=("functions")
+          cmp "$STMTS_P" "$STMTS_T" || FAILS+=("statements")
+          STATUS=ok
+          if [ ${#FAILS[@]} -gt 0 ]; then STATUS=low; fi
+          LABEL_OK="coverage:ok"
+          LABEL_LOW="coverage:low"
+          PR_NUMBER=${{ github.event.pull_request.number }}
+          REPO_FULL=${GITHUB_REPOSITORY}
+          # Ensure labels exist
+          gh label list --repo "$REPO_FULL" >/dev/null 2>&1 || true
+          for L in "$LABEL_OK" "$LABEL_LOW"; do
+            if ! gh label view "$L" --repo "$REPO_FULL" >/dev/null 2>&1; then
+              gh label create "$L" --color $( [ "$L" = "$LABEL_OK" ] && echo 2eb886 || echo e11d21 ) --description "Test coverage ${L#coverage:}" --repo "$REPO_FULL" || true
+            fi
+          done
+          # Update labels on PR
+          if [ "$STATUS" = ok ]; then
+            gh pr edit "$PR_NUMBER" --repo "$REPO_FULL" --add-label "$LABEL_OK" --remove-label "$LABEL_LOW" 2>/dev/null || true
+          else
+            gh pr edit "$PR_NUMBER" --repo "$REPO_FULL" --add-label "$LABEL_LOW" --remove-label "$LABEL_OK" 2>/dev/null || true
+          fi
+          # Prepare PR comment body with stable marker
+          {
+            echo "<!-- a5c:coverage-feedback -->"
+            echo "## 🧪 Coverage Feedback"
+            echo "Status: ${STATUS}"
+            echo ""
+            echo "| Metric | Actual | Threshold |"
+            echo "|---|---:|---:|"
+            printf "| Lines | %s%% | %s%% |\n" "$LINES_P" "$LINES_T"
+            printf "| Branches | %s%% | %s%% |\n" "$BRANCHES_P" "$BRANCHES_T"
+            printf "| Functions | %s%% | %s%% |\n" "$FUNCS_P" "$FUNCS_T"
+            printf "| Statements | %s%% | %s%% |\n" "$STMTS_P" "$STMTS_T"
+            echo ""
+            echo "_Automated feedback from PR Quick Tests._"
+          } > /tmp/pr-comment.md
+          # Upsert comment with stable marker
+          existing_id=$(gh api \
+            repos/${REPO_FULL}/issues/${PR_NUMBER}/comments \
+            --jq '.[] | select(.body | contains("a5c:coverage-feedback")) | .id' || true)
+          if [ -n "$existing_id" ]; then
+            gh api \
+              -X PATCH \
+              -H "Accept: application/vnd.github+json" \
+              repos/${REPO_FULL}/issues/comments/${existing_id} \
+              -f body@/tmp/pr-comment.md >/dev/null
+          else
+            gh pr comment "$PR_NUMBER" --repo "$REPO_FULL" -F /tmp/pr-comment.md >/dev/null
+          fi

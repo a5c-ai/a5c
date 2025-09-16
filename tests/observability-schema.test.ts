@@ -27,4 +27,25 @@ describe("observability.schema.json", () => {
     }
     expect(ok).toBe(true);
   });
+
+  it("parses enrich examples (offline/online) and validates basic NE shape", () => {
+    const offline = JSON.parse(
+      fs.readFileSync("docs/examples/enrich.offline.json", "utf8"),
+    );
+    const online = JSON.parse(
+      fs.readFileSync("docs/examples/enrich.online.json", "utf8"),
+    );
+    expect(offline).toBeTypeOf("object");
+    expect(online).toBeTypeOf("object");
+    for (const obj of [offline, online]) {
+      expect(obj).toHaveProperty("provider");
+      expect(obj).toHaveProperty("type");
+      expect(obj).toHaveProperty("repo");
+      expect(obj).toHaveProperty("actor");
+      expect(obj).toHaveProperty("payload");
+      expect(obj).toHaveProperty("provenance");
+    }
+    expect(offline.enriched?.github?.partial).toBe(true);
+    expect(offline.enriched?.github?.reason).toBe("flag:not_set");
+  });
 });

@@ -90,6 +90,7 @@ on:
         Packages Npx Test,
         Lint,
         Tests,
+        PR Quick Tests,
         Quick Checks,
         Typecheck,
         Commit Hygiene,

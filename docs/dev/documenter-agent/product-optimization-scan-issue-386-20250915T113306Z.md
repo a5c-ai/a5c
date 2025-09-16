@@ -1,3 +1,5 @@
+[Note] Updated semantics: offline reason is `flag:not_set` (replaced prior `github_enrich_disabled`). See `docs/cli/reference.md` for canonical behavior.
+
 # Product Optimization Scan — Docs Updates
 
 - Issue: https://github.com/a5c-ai/events/issues/386

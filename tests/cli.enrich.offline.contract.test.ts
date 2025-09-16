@@ -14,6 +14,7 @@ describe("offline GitHub enrichment contract", () => {
     expect(gh).toBeTruthy();
     expect(gh.provider).toBe("github");
     expect(gh.partial).toBe(true);
+    // Offline mode contract: no network calls; stub reason is standardized as 'flag:not_set'
     expect(gh.reason).toBe("flag:not_set");
   });
 });

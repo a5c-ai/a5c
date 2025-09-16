@@ -66,6 +66,13 @@ Ownership semantics:
 - owners: resolved code owners per changed file and union at PR level.
   - Semantics: the PR‑level `owners_union` is the sorted, de‑duplicated union of all CODEOWNERS across changed files. This intentionally differs from GitHub’s per‑file evaluation (last matching rule wins). A future toggle may allow strict last‑rule parity at PR level.
 - mentions: see schema below; sources include commit messages, PR/issue title/body, latest issue_comment (event), and code comments in changed files using language-aware regexes for `@name` inside comments.
+  Examples: see `docs/examples/enrich.offline.json` (offline; includes `enriched.github` with `partial=true` and `reason: "flag:not_set"`) and
+  `docs/examples/enrich.online.json` (minimal representative `enriched.github`). Both validate against `docs/specs/ne.schema.json`.
+
+Examples:
+
+- Offline enrich (no `--use-github`): `docs/examples/enrich.offline.json` (stub with `enriched.github.partial=true`, `reason: "flag:not_set"`)
+- Online enrich (`--use-github`): `docs/examples/enrich.online.json`
 
 ### 4.2) Mentions Schema
 

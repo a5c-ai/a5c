@@ -1,3 +1,5 @@
+[Note] Updated semantics: offline reason is `flag:not_set` (replaced prior `github_enrich_disabled`). See `docs/cli/reference.md` for canonical behavior.
+
 # Fix: Align offline GitHub enrichment shape (issue #245)
 
 - Branch: fix/enrich-offline-shape-issue-245
