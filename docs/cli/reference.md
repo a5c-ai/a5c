@@ -130,6 +130,14 @@ events enrich --in samples/pull_request.synchronize.json \
   | jq '(.composed // []) | map({key, reason})'
 ```
 
+Mentions sources for GitHub Issues:
+
+- When the input is a GitHub `issues.*` webhook payload (or an NE of type `issue`), the enrich step also extracts `@mentions` from:
+  - `issue.title` → entries with `source: "issue_title"`
+  - `issue.body` → entries with `source: "issue_body"`
+
+These are included under `enriched.mentions` and are deduplicated by normalized target and location when applicable.
+
 Note:
 
 - `.composed` may be absent or `null` when no rules match. Guard with `(.composed // [])` as above.
