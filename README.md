@@ -214,6 +214,32 @@ events enrich --in samples/pull_request.synchronize.json \
   # note: `reason` may be omitted depending on rule configuration
 ```
 
+### Rules quick-start
+
+Evaluate simple YAML/JSON rules during enrichment to emit composed events (`.composed[]`). This enables lightweight routing/triggers without extra services.
+
+Minimal example using included samples:
+
+```bash
+# Offline mode (no GitHub API). May yield no matches if PR state
+# like mergeability cannot be determined without API lookups.
+events enrich --in samples/pull_request.synchronize.json \
+  --rules samples/rules/conflicts.yml \
+  | jq '(.composed // []) | map({key, labels})'
+
+# Recommended: enable GitHub lookups for PR rules using PR state
+export GITHUB_TOKEN=ghp_your_token_here
+events enrich --in samples/pull_request.synchronize.json \
+  --use-github \
+  --rules samples/rules/conflicts.yml \
+  | jq '(.composed // []) | map({key, reason, labels})'
+```
+
+See also:
+
+- Specs §6.1 Rule Engine and Composed Events: `docs/specs/README.md#61-rule-engine-and-composed-events`
+- Full CLI reference: `docs/cli/reference.md`
+
 ## Coverage (Optional)
 
 You can optionally upload coverage to Codecov. This repo does not enable uploads by default.
