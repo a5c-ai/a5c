@@ -30,6 +30,7 @@ Run `npm install` once; Husky will install hooks automatically. Node >= 20 is re
 - Related scope considers changes since `origin/a5c/main` by default; override with `A5C_BASE_REF`.
 
 ### Common failures and fixes
+
 - Type errors: run `npm run build` locally and fix the reported TS errors.
 - Failing tests: run `vitest related` for the files in the error output, or `npm run prepush:full` to reproduce.
 - If you need to bypass temporarily (e.g., WIP branch): `A5C_SKIP_PREPUSH=1 git push`.

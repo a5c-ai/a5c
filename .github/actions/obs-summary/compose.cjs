@@ -1,20 +1,25 @@
 // Compose observability JSON; designed for Node 18+ CommonJS execution
-const fs = require('fs');
+const fs = require("fs");
 
-const env = (k, d = '') => process.env[k] ?? d;
-const schemaVersion = env('SCHEMA_VERSION', '0.1');
-const HIT = 'HIT', BYTES = 'BYTES', KEY = 'KEY';
+const env = (k, d = "") => process.env[k] ?? d;
+const schemaVersion = env("SCHEMA_VERSION", "0.1");
+const HIT = "HIT",
+  BYTES = "BYTES",
+  KEY = "KEY";
 // Normalize boolean-like inputs (supports true/1/yes/y)
 const toBool = (v) => {
   const s = String(v).trim().toLowerCase();
-  return s === 'true' || s === '1' || s === 'yes' || s === 'y';
+  return s === "true" || s === "1" || s === "yes" || s === "y";
 };
 
-const startedAtEnv = env('RUN_STARTED_AT') || env('GITHUB_RUN_STARTED_AT') || '';
+const startedAtEnv =
+  env("RUN_STARTED_AT") || env("GITHUB_RUN_STARTED_AT") || "";
 const startedAt = startedAtEnv || new Date().toISOString();
 
 let cov = null;
-try { cov = JSON.parse(fs.readFileSync('coverage/coverage-summary.json', 'utf8')); } catch {}
+try {
+  cov = JSON.parse(fs.readFileSync("coverage/coverage-summary.json", "utf8"));
+} catch {}
 
 // Collect cache info from envs. We normalize to entries[] with allowed fields per schema.
 const byKind = new Map();
@@ -35,15 +40,27 @@ for (const [k, v] of Object.entries(process.env)) {
 // Sanitize entries to schema-allowed fields only
 const cacheEntries = Array.from(byKind.values()).map((r) => {
   const out = { kind: r.kind, hit: !!r.hit };
-  if (typeof r.bytes === 'number') out.bytes = r.bytes;
-  if (typeof r.key === 'string' && r.key) out.key = r.key;
+  if (typeof r.bytes === "number") out.bytes = r.bytes;
+  if (typeof r.key === "string" && r.key) out.key = r.key;
   return out;
 });
-const hits = cacheEntries.filter(e => e.hit === true).length;
+const hits = cacheEntries.filter((e) => e.hit === true).length;
 const total = cacheEntries.length;
-const bytes_total = cacheEntries.reduce((a, e) => a + (typeof e.bytes === 'number' ? e.bytes : 0), 0);
+const bytes_total = cacheEntries.reduce(
+  (a, e) => a + (typeof e.bytes === "number" ? e.bytes : 0),
+  0,
+);
 const cache = total
-  ? { entries: cacheEntries, summary: { hits, misses: total - hits, total, hit_ratio: total ? hits / total : null, bytes_restored_total: bytes_total } }
+  ? {
+      entries: cacheEntries,
+      summary: {
+        hits,
+        misses: total - hits,
+        total,
+        hit_ratio: total ? hits / total : null,
+        bytes_restored_total: bytes_total,
+      },
+    }
   : null;
 
 const end = new Date();
@@ -57,18 +74,19 @@ try {
 // Optionally parse Vitest JSON to include tests (retries, slowest)
 let tests = null;
 try {
-  const vitest = JSON.parse(fs.readFileSync('vitest-results.json', 'utf8'));
+  const vitest = JSON.parse(fs.readFileSync("vitest-results.json", "utf8"));
   if (vitest && Array.isArray(vitest.testResults)) {
     const all = [];
     for (const tr of vitest.testResults) {
-      for (const a of (tr.assertionResults || [])) {
+      for (const a of tr.assertionResults || []) {
         const meta = a.meta || {};
         const attempts = Number(meta.retryCount || meta.retries || 0);
         const duration = a.duration ?? null;
         // Ensure duration_ms is an integer per schema (or null)
-        const durationMs = typeof duration === 'number' ? Math.round(duration) : null;
+        const durationMs =
+          typeof duration === "number" ? Math.round(duration) : null;
         all.push({
-          fullName: a.fullName || a.title || '',
+          fullName: a.fullName || a.title || "",
           status: a.status,
           duration_ms: durationMs,
           retries: attempts,
@@ -76,10 +94,10 @@ try {
       }
     }
     const slowest = all
-      .filter(t => typeof t.duration_ms === 'number')
+      .filter((t) => typeof t.duration_ms === "number")
       .sort((a, b) => (b.duration_ms || 0) - (a.duration_ms || 0))
       .slice(0, 10);
-    const flaky = all.filter(t => (t.retries || 0) > 0);
+    const flaky = all.filter((t) => (t.retries || 0) > 0);
     tests = {
       totals: {
         total: all.length,
@@ -94,17 +112,17 @@ try {
 
 const obs = {
   schema_version: schemaVersion,
-  repo: env('GITHUB_REPOSITORY') || env('REPO'),
-  workflow: env('GITHUB_WORKFLOW') || env('WORKFLOW_NAME'),
-  job: env('JOB_NAME') || env('GITHUB_JOB'),
+  repo: env("GITHUB_REPOSITORY") || env("REPO"),
+  workflow: env("GITHUB_WORKFLOW") || env("WORKFLOW_NAME"),
+  job: env("JOB_NAME") || env("GITHUB_JOB"),
   run: {
-    id: env('GITHUB_RUN_ID') || env('RUN_ID'),
-    attempt: Number(env('GITHUB_RUN_ATTEMPT') || env('RUN_ATTEMPT') || '1'),
-    sha: env('GITHUB_SHA') || env('SHA'),
-    ref: env('GITHUB_REF') || env('BRANCH_REF'),
-    actor: env('GITHUB_ACTOR', ''),
-    event_name: env('GITHUB_EVENT_NAME', ''),
-    conclusion: env('CONCLUSION', ''),
+    id: env("GITHUB_RUN_ID") || env("RUN_ID"),
+    attempt: Number(env("GITHUB_RUN_ATTEMPT") || env("RUN_ATTEMPT") || "1"),
+    sha: env("GITHUB_SHA") || env("SHA"),
+    ref: env("GITHUB_REF") || env("BRANCH_REF"),
+    actor: env("GITHUB_ACTOR", ""),
+    event_name: env("GITHUB_EVENT_NAME", ""),
+    conclusion: env("CONCLUSION", ""),
     started_at: startedAt,
     completed_at: endIso,
     duration_ms: durationMs,
@@ -112,7 +130,8 @@ const obs = {
   // Shape coverage to match schema: only include the `total` subsection.
   // If neither coverage nor cache is present, omit metrics entirely per schema flexibility.
   metrics: (() => {
-    const coverage = (cov && typeof cov === 'object') ? { total: cov.total || {} } : undefined;
+    const coverage =
+      cov && typeof cov === "object" ? { total: cov.total || {} } : undefined;
     const metrics = {};
     if (coverage) metrics.coverage = coverage;
     if (cache) metrics.cache = cache;

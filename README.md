@@ -1,12 +1,11 @@
 [![99% built by agents](https://img.shields.io/badge/99%25-built%20by%20agents-blue.svg)](https://a5c.ai) [![codecov](https://codecov.io/gh/a5c-ai/events/branch/a5c/main/graph/badge.svg)](https://app.codecov.io/gh/a5c-ai/events/tree/a5c/main)
 
-
 # @a5c-ai/events – Events SDK & CLI
 
 Normalize and enrich GitHub (and other) events for agentic workflows. Use the CLI in CI or locally to turn raw webhook/Actions payloads into a compact, consistent schema that downstream agents and automations can trust.
 
 - Quick install via npm
-- Commands: `events mentions`, `events normalize`, `events enrich`, `events emit`, `events validate` (see `docs/cli/reference.md#events-emit` for `emit` options and examples)
+- Commands: `events mentions`, `events normalize`, `events enrich`, `events reactor`, `events emit`, `events validate` (see `docs/cli/reference.md#events-reactor` and `docs/cli/reference.md#events-emit` for options and examples)
 - Output: JSON to stdout or file
 - Extensible via provider adapters and enrichers
 
@@ -176,7 +175,7 @@ If you pass `--use-github` without a token, the CLI exits with code `3` and prin
 Notes:
 
 - Minimal offline examples may omit `enriched.github`. Both shapes validate against the NE schema. See also: `docs/examples/enrich.offline.stub.json`.
-For detailed command usage and examples, see docs/cli/reference.md.
+  For detailed command usage and examples, see docs/cli/reference.md.
 
 ### Mentions scanning examples
 
