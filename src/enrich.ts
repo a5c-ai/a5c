@@ -29,6 +29,12 @@ export async function handleEnrich(opts: {
   const scanChangedFilesFlag = toBool(
     (opts.flags as any)?.["mentions.scan.changed_files"] ?? true,
   );
+  const scanCommitMessagesFlag = toBool(
+    (opts.flags as any)?.["mentions.scan.commit_messages"] ?? true,
+  );
+  const scanIssueCommentsFlag = toBool(
+    (opts.flags as any)?.["mentions.scan.issue_comments"] ?? true,
+  );
   const maxFileBytesFlag = toInt(
     (opts.flags as any)?.["mentions.max_file_bytes"],
     200 * 1024,
@@ -186,7 +192,7 @@ export async function handleEnrich(opts: {
     if (issue?.body)
       mentions.push(...extractMentions(String(issue.body), "issue_body"));
     const commits = (baseEvent as any)?.commits;
-    if (Array.isArray(commits)) {
+    if (Array.isArray(commits) && scanCommitMessagesFlag) {
       for (const c of commits)
         if (c?.message)
           mentions.push(
@@ -194,7 +200,7 @@ export async function handleEnrich(opts: {
           );
     }
     const commentBody = (baseEvent as any)?.comment?.body;
-    if (commentBody)
+    if (commentBody && scanIssueCommentsFlag)
       mentions.push(...extractMentions(String(commentBody), "issue_comment"));
   } catch {}
 

@@ -45,6 +45,29 @@ describe("handleEnrich", () => {
     expect(names).toContain("developer-agent");
   });
 
+  it("respects mentions.scan.commit_messages=false (suppresses commit_message mentions)", async () => {
+    const enriched = await handleEnrich({
+      in: "samples/push.json",
+      labels: [],
+      rules: undefined,
+      flags: { "mentions.scan.commit_messages": false } as any,
+    });
+    const mentions = (enriched.output.enriched as any)?.mentions || [];
+    const sources = new Set(mentions.map((m: any) => m.source));
+    expect(sources.has("commit_message")).toBe(false);
+  });
+
+  it("respects mentions.scan.issue_comments=false (suppresses issue_comment mentions)", async () => {
+    const res = await handleEnrich({
+      in: "samples/issue_comment.created.json",
+      labels: [],
+      rules: undefined,
+      flags: { "mentions.scan.issue_comments": false } as any,
+    });
+    const mentions = (res.output.enriched as any)?.mentions || [];
+    expect(mentions.some((m: any) => m.source === "issue_comment")).toBe(false);
+  });
+
   it("omits patch fields by default (include_patch=false)", async () => {
     const { output } = await handleEnrich({
       in: "samples/pull_request.synchronize.json",

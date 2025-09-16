@@ -98,7 +98,7 @@ events enrich --in FILE [--out FILE] [--rules FILE] \
 - `--in FILE`: input JSON (normalized event or raw GitHub payload)
 - `--out FILE`: write result JSON (stdout if omitted)
 - `--rules FILE`: YAML/JSON rules file (optional). When provided, matching rules emit `composed[]` with `{ key, reason, targets?, labels?, payload? }`.
-- `--flag KEY=VAL...`: enrichment flags (repeatable); notable flags:
+  - `--flag KEY=VAL...`: enrichment flags (repeatable); notable flags:
   - `include_patch=true|false` (default: `false`) – include diff patches; when `false`, patches are removed. Defaulting to false avoids leaking secrets via diffs and keeps outputs small; enable only when required.
   - `commit_limit=<n>` (default: `50`) – limit commits fetched for PR/push
   - `file_limit=<n>` (default: `200`) – limit files per compare list
@@ -107,6 +107,8 @@ events enrich --in FILE [--out FILE] [--rules FILE] \
     - `mentions.max_file_bytes=<bytes>` (default: `204800` ≈ 200KB) – skip files larger than this when scanning
     - `mentions.languages=<lang,...>` – optional allowlist of canonical language codes to scan (e.g., `js,ts,py,go,yaml,md`). When omitted, detection is used.
       - Mapping note: extensions are normalized to codes during detection (e.g., `.tsx → ts`, `.jsx → js`, `.yml → yaml`), but the filter list itself compares codes.
+    - `mentions.scan.commit_messages=true|false` (default: `true`) – enable/disable scanning commit messages for `@mentions`
+    - `mentions.scan.issue_comments=true|false` (default: `true`) – enable/disable scanning issue comments for `@mentions`
 - `--use-github`: enable GitHub API enrichment; equivalent to `--flag use_github=true` (requires `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`). Without this flag, the CLI performs no network calls and sets `enriched.github = { provider: 'github', partial: true, reason: 'github_enrich_disabled' }`.
 - `--label KEY=VAL...`: labels to attach
 - `--select PATHS`: comma-separated dot paths to include in output
@@ -115,8 +117,8 @@ events enrich --in FILE [--out FILE] [--rules FILE] \
 Mentions scanning (code comments in changed files):
 
 - `mentions.scan.changed_files=true|false` (default: `true`) – when `true`, scan changed files' patches for `@mentions` within code comments and add to `enriched.mentions[]` with `source="code_comment"` and `location` hints.
-- `mentions.max_file_bytes=<bytes>` (default: `200KB`) – skip scanning any single file patch larger than this cap.
-- `mentions.languages=lang1,lang2,...` (optional) – only scan files whose detected languages match one of these codes (e.g., `js,ts,yaml,md`). Use `js,ts` to include `.jsx/.tsx` files.
+- `mentions.max_file_bytes=<bytes>` (default: `204800` ≈ 200KB) – skip scanning any single file larger than this cap.
+- `mentions.languages=<ext,...>` (optional) – only scan files whose extensions match the allowlist (e.g., `ts,tsx,js,jsx,py,go,yaml`). Using `js,ts` also covers `.jsx/.tsx`.
   Examples:
 
 ```bash
@@ -312,3 +314,8 @@ References:
 - Large payloads: JSON is read/written from files/stdin/stdout; providers may add streaming in future.
 
 See also: `docs/specs/README.md`. Technical specs reference for token precedence: `docs/producer/phases/technical-specs/tech-stack.md`.
+
+# Disable commit message and issue comment scanning
+
+events enrich --in samples/push.json --flag 'mentions.scan.commit_messages=false'
+events enrich --in samples/issue_comment.created.json --flag 'mentions.scan.issue_comments=false'

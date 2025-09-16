@@ -11,9 +11,9 @@ Normalize and enrich GitHub (and other) events for agentic workflows. Use the CL
 
 ## Ownership & Routing
 
-See `docs/routing/ownership-and-routing.md` for how CODEOWNERS drives routing and how `owners_union` is used in enrichment.
+Semantics: enrichment computes `owners_union` as the sorted, de‑duplicated union of all CODEOWNERS across changed files. This differs from GitHub’s per‑file evaluation where the last matching rule wins. We use union semantics to enable broader, safer routing.
 
-Note: For routing, this project computes a per-PR `owners_union` as the sorted, de-duplicated union of all owners across changed files. This intentionally differs from GitHub CODEOWNERS evaluation where the last matching rule wins for a single file. See the routing doc for examples and rationale.
+Learn more and see examples in `docs/routing/ownership-and-routing.md` (Semantics).
 
 ## Quick Start
 
@@ -47,7 +47,7 @@ cat out.json | npx @a5c-ai/events validate --quiet
 
 ### Mentions config (Quick Start)
 
-Use a simple example, then see the CLI reference for canonical flags and defaults:
+Use a simple example, then see the CLI reference for the canonical flags and defaults:
 
 ```bash
 # Disable scanning of changed files (code-comment mentions)
@@ -60,7 +60,10 @@ events enrich --in ... --flag 'mentions.scan.changed_files=false'
 events enrich --in ... --flag "mentions.languages=ts,js"
 ```
 
-Full reference and examples: docs/cli/reference.md#events-enrich
+Canonical reference and examples:
+
+- docs/cli/reference.md#events-enrich
+- docs/cli/reference.md#mentions-scanning-controls-code-comments-in-changed-files
 
 `events mentions`
 
@@ -93,38 +96,71 @@ Full reference and examples: docs/cli/reference.md#events-enrich
 - `--flag include_patch=<true|false>`: include diff patches in files (default: false)
 - `--flag commit_limit=<n>`: max commits to include (default: 50)
 - `--flag file_limit=<n>`: max files to include (default: 200)
-  - Mentions scanning (code comments in changed files):
-    - `--flag mentions.scan.changed_files=<true|false>` (default: true)
-    - `--flag mentions.max_file_bytes=<bytes>` (default: 200KB / 204800 bytes)
-    - `--flag mentions.languages=<ext,...>` (optional list such as `ts,tsx,js,jsx,py,go,yaml`)
-  - `--use-github`: enable GitHub API enrichment (requires `GITHUB_TOKEN`)
-  - `--select <paths>`: comma-separated dot paths to include in output
-  - `--filter <expr>`: filter expression `path[=value]`; if not matching, exits with code 2 and no output
-  - `--label <key=value...>`: attach labels to top‑level `labels[]`
+  // Mentions scanning flags are centralized in docs
+- Mentions scanning flags are centralized in `docs/cli/reference.md` (see canonical wording and defaults there).
+- `--use-github`: enable GitHub API enrichment (requires `GITHUB_TOKEN`)
+- `--select <paths>`: comma-separated dot paths to include in output
+- `--filter <expr>`: filter expression `path[=value]`; if not matching, exits with code 2 and no output
+- `--label <key=value...>`: attach labels to top‑level `labels[]`
+
+#### Mentions flags
+
+For flags and examples, see the canonical section in the CLI Reference:
+
+- docs/cli/reference.md#mentions-scanning-controls-code-comments-in-changed-files
 
 Behavior:
 
 - Offline by default: without `--use-github`, no network calls occur. Output includes `enriched.github = { provider: 'github', partial: true, reason: 'github_enrich_disabled' }`.
 - When `--use-github` is set but no token is configured, the CLI exits with code `3` (provider/network error) and prints an error. Use programmatic APIs with an injected Octokit for testing scenarios if needed.
-
-Exit codes: `0` success, non‑zero on errors (invalid input, etc.).
+  Exit codes: `0` success, non‑zero on errors (invalid input, etc.).
 
 ### Mentions scanning examples
 
-Disable scanning changed files for code-comment mentions:
+Examples are centralized in the CLI Reference:
+
+- docs/cli/reference.md#mentions-scanning-controls-code-comments-in-changed-files
+
+### Rules quick-start (composed events)
+
+Define a minimal rule in YAML and evaluate it with `enrich --rules` to emit composed events. This example matches the included PR sample (`samples/pull_request.synchronize.json`) which carries a `documentation` label.
 
 ```bash
+# 1) Create a tiny rules file
+cat > rules.sample.yml <<'YAML'
+rules:
+  - name: pr_labeled_documentation
+    on: pull_request
+    when:
+      all:
+        - { path: "$.payload.pull_request.labels[*].name", contains: "documentation" }
+    emit:
+      key: pr_labeled_documentation
+      reason: "PR has documentation label"
+      targets: [developer-agent]
+YAML
+
+# 2) Enrich with rules and inspect composed outputs
 events enrich --in samples/pull_request.synchronize.json \
-  --flag mentions.scan.changed_files=false
+  --rules rules.sample.yml \
+  | jq '(.composed // []) | map({key, reason})'
 ```
 
-Limit scanned file size and restrict to TS/JS:
+Notes:
 
 ```bash
 events enrich --in samples/pull_request.synchronize.json \
   --flag mentions.max_file_bytes=102400 \
   --flag mentions.languages=ts,js
 ```
+
+// Learn more links
+
+- Real‑world rules can combine predicates (`all/any/not`, `eq`, `in`, `contains`, `exists`) and project fields into `emit.payload`. See the richer sample at `samples/rules/conflicts.yml`.
+- When no rules match, `.composed` may be absent or `null`. Guard with `(.composed // [])` as shown.
+- Learn more:
+  - Specs §6.1: docs/specs/README.md#61-rule-engine-and-composed-events
+  - Full CLI options: docs/cli/reference.md
 
 ### Rules quick-start (composed events)
 
@@ -274,7 +310,7 @@ events enrich --in samples/pull_request.synchronize.json \
   | jq '.enriched.mentions // [] | map(select(.source=="code_comment")) | length'
 ```
 
-See also: CLI reference for flags and exit codes: `docs/cli/reference.md`. For a complete and authoritative list of Mentions flags under `events enrich`, see `docs/cli/reference.md#events-enrich`.
+See also: CLI reference for flags and exit codes: `docs/cli/reference.md`. Cross‑link: `docs/cli/code-comment-mentions.md` and specs §4.2 in `docs/specs/README.md`.
 
 ### Validate against schema
 
