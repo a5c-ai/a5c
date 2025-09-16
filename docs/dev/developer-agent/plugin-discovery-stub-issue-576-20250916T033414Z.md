@@ -11,7 +11,6 @@
 
 - Precedence: `.eventsrc.*` > `package.json` (dedupe by request string).
 - Resolution: relative paths resolved from project root; bare modules via Node resolution.
-
 ## Results (developer-agent)
 
 - Implemented discovery in `src/core/plugins.ts` with env gate and test `force` flag.
