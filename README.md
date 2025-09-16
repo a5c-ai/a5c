@@ -134,7 +134,7 @@ Notes:
 - Real‑world rules can combine predicates (`all/any/not`, `eq`, `in`, `contains`, `exists`) and project fields into `emit.payload`. See the richer sample at `samples/rules/conflicts.yml`.
 - When no rules match, `.composed` may be absent or `null`. Guard with `(.composed // [])` as shown.
 - Learn more:
-  - Specs §6.1: docs/specs/README.md#6.1-rule-engine-and-composed-events
+  - Specs §6.1: docs/specs/README.md#61-rule-engine-and-composed-events
   - Full CLI options: docs/cli/reference.md
 
 ## Normalized Event Schema (MVP)
