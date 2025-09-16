@@ -13,10 +13,27 @@ jobs:
   reactor:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Repository
+      - name: Checkout
         uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
-          fetch-depth: 0
+          node-version-file: .nvmrc
+          # Avoid setting global registry to GPR; use project .npmrc scoping instead
+      - name: Configure npm auth (env)
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          # Create a project-level npmrc and point npm to use it for all subsequent steps
+          echo "registry=https://registry.npmjs.org" > .npmrc
+          echo "//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}" >> .npmrc
+          echo "@a5c-ai:registry=https://npm.pkg.github.com/" >> .npmrc
+          echo "always-auth=true" >> .npmrc
+          export NPM_CONFIG_USERCONFIG="$PWD/.npmrc"
+          echo "NPM_CONFIG_USERCONFIG=$NPM_CONFIG_USERCONFIG" >> "$GITHUB_ENV"
+          npm whoami || true
       - name: Enrich and run reactor with actual github context
         env:
           NODE_AUTH_TOKEN: ${{ secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
