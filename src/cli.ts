@@ -57,9 +57,10 @@ program
   .option("--in <file>", "input JSON file path")
   .option("--out <file>", "output JSON file path")
   .addOption(
-    new Option("--source <name>", "source name (actions|webhook|cli)").default(
-      "cli",
-    ),
+    new Option(
+      "--source <name>",
+      "source name (accepts alias 'actions'; stored as 'action' | 'webhook' | 'cli')",
+    ).default("cli"),
   )
   .option("--select <paths>", "comma-separated dot paths to include in output")
   .option("--filter <expr>", "filter expression path[=value] to gate output")

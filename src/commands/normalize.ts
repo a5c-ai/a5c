@@ -50,6 +50,9 @@ export async function cmdNormalize(opts: {
   source?: string;
   labels?: string[];
 }): Promise<{ code: number; output?: NormalizedEvent; errorMessage?: string }> {
+  // Normalize source alias: accept "actions" as input, persist as "action"
+  const normalizedSource =
+    String(opts.source || "") === "actions" ? "action" : opts.source;
   // Resolve input path
   let inPath = opts.in;
   if (!inPath && String(opts.source) === "actions") {
@@ -69,7 +72,7 @@ export async function cmdNormalize(opts: {
   try {
     const payload = readJSONFile<any>(inPath);
     const output = mapToNE(payload || {}, {
-      source: opts.source,
+      source: normalizedSource,
       labels: opts.labels,
     });
     return { code: 0, output };
