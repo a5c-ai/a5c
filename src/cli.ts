@@ -30,7 +30,7 @@ program
     "Known agent names to boost confidence",
     [],
   )
-  .action((opts: any) => {
+  .action(async (opts: any) => {
     const src = opts.source as MentionSource;
     let text = "";
     if (opts.file) {
@@ -42,7 +42,7 @@ program
       window: opts.window,
       knownAgents: opts.knownAgent || opts.knownAgents || [],
     };
-    runWithSpan(
+    await runWithSpan(
       "cli.mentions",
       {
         cmd: "mentions",
