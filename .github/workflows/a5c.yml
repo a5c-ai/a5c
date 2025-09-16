@@ -93,6 +93,7 @@ on:
         Quick Checks,
         Typecheck,
         Commit Hygiene,
+        Docs Lint,
         Release,
       ]
 

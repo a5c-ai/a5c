@@ -52,5 +52,11 @@ describe("CLI exit codes", () => {
     const res = runCLI(["enrich", "--in", inFile]);
     expect(res.status, res.stderr).toBe(0);
     expect(res.stdout).toMatch(/"provider":\s*"github"/);
+    const out = JSON.parse(res.stdout || "{}") as any;
+    const gh = out?.enriched?.github || {};
+    expect(gh.provider).toBe("github");
+    expect(gh.partial).toBe(true);
+    // Contract uses reason 'flag:not_set' for offline mode
+    expect(gh.reason).toBe("flag:not_set");
   });
 });

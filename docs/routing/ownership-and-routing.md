@@ -17,53 +17,49 @@ docs/**             @a5c-ai/docs
 
 Tips:
 
-- Place more specific patterns higher; last match wins.
+- Place more specific patterns lower; last match wins. (Order matters; the last matching rule per file takes precedence.)
 - Prefer team handles over individuals.
 - Keep owners current to ensure accurate routing in CI and agent workflows.
 
-## Semantics
+## Semantics: Union vs. Last-Rule
 
-Our enrichment intentionally diverges from GitHub’s CODEOWNERS review semantics:
+GitHub CODEOWNERS applies matching rules top-to-bottom per file; the last matching rule determines that file’s owners and thus review requirements.
 
-- GitHub reviews: patterns are evaluated top-to-bottom and the last matching rule wins for a file (owners are replaced by the last rule).
-- a5c enrichment: for each changed file, we take the union of all matching rules’ owners; then we compute `owners_union` as the sorted, de-duplicated union across all changed files.
+Event enrichment for routing computes both per-file owners and an `owners_union` across all changed files:
 
-This union-based approach fans out routing/notifications to all relevant owners who matched, not just the last rule.
+- `enriched.github.pr.owners`: map of `file -> [owners]` using CODEOWNERS last-match per file.
+- `enriched.github.pr.owners_union`: sorted, de-duplicated union of all owners across changed files.
 
-### Example A: Overlapping patterns for the same file
+Why union? Routing and notifications often need a superset of stakeholders for downstream agents (triage, review pings, labeling). Union minimizes surprise where multiple areas are touched.
 
-```ini
-# .github/CODEOWNERS (later rule is listed later in file)
-docs/**                 @a5c-ai/docs
-docs/routing/**         @a5c-ai/platform-docs
-```
+### Examples
 
-- Changed file: `docs/routing/ownership-and-routing.md`
-- GitHub review semantics (last match wins): `@a5c-ai/platform-docs` only
-- a5c enrichment per-file owners: `enriched.github.pr.owners["docs/routing/ownership-and-routing.md"] = ["@a5c-ai/docs", "@a5c-ai/platform-docs"]` (order not guaranteed)
-- a5c enrichment union across files: `enriched.github.pr.owners_union` includes both `@a5c-ai/docs` and `@a5c-ai/platform-docs`
-
-### Example B: Multiple files, different owners
+Example A (overlapping specific vs broad):
 
 ```ini
-# .github/CODEOWNERS
-src/**                  @a5c-ai/agents
-docs/**                 @a5c-ai/docs
+# CODEOWNERS
+src/**          @team-src
+src/feature/**  @team-feature
 ```
 
-- Changed files: `src/api/users.ts`, `docs/user/quickstart.md`
-- GitHub review semantics: each file considered separately; owners differ per file
-- a5c enrichment per-file owners:
-  - `owners["src/api/users.ts"] = ["@a5c-ai/agents"]`
-  - `owners["docs/user/quickstart.md"] = ["@a5c-ai/docs"]`
-- a5c enrichment union across files: `owners_union = ["@a5c-ai/agents", "@a5c-ai/docs"]`
+- File: `src/feature/util.ts` → per-file owners: `[@team-feature]` (last rule wins)
+- File: `src/common/helpers.ts` → per-file owners: `[@team-src]`
+- PR changes both → `owners_union = [@team-feature, @team-src]` (sorted, deduped)
 
-### Rationale and future toggle
+Example B (users and teams; markdown):
 
-- Rationale: Agent workflows benefit from wider, deterministic routing (labeling, mentions, auto-assign) across all matched owners. This reduces missed notifications when multiple rules legitimately apply.
-- Parity option: We may add a toggle to switch to strict “last matching rule wins” parity for per-file owners if your process requires mirroring GitHub review semantics exactly.
+```ini
+*.md            @docs-bot @a5c-ai/docs
+docs/**         @a5c-ai/docs
+```
 
-See also:
+- Files: `README.md`, `docs/guide.md` → union: `[@a5c-ai/docs, @docs-bot]`
 
-- Ownership fields overview in `docs/ownership/README.md`.
-- CLI reference for enrichment outputs in `docs/cli/reference.md`.
+Rationale:
+
+- Routing favors broader notification to avoid missing stakeholders when multiple areas are touched.
+- Downstream agents can still implement stricter strategies if needed (e.g., use per-file last-rule owners only).
+
+Future toggle (tracking): a configuration flag may allow switching between union-based routing and strict last-rule parity for PR-level owners.
+
+See also: `docs/specs/README.md` §4.1 for a concise specification note.
