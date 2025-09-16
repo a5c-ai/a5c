@@ -115,7 +115,7 @@ events normalize --in samples/pull_request.synchronize.json \
 Notes:
 
 - Passing a raw payload to `events enrich` is supported; the CLI will construct a minimal NE shell when needed. That fallback may omit some fields (`repo`, `ref`, `actor`, etc.). Prefer the normalize → enrich flow for consistent outputs.
-- See also: docs/cli/reference.md#events-enrich and docs/producer/cli-normalize.md for more on normalization, including `--source actions` usage.
+- See also: docs/cli/reference.md#events-enrich and docs/cli/reference.md#events-normalize for more on normalization, including `--source actions` usage.
 
 #### Mentions flags
 
