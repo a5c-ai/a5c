@@ -5,6 +5,7 @@
 Resolved: `docs/specs/README.md` now aligns with `docs/specs/ne.schema.json` — `composed[].payload` is `object | array | null`.
 
 Notes:
+
 - Source of truth remains the schema file.
 - Add docs lint to prevent regressions.
 
