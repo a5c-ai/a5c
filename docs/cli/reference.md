@@ -149,6 +149,11 @@ events enrich --in samples/pull_request.synchronize.json \
   | jq '(.composed // []) | map({key, reason})'
 ```
 
+Mentions sources:
+
+- Allowed values for `mentions[].source`: `commit_message`, `pr_title`, `pr_body`, `issue_comment`, `code_comment`.
+- Mentions discovered within diffs/changed files are emitted as `source: code_comment` with `location.file` and `location.line` populated. There is no distinct `file_change` source.
+
 Mentions sources for GitHub Issues:
 
 - When the input is a GitHub `issues.*` webhook payload (or an NE of type `issue`), the enrich step also extracts `@mentions` from:
