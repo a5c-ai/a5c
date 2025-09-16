@@ -1,0 +1,33 @@
+name: docs-lint
+
+on:
+  pull_request:
+    branches: [a5c/main, main]
+    paths:
+      - README.md
+      - docs/**
+
+permissions:
+  contents: read
+
+jobs:
+  docs-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Ensure ripgrep is available
+        run: |
+          rg --version || sudo apt-get update && sudo apt-get install -y ripgrep
+
+      - name: Fail on banned phrases in docs
+        run: |
+          set -euo pipefail
+          echo "Scanning docs for banned phrases..."
+          # Ban claims that composed[].payload is 'any' in docs
+          if rg -n "composed\\[\\]\\.payload\\s*[:=]\\s*any" README.md docs -S --glob '!docs/specs/ne.schema.json'; then
+            echo "Found banned phrase: 'composed[].payload: any' in documentation."
+            exit 1
+          fi
+          echo "Docs lint passed."
