@@ -1,6 +1,5 @@
 [![99% built by agents](https://img.shields.io/badge/99%25-built%20by%20agents-blue.svg)](https://a5c.ai) [![codecov](https://codecov.io/gh/a5c-ai/events/branch/a5c/main/graph/badge.svg)](https://app.codecov.io/gh/a5c-ai/events/tree/a5c/main)
 
-
 # @a5c-ai/events – Events SDK & CLI
 
 Normalize and enrich GitHub (and other) events for agentic workflows. Use the CLI in CI or locally to turn raw webhook/Actions payloads into a compact, consistent schema that downstream agents and automations can trust.
@@ -97,7 +96,7 @@ Canonical reference and examples:
 - `--flag include_patch=<true|false>`: include diff patches in files (default: false)
 - `--flag commit_limit=<n>`: max commits to include (default: 50)
 - Mentions scanning flags are documented once in the CLI reference at `docs/cli/reference.md#events-enrich` and are the canonical source of truth for wording and defaults.
-- `--use-github`: enable GitHub API enrichment (requires `GITHUB_TOKEN`)
+- `--use-github`: enable GitHub API enrichment (requires `GITHUB_TOKEN`). For CI convenience, you may set `A5C_EVENTS_AUTO_USE_GITHUB=true` to auto-enable when a token is present; otherwise behavior remains offline by default.
 - `--select <paths>`: comma-separated dot paths to include in output
   - `--filter <expr>`: filter expression `path[=value]`; if not matching, exits with code 2 and no output (see CLI reference example: docs/cli/reference.md#events-enrich)
 - `--label <key=value...>`: attach labels to top‑level `labels[]`
@@ -108,7 +107,7 @@ For the authoritative list and defaults for Mentions controls during `enrich` (i
 
 Behavior:
 
-- Offline by default: without `--use-github`, no network calls occur. Output includes `enriched.github = { provider: 'github', partial: true, reason: 'flag:not_set' }`.
+- Offline by default: without `--use-github`, no network calls occur. Output includes `enriched.github = { provider: 'github', partial: true, reason: 'flag:not_set' }`. For CI, `A5C_EVENTS_AUTO_USE_GITHUB=true` auto-enables when a token exists.
 - When `--use-github` is set but no token is configured, the CLI exits with code `3` (provider/network error) and prints an error. Use programmatic APIs with an injected Octokit for testing scenarios if needed.
   - `--flag mentions.scan.changed_files=<true|false>` — enable scanning code comments in changed files for `@mentions` (default: `true`).
   - `--flag mentions.max_file_bytes=<bytes>` — per‑file size cap when scanning code comments (default: `200KB` / `204800`). Files larger than this are skipped.
@@ -176,7 +175,7 @@ If you pass `--use-github` without a token, the CLI exits with code `3` and prin
 Notes:
 
 - Minimal offline examples may omit `enriched.github`. Both shapes validate against the NE schema. See also: `docs/examples/enrich.offline.stub.json`.
-For detailed command usage and examples, see docs/cli/reference.md.
+  For detailed command usage and examples, see docs/cli/reference.md.
 
 ### Mentions scanning examples
 

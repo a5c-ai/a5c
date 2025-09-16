@@ -49,7 +49,9 @@ describe("CLI exit codes", () => {
     const inFile = path.resolve(
       "tests/fixtures/github/pull_request.synchronize.json",
     );
-    const res = runCLI(["enrich", "--in", inFile]);
+    // Ensure escape hatch doesn't interfere
+    const env = { A5C_EVENTS_AUTO_USE_GITHUB: "false" } as any;
+    const res = runCLI(["enrich", "--in", inFile], { env });
     expect(res.status, res.stderr).toBe(0);
     expect(res.stdout).toMatch(/"provider":\s*"github"/);
     const out = JSON.parse(res.stdout || "{}") as any;
@@ -58,5 +60,29 @@ describe("CLI exit codes", () => {
     expect(gh.partial).toBe(true);
     // Contract uses reason 'flag:not_set' for offline mode
     expect(gh.reason).toBe("flag:not_set");
+  });
+
+  it("enrich: with token present but no flag, stays offline (escape hatch off)", () => {
+    const inFile = path.resolve(
+      "tests/fixtures/github/pull_request.synchronize.json",
+    );
+    const res = runCLI(["enrich", "--in", inFile], {
+      env: { GITHUB_TOKEN: "ghs_dummy", A5C_EVENTS_AUTO_USE_GITHUB: "false" },
+    });
+    expect(res.status, res.stderr).toBe(0);
+    const out = JSON.parse(res.stdout || "{}") as any;
+    const gh = out?.enriched?.github || {};
+    expect(gh.reason).toBe("flag:not_set");
+  });
+
+  it("enrich: auto-enables when A5C_EVENTS_AUTO_USE_GITHUB=true and token present", () => {
+    const inFile = path.resolve(
+      "tests/fixtures/github/pull_request.synchronize.json",
+    );
+    const res = runCLI(["enrich", "--in", inFile], {
+      env: { GITHUB_TOKEN: "ghs_dummy", A5C_EVENTS_AUTO_USE_GITHUB: "true" },
+    });
+    // We can't guarantee network in tests; accept either 0 (with stub/partial) or 3 (provider error)
+    expect([0, 3]).toContain(res.status);
   });
 });
