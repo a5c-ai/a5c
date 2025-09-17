@@ -141,8 +141,8 @@ events enrich --in FILE [--out FILE] [--rules FILE] \
 - `mentions.scan.changed_files=true|false` (default: `true`) – when `true`, scan changed files' patches for `@mentions` within code comments and add to `enriched.mentions[]` with `source="code_comment"` and `location` hints.
 - `mentions.scan.commit_messages=true|false` (default: `true`) – enable/disable scanning commit messages for `@mentions`.
 - `mentions.scan.issue_comments=true|false` (default: `true`) – enable/disable scanning issue comment bodies for `@mentions`.
-- `mentions.max_file_bytes=<bytes>` (default: `204800` ≈ 200KB) – skip scanning any single file larger than this cap.
-- `mentions.languages=<lang,...>` (optional) – only scan files whose detected language matches the allowlist. Accepted values are canonical IDs and common extensions (with/without a leading dot); inputs normalize to IDs. Canonical IDs: `js, ts, py, go, java, c, cpp, sh, yaml, md`.
+  - `mentions.max_file_bytes=<bytes>` (default: `204800` ≈ 200KB) – skip scanning any single file larger than this cap.
+  - `mentions.languages=<lang,...>` (optional) – only scan files whose detected language matches the allowlist. Accepted values are canonical IDs and common extensions (with/without a leading dot); inputs normalize to IDs. Canonical IDs: `js, ts, py, go, java, c, cpp, sh, yaml, md`.
 
 Language allowlist details (inputs normalize to IDs):
 
@@ -160,8 +160,8 @@ Language allowlist details (inputs normalize to IDs):
 
 Notes:
 
-- Provide language IDs in the allowlist (e.g., `--flag mentions.languages=ts,js,md`). Do not include a leading dot; values like `.ts` will not match.
-- You don’t need to list JSX/TSX/YML explicitly; detection maps them to `js`/`ts`/`yaml` automatically.
+- You can provide canonical language IDs or common extensions, with or without a leading dot. All inputs are normalized to IDs. Examples: `--flag mentions.languages=ts,js,md`, `--flag mentions.languages=.tsx,.yml`.
+- You don’t need to list JSX/TSX/YML explicitly when the corresponding ID is present; detection maps them to `js`/`ts`/`yaml` automatically.
 
 Examples:
 
