@@ -235,11 +235,13 @@ program
   .command("emit")
   .description("Emit an event to a sink (stdout or file)")
   .option("--in <file>", "input JSON file path (default: stdin)")
+  .option("-s, --single <file>", "single event file path (use '-' for stdin)")
   .option("--out <file>", "output JSON file path (for file sink)")
   .option("--sink <name>", "sink name (stdout|file|github)")
   .action(async (cmdOpts: any) => {
+    const inputPath = cmdOpts.single || cmdOpts.in;
     const { code } = await handleEmit({
-      in: cmdOpts.in,
+      in: inputPath,
       out: cmdOpts.out,
       sink: cmdOpts.sink,
     });

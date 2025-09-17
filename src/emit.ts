@@ -13,7 +13,7 @@ export async function handleEmit(
 ): Promise<{ code: number; output: any }> {
   try {
     let obj: any;
-    if (opts.in) {
+    if (opts.in && opts.in !== "-") {
       obj = readJSONFile(opts.in);
     } else {
       const raw = fs.readFileSync(0, "utf8");
@@ -23,7 +23,7 @@ export async function handleEmit(
     await executeSideEffects(obj);
 
     const safe = redactObject(obj);
-    const sink = opts.sink || (opts.out ? "file" : "stdout");
+    const sink = opts.sink || (opts.out ? "file" : "github");
     if (sink === "file") {
       if (!opts.out) throw new Error("Missing --out for file sink");
       writeJSONFile(opts.out, safe);
