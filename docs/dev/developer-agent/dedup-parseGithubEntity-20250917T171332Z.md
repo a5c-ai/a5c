@@ -22,6 +22,17 @@ This refactor extracts a single shared helper and updates call sites.
 ## Notes
 
 - Preserve current behavior of `parseGithubEntity` exported from `src/emit.ts`.
+
+## Results (2025-09-17T17:27Z)
+
+- Implemented `src/utils/githubEntity.ts` with:
+  - `parseGithubEntity(url)` supporting web/API issue and PR URLs
+  - `parseGithubOwnerRepo(url)` supporting web/API repo URLs
+- `src/emit.ts` already re-exports util via `export const parseGithubEntity = parseGithubEntityUtil;`
+- `src/reactor.ts` imports and uses the shared helpers
+- Added unit tests: `test/utils.githubEntity.test.ts`
+- Verified locally: `npm ci && ./scripts/test.sh` → all tests passing
+
 - Avoid breaking `inferRepoFromNE` which parses repo `html_url` (no number).
 
 ## Progress
