@@ -1,16 +1,27 @@
 ---
 on:
+  any:
+---
+on:
   pull_request:
-    types: [synchronize, ready_for_review]
+    filters:
+      - expression: ${{ event.pull_request.labels | map(name) | contains('validation') && event.type == 'ready_for_review' }}
+      - expression: ${{ event.pull_request.labels | map(name) | contains('validation') && event.type == 'synchronize' }}
 emit:
   pull_request_ready_for_review:
     type: ready_for_review
-    labels: []
     payload:
       original_event: ${{ event }}
       pr_ref: ${{ event.pull_request.head.ref }}
       base_ref: ${{ event.pull_request.base.ref }}
       pull_request: ${{ event.pull_request }}
+set_labels:
+  - entity: ${{ event.pull_request.html_url }}
+    add_labels: [validation]
+    remove_labels: [validation_requested]
+script:
+  - |
+    echo "Validation request for PR ${{ event.pull_request.html_url }} added label validation"
 ---
 on:
   pull_request_ready_for_review:

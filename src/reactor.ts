@@ -36,7 +36,8 @@ export async function handleReactor(opts: ReactorOptions): Promise<{
       if (emitSpec && typeof emitSpec === "object") {
         for (const [eventType, spec] of Object.entries(emitSpec)) {
           const payload = buildClientPayload(spec, ne);
-          events.push({ event_type: eventType, client_payload: payload });
+          const merged = attachDocCommands(payload, doc, ne);
+          events.push({ event_type: eventType, client_payload: merged });
         }
       }
     }
@@ -54,22 +55,52 @@ function readInput(inPath?: string): any {
 }
 
 function resolveRulesPath(fileOpt?: string): string {
-  const p = fileOpt || ".a5c/events/reactor.yaml";
+  const p = fileOpt || ".a5c/events/";
   return path.resolve(p);
 }
 
 function loadYamlDocuments(filePath: string): any[] {
-  const raw = fs.readFileSync(filePath, "utf8");
-  const docs = YAML.parseAllDocuments(raw, { prettyErrors: false });
-  return docs
-    .map((d: any) => {
+  const files: string[] = isDirectorySafe(filePath)
+    ? walkYamlFiles(filePath)
+    : [filePath];
+  const out: any[] = [];
+  for (const fp of files) {
+    const raw = fs.readFileSync(fp, "utf8");
+    const docs = YAML.parseAllDocuments(raw, { prettyErrors: false });
+    for (const d of docs as any[]) {
       try {
-        return (d as any).toJSON();
-      } catch {
-        return undefined;
-      }
-    })
-    .filter((d: any) => d && typeof d === "object") as any[];
+        const obj = (d as any).toJSON();
+        if (obj && typeof obj === "object") out.push(obj);
+      } catch {}
+    }
+  }
+  return out;
+}
+
+function isDirectorySafe(p: string): boolean {
+  try {
+    const st = fs.statSync(p);
+    return st.isDirectory();
+  } catch {
+    return false;
+  }
+}
+
+function walkYamlFiles(dir: string): string[] {
+  const out: string[] = [];
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+  for (const e of entries) {
+    const full = path.join(dir, e.name);
+    if (e.isDirectory()) {
+      out.push(...walkYamlFiles(full));
+    } else if (
+      e.isFile() &&
+      (full.endsWith(".yaml") || full.endsWith(".yml"))
+    ) {
+      out.push(full);
+    }
+  }
+  return out;
 }
 
 function normalizeNE(input: any): {
@@ -170,6 +201,12 @@ function matchesTrigger(
       if (!phase || String(phase) !== String(phaseSpec)) return false;
     }
   }
+  // filters: array of { expression: ${{ ... }} } – match if ANY expression is truthy
+  const filters = (spec as any).filters;
+  if (Array.isArray(filters) && filters.length) {
+    const anyTrue = filters.some((f: any) => evaluateFilter(f, ne));
+    if (!anyTrue) return false;
+  }
   return true;
 }
 
@@ -197,6 +234,21 @@ function buildClientPayload(
   return out;
 }
 
+function attachDocCommands(
+  payload: any,
+  doc: any,
+  neCtx: ReturnType<typeof normalizeNE>,
+): any {
+  const out = { ...(payload || {}) } as any;
+  if (Array.isArray(doc?.set_labels) && doc.set_labels.length) {
+    out.set_labels = resolveTemplates(doc.set_labels, neCtx);
+  }
+  if (Array.isArray(doc?.script) && doc.script.length) {
+    out.script = resolveTemplates(doc.script, neCtx);
+  }
+  return out;
+}
+
 function resolveTemplates(node: any, ctx: ReturnType<typeof normalizeNE>): any {
   if (node == null) return node;
   if (typeof node === "string") return resolveTemplateString(node, ctx);
@@ -220,11 +272,94 @@ function resolveTemplateString(
   const expr = m[1];
   try {
     // Provide a minimal sandbox with event (=payload), ne (=full object), env
-    const fn = new Function("event", "ne", "env", `return (${expr});`);
+    const compiled = preprocessExpression(expr);
+    const fn = new Function("event", "ne", "env", `return (${compiled});`);
     return fn(ctx.payload, { ...ctx }, process.env);
   } catch {
     return null;
   }
+}
+
+function evaluateFilter(
+  filter: any,
+  neCtx: ReturnType<typeof normalizeNE>,
+): boolean {
+  if (!filter) return false;
+  const expr = (filter as any).expression;
+  if (typeof expr !== "string" || !expr.trim()) return false;
+  const value = resolveTemplateString(expr, neCtx);
+  return Boolean(value);
+}
+
+function preprocessExpression(expr: string): string {
+  // Transform simple pipeline syntax: a.b | map(name) | contains('x')
+  // into: (a.b).map(x => x.name).includes('x')
+  const parts = splitByLogical(expr);
+  const out: string[] = [];
+  for (const p of parts) {
+    if (p === "&&" || p === "||") {
+      out.push(p);
+      continue;
+    }
+    if (p.includes("|")) out.push(transformPipeline(p));
+    else out.push(p);
+  }
+  return out.join(" ");
+}
+
+function splitByLogical(expr: string): string[] {
+  const tokens: string[] = [];
+  let cur = "";
+  for (let i = 0; i < expr.length; i++) {
+    const ch = expr[i];
+    const next = expr[i + 1];
+    if (ch === "&" && next === "&") {
+      if (cur.trim()) tokens.push(cur.trim());
+      tokens.push("&&");
+      cur = "";
+      i++;
+    } else if (ch === "|" && next === "|") {
+      if (cur.trim()) tokens.push(cur.trim());
+      tokens.push("||");
+      cur = "";
+      i++;
+    } else {
+      cur += ch;
+    }
+  }
+  if (cur.trim()) tokens.push(cur.trim());
+  return tokens;
+}
+
+function transformPipeline(segment: string): string {
+  const tokens = segment
+    .split("|")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (!tokens.length) return segment;
+  let expr = tokens[0];
+  for (let i = 1; i < tokens.length; i++) {
+    const t = tokens[i];
+    const mapMatch = /^map\(([^)]+)\)$/.exec(t);
+    if (mapMatch) {
+      const prop = mapMatch[1].trim();
+      // support map(name) -> .map(x => x.name)
+      const accessor = /[^a-zA-Z0-9_]/.test(prop)
+        ? `[${JSON.stringify(prop)}]`
+        : `.${prop}`;
+      expr = `(${expr}).map(x => x${accessor})`;
+      continue;
+    }
+    const containsMatch = /^contains\((.+)\)$/.exec(t);
+    if (containsMatch) {
+      const arg = containsMatch[1].trim();
+      expr = `(${expr}).includes(${arg})`;
+      continue;
+    }
+    // Unknown operator, keep as-is
+    expr = `${expr}`;
+  }
+  return expr;
 }
 
 function toStr(v: any): string | undefined {
