@@ -7,6 +7,7 @@ import { loadConfig, writeJSONFile } from "./config.js";
 import { cmdNormalize } from "./commands/normalize.js";
 import { handleEnrich } from "./enrich.js";
 import { handleReactor } from "./reactor.js";
+import { handleGenerateContext } from "./generateContext.js";
 import { handleEmit } from "./emit.js";
 import { redactObject } from "./utils/redact.js";
 import path from "node:path";
@@ -105,6 +106,41 @@ program
     } catch (e: any) {
       process.stderr.write(String(e?.message || e) + "\n");
       return process.exit(1);
+    }
+    process.exit(0);
+  });
+
+program
+  .command("generate_context")
+  .description("Render a prompt/context file from templates and event context")
+  .option("--in <file>", "input JSON event file (default: stdin)")
+  .option("--template <uri>", "root template URI (md/yaml)")
+  .option("--out <file>", "output file (default: stdout)")
+  .option(
+    "--var <key=value...>",
+    "extra template variables",
+    collectKeyValue,
+    {},
+  )
+  .option(
+    "--token <str>",
+    "GitHub token for github:// URIs (default: env tokens)",
+  )
+  .action(async (cmdOpts: any) => {
+    const { code, output, errorMessage } = await handleGenerateContext({
+      in: cmdOpts.in,
+      template: cmdOpts.template,
+      out: cmdOpts.out,
+      vars: cmdOpts.var,
+      token: cmdOpts.token,
+    });
+    if (code !== 0) {
+      if (errorMessage) process.stderr.write(errorMessage + "\n");
+      return process.exit(code);
+    }
+    if (typeof output === "string") {
+      if (cmdOpts.out) fs.writeFileSync(cmdOpts.out, output, "utf8");
+      else process.stdout.write(output);
     }
     process.exit(0);
   });
