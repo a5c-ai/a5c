@@ -52,7 +52,7 @@ Validate locally: `npm run -s validate:examples` (details in `docs/ci/ci-checks.
 Triggers matrix (summary):
 
 - Pull requests → Quick feedback: `Quick Checks` (lint, typecheck, unit tests + coverage), `Lint`, `Typecheck`, `Commit Hygiene`, and `Tests` (lightweight; mirrors Quick Checks but uploads coverage artifacts).
-- Push to protected branches (`a5c/main`, `main`) → Heavier gates: `Build`; `Tests` (full install/build/test with coverage artifacts).
+- Push to protected branches (`a5c/main`, `main`) → Heavier gates: `Build`, `Tests` (full install/build/test with coverage artifacts).
 - Branch semantics: `a5c/main` is development/staging; `main` is production.
 
 ## CLI Reference
