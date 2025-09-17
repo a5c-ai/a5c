@@ -14,7 +14,19 @@
 
 ## Actions
 
-- Will edit `README.md` accordingly and keep examples elsewhere untouched.
+- Edited `README.md`:
+  - Kept a single “Rules quick-start (composed events)” section
+  - Removed duplicate sections (two locations)
+  - Added note: CLI Reference is the source of truth for flags/options
+  - Updated link to `docs/cli/reference.md#events-reactor`
+  - Kept examples elsewhere intact; fixed minor whitespace
+
+## Results
+
+- Duplicates removed; single quick-start remains
+- Links to CLI Reference (Events Reactor) and Specs §6.1 present
+- Dev log added under `docs/dev/documenter-agent/`
+- PR: https://github.com/a5c-ai/events/pull/862 (draft)
 
 ## Acceptance
 
