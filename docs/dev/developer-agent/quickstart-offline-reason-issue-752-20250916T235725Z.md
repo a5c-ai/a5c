@@ -17,3 +17,9 @@ Issue: #752
 ## Notes
 
 - Preserve developer notes mentioning the legacy value as historical context.
+
+## Results
+
+- Verified Quickstart example shows `reason: "flag:not_set"`.
+- No user-facing occurrences of `github_enrich_disabled` outside historical CHANGELOG.
+- Left dev/validation notes intact.
