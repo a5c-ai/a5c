@@ -166,7 +166,7 @@ function normalizeLabelsArray(v: any): string[] {
     .filter(Boolean);
 }
 
-function parseGithubEntity(
+export function parseGithubEntity(
   url: string,
 ): { owner: string; repo: string; number: number } | null {
   try {
