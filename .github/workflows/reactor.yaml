@@ -59,6 +59,7 @@ jobs:
             echo "Fallback package: $PKG_SPEC"
             npx -y "$PKG_SPEC" --help >/dev/null
           fi
+          npx -y "$PKG_SPEC" version
           echo "A5C_PKG_SPEC=$PKG_SPEC" >> "$GITHUB_ENV"
       - name: Enrich and run reactor with actual github context
         env:
