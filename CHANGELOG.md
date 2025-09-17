@@ -1,3 +1,49 @@
+## <small>1.7.1 (2025-09-17)</small>
+
+* fix(build): export parseGithubEntity and resolveOwnerRepo on main (fixes #837)\n\n- Unblocks unit te ([845436a](https://github.com/a5c-ai/events/commit/845436a))
+* feat(emit, reactor): enhance event handling and template expansion ([2cfe5f4](https://github.com/a5c-ai/events/commit/2cfe5f4))
+* Merge pull request #831 from a5c-ai/a5c/main ([d2320bb](https://github.com/a5c-ai/events/commit/d2320bb)), closes [#831](https://github.com/a5c-ai/events/issues/831)
+
+## 1.7.0 (2025-09-17)
+
+* Merge pull request #830 from a5c-ai/a5c/main ([674f975](https://github.com/a5c-ai/events/commit/674f975)), closes [#830](https://github.com/a5c-ai/events/issues/830)
+* feat(reactor): enhance reactor document handling and expression evaluation ([69fb4af](https://github.com/a5c-ai/events/commit/69fb4af))
+
+## 1.6.0 (2025-09-17)
+
+* Merge pull request #829 from a5c-ai/a5c/main ([aa0359b](https://github.com/a5c-ai/events/commit/aa0359b)), closes [#829](https://github.com/a5c-ai/events/issues/829)
+* feat(validation): enhance validation request workflow and metadata handling ([bcbfb74](https://github.com/a5c-ai/events/commit/bcbfb74))
+
+## <small>1.5.2 (2025-09-17)</small>
+
+* Merge pull request #826 from a5c-ai/a5c/main ([9b225e1](https://github.com/a5c-ai/events/commit/9b225e1)), closes [#826](https://github.com/a5c-ai/events/issues/826)
+* Merge pull request #827 from a5c-ai/a5c/main ([0145138](https://github.com/a5c-ai/events/commit/0145138)), closes [#827](https://github.com/a5c-ai/events/issues/827)
+* Merge pull request #828 from a5c-ai/a5c/main ([fc02b6a](https://github.com/a5c-ai/events/commit/fc02b6a)), closes [#828](https://github.com/a5c-ai/events/issues/828)
+* fix(reactor): optimize fetching of GitHub YAML docs by breaking early on successful fetch ([8a721db](https://github.com/a5c-ai/events/commit/8a721db))
+* chore(workflow): remove cancellation of in-progress jobs in reactor concurrency group ([51e449e](https://github.com/a5c-ai/events/commit/51e449e))
+* chore(workflow): remove concurrency group from reactor job in GitHub Actions ([5e6d3e8](https://github.com/a5c-ai/events/commit/5e6d3e8))
+
+## <small>1.5.1 (2025-09-17)</small>
+
+* 📘 docs: SDK quickstart + links (fixes #794) (#823) ([0bdb9e3](https://github.com/a5c-ai/events/commit/0bdb9e3)), closes [#794](https://github.com/a5c-ai/events/issues/794) [#823](https://github.com/a5c-ai/events/issues/823) [#794](https://github.com/a5c-ai/events/issues/794)
+* Merge branch 'a5c/main' of https://github.com/a5c-ai/events into a5c/main ([b57c8e0](https://github.com/a5c-ai/events/commit/b57c8e0))
+* Merge pull request #822 from a5c-ai/main ([7e85e1d](https://github.com/a5c-ai/events/commit/7e85e1d)), closes [#822](https://github.com/a5c-ai/events/issues/822)
+* Merge pull request #824 from a5c-ai/a5c/main ([2aa89a9](https://github.com/a5c-ai/events/commit/2aa89a9)), closes [#824](https://github.com/a5c-ai/events/issues/824)
+* Merge pull request #825 from a5c-ai/a5c/main ([753ca32](https://github.com/a5c-ai/events/commit/753ca32)), closes [#825](https://github.com/a5c-ai/events/issues/825)
+* fix(reactor): normalize repository paths and clean reference handling in GitHub API calls ([7251338](https://github.com/a5c-ai/events/commit/7251338))
+* chore(workflow): disable cancellation of in-progress jobs in reactor concurrency group ([3983d14](https://github.com/a5c-ai/events/commit/3983d14))
+
+## 1.5.0 (2025-09-17)
+
+* Merge branch 'a5c/main' of https://github.com/a5c-ai/events into a5c/main ([1a2d44f](https://github.com/a5c-ai/events/commit/1a2d44f))
+* Merge pull request #820 from a5c-ai/feat/logging-toggles-discovery-795 ([1950482](https://github.com/a5c-ai/events/commit/1950482)), closes [#820](https://github.com/a5c-ai/events/issues/820) [#795](https://github.com/a5c-ai/events/issues/795)
+* Merge pull request #821 from a5c-ai/a5c/main ([21b04ba](https://github.com/a5c-ai/events/commit/21b04ba)), closes [#821](https://github.com/a5c-ai/events/issues/821)
+* feat(workflow): add validation request workflow for pull request reviews ([33a9759](https://github.com/a5c-ai/events/commit/33a9759))
+* chore(workflow): add concurrency group to reactor job in GitHub Actions ([57ec3e5](https://github.com/a5c-ai/events/commit/57ec3e5))
+* docs(dev): discovery kickoff for logging toggles (issue #795) ([a5e94f9](https://github.com/a5c-ai/events/commit/a5e94f9)), closes [#795](https://github.com/a5c-ai/events/issues/795)
+* docs(observability): clarify status of A5C_LOG_* toggles and link issue #795 ([5d4f507](https://github.com/a5c-ai/events/commit/5d4f507)), closes [#795](https://github.com/a5c-ai/events/issues/795)
+* refactor(reactor): streamline YAML document fetching from GitHub ([9cbb09c](https://github.com/a5c-ai/events/commit/9cbb09c))
+
 ## <small>1.4.3 (2025-09-17)</small>
 
 * 🔗 docs: README cross-link to Reactor CLI (#819) ([0707794](https://github.com/a5c-ai/events/commit/0707794)), closes [#819](https://github.com/a5c-ai/events/issues/819) [#796](https://github.com/a5c-ai/events/issues/796) [#796](https://github.com/a5c-ai/events/issues/796)
