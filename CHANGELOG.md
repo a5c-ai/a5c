@@ -1,3 +1,14 @@
+## 1.5.0 (2025-09-17)
+
+* Merge branch 'a5c/main' of https://github.com/a5c-ai/events into a5c/main ([1a2d44f](https://github.com/a5c-ai/events/commit/1a2d44f))
+* Merge pull request #820 from a5c-ai/feat/logging-toggles-discovery-795 ([1950482](https://github.com/a5c-ai/events/commit/1950482)), closes [#820](https://github.com/a5c-ai/events/issues/820) [#795](https://github.com/a5c-ai/events/issues/795)
+* Merge pull request #821 from a5c-ai/a5c/main ([21b04ba](https://github.com/a5c-ai/events/commit/21b04ba)), closes [#821](https://github.com/a5c-ai/events/issues/821)
+* feat(workflow): add validation request workflow for pull request reviews ([33a9759](https://github.com/a5c-ai/events/commit/33a9759))
+* chore(workflow): add concurrency group to reactor job in GitHub Actions ([57ec3e5](https://github.com/a5c-ai/events/commit/57ec3e5))
+* docs(dev): discovery kickoff for logging toggles (issue #795) ([a5e94f9](https://github.com/a5c-ai/events/commit/a5e94f9)), closes [#795](https://github.com/a5c-ai/events/issues/795)
+* docs(observability): clarify status of A5C_LOG_* toggles and link issue #795 ([5d4f507](https://github.com/a5c-ai/events/commit/5d4f507)), closes [#795](https://github.com/a5c-ai/events/issues/795)
+* refactor(reactor): streamline YAML document fetching from GitHub ([9cbb09c](https://github.com/a5c-ai/events/commit/9cbb09c))
+
 ## <small>1.4.3 (2025-09-17)</small>
 
 * 🔗 docs: README cross-link to Reactor CLI (#819) ([0707794](https://github.com/a5c-ai/events/commit/0707794)), closes [#819](https://github.com/a5c-ai/events/issues/819) [#796](https://github.com/a5c-ai/events/issues/796) [#796](https://github.com/a5c-ai/events/issues/796)
