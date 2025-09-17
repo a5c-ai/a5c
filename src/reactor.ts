@@ -2,6 +2,10 @@ import fs from "node:fs";
 import path from "node:path";
 import YAML from "yaml";
 import { readJSONFile } from "./config.js";
+import {
+  parseGithubEntity,
+  parseGithubOwnerRepo,
+} from "./utils/githubEntity.js";
 
 export interface ReactorOptions {
   in?: string;
@@ -914,7 +918,7 @@ function inferRepoFromNE(
     }
     const url = (ne as any)?.payload?.repository?.html_url;
     if (typeof url === "string") {
-      const parsed = parseGithubEntity(url);
+      const parsed = parseGithubOwnerRepo(url);
       if (parsed) return { owner: parsed.owner, repo: parsed.repo };
     }
     return null;
@@ -947,27 +951,7 @@ function computeRemotePaths(localPath: string): string[] {
   return Array.from(new Set(candidates));
 }
 
-function parseGithubEntity(
-  url: string,
-): { owner: string; repo: string; number?: number } | null {
-  try {
-    const u = new URL(url);
-    const parts = u.pathname.split("/").filter(Boolean);
-    const idxRepos = parts[0] === "repos" ? 1 : 0;
-    const owner = parts[idxRepos];
-    const repo = parts[idxRepos + 1];
-    const numberStr = parts[idxRepos + 3];
-    const number = Number.parseInt(numberStr, 10);
-    if (!owner || !repo) return null;
-    return {
-      owner,
-      repo,
-      number: Number.isFinite(number) ? number : undefined,
-    };
-  } catch {
-    return null;
-  }
-}
+// Removed in favor of shared helper in src/utils/githubEntity.ts
 
 function toStr(v: any): string | undefined {
   if (v == null) return undefined;
