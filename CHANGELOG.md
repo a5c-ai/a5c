@@ -1,3 +1,11 @@
+## <small>1.4.2 (2025-09-17)</small>
+
+* 🚑 fix(emit): default stdout when no token; keep github only if token (#810) ([b89dde9](https://github.com/a5c-ai/events/commit/b89dde9)), closes [#810](https://github.com/a5c-ai/events/issues/810)
+* Merge pull request #816 from a5c-ai/fix/emit-default-stdout-main ([8ebe185](https://github.com/a5c-ai/events/commit/8ebe185)), closes [#816](https://github.com/a5c-ai/events/issues/816)
+* Merge remote-tracking branch 'origin/a5c/main' into fix/emit-default-stdout-main ([820412a](https://github.com/a5c-ai/events/commit/820412a))
+* ci(docs-lint): install ripgrep for docs lint job\n\nFix failing job due to 'rg: command not found' b ([29389f0](https://github.com/a5c-ai/events/commit/29389f0))
+* fix(test): make emit stdout test explicit about sink=stdout (#812) ([37c22a6](https://github.com/a5c-ai/events/commit/37c22a6)), closes [#812](https://github.com/a5c-ai/events/issues/812)
+
 ## <small>1.4.1 (2025-09-17)</small>
 
 * Merge pull request #809 from a5c-ai/a5c/main ([0cb0c0c](https://github.com/a5c-ai/events/commit/0cb0c0c)), closes [#809](https://github.com/a5c-ai/events/issues/809)
