@@ -96,6 +96,7 @@ on:
         Quick Checks,
         Typecheck,
         Commit Hygiene,
+        Commitlint,
         Docs Lint,
         Release,
       ]
