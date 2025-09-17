@@ -138,22 +138,22 @@ jobs:
           else
             gh pr comment "$PR_NUMBER" --repo "$REPO_FULL" -F /tmp/pr-comment.md >/dev/null
           fi
-      - name: Enforce coverage thresholds (optional hard gate)
+      - name: "Coverage gate (optional, REQUIRE_COVERAGE)"
         if: ${{ vars.REQUIRE_COVERAGE == 'true' }}
         shell: bash
         run: |
           set -euo pipefail
-          echo "REQUIRE_COVERAGE is true — enforcing coverage thresholds"
+          echo "REQUIRE_COVERAGE=true -> enforcing thresholds from scripts/coverage-thresholds.json"
           if [ ! -f coverage/coverage-summary.json ]; then
-            echo "coverage/coverage-summary.json not found; failing due to hard gate." >&2
+            echo "::error title=Coverage Gate Failed::coverage/coverage-summary.json not found. Ensure tests generate coverage with json-summary reporter."
+            exit 1
+          fi
+          if [ ! -f scripts/coverage-thresholds.json ]; then
+            echo "::error title=Coverage Gate Failed::scripts/coverage-thresholds.json not found. Thresholds must be defined."
             exit 1
           fi
           # Load thresholds from single source of truth
-          if [ -f scripts/coverage-thresholds.json ]; then
-            read -r LINES_T BRANCHES_T FUNCS_T STMTS_T < <(jq -r '[.lines,.branches,.functions,.statements] | @tsv' scripts/coverage-thresholds.json)
-          else
-            LINES_T=60; BRANCHES_T=55; FUNCS_T=60; STMTS_T=60
-          fi
+          read -r LINES_T BRANCHES_T FUNCS_T STMTS_T < <(jq -r '[.lines,.branches,.functions,.statements] | @tsv' scripts/coverage-thresholds.json)
           # Extract actuals
           node -e '
             const fs = require("fs");
@@ -188,9 +188,13 @@ jobs:
             if [ ${#FAILS[@]} -gt 0 ]; then
               echo ""
               echo "Failures: ${FAILS[*]}"
+            else
+              echo ""
+              echo "All metrics meet or exceed thresholds."
             fi
           } | tee -a "$GITHUB_STEP_SUMMARY"
           if [ ${#FAILS[@]} -gt 0 ]; then
+            echo "::error title=Coverage Gate Failed::Below thresholds for: ${FAILS[*]}"
             echo "Coverage below thresholds; failing per REQUIRE_COVERAGE=true" >&2
             exit 1
           fi

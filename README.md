@@ -49,31 +49,30 @@ For CI guidance and required checks, see `docs/ci/ci-checks.md`.
 
 Validate locally: `npm run -s validate:examples` (details in `docs/ci/ci-checks.md`).
 
-- Quick checks run on pull requests for fast feedback (lint, typecheck, tests with coverage).
-- Heavier gates (build, full tests) run on push to protected branches.
-- Branch semantics: `a5c/main` is the development/staging branch; `main` is production.
+Triggers matrix (summary):
+
+- Pull requests → Quick feedback: `Quick Checks` (lint, typecheck, unit tests + coverage), `Lint`, `Typecheck`, `Commit Hygiene`, and `Tests` (lightweight; mirrors Quick Checks but uploads coverage artifacts).
+- Push to protected branches (`a5c/main`, `main`) → Heavier gates: `Build`, `Tests` (full install/build/test with coverage artifacts).
+- Branch semantics: `a5c/main` is development/staging; `main` is production.
 
 ## CLI Reference
 
 ### Mentions config (Quick Start)
 
-Use a simple example, then see the CLI reference for the canonical flags and defaults:
+For the full, canonical list of Mentions flags and defaults, see the CLI reference. Quick examples:
 
 ```bash
-# Disable scanning of changed files (code-comment mentions)
+# Disable scanning of changed files (code‑comment mentions)
 events enrich --in ... --flag 'mentions.scan.changed_files=false'
 
-# Restrict code‑comment scanning to specific languages
-# Accepted values: canonical language IDs and common extensions (with or without a leading dot).
-# Values are normalized to IDs. Examples: `.tsx → ts`, `.jsx → js`, `.yml → yaml`.
-# Canonical IDs include: js, ts, py, go, java, c, cpp, sh, yaml, md.
-events enrich --in ... --flag "mentions.languages=ts,js"    # or include extensions: --flag "mentions.languages=.yml,.tsx"
+# Restrict by canonical language IDs (not extensions). IDs: js, ts, py, go, java, c, cpp, sh, yaml, md.
+events enrich --in ... --flag 'mentions.languages=ts,js'
 ```
 
 Canonical reference and examples:
 
 - docs/cli/reference.md#events-enrich
-- docs/cli/reference.md#mentions-scanning-controls-code-comments-in-changed-files
+- docs/cli/reference.md#mentions-scanning
 
 `events mentions`
 
@@ -106,7 +105,7 @@ Canonical reference and examples:
 - `--flag include_patch=<true|false>`: include diff patches in files (default: false)
 - `--flag commit_limit=<n>`: max commits to include (default: 50)
 - Mentions scanning flags are documented once in the CLI reference at `docs/cli/reference.md#events-enrich` and are the canonical source of truth for wording and defaults.
-- `--use-github`: enable GitHub API enrichment (requires `GITHUB_TOKEN`). For CI convenience, you may set `A5C_EVENTS_AUTO_USE_GITHUB=true` to auto-enable when a token is present; otherwise behavior remains offline by default.
+- `--use-github`: enable GitHub API enrichment (requires `A5C_AGENT_GITHUB_TOKEN` or `GITHUB_TOKEN`; `A5C_AGENT_GITHUB_TOKEN` takes precedence when both are set). For CI convenience, you may set `A5C_EVENTS_AUTO_USE_GITHUB=true` to auto-enable when a token is present; otherwise behavior remains offline by default.
 - `--select <paths>`: comma-separated dot paths to include in output
   - `--filter <expr>`: filter expression `path[=value]`; if not matching, exits with code 2 and no output (see CLI reference example: docs/cli/reference.md#events-enrich)
 - `--label <key=value...>`: attach labels to top‑level `labels[]`
@@ -190,7 +189,7 @@ Notes:
 
 Examples are centralized in the CLI Reference:
 
-- docs/cli/reference.md#mentions-scanning-controls-code-comments-in-changed-files
+- docs/cli/reference.md#mentions-scanning
 
 ### Rules quick-start (composed events)
 
@@ -351,19 +350,37 @@ See also sample outputs:
 
 You can optionally upload coverage to Codecov. This repo does not enable uploads by default.
 
-Opt-in steps:
+Opt-in steps (aligned with `docs/ci/ci-checks.md`):
 
-- Create a Codecov project for this repository and add a repo Secret or Variable named `CODECOV_TOKEN`.
-- Add the following step to your tests workflow after coverage is generated:
+- Define `CODECOV_TOKEN` via repo/org Secret or Variable.
+- Use the guarded upload step after coverage is generated:
 
 ```yaml
+env:
+  CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN || vars.CODECOV_TOKEN || '' }}
+
 - name: Upload coverage to Codecov (optional)
   if: ${{ env.CODECOV_TOKEN != '' }}
-  run: |
-    bash scripts/coverage-upload.sh
+  uses: codecov/codecov-action@v4
+  with:
+    token: ${{ env.CODECOV_TOKEN }}
+    files: coverage/lcov.info
+    flags: pr
+    fail_ci_if_error: false
 ```
 
-Note: The Codecov badge is shown at the top of this README and links to the tree view for `a5c/main`: https://app.codecov.io/gh/a5c-ai/events/tree/a5c/main
+Alternatively, use the repo script:
+
+```yaml
+env:
+  CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN || vars.CODECOV_TOKEN || '' }}
+
+- name: Upload coverage to Codecov (optional)
+  if: ${{ env.CODECOV_TOKEN != '' }}
+  run: bash scripts/coverage-upload.sh
+```
+
+Note: The Codecov badge at the top links to the tree view for `a5c/main`: https://app.codecov.io/gh/a5c-ai/events/tree/a5c/main
 
 ### Auth tokens: precedence & redaction
 
