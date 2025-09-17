@@ -59,23 +59,20 @@ Triggers matrix (summary):
 
 ### Mentions config (Quick Start)
 
-Use a simple example, then see the CLI reference for the canonical flags and defaults:
+For the full, canonical list of Mentions flags and defaults, see the CLI reference. Quick examples:
 
 ```bash
-# Disable scanning of changed files (code-comment mentions)
+# Disable scanning of changed files (code‑comment mentions)
 events enrich --in ... --flag 'mentions.scan.changed_files=false'
 
-# Restrict code‑comment scanning to specific languages
-# Accepted values: canonical language IDs and common extensions (with or without a leading dot).
-# Values are normalized to IDs. Examples: `.tsx → ts`, `.jsx → js`, `.yml → yaml`.
-# Canonical IDs include: js, ts, py, go, java, c, cpp, sh, yaml, md.
-events enrich --in ... --flag "mentions.languages=ts,js"    # or include extensions: --flag "mentions.languages=.yml,.tsx"
+# Restrict by canonical language IDs (not extensions). IDs: js, ts, py, go, java, c, cpp, sh, yaml, md.
+events enrich --in ... --flag 'mentions.languages=ts,js'
 ```
 
 Canonical reference and examples:
 
 - docs/cli/reference.md#events-enrich
-- docs/cli/reference.md#mentions-scanning-controls-code-comments-in-changed-files
+- docs/cli/reference.md#mentions-scanning
 
 `events mentions`
 
@@ -192,7 +189,7 @@ Notes:
 
 Examples are centralized in the CLI Reference:
 
-- docs/cli/reference.md#mentions-scanning-controls-code-comments-in-changed-files
+- docs/cli/reference.md#mentions-scanning
 
 ### Rules quick-start (composed events)
 
