@@ -1,3 +1,8 @@
+## 1.6.0 (2025-09-17)
+
+* Merge pull request #829 from a5c-ai/a5c/main ([aa0359b](https://github.com/a5c-ai/events/commit/aa0359b)), closes [#829](https://github.com/a5c-ai/events/issues/829)
+* feat(validation): enhance validation request workflow and metadata handling ([bcbfb74](https://github.com/a5c-ai/events/commit/bcbfb74))
+
 ## <small>1.5.2 (2025-09-17)</small>
 
 * Merge pull request #826 from a5c-ai/a5c/main ([9b225e1](https://github.com/a5c-ai/events/commit/9b225e1)), closes [#826](https://github.com/a5c-ai/events/issues/826)
