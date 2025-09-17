@@ -76,12 +76,23 @@ run_actionlint_docker() {
 if command -v curl >/dev/null 2>&1; then
   if run_actionlint_binary; then
     exit 0
+  else
+    rc=$?
+    # STRICT + findings indicated by 2 → fail the step
+    if [[ $rc -eq 2 ]]; then
+      exit 1
+    fi
   fi
 fi
 
 if command -v docker >/dev/null 2>&1; then
   if run_actionlint_docker; then
     exit 0
+  else
+    rc=$?
+    if [[ $rc -eq 2 ]]; then
+      exit 1
+    fi
   fi
 fi
 
