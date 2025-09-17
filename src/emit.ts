@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import { writeJSONFile, readJSONFile } from "./config.js";
+import { parseGithubEntity as parseGithubEntityUtil } from "./utils/githubEntity.js";
 import { redactObject } from "./utils/redact.js";
 
 export interface EmitOptions {
@@ -166,31 +167,8 @@ function normalizeLabelsArray(v: any): string[] {
     .filter(Boolean);
 }
 
-export function parseGithubEntity(
-  url: string,
-): { owner: string; repo: string; number: number } | null {
-  try {
-    if (!url) return null;
-    const u = new URL(url);
-    const parts = u.pathname.split("/").filter(Boolean);
-    const idxRepos = parts[0] === "repos" ? 1 : 0;
-    const owner = parts[idxRepos];
-    const repo = parts[idxRepos + 1];
-    const type = parts[idxRepos + 2];
-    const numberStr = parts[idxRepos + 3];
-    if (!owner || !repo) return null;
-    let number = Number.parseInt(numberStr, 10);
-    if (!Number.isFinite(number)) {
-      const altIdx =
-        parts.indexOf("pull") >= 0 ? parts.indexOf("pull") + 1 : -1;
-      if (altIdx > 0) number = Number.parseInt(parts[altIdx], 10);
-    }
-    if (!Number.isFinite(number)) return null;
-    return { owner, repo, number };
-  } catch {
-    return null;
-  }
-}
+// Re-export the shared helper to preserve the public API
+export const parseGithubEntity = parseGithubEntityUtil;
 
 async function runScripts(lines: string[]): Promise<void> {
   // Execute each line via sh -c in a minimal environment

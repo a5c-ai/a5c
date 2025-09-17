@@ -2,6 +2,10 @@ import fs from "node:fs";
 import path from "node:path";
 import YAML from "yaml";
 import { readJSONFile } from "./config.js";
+import {
+  parseGithubEntity,
+  parseGithubOwnerRepo,
+} from "./utils/githubEntity.js";
 
 export interface ReactorOptions {
   in?: string;
@@ -69,11 +73,19 @@ export async function handleReactor(opts: ReactorOptions): Promise<{
 
     const events: ReactorOutputEvent[] = [];
     const match = opts.metadataMatch || {};
+    let idx = 0;
     for (const doc of docs) {
+      idx++;
       if (!doc || typeof doc !== "object") continue;
+      const source = (doc as any).__source || "(unknown)";
+      logDebug(`eval handler#${idx} from ${source}`);
       const metadata = (doc as any).metadata || {};
       if (!metadataMatches(metadata, match)) {
-        logDebug(`doc filtered by metadata (needed=${JSON.stringify(match)})`);
+        logDebug(
+          `handler#${idx} filtered: metadata mismatch need=${JSON.stringify(
+            match,
+          )} have=${JSON.stringify(metadata)}`,
+        );
         continue;
       }
       const onSpec: any = (doc as any).on;
@@ -89,13 +101,19 @@ export async function handleReactor(opts: ReactorOptions): Promise<{
         secrets,
         vars: varsEnv,
       });
-      if (!onSpec || !emitSpec) continue;
-      const matched = matchesAnyTrigger(
+      if (!onSpec || !emitSpec) {
+        logDebug(`handler#${idx} filtered: missing on/emit`);
+        continue;
+      }
+      const explain = explainMatch(
         onSpec,
         withDocEnv(ne, docEnv, secrets, varsEnv),
       );
-      logDebug(`doc matched=${matched}`);
-      if (!matched) continue;
+      if (!explain.matched) {
+        logDebug(`handler#${idx} filtered: ${explain.reason || "no match"}`);
+        continue;
+      }
+      logDebug(`handler#${idx} matched`);
       if (emitSpec && typeof emitSpec === "object") {
         for (const [eventType, spec] of Object.entries(emitSpec)) {
           const payload = buildClientPayload(
@@ -118,6 +136,133 @@ export async function handleReactor(opts: ReactorOptions): Promise<{
     logWarn(`reactor failed: ${msg}`);
     return { code: 1, errorMessage: `reactor: ${msg}` };
   }
+}
+
+function explainMatch(
+  onSpec: any,
+  ne: ReturnType<typeof normalizeNE>,
+): { matched: boolean; reason?: string } {
+  const base = (ne as any)?.payload || {};
+  const eventType = (ne as any)?.type || toStr((base as any)?.event);
+  const action =
+    toStr((base as any)?.action) ||
+    toStr((base as any)?.event_type) ||
+    toStr((base as any)?.client_payload?.event_type);
+  if (typeof onSpec === "string") {
+    const name = onSpec;
+    const nameIsCustom = !KNOWN_GH_EVENTS.has(name) && name !== "any";
+    if (!nameIsCustom && name !== "any" && eventType && eventType !== name) {
+      return {
+        matched: false,
+        reason: `type mismatch need=${name} have=${eventType}`,
+      };
+    }
+    if (nameIsCustom && action !== name) {
+      return {
+        matched: false,
+        reason: `custom action mismatch need=${name} have=${action}`,
+      };
+    }
+    return { matched: true };
+  }
+  if (Array.isArray(onSpec)) {
+    for (const name of onSpec) {
+      const r = explainMatch(name, ne);
+      if (r.matched) return r;
+    }
+    return { matched: false, reason: `none of ${onSpec.join(",")} matched` };
+  }
+  if (onSpec && typeof onSpec === "object") {
+    for (const [name, spec] of Object.entries(onSpec)) {
+      const r = explainMatchOne(String(name), spec, ne);
+      if (r.matched) return r;
+    }
+  }
+  return { matched: false, reason: "empty on spec" };
+}
+
+function explainMatchOne(
+  name: string,
+  spec: any,
+  ne: ReturnType<typeof normalizeNE>,
+): { matched: boolean; reason?: string } {
+  const base = (ne as any)?.payload || {};
+  const action =
+    toStr((base as any)?.action) ||
+    toStr((base as any)?.event_type) ||
+    toStr((base as any)?.client_payload?.event_type);
+  const evtType = (ne as any)?.type || toStr((base as any)?.event);
+  const nameIsCustom = !KNOWN_GH_EVENTS.has(name) && name !== "any";
+  if (!nameIsCustom && name !== "any" && evtType && evtType !== name)
+    return {
+      matched: false,
+      reason: `type mismatch need=${name} have=${evtType}`,
+    };
+  if (nameIsCustom) {
+    if (evtType && evtType !== "repository_dispatch")
+      return {
+        matched: false,
+        reason: `custom requires repository_dispatch, have=${evtType}`,
+      };
+    if (action !== name)
+      return {
+        matched: false,
+        reason: `custom action mismatch need=${name} have=${action}`,
+      };
+  }
+  if (!spec || typeof spec !== "object") return { matched: true };
+  if (Array.isArray((spec as any).types) && KNOWN_GH_EVENTS.has(name)) {
+    const set = new Set(((spec as any).types as any[]).map((v) => String(v)));
+    if (!action || !set.has(action))
+      return {
+        matched: false,
+        reason: `subtype mismatch need one of ${Array.from(set).join(",")}, have=${action}`,
+      };
+  }
+  if (Array.isArray((spec as any).events)) {
+    const set = new Set(((spec as any).events as any[]).map((v) => String(v)));
+    if (!action || !set.has(action))
+      return {
+        matched: false,
+        reason: `event mismatch need one of ${Array.from(set).join(",")}, have=${action}`,
+      };
+  }
+  if (Array.isArray((spec as any).labels)) {
+    const needed = new Set((spec as any).labels.map((v: any) => String(v)));
+    const labelsSource = nameIsCustom
+      ? normalizeLabels((base as any)?.client_payload?.labels)
+      : (ne as any)?.labels || [];
+    const missing: string[] = [];
+    for (const l of Array.from(needed.values()) as string[])
+      if (!labelsSource.includes(String(l))) missing.push(String(l));
+    if (missing.length)
+      return { matched: false, reason: `labels missing: ${missing.join(",")}` };
+  }
+  const phaseSpec = (spec as any).phase;
+  if (phaseSpec) {
+    const phase =
+      toStr((base as any).phase) || toStr((base as any)?.client_payload?.phase);
+    if (Array.isArray(phaseSpec)) {
+      const set = new Set((phaseSpec as any[]).map((v) => String(v)));
+      if (!phase || !set.has(phase))
+        return {
+          matched: false,
+          reason: `phase mismatch need one of ${Array.from(set).join(",")}, have=${phase}`,
+        };
+    } else {
+      if (!phase || String(phase) !== String(phaseSpec))
+        return {
+          matched: false,
+          reason: `phase mismatch need=${phaseSpec} have=${phase}`,
+        };
+    }
+  }
+  const filters = (spec as any).filters;
+  if (Array.isArray(filters) && filters.length) {
+    const anyTrue = filters.some((f: any) => evaluateFilter(f, ne));
+    if (!anyTrue) return { matched: false, reason: `filters not satisfied` };
+  }
+  return { matched: true };
 }
 
 function metadataMatches(
@@ -492,11 +637,13 @@ function matchesTrigger(
     toStr(base.action) ||
     toStr(base.event_type) ||
     toStr((base as any)?.client_payload?.event_type);
-  const eventType = ne.type || toStr(base.event) || undefined;
+  const eventType =
+    (ne as any)?.type || toStr((base as any)?.event) || undefined;
 
-  // Custom event name: match against action/event_type
+  // Custom event name: alias to repository_dispatch with payload.action == name
   const nameIsCustom = !KNOWN_GH_EVENTS.has(name) && name !== "any";
   if (nameIsCustom) {
+    if (eventType && eventType !== "repository_dispatch") return false;
     if (action !== name) return false;
   } else {
     if (name !== "any" && eventType && eventType !== name) return false;
@@ -518,7 +665,7 @@ function matchesTrigger(
     const needed = new Set((spec as any).labels.map((v: any) => String(v)));
     const labelsSource = nameIsCustom
       ? normalizeLabels((base as any)?.client_payload?.labels)
-      : ne.labels;
+      : (ne as any)?.labels || [];
     for (const l of Array.from(needed.values()) as string[])
       if (!labelsSource.includes(String(l))) return false;
   }
@@ -771,7 +918,7 @@ function inferRepoFromNE(
     }
     const url = (ne as any)?.payload?.repository?.html_url;
     if (typeof url === "string") {
-      const parsed = parseGithubEntity(url);
+      const parsed = parseGithubOwnerRepo(url);
       if (parsed) return { owner: parsed.owner, repo: parsed.repo };
     }
     return null;
@@ -804,27 +951,7 @@ function computeRemotePaths(localPath: string): string[] {
   return Array.from(new Set(candidates));
 }
 
-function parseGithubEntity(
-  url: string,
-): { owner: string; repo: string; number?: number } | null {
-  try {
-    const u = new URL(url);
-    const parts = u.pathname.split("/").filter(Boolean);
-    const idxRepos = parts[0] === "repos" ? 1 : 0;
-    const owner = parts[idxRepos];
-    const repo = parts[idxRepos + 1];
-    const numberStr = parts[idxRepos + 3];
-    const number = Number.parseInt(numberStr, 10);
-    if (!owner || !repo) return null;
-    return {
-      owner,
-      repo,
-      number: Number.isFinite(number) ? number : undefined,
-    };
-  } catch {
-    return null;
-  }
-}
+// Removed in favor of shared helper in src/utils/githubEntity.ts
 
 function toStr(v: any): string | undefined {
   if (v == null) return undefined;
