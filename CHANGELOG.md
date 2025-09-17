@@ -1,3 +1,8 @@
+## 1.9.0 (2025-09-17)
+
+* Merge pull request #844 from a5c-ai/a5c/main ([e5cb4a6](https://github.com/a5c-ai/events/commit/e5cb4a6)), closes [#844](https://github.com/a5c-ai/events/issues/844)
+* feat(workflow): add dynamic log level configuration to reactor workflow ([cdb727c](https://github.com/a5c-ai/events/commit/cdb727c))
+
 ## 1.8.0 (2025-09-17)
 
 * 🧪 CI: export parseGithubEntity from emit (#838) ([37eb709](https://github.com/a5c-ai/events/commit/37eb709)), closes [#838](https://github.com/a5c-ai/events/issues/838) [#834](https://github.com/a5c-ai/events/issues/834) [#834](https://github.com/a5c-ai/events/issues/834)
