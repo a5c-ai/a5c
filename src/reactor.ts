@@ -98,7 +98,9 @@ function parseGithubUri(
         uri,
       );
     if (!m) return null;
-    const [, owner, repo, ref, p] = m;
+    const [, owner, repo, refRaw, pRaw] = m;
+    const ref = decodeURIComponent(refRaw);
+    const p = decodeURIComponent(pRaw);
     return { owner, repo, ref, path: p };
   } catch {
     return null;
@@ -170,6 +172,8 @@ function readInput(inPath?: string): any {
 
 function resolveRulesPath(fileOpt?: string): string {
   const p = fileOpt || ".a5c/events/";
+  // Preserve URI forms like github:// and file:// — don't path.resolve them
+  if (/^[a-zA-Z]+:\/\//.test(p)) return p;
   return path.resolve(p);
 }
 
