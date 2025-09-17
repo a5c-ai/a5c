@@ -20,9 +20,9 @@ jobs:
           jq -r '.action // .event_type // .type // "?"' "$GITHUB_EVENT_PATH" || true
       - name: Setup Node
         uses: actions/setup-node@v4
-        with:
-          node-version-file: .nvmrc
-          # Avoid setting global registry to GPR; use project .npmrc scoping instead
+        # with:
+        # node-version-file: .nvmrc
+        # Avoid setting global registry to GPR; use project .npmrc scoping instead
       - name: Configure npm auth (env)
         env:
           NODE_AUTH_TOKEN: ${{ secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
