@@ -21,6 +21,15 @@ Notes:
 - Use `!` for breaking changes after the type/scope, and describe the change in the body.
 - Keep the first line under ~72 chars when possible.
 
+### PR Titles
+
+Pull request titles must also follow Conventional Commits format. Titles are enforced as:
+
+- Blocking for PRs targeting `a5c/main`.
+- Warning-only (non-blocking) for PRs targeting `main`.
+
+Example PR title: `feat: add normalize CLI flag`.
+
 ## Commit Message Validation (Local)
 
 We include a Husky `commit-msg` hook that validates your commit message using Commitlint. The hook calls `npx commitlint --edit "$1"` as defined in `.husky/commit-msg` and reads rules from `commitlint.config.cjs` (extends `@commitlint/config-conventional`). If a commit is rejected, adjust the message to match the format above. See also `docs/contributing/git-commits.md`.

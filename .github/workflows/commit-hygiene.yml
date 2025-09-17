@@ -18,11 +18,21 @@ jobs:
       - name: Install lightweight deps
         run: |
           npm ci --omit=dev || npm i --omit=dev || true
-      - name: Validate PR title (non-blocking)
+      - name: Validate PR title (branch-aware)
         run: |
           TITLE=$(jq -r .pull_request.title < "$GITHUB_EVENT_PATH")
+          BASE_REF=$(jq -r .pull_request.base.ref < "$GITHUB_EVENT_PATH")
           if ! npx -y tsx scripts/commit-verify.ts --pr-title "$TITLE" --allow-merge; then
-            echo "PR title does not conform to Conventional Commits; consider rewording." >&2
+            if [ "$BASE_REF" = "a5c/main" ]; then
+              echo "::error title=PR title not Conventional::Title must follow Conventional Commits for PRs into a5c/main (e.g., feat: add X)." >&2
+              echo "Enforcement: blocking (a5c/main) — title must conform." >> "$GITHUB_STEP_SUMMARY"
+              exit 1
+            else
+              echo "::warning title=PR title not Conventional::Title should follow Conventional Commits (e.g., feat: add X)." >&2
+              echo "Enforcement: warning-only (base '$BASE_REF')." >> "$GITHUB_STEP_SUMMARY"
+            fi
+          else
+            echo "PR title conforms to Conventional Commits." >> "$GITHUB_STEP_SUMMARY"
           fi
       - name: Validate commit messages in PR
         run: |
