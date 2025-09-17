@@ -19,3 +19,12 @@
 ## Notes
 
 Initial commit to start PR and track progress.
+
+## Results
+
+- Removed legacy duplicate under docs/schemas
+- Updated docs to reference only the canonical path
+- Added CI guard at `.github/workflows/quick-checks.yml` via `scripts/lint-obs-paths.sh`
+- Local checks:
+  - `npm run validate:obs:file` — passed
+  - repo grep for legacy path — none (excluding the guard script itself)
