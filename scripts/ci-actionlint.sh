@@ -35,8 +35,10 @@ fi
 run_actionlint_binary() {
   echo "Using actionlint binary installer"
   if bash <(curl -s https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash) >/dev/null 2>&1; then
+    set +e
     ./actionlint -color
     rc=$?
+    set -e
     if [[ $rc -eq 0 ]]; then
       return 0
     else
@@ -54,8 +56,10 @@ run_actionlint_binary() {
 
 run_actionlint_docker() {
   echo "Using actionlint via Docker"
+  set +e
   docker run --rm -v "$PWD":/repo -w /repo ghcr.io/rhysd/actionlint:latest -color
   rc=$?
+  set -e
   if [[ $rc -eq 0 ]]; then
     return 0
   fi
@@ -74,14 +78,26 @@ run_actionlint_docker() {
 }
 
 if command -v curl >/dev/null 2>&1; then
-  if run_actionlint_binary; then
+  run_actionlint_binary
+  rc=$?
+  if [[ $rc -eq 0 ]]; then
     exit 0
+  fi
+  if [[ $rc -eq 2 ]]; then
+    # Strict mode: fail CI on findings
+    exit 2
   fi
 fi
 
 if command -v docker >/dev/null 2>&1; then
-  if run_actionlint_docker; then
+  run_actionlint_docker
+  rc=$?
+  if [[ $rc -eq 0 ]]; then
     exit 0
+  fi
+  if [[ $rc -eq 2 ]]; then
+    # Strict mode via Docker: fail CI on findings
+    exit 2
   fi
 fi
 
