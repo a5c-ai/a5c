@@ -23,7 +23,10 @@ export async function handleEmit(
     await executeSideEffects(obj);
 
     const safe = redactObject(obj);
-    const sink = opts.sink || (opts.out ? "file" : "github");
+    // Default behavior should be stdout when no explicit sink is provided.
+    // Prior logic defaulted to 'github' which requires a token and caused
+    // CI tests to fail when expecting stdout by default.
+    const sink = opts.sink || (opts.out ? "file" : "stdout");
     if (sink === "file") {
       if (!opts.out) throw new Error("Missing --out for file sink");
       writeJSONFile(opts.out, safe);
