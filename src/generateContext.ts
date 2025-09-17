@@ -307,8 +307,10 @@ function evalWithThis(expr: string, ctx: Context, currentUri: string): any {
 }
 
 function preprocess(expr: string): string {
-  // Reuse simple pipeline handling similar to reactor
-  return expr;
+  // Map bare `this` to the current each-item value stored in vars.this
+  // Also map member access like `this.foo` -> `vars.this.foo`
+  // Do a conservative replacement on identifier boundaries
+  return expr.replace(/\bthis\b/g, "vars.this");
 }
 
 function expandDollarExpressions(s: string, ctx: Context): string {
