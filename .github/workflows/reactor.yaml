@@ -17,8 +17,6 @@ permissions:
   statuses: write
   checks: write
   repository-projects: write
-concurrency:
-  group: reactor
 jobs:
   reactor:
     runs-on: ubuntu-latest
