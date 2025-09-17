@@ -23,7 +23,11 @@ export async function handleEmit(
     await executeSideEffects(obj);
 
     const safe = redactObject(obj);
-    const sink = opts.sink || (opts.out ? "file" : "github");
+    // Default behavior:
+    // - stdout when no sink specified
+    // - file when --out is provided
+    // - github only when explicitly requested via sink="github"
+    const sink = opts.sink || (opts.out ? "file" : "stdout");
     if (sink === "file") {
       if (!opts.out) throw new Error("Missing --out for file sink");
       writeJSONFile(opts.out, safe);
