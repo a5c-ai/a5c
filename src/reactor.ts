@@ -125,6 +125,7 @@ async function fetchGithubYamlDocs(
     const targets = computeRemotePaths(basePath);
     for (const pathItem of targets) {
       await fetchGithubPath(octokit, owner, repo, cleanRef, pathItem, docs);
+      if (docs.length) break;
     }
     return docs;
   } catch {
