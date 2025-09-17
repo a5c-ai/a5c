@@ -271,22 +271,6 @@ events enrich --in samples/pull_request.synchronize.json \
   | jq '.enriched.github.pr.files | map(has("patch")) | all'
 ```
 
-Include patch diffs explicitly (opt‑in):
-
-```bash
-events enrich --in samples/pull_request.synchronize.json \
-  --use-github --flag include_patch=true \
-  | jq '.enriched.github.pr.files | map(has("patch")) | all'
-```
-
-Include patch diffs explicitly (opt‑in):
-
-```bash
-events enrich --in samples/pull_request.synchronize.json \
-  --use-github --flag include_patch=true \
-  | jq '.enriched.github.pr.files | map(has("patch")) | all'
-```
-
 Inspect composed if present:
 
 ```bash
@@ -420,8 +404,3 @@ References:
 - Large payloads: JSON is read/written from files/stdin/stdout; providers may add streaming in future.
 
 See also: `docs/specs/README.md`. Technical specs reference for token precedence: `docs/producer/phases/technical-specs/tech-stack.md`.
-
-# Disable commit message and issue comment scanning
-
-events enrich --in samples/push.json --flag 'mentions.scan.commit_messages=false'
-events enrich --in samples/issue_comment.created.json --flag 'mentions.scan.issue_comments=false'
