@@ -49,9 +49,11 @@ For CI guidance and required checks, see `docs/ci/ci-checks.md`.
 
 Validate locally: `npm run -s validate:examples` (details in `docs/ci/ci-checks.md`).
 
-- Quick checks run on pull requests for fast feedback (lint, typecheck, tests with coverage).
-- Heavier gates (build, full tests) run on push to protected branches.
-- Branch semantics: `a5c/main` is the development/staging branch; `main` is production.
+Triggers matrix (summary):
+
+- Pull requests → Quick feedback: `Quick Checks` (lint, typecheck, unit tests + coverage), `Lint`, `Typecheck`, `Commit Hygiene`.
+- Push to protected branches (`a5c/main`, `main`) → Heavier gates: `Build`, `Tests` (full install/build/test with coverage artifacts).
+- Branch semantics: `a5c/main` is development/staging; `main` is production.
 
 ## CLI Reference
 
@@ -351,19 +353,37 @@ See also sample outputs:
 
 You can optionally upload coverage to Codecov. This repo does not enable uploads by default.
 
-Opt-in steps:
+Opt-in steps (aligned with `docs/ci/ci-checks.md`):
 
-- Create a Codecov project for this repository and add a repo Secret or Variable named `CODECOV_TOKEN`.
-- Add the following step to your tests workflow after coverage is generated:
+- Define `CODECOV_TOKEN` via repo/org Secret or Variable.
+- Use the guarded upload step after coverage is generated:
 
 ```yaml
+env:
+  CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN || vars.CODECOV_TOKEN || '' }}
+
 - name: Upload coverage to Codecov (optional)
   if: ${{ env.CODECOV_TOKEN != '' }}
-  run: |
-    bash scripts/coverage-upload.sh
+  uses: codecov/codecov-action@v4
+  with:
+    token: ${{ env.CODECOV_TOKEN }}
+    files: coverage/lcov.info
+    flags: pr
+    fail_ci_if_error: false
 ```
 
-Note: The Codecov badge is shown at the top of this README and links to the tree view for `a5c/main`: https://app.codecov.io/gh/a5c-ai/events/tree/a5c/main
+Alternatively, use the repo script:
+
+```yaml
+env:
+  CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN || vars.CODECOV_TOKEN || '' }}
+
+- name: Upload coverage to Codecov (optional)
+  if: ${{ env.CODECOV_TOKEN != '' }}
+  run: bash scripts/coverage-upload.sh
+```
+
+Note: The Codecov badge at the top links to the tree view for `a5c/main`: https://app.codecov.io/gh/a5c-ai/events/tree/a5c/main
 
 ### Auth tokens: precedence & redaction
 

@@ -90,7 +90,7 @@ See also:
 
 Behavior:
 
-- Pass `--use-github` to enable GitHub API enrichment. If no token is configured, the CLI exits with code `3` (provider/network error) and prints an error (no JSON is emitted by the CLI path).
+- Pass `--use-github` to enable GitHub API enrichment. If no token is configured, the CLI exits with code `3` (provider/network error) and prints an error (no JSON is emitted by the CLI path). Token precedence: `A5C_AGENT_GITHUB_TOKEN` is preferred over `GITHUB_TOKEN` when both are set.
 - Offline by default: no network calls without `--use-github`. Output includes a minimal stub under `enriched.github`:
 
 > Offline states
@@ -127,9 +127,9 @@ events enrich --in FILE [--out FILE] [--rules FILE] \
 - `--out FILE`: write result JSON (stdout if omitted)
 - `--rules FILE`: YAML/JSON rules file (optional). When provided, matching rules emit `composed[]` with `{ key, reason, targets?, labels?, payload? }`.
   - `--flag KEY=VAL...`: enrichment flags (repeatable); notable flags:
-  - `include_patch=true|false` (default: `false`) – include diff patches; when `false`, patches are removed. Defaulting to false avoids leaking secrets via diffs and keeps outputs small; enable only when required.
-  - `commit_limit=<n>` (default: `50`) – limit commits fetched for PR/push
-  - `file_limit=<n>` (default: `200`) – limit files per compare list
+    - `include_patch=true|false` (default: `false`) – include diff patches; when `false`, patches are removed. Defaulting to false avoids leaking secrets via diffs and keeps outputs small; enable only when required.
+    - `commit_limit=<n>` (default: `50`) – limit commits fetched for PR/push
+    - `file_limit=<n>` (default: `200`) – limit files per compare list
   - Mentions scanning flags:
     - `mentions.scan.commit_messages=true|false` (default: `true`) – enable/disable scanning commit messages
     - `mentions.scan.issue_comments=true|false` (default: `true`) – enable/disable scanning issue comment bodies
@@ -139,7 +139,7 @@ events enrich --in FILE [--out FILE] [--rules FILE] \
       - Mapping note: common extensions normalize to IDs before comparison (e.g., `.tsx → ts`, `.jsx → js`, `.yml → yaml`).
     - `mentions.scan.commit_messages=true|false` (default: `true`) – enable/disable scanning commit messages for `@mentions`
     - `mentions.scan.issue_comments=true|false` (default: `true`) – enable/disable scanning issue comment bodies for `@mentions`
-  - `--use-github`: enable GitHub API enrichment; equivalent to `--flag use_github=true` (requires `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`). Without this flag, the CLI performs no network calls and sets `enriched.github = { provider: 'github', partial: true, reason: 'flag:not_set' }` (canonical and stable).
+  - `--use-github`: enable GitHub API enrichment; equivalent to `--flag use_github=true` (requires `A5C_AGENT_GITHUB_TOKEN` or `GITHUB_TOKEN`). Without this flag, the CLI performs no network calls and sets `enriched.github = { provider: 'github', partial: true, reason: 'flag:not_set' }` (canonical and stable).
   - Escape hatch for CI convenience: set environment variable `A5C_EVENTS_AUTO_USE_GITHUB=true` to auto-enable GitHub enrichment when a token is present (still no effect if no token). Default remains offline unless `--use-github` is explicitly provided.
   - Notes: Mentions found in file diffs or changed files are emitted with `source: code_comment` and include `location.file` and `location.line` when available.
 - `--label KEY=VAL...`: labels to attach
