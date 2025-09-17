@@ -5,7 +5,7 @@
 - Plan: Update `.github/workflows/pr-tests.yml` to use `-F body=@/tmp/pr-comment.md` for PATCH, matching `gh` semantics, and keep fallback to `gh pr comment` for initial creation. Verify locally with `gh` dry-run where possible.
 
 Verification steps:
+
 - Reproduce parsing locally by invoking the affected lines in a safe repo context.
 - Run `npm test` to ensure no app code changes break tests.
 - Push fix; rely on CI to validate the workflow behavior.
-

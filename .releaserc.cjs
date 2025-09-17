@@ -4,7 +4,10 @@
 
 const commonPlugins = [
   ["@semantic-release/commit-analyzer", { preset: "conventionalcommits" }],
-  ["@semantic-release/release-notes-generator", { preset: "conventionalcommits" }],
+  [
+    "@semantic-release/release-notes-generator",
+    { preset: "conventionalcommits" },
+  ],
   ["@semantic-release/changelog", { changelogFile: "CHANGELOG.md" }],
   ["@semantic-release/npm", { npmPublish: true }],
   ["@semantic-release/github", { labels: ["release"] }],
@@ -34,5 +37,7 @@ module.exports = {
     { name: "a5c/main", channel: "a5c-main", prerelease: "a5c-main" },
     { name: "main" },
   ],
-  plugins: pluginsForBranch(process.env.GITHUB_REF_NAME || process.env.BRANCH_NAME || ""),
+  plugins: pluginsForBranch(
+    process.env.GITHUB_REF_NAME || process.env.BRANCH_NAME || "",
+  ),
 };
