@@ -159,17 +159,22 @@ function explainMatch(
     return { matched: true };
   }
   if (Array.isArray(onSpec)) {
+    let lastReason: string | undefined;
     for (const name of onSpec) {
       const r = explainMatch(name, ne);
       if (r.matched) return r;
+      lastReason = r.reason;
     }
-    return { matched: false, reason: `none of ${onSpec.join(",")} matched` };
+    return { matched: false, reason: lastReason || `none matched` };
   }
   if (onSpec && typeof onSpec === "object") {
+    let lastReason: string | undefined;
     for (const [name, spec] of Object.entries(onSpec)) {
       const r = explainMatchOne(String(name), spec, ne);
       if (r.matched) return r;
+      lastReason = r.reason;
     }
+    return { matched: false, reason: lastReason || "no entry matched" };
   }
   return { matched: false, reason: "empty on spec" };
 }
@@ -820,9 +825,15 @@ function buildExpressionEvent(base: any): any {
       ]) {
         if (e[k] == null && oe[k] != null) e[k] = oe[k];
       }
+      // Derive type from original_event shape first
+      if (e.type == null) {
+        if (oe.pull_request) e.type = "pull_request";
+        else if (oe.issue) e.type = "issues";
+      }
       if (e.action == null && typeof oe.action === "string")
         e.action = oe.action;
     }
+    // Fallback type from action when still unset
     if (e && e.type == null) {
       e.type =
         e.action ||
