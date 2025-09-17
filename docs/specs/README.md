@@ -35,6 +35,21 @@
       - pull_request events use `ref.type: "branch"` and populate `ref.base` and `ref.head` with the base and head branch names respectively.
       - push/workflow_run typically use `ref.type: "branch"`; tags use `ref.type: "tag"`.
       - when the ref cannot be categorized, use `ref.type: "unknown"`.
+
+    Example (excerpt for a pull_request event):
+
+    ```json
+    {
+      "type": "pull_request",
+      "repo": { "full_name": "a5c-ai/events" },
+      "ref": {
+        "type": "branch",
+        "base": "main",
+        "head": "feature/my-change"
+      }
+    }
+    ```
+
   - actor: { id, login, type }
   - payload: provider-native payload (raw)
   - enriched: { metadata: {}, derived: {}, correlations: {} }

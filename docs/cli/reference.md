@@ -142,9 +142,9 @@ events enrich --in FILE [--out FILE] [--rules FILE] \
 - `mentions.scan.commit_messages=true|false` (default: `true`) – enable/disable scanning commit messages for `@mentions`.
 - `mentions.scan.issue_comments=true|false` (default: `true`) – enable/disable scanning issue comment bodies for `@mentions`.
 - `mentions.max_file_bytes=<bytes>` (default: `204800` ≈ 200KB) – skip scanning any single file larger than this cap.
-- `mentions.languages=<lang,...>` (optional) – only scan files whose detected language matches the allowlist. Use canonical language IDs. Common extensions are accepted (with/without a leading dot) and normalized to IDs. Canonical IDs: `js, ts, py, go, java, c, cpp, sh, yaml, md`.
+- `mentions.languages=<lang,...>` (optional) – only scan files whose detected language matches the allowlist. Accepted values are canonical IDs and common extensions (with/without a leading dot); inputs normalize to IDs. Canonical IDs: `js, ts, py, go, java, c, cpp, sh, yaml, md`.
 
-Language allowlist details:
+Language allowlist details (inputs normalize to IDs):
 
 - Accepted language IDs and common extensions detected → ID
   - `.js, .mjs, .cjs, .jsx` → `js`

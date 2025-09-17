@@ -43,6 +43,16 @@ jq '.type, .repo.full_name, .provenance.workflow?.name' out.json
 cat out.json | npx @a5c-ai/events validate --quiet
 ```
 
+## CI Checks
+
+For CI guidance and required checks, see `docs/ci/ci-checks.md`.
+
+Validate locally: `npm run -s validate:examples` (details in `docs/ci/ci-checks.md`).
+
+- Quick checks run on pull requests for fast feedback (lint, typecheck, tests with coverage).
+- Heavier gates (build, full tests) run on push to protected branches.
+- Branch semantics: `a5c/main` is the development/staging branch; `main` is production.
+
 ## CLI Reference
 
 ### Mentions config (Quick Start)
@@ -57,7 +67,7 @@ events enrich --in ... --flag 'mentions.scan.changed_files=false'
 # Accepted values: canonical language IDs and common extensions (with or without a leading dot).
 # Values are normalized to IDs. Examples: `.tsx → ts`, `.jsx → js`, `.yml → yaml`.
 # Canonical IDs include: js, ts, py, go, java, c, cpp, sh, yaml, md.
-events enrich --in ... --flag "mentions.languages=ts,js,.yml,.tsx"
+events enrich --in ... --flag "mentions.languages=ts,js"    # or include extensions: --flag "mentions.languages=.yml,.tsx"
 ```
 
 Canonical reference and examples:

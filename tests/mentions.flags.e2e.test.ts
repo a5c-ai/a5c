@@ -297,6 +297,52 @@ describe("E2E: mentions flags — code comment scanning", () => {
     const inFile = writeJsonTmp(event);
     const octo = makeMockOctokit({ bigFileBytes: 5000 });
 
+    // Case A: dot-prefixed extension
+    {
+      const { output } = await handleEnrich({
+        in: inFile,
+        flags: {
+          use_github: "true",
+          include_patch: "false",
+          "mentions.languages": ".tsx",
+        },
+        labels: [],
+        rules: undefined,
+        octokit: octo,
+      });
+      const mentions: any[] = (output as any).enriched?.mentions || [];
+      // Only TS file should appear
+      const files = new Set(
+        mentions
+          .filter((m) => m.source === "code_comment")
+          .map((m) => (m.location as any)?.file),
+      );
+      expect(files.has("src/ok.ts")).toBe(true);
+      expect(files.has("src/big.js")).toBe(false);
+    }
+
+    // Case B: bare extension without dot
+    {
+      const { output } = await handleEnrich({
+        in: inFile,
+        flags: {
+          use_github: "true",
+          include_patch: "false",
+          "mentions.languages": "tsx",
+        },
+        labels: [],
+        rules: undefined,
+        octokit: octo,
+      });
+      const mentions: any[] = (output as any).enriched?.mentions || [];
+      const files = new Set(
+        mentions
+          .filter((m) => m.source === "code_comment")
+          .map((m) => (m.location as any)?.file),
+      );
+      expect(files.has("src/ok.ts")).toBe(true);
+      expect(files.has("src/big.js")).toBe(false);
+    }
     // Using a mix of extension forms; normalization should accept and map them to IDs
     const { output } = await handleEnrich({
       in: inFile,
