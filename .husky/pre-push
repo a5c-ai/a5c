@@ -1,17 +1,13 @@
 #!/usr/bin/env sh
-set -e
+set -euo pipefail
 
-echo "Running pre-push checks (typecheck + targeted tests)..."
-
-if [ -n "$A5C_SKIP_PREPUSH" ] || [ -n "$SKIP_PREPUSH" ]; then
+if [ -n "${A5C_SKIP_PREPUSH:-}" ] || [ -n "${SKIP_PREPUSH:-}" ]; then
   echo "Skipping pre-push due to env flag."
   exit 0
 fi
 
-if command -v npm >/dev/null 2>&1; then
-  npm run --silent typecheck || exit 1
-  # Try related tests first; fallback handled in script and here
-  npm run --silent prepush || npm run --silent prepush:full
-fi
-
-exit 0
+echo "Pre-push: typecheck + related tests"
+# Run typecheck first (silent for cleaner output)
+npm run --silent typecheck
+# Try related tests first; if it fails or finds no matches, fallback to full
+npm run --silent prepush || npm run --silent prepush:full
