@@ -27,11 +27,26 @@ EXCLUDE_REGEX='(^LICENSE$|^docs/|\.out$|^run\.log$|^run\.view\.err$|^actionlint$
 rm -f .editorconfig-checker.json || true
 
 # Resolve version: allow override via EDITORCONFIG_CHECKER_VERSION, default pinned
-EC_VERSION="${EDITORCONFIG_CHECKER_VERSION:-3.4.0}"
+# Default to 5.1.9 which supports -format github-actions
+EC_VERSION="${EDITORCONFIG_CHECKER_VERSION:-5.1.9}"
 echo "Using editorconfig-checker@${EC_VERSION}"
 
-# Execute with consistent flags for CI annotations
-npx --yes editorconfig-checker@"${EC_VERSION}" \
-  -color \
-  -format github-actions \
-  -exclude "$EXCLUDE_REGEX" || exit $?
+# Determine if -format flag is supported by this version
+FORMAT_ARGS=()
+# Detect support for -format flag without requiring ripgrep on runners
+if npx --yes editorconfig-checker@"${EC_VERSION}" -h 2>&1 | grep -q -- "-format"; then
+  FORMAT_ARGS=(-format github-actions)
+fi
+
+# Execute with excludes; avoid forcing color for broader compatibility
+if ! npx --yes editorconfig-checker@"${EC_VERSION}" \
+  "${FORMAT_ARGS[@]}" \
+  -exclude "$EXCLUDE_REGEX"; then
+  # If the first run failed and we attempted -format, retry without it once
+  if [ "${#FORMAT_ARGS[@]}" -gt 0 ]; then
+    echo "Retrying editorconfig-checker without -format flag"
+    npx --yes editorconfig-checker@"${EC_VERSION}" -exclude "$EXCLUDE_REGEX"
+  else
+    exit $?
+  fi
+fi
