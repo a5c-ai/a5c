@@ -1,3 +1,8 @@
+## 1.7.0 (2025-09-17)
+
+* Merge pull request #830 from a5c-ai/a5c/main ([674f975](https://github.com/a5c-ai/events/commit/674f975)), closes [#830](https://github.com/a5c-ai/events/issues/830)
+* feat(reactor): enhance reactor document handling and expression evaluation ([69fb4af](https://github.com/a5c-ai/events/commit/69fb4af))
+
 ## 1.6.0 (2025-09-17)
 
 * Merge pull request #829 from a5c-ai/a5c/main ([aa0359b](https://github.com/a5c-ai/events/commit/aa0359b)), closes [#829](https://github.com/a5c-ai/events/issues/829)
