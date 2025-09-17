@@ -22,6 +22,19 @@ Run `npm install` once; Husky will install hooks automatically. Node >= 20 is re
 - Skip pre-commit: set `A5C_SKIP_PRECOMMIT=1` or `SKIP_PRECOMMIT=1` (legacy `SKIP_CHECKS=1` also works)
 - Skip pre-push: set `A5C_SKIP_PREPUSH=1` or `SKIP_PREPUSH=1`
 
+## Pre-push behavior
+
+- Runs `npm run typecheck` first (no emit, src-only via `tsconfig.build.json`).
+- Then runs `npm run prepush` which executes `scripts/prepush-related.js`:
+  - Detects changed files vs `origin/a5c/main` and runs `vitest related` for them.
+  - If no related tests or on failure, falls back to `vitest run`.
+  - Honors `A5C_SKIP_PREPUSH`/`SKIP_PREPUSH` in case you need to bypass locally.
+
+### Fixing failures
+
+- Type errors: run `npm run typecheck` and open the reported files; fix TS annotations or imports.
+- Test failures: run `vitest --watch` or `vitest related <file>` to iterate quickly.
+
 ## Pre-push details
 
 - Runs `npm run typecheck` (no emit) to catch TypeScript issues quickly.
