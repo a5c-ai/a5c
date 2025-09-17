@@ -24,7 +24,8 @@ jobs:
       AJV_CLI_VERSION: "5.0.0" # ajv-cli v5 (Ajv v8, Draft 2020-12)
       AJV_FORMATS_VERSION: "3.0.1" # ajv-formats v3 for Ajv v8
       # Pin editorconfig-checker with override via repo Variable
-      EDITORCONFIG_CHECKER_VERSION: ${{ vars.EDITORCONFIG_CHECKER_VERSION || '3.4.0' }}
+      # Default 5.1.9 (supports -format github-actions); script detects support dynamically
+      EDITORCONFIG_CHECKER_VERSION: ${{ vars.EDITORCONFIG_CHECKER_VERSION || '5.1.9' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
