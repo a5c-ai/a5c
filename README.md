@@ -43,6 +43,10 @@ jq '.type, .repo.full_name, .provenance.workflow?.name' out.json
 cat out.json | npx @a5c-ai/events validate --quiet
 ```
 
+Programmatic SDK example:
+
+- See SDK Quickstart: `docs/user/sdk-quickstart.md` (minimal example using `mapToNE` and optional `enrichGithub`).
+
 Ref note (important):
 
 - The NE schema defines `ref.type` as `branch | tag | unknown`. Pull request events use branch semantics and populate `ref.base` and `ref.head` with the base and head branch names respectively; there is no `pr` enum in `ref.type`.
