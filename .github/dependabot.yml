@@ -1,0 +1,40 @@
+version: 2
+updates:
+  # npm - development dependencies (safe to auto-merge)
+  - package-ecosystem: npm
+    directory: "/"
+    target-branch: "a5c/main"
+    schedule:
+      interval: weekly
+      day: sunday
+      time: "04:00"
+    allow:
+      - dependency-type: development
+    labels:
+      - dependencies
+      - automerge
+    open-pull-requests-limit: 10
+  # npm - production/runtime dependencies (no automerge by default)
+  - package-ecosystem: npm
+    directory: "/"
+    target-branch: "a5c/main"
+    schedule:
+      interval: weekly
+      day: sunday
+      time: "04:00"
+    allow:
+      - dependency-type: production
+    labels:
+      - dependencies
+    open-pull-requests-limit: 10
+  # GitHub Actions
+  - package-ecosystem: github-actions
+    directory: "/.github/workflows"
+    target-branch: "a5c/main"
+    schedule:
+      interval: weekly
+      day: sunday
+      time: "04:00"
+    labels:
+      - dependencies
+    open-pull-requests-limit: 10
