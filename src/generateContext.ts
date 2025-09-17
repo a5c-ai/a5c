@@ -24,12 +24,20 @@ export async function handleGenerateContext(
       process.env.A5C_AGENT_GITHUB_TOKEN ||
       process.env.GITHUB_TOKEN;
     const rootUri = opts.template || "./README.md";
-    const rendered = await renderTemplate(rootUri, {
-      event: input,
-      env: process.env,
-      vars: opts.vars || {},
-      token,
-    });
+    const rendered = await renderTemplate(
+      expandDollarExpressions(rootUri, {
+        event: input,
+        env: process.env,
+        vars: opts.vars || {},
+        token,
+      }),
+      {
+        event: input,
+        env: process.env,
+        vars: opts.vars || {},
+        token,
+      },
+    );
     return { code: 0, output: rendered };
   } catch (e: any) {
     return { code: 1, errorMessage: String(e?.message || e) };
@@ -75,7 +83,8 @@ async function renderString(
         ...ctx,
         vars: { ...ctx.vars, ...argVars },
       };
-      const included = await renderTemplate(rawUri, merged, currentUri);
+      const dynUri = expandDollarExpressions(rawUri, merged);
+      const included = await renderTemplate(dynUri, merged, currentUri);
       return included;
     },
   );
@@ -189,7 +198,9 @@ async function fetchResource(
   ctx: Context,
   base?: string,
 ): Promise<string> {
-  const { scheme, path: p } = resolveUri(rawUri, base);
+  // Expand ${{ ... }} inside URI before resolution
+  const expanded = expandDollarExpressions(rawUri, ctx);
+  const { scheme, path: p } = resolveUri(expanded, base);
   if (scheme === "file") {
     const resolved =
       base && base.startsWith("file://")
@@ -259,16 +270,28 @@ function evalExpr(expr: string, ctx: Context, currentUri: string): any {
 
   const fn = new Function(
     "event",
+    "github",
     "env",
     "vars",
     "include",
     `return (${compiled});`,
   );
   const include = (u: string) => renderTemplate(u, ctx, currentUri);
-  return fn(ctx.event, ctx.env, ctx.vars, include);
+  return fn(ctx.event, ctx.event, ctx.env, ctx.vars, include);
 }
 
 function preprocess(expr: string): string {
   // Reuse simple pipeline handling similar to reactor
   return expr;
+}
+
+function expandDollarExpressions(s: string, ctx: Context): string {
+  return String(s).replace(/\$\{\{\s*([^}]+)\s*\}\}/g, (_m, expr) => {
+    try {
+      const val = evalExpr(String(expr), ctx, "file:///");
+      return val == null ? "" : String(val);
+    } catch {
+      return "";
+    }
+  });
 }
