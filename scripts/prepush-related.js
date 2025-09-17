@@ -23,7 +23,12 @@ function run(cmd, opts = {}) {
 try {
   const base = process.env.A5C_BASE_REF || "origin/a5c/main";
   // List changed source files
-  const diffCmd = `git diff --name-only ${base}...HEAD -- 'src/**/*.{ts,tsx}' 'tests/**/*.{ts,tsx,js}' 'test/**/*.{ts,tsx,js}'`;
+  // Use Git pathspec globs; avoid shell brace expansion which Git doesn't support.
+  // Keep patterns quoted so the shell doesn't expand them before Git receives them.
+  const diffCmd = `git diff --name-only ${base}...HEAD -- \
+    'src/**/*.ts' 'src/**/*.tsx' \
+    'tests/**/*.ts' 'tests/**/*.tsx' 'tests/**/*.js' \
+    'test/**/*.ts' 'test/**/*.tsx' 'test/**/*.js'`;
   const out = sh(diffCmd);
   const files = out
     .split("\n")
