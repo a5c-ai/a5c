@@ -1,5 +1,6 @@
 #!/usr/bin/env sh
-set -euo pipefail
+# POSIX sh: avoid non-portable 'pipefail'
+set -eu
 
 if [ -n "${A5C_SKIP_PREPUSH:-}" ] || [ -n "${SKIP_PREPUSH:-}" ]; then
   echo "Skipping pre-push due to env flag."
