@@ -1,3 +1,12 @@
+## 1.10.0 (2025-09-17)
+
+* Merge branch 'a5c/main' of https://github.com/a5c-ai/events into a5c/main ([b8c32c5](https://github.com/a5c-ai/events/commit/b8c32c5))
+* Merge pull request #845 from a5c-ai/a5c/main ([55e06fe](https://github.com/a5c-ai/events/commit/55e06fe)), closes [#845](https://github.com/a5c-ai/events/issues/845)
+* Merge pull request #848 from a5c-ai/a5c/main ([0be6afe](https://github.com/a5c-ai/events/commit/0be6afe)), closes [#848](https://github.com/a5c-ai/events/issues/848)
+* refactor(reactor): simplify custom event matching logic ([aa94270](https://github.com/a5c-ai/events/commit/aa94270))
+* refactor(reactor): simplify isReactorDoc logic and enhance document source tracking ([0f152cc](https://github.com/a5c-ai/events/commit/0f152cc))
+* feat(cli): add 'version' subcommand ([91f78fa](https://github.com/a5c-ai/events/commit/91f78fa)), closes [#846](https://github.com/a5c-ai/events/issues/846)
+
 ## 1.9.0 (2025-09-17)
 
 * Merge pull request #844 from a5c-ai/a5c/main ([e5cb4a6](https://github.com/a5c-ai/events/commit/e5cb4a6)), closes [#844](https://github.com/a5c-ai/events/issues/844)
