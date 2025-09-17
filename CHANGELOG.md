@@ -1,3 +1,12 @@
+## <small>1.5.2 (2025-09-17)</small>
+
+* Merge pull request #826 from a5c-ai/a5c/main ([9b225e1](https://github.com/a5c-ai/events/commit/9b225e1)), closes [#826](https://github.com/a5c-ai/events/issues/826)
+* Merge pull request #827 from a5c-ai/a5c/main ([0145138](https://github.com/a5c-ai/events/commit/0145138)), closes [#827](https://github.com/a5c-ai/events/issues/827)
+* Merge pull request #828 from a5c-ai/a5c/main ([fc02b6a](https://github.com/a5c-ai/events/commit/fc02b6a)), closes [#828](https://github.com/a5c-ai/events/issues/828)
+* fix(reactor): optimize fetching of GitHub YAML docs by breaking early on successful fetch ([8a721db](https://github.com/a5c-ai/events/commit/8a721db))
+* chore(workflow): remove cancellation of in-progress jobs in reactor concurrency group ([51e449e](https://github.com/a5c-ai/events/commit/51e449e))
+* chore(workflow): remove concurrency group from reactor job in GitHub Actions ([5e6d3e8](https://github.com/a5c-ai/events/commit/5e6d3e8))
+
 ## <small>1.5.1 (2025-09-17)</small>
 
 * 📘 docs: SDK quickstart + links (fixes #794) (#823) ([0bdb9e3](https://github.com/a5c-ai/events/commit/0bdb9e3)), closes [#794](https://github.com/a5c-ai/events/issues/794) [#823](https://github.com/a5c-ai/events/issues/823) [#794](https://github.com/a5c-ai/events/issues/794)
