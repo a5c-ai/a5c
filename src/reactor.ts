@@ -100,10 +100,15 @@ export async function handleReactor(opts: ReactorOptions): Promise<{
         logDebug(`handler#${idx} filtered: missing on/emit`);
         continue;
       }
-      const explain = explainMatch(
-        onSpec,
-        withDocEnv(ne, docEnv, secrets, varsEnv),
+      const neWithEnv = withDocEnv(ne, docEnv, secrets, varsEnv);
+      const dbgEvent = buildExpressionEvent((neWithEnv as any)?.payload);
+      const dbgLabels = Array.isArray(dbgEvent?.pull_request?.labels)
+        ? dbgEvent.pull_request.labels.map((x: any) => x?.name || x)
+        : (neWithEnv as any)?.labels || [];
+      logDebug(
+        `handler#${idx} on=${JSON.stringify(onSpec)} event.type=${dbgEvent?.type} action=${dbgEvent?.action} labels=${JSON.stringify(dbgLabels)}`,
       );
+      const explain = explainMatch(onSpec, neWithEnv);
       if (!explain.matched) {
         logDebug(`handler#${idx} filtered: ${explain.reason || "no match"}`);
         continue;
@@ -111,15 +116,8 @@ export async function handleReactor(opts: ReactorOptions): Promise<{
       logDebug(`handler#${idx} matched`);
       if (emitSpec && typeof emitSpec === "object") {
         for (const [eventType, spec] of Object.entries(emitSpec)) {
-          const payload = buildClientPayload(
-            spec,
-            withDocEnv(ne, docEnv, secrets, varsEnv),
-          );
-          const merged = attachDocCommands(
-            payload,
-            doc,
-            withDocEnv(ne, docEnv, secrets, varsEnv),
-          );
+          const payload = buildClientPayload(spec, neWithEnv);
+          const merged = attachDocCommands(payload, doc, neWithEnv);
           events.push({ event_type: eventType, client_payload: merged });
         }
       }
@@ -806,6 +804,25 @@ function resolveTemplateString(
 function buildExpressionEvent(base: any): any {
   try {
     const e: any = base && typeof base === "object" ? { ...base } : {};
+    // Promote nested original_event for convenience in expressions
+    const oe =
+      e?.client_payload?.payload?.original_event ||
+      e?.client_payload?.original_event;
+    if (oe && typeof oe === "object") {
+      for (const k of [
+        "pull_request",
+        "issue",
+        "repository",
+        "labels",
+        "action",
+        "type",
+        "phase",
+      ]) {
+        if (e[k] == null && oe[k] != null) e[k] = oe[k];
+      }
+      if (e.action == null && typeof oe.action === "string")
+        e.action = oe.action;
+    }
     if (e && e.type == null) {
       e.type =
         e.action ||
