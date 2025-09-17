@@ -26,7 +26,7 @@ This refactor extracts a single shared helper and updates call sites.
 
 ## Progress
 
-- [ ] Scaffolding util and imports
-- [ ] Tests added
+- [x] Scaffolding util and imports
+- [x] Tests added
 
-- [ ] All tests passing
+- [x] All tests passing
