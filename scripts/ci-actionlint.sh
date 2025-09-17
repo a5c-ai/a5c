@@ -54,9 +54,16 @@ run_actionlint_docker() {
 }
 
 if command -v curl >/dev/null 2>&1; then
-  if run_actionlint_binary; then
+  run_actionlint_binary
+  rc=$?
+  if [[ $rc -eq 0 ]]; then
+    # Success or advisory-mode findings -> do not try Docker
     exit 0
+  elif [[ $rc -eq 2 ]]; then
+    # Strict mode findings -> fail immediately and DO NOT try Docker
+    exit 2
   fi
+  # rc=1 means binary unavailable; fall through to Docker
 fi
 
 if command -v docker >/dev/null 2>&1; then
