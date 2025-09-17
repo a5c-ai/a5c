@@ -120,9 +120,11 @@ async function fetchGithubYamlDocs(
     const { Octokit } = await import("@octokit/rest");
     const octokit = new Octokit({ auth: token });
     const docs: any[] = [];
-    const targets = computeRemotePaths(p);
+    const cleanRef = decodeURIComponent(ref || "");
+    const basePath = normalizeRepoPathStr(decodeURIComponent(p || ""));
+    const targets = computeRemotePaths(basePath);
     for (const pathItem of targets) {
-      await fetchGithubPath(octokit, owner, repo, ref, pathItem, docs);
+      await fetchGithubPath(octokit, owner, repo, cleanRef, pathItem, docs);
     }
     return docs;
   } catch {
@@ -139,10 +141,11 @@ async function fetchGithubPath(
   docsOut: any[],
 ): Promise<void> {
   try {
+    const normPath = normalizeRepoPathStr(pathItem);
     const { data } = await octokit.repos.getContent({
       owner,
       repo,
-      path: pathItem,
+      path: normPath,
       ref,
     });
     if (Array.isArray(data)) {
@@ -176,6 +179,11 @@ async function fetchGithubPath(
       } catch {}
     }
   } catch {}
+}
+
+function normalizeRepoPathStr(p: string): string {
+  const s = String(p || "");
+  return s.replace(/^\/+/, "").replace(/\/+$/, "");
 }
 
 function inferRefFromNE(
@@ -530,21 +538,23 @@ function inferRepoFromNE(
 
 function computeRemotePaths(localPath: string): string[] {
   // Normalize input; if a directory, look for typical reactor locations
-  const rel = localPath.replace(/^[A-Za-z]:\\|^\/+/, "").replace(/\\/g, "/");
+  const relRaw = decodeURIComponent(localPath || "");
+  const isDir = relRaw.endsWith("/");
+  const rel = normalizeRepoPathStr(relRaw);
   const candidates: string[] = [];
   if (!rel || rel === "/") {
     candidates.push(".a5c/events/reactor.yaml");
     return candidates;
   }
-  if (rel.endsWith("/")) {
+  if (isDir) {
     // If a directory path is provided, try directory itself (recursive) and '<dir>/reactor.yaml'
     candidates.push(rel);
-    candidates.push(`${rel}reactor.yaml`);
+    candidates.push(`${rel}/reactor.yaml`);
   } else {
     candidates.push(rel);
   }
   // Special-case common root path
-  if (rel === ".a5c/events/" || rel === ".a5c/events") {
+  if (rel === ".a5c/events") {
     candidates.push(`.a5c/events/reactor.yaml`);
   }
   return Array.from(new Set(candidates));
