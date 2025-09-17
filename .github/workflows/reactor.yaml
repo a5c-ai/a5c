@@ -1,4 +1,6 @@
 name: Reactor
+env:
+  A5C_LOG_LEVEL: ${{ github.event.inputs.debug || 'false' && 'debug' || 'info' }}
 on:
   push:
   pull_request:
