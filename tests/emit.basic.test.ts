@@ -4,7 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 describe("handleEmit", () => {
-  it("writes to stdout by default and returns code 0", async () => {
+  it("writes to stdout when sink=stdout and returns code 0", async () => {
     const tmp = path.join(
       process.cwd(),
       "tests",
@@ -12,7 +12,9 @@ describe("handleEmit", () => {
       "github",
       "push.json",
     );
-    const { code, output } = await handleEmit({ in: tmp });
+    // Default sink changed to "github" when no --out is provided.
+    // For unit tests, explicitly force stdout sink to avoid env token dependence.
+    const { code, output } = await handleEmit({ in: tmp, sink: "stdout" });
     expect(code).toBe(0);
     expect(output).toBeTruthy();
   });
