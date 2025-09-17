@@ -37,6 +37,32 @@ Validation example:
 ajv validate -s docs/specs/ne.schema.json -d out.json
 ```
 
+## Ref
+
+The `ref` object captures branch/tag context for the event. The NE schema enumerates `ref.type` as `branch | tag | unknown`.
+
+- Pull request events use branch semantics and set `ref.type: "branch"` with `ref.base` and `ref.head` populated with the base and head branch names. There is no `pr` enum in `ref.type`.
+- Push and workflow_run on branches typically use `ref.type: "branch"`; tag events use `ref.type: "tag"`; when unknown, `ref.type: "unknown"`.
+
+Example (pull_request excerpt):
+
+```json
+{
+  "type": "pull_request",
+  "repo": { "full_name": "a5c-ai/events" },
+  "ref": {
+    "type": "branch",
+    "base": "main",
+    "head": "feature/my-change"
+  }
+}
+```
+
+References:
+
+- Specs: `docs/specs/README.md#3-event-sources-types-and-normalization-model`
+- JSON Schema: `docs/specs/ne.schema.json`
+
 ## Provenance details
 
 The canonical schema defines `provenance` as follows:
