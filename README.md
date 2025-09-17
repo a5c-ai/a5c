@@ -52,6 +52,8 @@ Ref note (important):
 - The NE schema defines `ref.type` as `branch | tag | unknown`. Pull request events use branch semantics and populate `ref.base` and `ref.head` with the base and head branch names respectively; there is no `pr` enum in `ref.type`.
 - Canonical references: see the NE Schema overview at `docs/cli/ne-schema.md#ref` and the JSON Schema at `docs/specs/ne.schema.json`.
 
+Normalized types (GitHub adapter): `workflow_run`, `pull_request`, `push`, `issue`, `issue_comment`, `check_run`, and now also `release`, `deployment`, `job` (from `workflow_job`), `step` (when granular), and `alert` (code/secret scanning).
+
 ## CI Checks
 
 For CI guidance and required checks, see `docs/ci/ci-checks.md`.

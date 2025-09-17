@@ -35,6 +35,70 @@ export function detectTypeAndId(payload: any): DetectResult {
     );
     return { type: "pull_request", occurred_at, id };
   }
+  // release
+  if (payload.release && payload.repository) {
+    const r = payload.release;
+    const occurred_at =
+      r.published_at || r.created_at || new Date().toISOString();
+    const id = String(
+      r.id ||
+        r.tag_name ||
+        `${payload.repository?.full_name}/release/${r.tag_name}`,
+    );
+    return { type: "release", occurred_at, id };
+  }
+  // deployment / deployment_status
+  if ((payload.deployment || payload.deployment_status) && payload.repository) {
+    const d = payload.deployment || payload.deployment_status?.deployment || {};
+    const ds = payload.deployment_status;
+    const occurred_at =
+      ds?.created_at || d.created_at || new Date().toISOString();
+    const id = String(
+      d.id ||
+        ds?.id ||
+        `${payload.repository?.full_name}/deployment/${d.id || "unknown"}`,
+    );
+    return { type: "deployment", occurred_at, id };
+  }
+  // workflow_job → job
+  if (payload.workflow_job && payload.repository) {
+    const wj = payload.workflow_job;
+    const occurred_at =
+      wj.completed_at ||
+      wj.started_at ||
+      wj.created_at ||
+      new Date().toISOString();
+    const id = String(
+      wj.id ||
+        `${payload.repository?.full_name}/workflow_job/${wj.run_id || "unknown"}`,
+    );
+    return { type: "job", occurred_at, id };
+  }
+  // step (granular or custom step-level payloads, if present)
+  if (payload.step && payload.repository) {
+    const s = payload.step;
+    const occurred_at =
+      s.completed_at ||
+      s.started_at ||
+      s.created_at ||
+      new Date().toISOString();
+    const id = String(
+      s.id || `${payload.repository?.full_name}/step/${s.name || "unknown"}`,
+    );
+    return { type: "step", occurred_at, id };
+  }
+  // alerts (code_scanning_alert / secret_scanning_alert)
+  if (payload.alert && payload.repository) {
+    const a = payload.alert;
+    const occurred_at =
+      a.updated_at || a.created_at || new Date().toISOString();
+    const id = String(
+      a.number ||
+        a.id ||
+        `${payload.repository?.full_name}/alert/${a.number || a.id}`,
+    );
+    return { type: "alert", occurred_at, id };
+  }
   // workflow_run
   if (payload.workflow_run) {
     const wr = payload.workflow_run;
@@ -103,6 +167,53 @@ function mapRepo(repo: GHRepo | undefined) {
 }
 
 function mapRef(payload: any) {
+  // release → tag ref
+  if (payload.release) {
+    const r = payload.release;
+    const tag = r.tag_name;
+    const target = r.target_commitish as string | undefined;
+    const shaLike =
+      typeof target === "string" && /^[0-9a-f]{40}$/i.test(target);
+    return tag
+      ? {
+          name: tag,
+          type: "tag",
+          ...(shaLike ? { sha: target } : {}),
+        }
+      : undefined;
+  }
+  // deployment → branch or tag name in deployment.ref (GitHub sends plain branch name)
+  if (payload.deployment || payload.deployment_status) {
+    const d = payload.deployment || payload.deployment_status?.deployment;
+    const name = d?.ref as string | undefined;
+    const sha = (d?.sha as string | undefined) || undefined;
+    return name
+      ? {
+          name,
+          // Heuristic: deployments commonly reference branches; keep unknown if not sure
+          type: "branch",
+          ...(sha ? { sha } : {}),
+        }
+      : undefined;
+  }
+  // workflow_job → branch/sha similar to workflow_run
+  if (payload.workflow_job) {
+    const wj = payload.workflow_job;
+    return {
+      name: wj.head_branch,
+      type: "branch",
+      ...(wj.head_sha ? { sha: wj.head_sha } : {}),
+    } as any;
+  }
+  // step: attach job context if available
+  if (payload.step && payload.workflow_job) {
+    const wj = payload.workflow_job;
+    return {
+      name: wj.head_branch,
+      type: "branch",
+      sha: wj.head_sha,
+    };
+  }
   if (payload.pull_request) {
     // For PR events, emit branch ref semantics.
     // Use head ref as name; keep base/head fields for context.

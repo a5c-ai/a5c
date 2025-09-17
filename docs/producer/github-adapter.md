@@ -1,6 +1,6 @@
 # GitHub Adapter → Normalized Event (NE)
 
-This page describes how GitHub payloads map to the Normalized Event (NE) schema. It covers `workflow_run`, `pull_request`, `push`, and `issue_comment`.
+This page describes how GitHub payloads map to the Normalized Event (NE) schema. It covers `workflow_run`, `pull_request`, `push`, and `issue_comment`. Additional normalized types supported: `release`, `deployment`, `job` (from `workflow_job`), `step` (when granular step context is provided), and `alert` (e.g., `code_scanning_alert`, `secret_scanning_alert`).
 
 See NE schema: `docs/specs/ne.schema.json`
 
@@ -64,6 +64,45 @@ See NE schema: `docs/specs/ne.schema.json`
 - ref: typically absent; may populate from linked issue/PR if provided
 - actor: `comment.user`
 - labels: include `issue:<issue.number>` and if the comment is on a PR, `pr:<pull_request.number>`
+
+### release
+
+- id: `release.id` (fallback: `release.tag_name`)
+- occurred_at: `release.published_at` (fallback: `release.created_at`)
+- ref:
+  - name: `release.tag_name`
+  - type: `tag`
+  - sha: include when `release.target_commitish` is a 40-hex sha
+
+### deployment / deployment_status → deployment
+
+- id: `deployment.id` (for `deployment_status`, use `deployment.id` from nested object)
+- occurred_at: `deployment_status.created_at` (fallback: `deployment.created_at`)
+- ref:
+  - name: `deployment.ref` (plain branch or tag name)
+  - type: `branch` (heuristic default)
+
+### workflow_job → job
+
+- id: `workflow_job.id`
+- occurred_at: `workflow_job.completed_at | started_at | created_at`
+- ref:
+  - name: `workflow_job.head_branch`
+  - type: `branch`
+  - sha: `workflow_job.head_sha`
+
+### step
+
+- When a granular step-level payload exists (non-standard; e.g., composed or custom emit), map to type `step`.
+- id: `step.id` (fallback: derive from `step.name`)
+- occurred_at: `step.completed_at | step.started_at | step.created_at`
+- ref: derived from surrounding `workflow_job` when present
+
+### alert (code/secret scanning)
+
+- id: `alert.number` (fallback: `alert.id`)
+- occurred_at: `alert.updated_at | alert.created_at`
+- ref: typically absent
 
 ## Provenance Detection (Actions)
 
