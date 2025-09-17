@@ -129,6 +129,59 @@ jobs:
           flags: pr
           fail_ci_if_error: false
           verbose: true
+      - name: "Coverage gate (optional, REQUIRE_COVERAGE)"
+        if: vars.REQUIRE_COVERAGE == 'true'
+        run: |
+          set -euo pipefail
+          echo "REQUIRE_COVERAGE=true -> enforcing thresholds from scripts/coverage-thresholds.json"
+          if [ ! -f coverage/coverage-summary.json ]; then
+            echo "::error title=Coverage Gate Failed::coverage/coverage-summary.json not found. Ensure tests generate coverage with json-summary reporter."
+            exit 1
+          fi
+          if [ ! -f scripts/coverage-thresholds.json ]; then
+            echo "::error title=Coverage Gate Failed::scripts/coverage-thresholds.json not found. Thresholds must be defined."
+            exit 1
+          fi
+          read -r LINES_T BRANCHES_T FUNCS_T STMTS_T < <(jq -r '[.lines,.branches,.functions,.statements] | @tsv' scripts/coverage-thresholds.json)
+          node -e '
+            const fs = require("fs");
+            const sum = JSON.parse(fs.readFileSync("coverage/coverage-summary.json","utf8"));
+            const t = sum.total || {};
+            const pct = {
+              lines: Number((t.lines?.pct ?? 0).toFixed(2)),
+              branches: Number((t.branches?.pct ?? 0).toFixed(2)),
+              functions: Number((t.functions?.pct ?? 0).toFixed(2)),
+              statements: Number((t.statements?.pct ?? 0).toFixed(2)),
+            };
+            fs.writeFileSync("/tmp/cov.json", JSON.stringify(pct));
+          '
+          read -r LINES_P BRANCHES_P FUNCS_P STMTS_P < <(jq -r '[.lines,.branches,.functions,.statements] | @tsv' /tmp/cov.json)
+          FAILS=()
+          cmp() { awk -v a="$1" -v b="$2" 'BEGIN{ if (a+0 < b+0) exit 1; else exit 0 }'; }
+          cmp "$LINES_P" "$LINES_T" || FAILS+=("lines")
+          cmp "$BRANCHES_P" "$BRANCHES_T" || FAILS+=("branches")
+          cmp "$FUNCS_P" "$FUNCS_T" || FAILS+=("functions")
+          cmp "$STMTS_P" "$STMTS_T" || FAILS+=("statements")
+          {
+            echo "## Coverage Gate"
+            echo ""
+            echo "| Metric | Actual | Threshold |"
+            echo "|---|---:|---:|"
+            printf "| Lines | %s%% | %s%% |\n" "$LINES_P" "$LINES_T"
+            printf "| Branches | %s%% | %s%% |\n" "$BRANCHES_P" "$BRANCHES_T"
+            printf "| Functions | %s%% | %s%% |\n" "$FUNCS_P" "$FUNCS_T"
+            printf "| Statements | %s%% | %s%% |\n" "$STMTS_P" "$STMTS_T"
+            echo ""
+            if [ ${#FAILS[@]} -gt 0 ]; then
+              echo "Failed metrics: ${FAILS[*]}"
+            else
+              echo "All metrics meet or exceed thresholds."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ ${#FAILS[@]} -gt 0 ]; then
+            echo "::error title=Coverage Gate Failed::Below thresholds for: ${FAILS[*]}"
+            exit 1
+          fi
       - name: Coverage gate (optional, REQUIRE_COVERAGE)
         if: ${{ vars.REQUIRE_COVERAGE == 'true' }}
         shell: bash
