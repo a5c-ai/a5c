@@ -14,3 +14,8 @@
 ## Notes
 
 - Similar helper exists in `src/reactor.ts` with optional `number`; tests target the `emit.ts` version that requires `number`.
+
+## Results
+
+- Implemented export in `src/emit.ts`
+- Ran `npm test`: all tests passing (162/162)
