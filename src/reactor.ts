@@ -549,18 +549,18 @@ function computeRemotePaths(localPath: string): string[] {
   // Normalize input; if a directory, look for typical reactor locations
   const rel = localPath.replace(/^[A-Za-z]:\\|^\/+/, "").replace(/\\/g, "/");
   const candidates: string[] = [];
+  if (!rel || rel === "/") {
+    candidates.push(".a5c/events/reactor.yaml");
+    return candidates;
+  }
   if (rel.endsWith("/")) {
-    candidates.push(`${rel}.a5c/events/reactor.yaml`);
-    candidates.push(`${rel}.a5c/events/`);
+    // If a directory path is provided, try '<dir>/reactor.yaml'
+    candidates.push(`${rel}reactor.yaml`);
   } else {
     candidates.push(rel);
   }
-  // Add defaults if the caller passed just a directory like ".a5c/events/"
-  if (
-    rel === ".a5c/events/" ||
-    rel.endsWith("/.a5c/events/") ||
-    rel === ".a5c/events"
-  ) {
+  // Special-case common root path
+  if (rel === ".a5c/events/" || rel === ".a5c/events") {
     candidates.push(".a5c/events/reactor.yaml");
   }
   return Array.from(new Set(candidates));
