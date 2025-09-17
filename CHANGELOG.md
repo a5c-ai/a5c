@@ -1,3 +1,9 @@
+## <small>1.7.1 (2025-09-17)</small>
+
+* fix(build): export parseGithubEntity and resolveOwnerRepo on main (fixes #837)\n\n- Unblocks unit te ([845436a](https://github.com/a5c-ai/events/commit/845436a))
+* feat(emit, reactor): enhance event handling and template expansion ([2cfe5f4](https://github.com/a5c-ai/events/commit/2cfe5f4))
+* Merge pull request #831 from a5c-ai/a5c/main ([d2320bb](https://github.com/a5c-ai/events/commit/d2320bb)), closes [#831](https://github.com/a5c-ai/events/issues/831)
+
 ## 1.7.0 (2025-09-17)
 
 * Merge pull request #830 from a5c-ai/a5c/main ([674f975](https://github.com/a5c-ai/events/commit/674f975)), closes [#830](https://github.com/a5c-ai/events/issues/830)
