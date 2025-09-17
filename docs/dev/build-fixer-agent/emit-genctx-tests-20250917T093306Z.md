@@ -15,3 +15,12 @@
 - Export `parseGithubEntity` from `src/emit.ts`
 - Bind `this` inside template eval for `{{ this }}` in `src/generateContext.ts`
 - Run tests locally (vitest)
+
+## Results
+
+- Local run: `./scripts/test.sh` passed (162 tests).
+- Opened PR https://github.com/a5c-ai/events/pull/788
+
+## Notes
+
+- Adjusted template engine to bind JS `this` so `{{ this }}` works within `#each`.
