@@ -278,7 +278,9 @@ function evalExpr(expr: string, ctx: Context, currentUri: string): any {
     `return (${compiled});`,
   );
   const include = (u: string) => renderTemplate(u, ctx, currentUri);
-  return fn(ctx.event, ctx.event, ctx.env, ctx.vars, include);
+  // Bind JS `this` to the current iteration item when available (e.g., {{ this }})
+  const thisArg: any = (ctx as any)?.vars?.this ?? undefined;
+  return fn.call(thisArg, ctx.event, ctx.event, ctx.env, ctx.vars, include);
 }
 
 function evalWithThis(expr: string, ctx: Context, currentUri: string): any {
