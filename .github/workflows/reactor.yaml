@@ -19,7 +19,6 @@ permissions:
   repository-projects: write
 concurrency:
   group: reactor
-  cancel-in-progress: false
 jobs:
   reactor:
     runs-on: ubuntu-latest
