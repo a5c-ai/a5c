@@ -62,6 +62,8 @@ Triggers matrix (summary):
 
 ## CLI Reference
 
+Reactor: Apply rules to a normalized event and emit custom events — see `docs/cli/reference.md#events-reactor` for usage and examples.
+
 ### Mentions config (Quick Start)
 
 For the full, canonical list of Mentions flags and defaults, see the CLI reference. Quick examples:
