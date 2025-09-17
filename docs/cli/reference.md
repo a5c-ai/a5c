@@ -135,8 +135,8 @@ events enrich --in FILE [--out FILE] [--rules FILE] \
     - `mentions.scan.issue_comments=true|false` (default: `true`) – enable/disable scanning issue comment bodies
     - `mentions.scan.changed_files=true|false` (default: `true`) – enable/disable scanning code comments in changed files for `@mentions`
     - `mentions.max_file_bytes=<bytes>` (default: `204800` ≈ 200KB) – skip files larger than this when scanning
-    - `mentions.languages=<values,...>` – optional allowlist of languages to scan. Accepted values are canonical language IDs and common extensions (with or without a leading dot); values are normalized to IDs. Canonical IDs: `js, ts, py, go, java, c, cpp, sh, yaml, md`.
-      - Mapping note: common extensions normalize to IDs before comparison (e.g., `.tsx → ts`, `.jsx → js`, `.yml → yaml`).
+    - `mentions.languages=<values,...>` – optional allowlist. Accepts canonical language IDs and common extensions (with or without a leading dot); inputs are normalized to IDs. Canonical IDs: `js, ts, py, go, java, c, cpp, sh, yaml, md`.
+      - Mapping note: extensions normalize to IDs before comparison (e.g., `.tsx → ts`, `.jsx → js`, `.yml → yaml`).
     - `mentions.scan.commit_messages=true|false` (default: `true`) – enable/disable scanning commit messages for `@mentions`
     - `mentions.scan.issue_comments=true|false` (default: `true`) – enable/disable scanning issue comment bodies for `@mentions`
 - `--use-github`: enable GitHub API enrichment; equivalent to `--flag use_github=true` (requires `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`). Without this flag, the CLI performs no network calls and the CLI uses a stub under `enriched.github` (see above). The exact `reason` value is implementation-defined and may evolve; current default is `flag:not_set`.
@@ -148,9 +148,9 @@ Mentions scanning (code comments in changed files):
 
 - `mentions.scan.changed_files=true|false` (default: `true`) – when `true`, scan changed files' patches for `@mentions` within code comments and add to `enriched.mentions[]` with `source="code_comment"` and `location` hints.
 - `mentions.max_file_bytes=<bytes>` (default: `204800` ≈ 200KB) – skip scanning any single file larger than this cap.
-- `mentions.languages=<lang,...>` (optional) – only scan files whose detected language matches the allowlist. Use canonical language IDs. Common extensions are accepted (with/without a leading dot) and normalized to IDs. Canonical IDs: `js, ts, py, go, java, c, cpp, sh, yaml, md`.
+- `mentions.languages=<lang,...>` (optional) – only scan files whose detected language matches the allowlist. Provide canonical IDs or common extensions (with/without a leading dot); inputs normalize to IDs. Canonical IDs: `js, ts, py, go, java, c, cpp, sh, yaml, md`.
 
-Language allowlist details:
+Language allowlist details (inputs normalize to IDs):
 
 - Accepted language IDs and common extensions detected → ID
   - `.js, .mjs, .cjs, .jsx` → `js`
@@ -166,7 +166,7 @@ Language allowlist details:
 
 Notes:
 
-- Provide language IDs in the allowlist (e.g., `--flag mentions.languages=ts,js,md`). Extensions are also accepted and normalized to IDs (leading dots optional). Examples: `.tsx → ts`, `.jsx → js`, `.yml → yaml`.
+- Provide language IDs, or common extensions which will be normalized (e.g., `--flag mentions.languages=ts,js` or `--flag mentions.languages=.tsx,.jsx,.yml`).
 - You don’t need to list JSX/TSX/YML explicitly; detection maps them to `js`/`ts`/`yaml` automatically, and the allowlist normalization maps extensions to IDs.
   Examples:
 
