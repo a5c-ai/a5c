@@ -8,7 +8,7 @@
 
 ## Root Cause
 
-- `src/providers/github/normalize.ts` produced fields not allowed by NE schema:
+- Legacy path `src/providers/github/normalize.ts` previously produced fields not allowed by NE schema (this path has since been removed; use `mapToNE` in `src/providers/github/map.ts`):
   - `provenance.workflow` included `run_number` and `run_attempt` (not in schema)
   - `ref.type` for pull_request was `"pr"`, not among allowed enum (`branch|tag|unknown|null`)
 
