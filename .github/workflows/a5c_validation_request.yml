@@ -1,8 +1,8 @@
-name: Packages Npx Test
+name: Validation Request
 
 on:
   repository_dispatch:
-    types: [pull_request_ready_for_review]
+    types: [validation_request]
   workflow_dispatch: {}
 
 permissions:
@@ -14,15 +14,17 @@ jobs:
     name: Install and run via npx
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
       - name: Show event context
         run: |
           echo "Event path: $GITHUB_EVENT_PATH"
           jq -r '.action // .event_type // .type // "?"' "$GITHUB_EVENT_PATH" || true
       - name: Setup Node
         uses: actions/setup-node@v4
-        with:
-          node-version-file: .nvmrc
-          # Avoid setting global registry to GPR; use project .npmrc scoping instead
+        # with:
+        # node-version-file: .nvmrc
+        # Avoid setting global registry to GPR; use project .npmrc scoping instead
       - name: Configure npm auth (env)
         env:
           NODE_AUTH_TOKEN: ${{ secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}

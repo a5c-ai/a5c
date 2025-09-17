@@ -9,6 +9,25 @@ The CLI transforms provider payloads into a Normalized Event (NE), extracts ment
 
 ## Commands
 
+### `events version`
+
+Print the CLI/package version. Same value as `--version`.
+
+Usage:
+
+```bash
+events version [--json]
+```
+
+- `--json`: print `{ "version": "x.y.z" }`
+
+Examples:
+
+```bash
+events version
+events version --json | jq -r .version
+```
+
 ### `events mentions`
 
 Extract `@mentions` from text.

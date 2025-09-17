@@ -116,7 +116,8 @@ async function renderString(
   // Variables: {{ expr }}
   const varRe = /\{\{\s*([^}]+)\s*\}\}/g;
   out = out.replace(varRe, (_m, expr: string) => {
-    const val = evalExpr(expr, ctx, currentUri);
+    // Bind `this` to current vars to allow {{ this }} inside each blocks
+    const val = evalWithThis(expr, ctx, currentUri);
     return val == null ? "" : String(val);
   });
   return out;
@@ -277,16 +278,41 @@ function evalExpr(expr: string, ctx: Context, currentUri: string): any {
     `return (${compiled});`,
   );
   const include = (u: string) => renderTemplate(u, ctx, currentUri);
-  // Bind JS `this` to the loop item if present, else undefined.
-  const thisArg = Object.prototype.hasOwnProperty.call(ctx.vars, "this")
-    ? (ctx.vars as any).this
-    : undefined;
+  // Bind JS `this` to the current iteration item when available (e.g., {{ this }})
+  const thisArg: any = (ctx as any)?.vars?.this ?? undefined;
   return fn.call(thisArg, ctx.event, ctx.event, ctx.env, ctx.vars, include);
 }
 
+function evalWithThis(expr: string, ctx: Context, currentUri: string): any {
+  const compiled = preprocess(expr);
+  const fn = new Function(
+    "event",
+    "github",
+    "env",
+    "vars",
+    "include",
+    `return (${compiled});`,
+  );
+  const include = (u: string) => renderTemplate(u, ctx, currentUri);
+  try {
+    // Bind `this` to current item when available (ctx.vars.this),
+    // otherwise fall back to ctx.vars to keep simple cases working.
+    const thisArg =
+      ctx && ctx.vars && Object.prototype.hasOwnProperty.call(ctx.vars, "this")
+        ? ctx.vars.this
+        : ctx.vars;
+    return fn.call(thisArg, ctx.event, ctx.event, ctx.env, ctx.vars, include);
+  } catch {
+    // Fallback to non-bound eval
+    return evalExpr(expr, ctx, currentUri);
+  }
+}
+
 function preprocess(expr: string): string {
-  // Reuse simple pipeline handling similar to reactor
-  return expr;
+  // Map bare `this` to the current each-item value stored in vars.this
+  // Also map member access like `this.foo` -> `vars.this.foo`
+  // Do a conservative replacement on identifier boundaries
+  return expr.replace(/\bthis\b/g, "vars.this");
 }
 
 function expandDollarExpressions(s: string, ctx: Context): string {

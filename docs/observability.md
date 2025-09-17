@@ -58,6 +58,8 @@ When multiple jobs or a matrix run produce per-job artifacts, an aggregate artif
 
 ### CLI Behavior (current and proposed)
 
+> Status: Proposed. Not yet implemented in CLI. This PR documents the toggles and proposes CLI flags; implementation to follow if accepted (issue #795).
+
 - Current: CLI prints human messages; tests ensure outputs are safe for logging.
 - Proposed: Add an env toggle for JSON logs: `A5C_LOG_FORMAT=json|pretty` (default pretty for humans; CI examples recommend `json`).
 - Proposed: Add level filter via `A5C_LOG_LEVEL=info|debug|warn|error` (fallback to `info`).

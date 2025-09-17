@@ -29,7 +29,14 @@ jobs:
           BASE_SHA=$(gh api repos/${{ github.repository }}/pulls/$PR_NUMBER --jq .base.sha)
           HEAD_SHA=$(gh api repos/${{ github.repository }}/pulls/$PR_NUMBER --jq .head.sha)
           echo "Range: $BASE_SHA..$HEAD_SHA"
+          TARGET_BRANCH=${{ github.event.pull_request.base.ref }}
+          # Use lenient rules only for release merges into main
+          if [ "$TARGET_BRANCH" = "main" ]; then
+            CONFIG="--config commitlint.lenient.cjs"
+          else
+            CONFIG=""
+          fi
           git rev-list --no-merges $BASE_SHA..$HEAD_SHA | while read sha; do
             echo "Checking $sha"
-            git show -s --format=%B "$sha" | npx commitlint
+            git show -s --format=%B "$sha" | npx commitlint $CONFIG
           done

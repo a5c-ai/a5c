@@ -110,15 +110,19 @@ Both shapes are acceptable. See example stub at `docs/examples/enrich.offline.st
   - context: `string` short excerpt around the mention (<=140 chars)
   - confidence: `0..1` (parser confidence, esp. for code_comment extraction)
 
-Configuration (aligns with CLI and README):
+Configuration
 
-- `mentions.scan.changed_files`: `true|false` (default: true) — scan changed files for `@...` in code comments.
-- `mentions.max_file_bytes`: number of bytes cap per file (default: 204800 bytes ≈ 200KB)
-- `mentions.languages`: optional allowlist of languages to scan (e.g., `js,ts,py,go,yaml,md`). Accepts canonical IDs and common extensions (leading dot optional); values are normalized to IDs. When omitted, detection is used. Examples: `.tsx → ts`, `.jsx → js`, `.yml → yaml`.
+The CLI reference is the canonical source for Mentions scanning flags and defaults. This spec does not duplicate the full list to avoid drift. See:
+
+- `docs/cli/reference.md#events-enrich`
+- `docs/cli/reference.md#mentions-scanning`
+
+Notes:
+
+- Flags include `mentions.scan.changed_files`, `mentions.max_file_bytes`, and `mentions.languages` (language inputs normalize to canonical IDs; common extensions with/without a leading dot are accepted, e.g., `.tsx → ts`, `.jsx → js`, `.yml → yaml`).
 
 See also:
 
-- CLI details and examples: `docs/cli/reference.md#events-enrich`.
 - Root README quick reference: `README.md#mentions-scanning-examples`.
 
 Example mention from a code comment:

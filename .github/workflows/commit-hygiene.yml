@@ -28,8 +28,20 @@ jobs:
         run: |
           BASE_SHA=$(jq -r .pull_request.base.sha < "$GITHUB_EVENT_PATH")
           HEAD_SHA=$(jq -r .pull_request.head.sha < "$GITHUB_EVENT_PATH")
+          BASE_REF=$(jq -r .pull_request.base.ref < "$GITHUB_EVENT_PATH")
           git fetch --depth=200 origin
-          git log --format=%s "$BASE_SHA..$HEAD_SHA" | while IFS= read -r line; do
-            # allow merge commits through
-            npx -y tsx scripts/commit-verify.ts --message "$line" --allow-merge || exit 1
-          done
+          FAIL=0
+          while IFS= read -r line; do
+            if ! npx -y tsx scripts/commit-verify.ts --message "$line" --allow-merge; then
+              echo "::warning title=Commit message not Conventional::${line}"
+              FAIL=1
+            fi
+          done < <(git log --format=%s "$BASE_SHA..$HEAD_SHA")
+          # Enforce strictly on a5c/main PRs; warn only on PRs into main
+          if [ "$FAIL" -ne 0 ] && [ "$BASE_REF" = "a5c/main" ]; then
+            echo "::error title=Conventional Commits check failed::One or more commit messages do not follow Conventional Commits."
+            exit 1
+          fi
+          if [ "$FAIL" -ne 0 ] && [ "$BASE_REF" != "a5c/main" ]; then
+            echo "Commit message issues detected but not failing for base '$BASE_REF'" >> "$GITHUB_STEP_SUMMARY"
+          fi

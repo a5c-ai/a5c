@@ -20,6 +20,21 @@ program
   .description("Events CLI - mentions, normalize and enrich")
   .version(readVersion());
 
+// Explicit `version` subcommand for parity with flag usage
+program
+  .command("version")
+  .description("Print CLI version")
+  .option("--json", "print as JSON {version}")
+  .action((opts: any) => {
+    const v = readVersion();
+    if (opts.json) {
+      process.stdout.write(JSON.stringify({ version: v }) + "\n");
+    } else {
+      process.stdout.write(v + "\n");
+    }
+    process.exit(0);
+  });
+
 program
   .command("mentions")
   .description("Extract mentions from text or file")
@@ -235,11 +250,13 @@ program
   .command("emit")
   .description("Emit an event to a sink (stdout or file)")
   .option("--in <file>", "input JSON file path (default: stdin)")
+  .option("-s, --single <file>", "single event file path (use '-' for stdin)")
   .option("--out <file>", "output JSON file path (for file sink)")
   .option("--sink <name>", "sink name (stdout|file|github)")
   .action(async (cmdOpts: any) => {
+    const inputPath = cmdOpts.single || cmdOpts.in;
     const { code } = await handleEmit({
-      in: cmdOpts.in,
+      in: inputPath,
       out: cmdOpts.out,
       sink: cmdOpts.sink,
     });
@@ -264,6 +281,12 @@ program
     "--branch <name>",
     "config branch for remote YAML when not present locally (default: env A5C_EVENT_CONFIG_BRANCH or 'main')",
   )
+  .option(
+    "--metadata-match <key=value...>",
+    "filter by doc.metadata key=val (repeatable)",
+    collectKeyValue,
+    {},
+  )
   .action(async (cmdOpts: any) => {
     try {
       const { code, output, errorMessage } = await handleReactor({
@@ -271,6 +294,7 @@ program
         out: cmdOpts.out,
         file: cmdOpts.file,
         branch: cmdOpts.branch || process.env.A5C_EVENT_CONFIG_BRANCH || "main",
+        metadataMatch: cmdOpts.metadataMatch || cmdOpts["metadata-match"] || {},
       });
       if (code !== 0) {
         if (errorMessage) process.stderr.write(errorMessage + "\n");

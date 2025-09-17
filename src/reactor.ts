@@ -2,17 +2,50 @@ import fs from "node:fs";
 import path from "node:path";
 import YAML from "yaml";
 import { readJSONFile } from "./config.js";
+import {
+  parseGithubEntity,
+  parseGithubOwnerRepo,
+} from "./utils/githubEntity.js";
 
 export interface ReactorOptions {
   in?: string;
   out?: string;
   file?: string;
   branch?: string;
+  metadataMatch?: Record<string, string>;
 }
 
 export interface ReactorOutputEvent {
   event_type: string;
   client_payload: any;
+}
+
+// Lightweight logging helpers (GitHub Actions compatible)
+const LOG_LEVEL = String(process.env.A5C_LOG_LEVEL || "info").toLowerCase();
+const IS_ACTIONS =
+  String(process.env.GITHUB_ACTIONS || "").toLowerCase() === "true";
+function logInfo(msg: string) {
+  const line = IS_ACTIONS ? `::notice::${msg}` : `[reactor] ${msg}`;
+  process.stderr.write(line + "\n");
+}
+function logWarn(msg: string) {
+  const line = IS_ACTIONS ? `::warning::${msg}` : `[reactor] WARN: ${msg}`;
+  process.stderr.write(line + "\n");
+}
+function logDebug(msg: string) {
+  if (!(LOG_LEVEL === "debug" || LOG_LEVEL === "trace")) return;
+  const line = IS_ACTIONS ? `::debug::${msg}` : `[reactor] DEBUG: ${msg}`;
+  process.stderr.write(line + "\n");
+}
+
+function isReactorDoc(obj: any): boolean {
+  if (!obj || typeof obj !== "object") return false;
+  const keys = new Set(Object.keys(obj));
+  const hasOn = keys.has("on");
+  const hasEmit = keys.has("emit");
+  const hasCommands =
+    keys.has("set_labels") || keys.has("pre_set_labels") || keys.has("script");
+  return hasOn || hasEmit || hasCommands;
 }
 
 export async function handleReactor(opts: ReactorOptions): Promise<{
@@ -21,39 +54,470 @@ export async function handleReactor(opts: ReactorOptions): Promise<{
   errorMessage?: string;
 }> {
   try {
+    logInfo(`starting reactor (file=${opts.file || "(default)"})`);
     const inputObj = readInput(opts.in);
     const ne = normalizeNE(inputObj);
     const rulesPath = resolveRulesPath(opts.file);
-    let docs = loadYamlDocuments(rulesPath);
-    if (!docs.length) {
-      const remote = await tryLoadRemoteYaml(
-        ne,
-        rulesPath,
-        opts.branch || process.env.A5C_EVENT_CONFIG_BRANCH || "main",
-      );
-      if (remote && remote.length) docs = remote;
-    }
+    const branch = opts.branch || process.env.A5C_EVENT_CONFIG_BRANCH || "main";
+    logDebug(`resolved rulesPath=${rulesPath}, branch=${branch}`);
+    const repo = inferRepoFromNE(ne);
+    if (repo) logDebug(`inferred repo=${repo.owner}/${repo.repo}`);
+
+    const docs = await loadReactorDocs(ne, rulesPath, branch);
+    logInfo(`loaded ${docs.length} reactor handler(s)`);
+
     const events: ReactorOutputEvent[] = [];
+    const match = opts.metadataMatch || {};
+    let idx = 0;
     for (const doc of docs) {
+      idx++;
       if (!doc || typeof doc !== "object") continue;
+      const source = (doc as any).__source || "(unknown)";
+      logDebug(`eval handler#${idx} from ${source}`);
+      const metadata = (doc as any).metadata || {};
+      if (!metadataMatches(metadata, match)) {
+        logDebug(
+          `handler#${idx} filtered: metadata mismatch need=${JSON.stringify(
+            match,
+          )} have=${JSON.stringify(metadata)}`,
+        );
+        continue;
+      }
       const onSpec: any = (doc as any).on;
       const emitSpec: any = (doc as any).emit;
-      if (!onSpec || !emitSpec) continue;
-      const matched = matchesAnyTrigger(onSpec, ne);
-      if (!matched) continue;
-      // Build events from emit map
+      const docEnvSpec: any[] = Array.isArray((doc as any).env)
+        ? (doc as any).env
+        : [];
+      const secrets: Record<string, string | undefined> = buildSecretsEnv();
+      const varsEnv: Record<string, string | undefined> = buildVarsEnv();
+      const docEnv = evaluateDocEnv(docEnvSpec, {
+        event: ne.payload,
+        env: process.env,
+        secrets,
+        vars: varsEnv,
+      });
+      if (!onSpec || !emitSpec) {
+        logDebug(`handler#${idx} filtered: missing on/emit`);
+        continue;
+      }
+      const neWithEnv = withDocEnv(ne, docEnv, secrets, varsEnv);
+      const dbgEvent = buildExpressionEvent((neWithEnv as any)?.payload);
+      const dbgLabels = Array.isArray(dbgEvent?.pull_request?.labels)
+        ? dbgEvent.pull_request.labels.map((x: any) => x?.name || x)
+        : (neWithEnv as any)?.labels || [];
+      logDebug(
+        `handler#${idx} on=${JSON.stringify(onSpec)} event.type=${dbgEvent?.type} action=${dbgEvent?.action} labels=${JSON.stringify(dbgLabels)}`,
+      );
+      const explain = explainMatch(onSpec, neWithEnv);
+      if (!explain.matched) {
+        logDebug(`handler#${idx} filtered: ${explain.reason || "no match"}`);
+        continue;
+      }
+      logDebug(`handler#${idx} matched`);
       if (emitSpec && typeof emitSpec === "object") {
         for (const [eventType, spec] of Object.entries(emitSpec)) {
-          const payload = buildClientPayload(spec, ne);
-          const merged = attachDocCommands(payload, doc, ne);
+          const payload = buildClientPayload(spec, neWithEnv);
+          const merged = attachDocCommands(payload, doc, neWithEnv);
           events.push({ event_type: eventType, client_payload: merged });
         }
       }
     }
+    logInfo(`reactor produced ${events.length} event(s)`);
     return { code: 0, output: { events } };
   } catch (e: any) {
     const msg = String(e?.message || e);
+    logWarn(`reactor failed: ${msg}`);
     return { code: 1, errorMessage: `reactor: ${msg}` };
+  }
+}
+
+function explainMatch(
+  onSpec: any,
+  ne: ReturnType<typeof normalizeNE>,
+): { matched: boolean; reason?: string } {
+  const base = (ne as any)?.payload || {};
+  const eventType = (ne as any)?.type || toStr((base as any)?.event);
+  const action =
+    toStr((base as any)?.action) ||
+    toStr((base as any)?.event_type) ||
+    toStr((base as any)?.client_payload?.event_type);
+  if (typeof onSpec === "string") {
+    const name = onSpec;
+    const nameIsCustom = !KNOWN_GH_EVENTS.has(name) && name !== "any";
+    if (!nameIsCustom && name !== "any" && eventType && eventType !== name) {
+      return {
+        matched: false,
+        reason: `type mismatch need=${name} have=${eventType}`,
+      };
+    }
+    if (nameIsCustom && action !== name) {
+      return {
+        matched: false,
+        reason: `custom action mismatch need=${name} have=${action}`,
+      };
+    }
+    return { matched: true };
+  }
+  if (Array.isArray(onSpec)) {
+    let lastReason: string | undefined;
+    for (const name of onSpec) {
+      const r = explainMatch(name, ne);
+      if (r.matched) return r;
+      lastReason = r.reason;
+    }
+    return { matched: false, reason: lastReason || `none matched` };
+  }
+  if (onSpec && typeof onSpec === "object") {
+    let lastReason: string | undefined;
+    for (const [name, spec] of Object.entries(onSpec)) {
+      const r = explainMatchOne(String(name), spec, ne);
+      if (r.matched) return r;
+      lastReason = r.reason;
+    }
+    return { matched: false, reason: lastReason || "no entry matched" };
+  }
+  return { matched: false, reason: "empty on spec" };
+}
+
+function explainMatchOne(
+  name: string,
+  spec: any,
+  ne: ReturnType<typeof normalizeNE>,
+): { matched: boolean; reason?: string } {
+  const base = (ne as any)?.payload || {};
+  const action =
+    toStr((base as any)?.action) ||
+    toStr((base as any)?.event_type) ||
+    toStr((base as any)?.client_payload?.event_type);
+  const evtType = (ne as any)?.type || toStr((base as any)?.event);
+  const nameIsCustom = !KNOWN_GH_EVENTS.has(name) && name !== "any";
+  if (!nameIsCustom && name !== "any" && evtType && evtType !== name)
+    return {
+      matched: false,
+      reason: `type mismatch need=${name} have=${evtType}`,
+    };
+  if (nameIsCustom) {
+    if (action !== name)
+      return {
+        matched: false,
+        reason: `custom action mismatch need=${name} have=${action}`,
+      };
+  }
+  if (!spec || typeof spec !== "object") return { matched: true };
+  if (Array.isArray((spec as any).types) && KNOWN_GH_EVENTS.has(name)) {
+    const set = new Set(((spec as any).types as any[]).map((v) => String(v)));
+    if (!action || !set.has(action))
+      return {
+        matched: false,
+        reason: `subtype mismatch need one of ${Array.from(set).join(",")}, have=${action}`,
+      };
+  }
+  if (Array.isArray((spec as any).events)) {
+    const set = new Set(((spec as any).events as any[]).map((v) => String(v)));
+    if (!action || !set.has(action))
+      return {
+        matched: false,
+        reason: `event mismatch need one of ${Array.from(set).join(",")}, have=${action}`,
+      };
+  }
+  if (Array.isArray((spec as any).labels)) {
+    const needed = new Set((spec as any).labels.map((v: any) => String(v)));
+    const labelsSource = nameIsCustom
+      ? normalizeLabels((base as any)?.client_payload?.labels)
+      : (ne as any)?.labels || [];
+    const missing: string[] = [];
+    for (const l of Array.from(needed.values()) as string[])
+      if (!labelsSource.includes(String(l))) missing.push(String(l));
+    if (missing.length)
+      return { matched: false, reason: `labels missing: ${missing.join(",")}` };
+  }
+  const phaseSpec = (spec as any).phase;
+  if (phaseSpec) {
+    const phase =
+      toStr((base as any).phase) || toStr((base as any)?.client_payload?.phase);
+    if (Array.isArray(phaseSpec)) {
+      const set = new Set((phaseSpec as any[]).map((v) => String(v)));
+      if (!phase || !set.has(phase))
+        return {
+          matched: false,
+          reason: `phase mismatch need one of ${Array.from(set).join(",")}, have=${phase}`,
+        };
+    } else {
+      if (!phase || String(phase) !== String(phaseSpec))
+        return {
+          matched: false,
+          reason: `phase mismatch need=${phaseSpec} have=${phase}`,
+        };
+    }
+  }
+  const filters = (spec as any).filters;
+  if (Array.isArray(filters) && filters.length) {
+    const anyTrue = filters.some((f: any) => evaluateFilter(f, ne));
+    if (!anyTrue) return { matched: false, reason: `filters not satisfied` };
+  }
+  return { matched: true };
+}
+
+function metadataMatches(
+  meta: Record<string, any>,
+  match: Record<string, string>,
+): boolean {
+  const entries = Object.entries(match || {});
+  for (const [k, v] of entries) {
+    if (v == null) continue;
+    if (String(meta?.[k]) !== String(v)) return false;
+  }
+  return true;
+}
+
+function buildSecretsEnv(): Record<string, string | undefined> {
+  const out: Record<string, string | undefined> = {};
+  for (const [k, v] of Object.entries(process.env)) {
+    if (
+      k &&
+      (k.startsWith("A5C_") ||
+        k.startsWith("GITHUB_") ||
+        k.startsWith("SECRET_") ||
+        k === "GITHUB_TOKEN")
+    ) {
+      out[k] = v;
+    }
+  }
+  return out;
+}
+
+function buildVarsEnv(): Record<string, string | undefined> {
+  const out: Record<string, string | undefined> = {};
+  for (const [k, v] of Object.entries(process.env)) {
+    if (
+      k &&
+      (k.startsWith("A5C_") || k.startsWith("VAR_") || k === "A5C_MCPS_PATH")
+    ) {
+      out[k] = v;
+    }
+  }
+  return out;
+}
+
+function withDocEnv(
+  ne: ReturnType<typeof normalizeNE>,
+  env: Record<string, string>,
+  secrets: Record<string, any>,
+  vars: Record<string, any>,
+) {
+  // Attach doc env into enriched.derived.flags for expression visibility; do not mutate input
+  const copy: any = { ...ne };
+  copy.enriched = { ...(ne as any).enriched };
+  copy.enriched.derived = {
+    ...((ne as any).enriched?.derived || {}),
+    doc_env: env,
+    secrets,
+    vars,
+  };
+  return copy as ReturnType<typeof normalizeNE>;
+}
+
+function evaluateDocEnv(
+  spec: any[],
+  ctx: { event: any; env: any; secrets: any; vars: any },
+): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const item of spec) {
+    const name = String(item?.name || "");
+    if (!name) continue;
+    const val = resolveTemplateString(String(item?.value ?? ""), {
+      ...(normalizeNE({
+        provider: "github",
+        payload: ctx.event,
+        labels: [],
+        enriched: { derived: {} },
+      }) as any),
+      enriched: {
+        derived: {
+          flags: {},
+          doc_env: out,
+          secrets: ctx.secrets,
+          vars: ctx.vars,
+        },
+      },
+    } as any);
+    out[name] = String(val ?? "");
+  }
+  return out;
+}
+
+async function loadReactorDocs(
+  ne: ReturnType<typeof normalizeNE>,
+  pathOrUri: string,
+  branch: string,
+): Promise<any[]> {
+  if (/^github:\/\//i.test(pathOrUri)) {
+    const parsed = parseGithubUri(pathOrUri);
+    logDebug(`loadReactorDocs: github uri parsed=${JSON.stringify(parsed)}`);
+    if (!parsed) return [];
+    return await fetchGithubYamlDocs(
+      parsed.owner,
+      parsed.repo,
+      parsed.ref,
+      parsed.path,
+    );
+  }
+  if (/^file:\/\//i.test(pathOrUri)) {
+    const p = new URL(pathOrUri).pathname;
+    logDebug(`loadReactorDocs: file uri path=${p}`);
+    return loadYamlDocuments(p);
+  }
+  if (fs.existsSync(pathOrUri)) {
+    const isDir = isDirectorySafe(pathOrUri);
+    logDebug(
+      `loadReactorDocs: local path exists (dir=${isDir}) -> ${pathOrUri}`,
+    );
+    return loadYamlDocuments(pathOrUri);
+  }
+  const repoInfo = inferRepoFromNE(ne);
+  const ref = inferRefFromNE(ne) || branch;
+  logDebug(
+    `loadReactorDocs: remote from event repo=${JSON.stringify(repoInfo)} ref=${ref} path=${pathOrUri}`,
+  );
+  if (!repoInfo) return [];
+  return await fetchGithubYamlDocs(
+    repoInfo.owner,
+    repoInfo.repo,
+    ref,
+    pathOrUri,
+  );
+}
+
+function parseGithubUri(
+  uri: string,
+): { owner: string; repo: string; ref: string; path: string } | null {
+  try {
+    const m =
+      /^github:\/\/([^/]+)\/([^/]+)\/(?:branch|ref|version)\/([^/]+)\/(.+)$/i.exec(
+        uri,
+      );
+    if (!m) return null;
+    const [, owner, repo, refRaw, pRaw] = m;
+    const ref = decodeURIComponent(refRaw);
+    const p = decodeURIComponent(pRaw);
+    return { owner, repo, ref, path: p };
+  } catch (e: any) {
+    logWarn(`parseGithubUri failed: ${e?.message || e}`);
+    return null;
+  }
+}
+
+async function fetchGithubYamlDocs(
+  owner: string,
+  repo: string,
+  ref: string,
+  p: string,
+): Promise<any[]> {
+  try {
+    const token =
+      process.env.A5C_AGENT_GITHUB_TOKEN || process.env.GITHUB_TOKEN;
+    if (!token) {
+      logWarn("fetchGithubYamlDocs: missing token; skipping remote load");
+      return [];
+    }
+    const { Octokit } = await import("@octokit/rest");
+    const octokit = new Octokit({ auth: token });
+    const docs: any[] = [];
+    const cleanRef = decodeURIComponent(ref || "");
+    const basePath = normalizeRepoPathStr(decodeURIComponent(p || ""));
+    const targets = computeRemotePaths(basePath);
+    logInfo(
+      `remote discovery from ${owner}/${repo}@${cleanRef} base='${basePath}' targets=${JSON.stringify(targets)}`,
+    );
+    for (const pathItem of targets) {
+      await fetchGithubPath(octokit, owner, repo, cleanRef, pathItem, docs);
+      if (docs.length) break;
+    }
+    logInfo(`remote discovery loaded ${docs.length} YAML doc(s)`);
+    return docs;
+  } catch (e: any) {
+    logWarn(`fetchGithubYamlDocs failed: ${e?.message || e}`);
+    return [];
+  }
+}
+
+async function fetchGithubPath(
+  octokit: any,
+  owner: string,
+  repo: string,
+  ref: string,
+  pathItem: string,
+  docsOut: any[],
+): Promise<void> {
+  try {
+    const normPath = normalizeRepoPathStr(pathItem);
+    logDebug(`fetchGithubPath: GET contents path='${normPath}' ref='${ref}'`);
+    const { data } = await octokit.repos.getContent({
+      owner,
+      repo,
+      path: normPath,
+      ref,
+    });
+    if (Array.isArray(data)) {
+      logDebug(`fetchGithubPath: directory entries=${data.length}`);
+      for (const entry of data) {
+        const type = (entry as any).type;
+        const name = (entry as any).name || "";
+        const p = (entry as any).path || "";
+        if (type === "dir") {
+          await fetchGithubPath(octokit, owner, repo, ref, p, docsOut);
+        } else if (
+          type === "file" &&
+          (name.endsWith(".yaml") || name.endsWith(".yml"))
+        ) {
+          await fetchGithubPath(octokit, owner, repo, ref, p, docsOut);
+        }
+      }
+      return;
+    }
+    const name = (data as any).name || "";
+    if (!name.endsWith(".yaml") && !name.endsWith(".yml")) return;
+    const encoding = (data as any).encoding || "base64";
+    const content: string = Buffer.from(
+      (data as any).content || "",
+      encoding,
+    ).toString("utf8");
+    const parsed = YAML.parseAllDocuments(content, { prettyErrors: false });
+    let docIdx = 0;
+    for (const d of parsed as any[]) {
+      try {
+        const obj = (d as any).toJSON();
+        if (isReactorDoc(obj)) {
+          (obj as any).__source = `${normPath}#${docIdx}`;
+          docsOut.push(obj);
+        }
+      } catch {}
+      docIdx++;
+    }
+    logDebug(
+      `fetchGithubPath: parsed YAML file '${name}' (docsOut=${docsOut.length})`,
+    );
+  } catch (e: any) {
+    logDebug(`fetchGithubPath error: ${e?.message || e}`);
+  }
+}
+
+function normalizeRepoPathStr(p: string): string {
+  const s = String(p || "");
+  return s.replace(/^\/+/, "").replace(/\/+$/, "");
+}
+
+function inferRefFromNE(
+  ne: ReturnType<typeof normalizeNE>,
+): string | undefined {
+  try {
+    const pr = (ne as any)?.payload?.pull_request;
+    const ref = pr?.head?.ref || (ne as any)?.payload?.ref;
+    if (typeof ref === "string" && ref.length)
+      return ref.replace(/^refs\/heads\//, "");
+    return undefined;
+  } catch {
+    return undefined;
   }
 }
 
@@ -65,6 +529,8 @@ function readInput(inPath?: string): any {
 
 function resolveRulesPath(fileOpt?: string): string {
   const p = fileOpt || ".a5c/events/";
+  // Preserve URI forms like github:// and file:// — don't path.resolve them
+  if (/^[a-zA-Z]+:\/\//.test(p)) return p;
   return path.resolve(p);
 }
 
@@ -76,13 +542,19 @@ function loadYamlDocuments(filePath: string): any[] {
   for (const fp of files) {
     const raw = fs.readFileSync(fp, "utf8");
     const docs = YAML.parseAllDocuments(raw, { prettyErrors: false });
+    let docIdx = 0;
     for (const d of docs as any[]) {
       try {
         const obj = (d as any).toJSON();
-        if (obj && typeof obj === "object") out.push(obj);
+        if (isReactorDoc(obj)) {
+          (obj as any).__source = `${fp}#${docIdx}`;
+          out.push(obj);
+        }
       } catch {}
+      docIdx++;
     }
   }
+  logDebug(`loadYamlDocuments: loaded ${out.length} from local '${filePath}'`);
   return out;
 }
 
@@ -168,9 +640,10 @@ function matchesTrigger(
     toStr(base.action) ||
     toStr(base.event_type) ||
     toStr((base as any)?.client_payload?.event_type);
-  const eventType = ne.type || toStr(base.event) || undefined;
+  const eventType =
+    (ne as any)?.type || toStr((base as any)?.event) || undefined;
 
-  // Custom event name: match against action/event_type
+  // Custom event name: alias by action only
   const nameIsCustom = !KNOWN_GH_EVENTS.has(name) && name !== "any";
   if (nameIsCustom) {
     if (action !== name) return false;
@@ -179,26 +652,22 @@ function matchesTrigger(
   }
 
   if (!spec || typeof spec !== "object") return true;
-  // types: sub-actions under GH event (e.g., pull_request: types: [opened])
   if (Array.isArray((spec as any).types) && KNOWN_GH_EVENTS.has(name)) {
     const set = new Set(((spec as any).types as any[]).map((v) => String(v)));
     if (!action || !set.has(action)) return false;
   }
-  // events: repository_dispatch event types
   if (Array.isArray((spec as any).events)) {
     const set = new Set(((spec as any).events as any[]).map((v) => String(v)));
     if (!action || !set.has(action)) return false;
   }
-  // labels: require all to be present; for custom events, read from client_payload.labels, else use NE labels
   if (Array.isArray((spec as any).labels)) {
     const needed = new Set((spec as any).labels.map((v: any) => String(v)));
     const labelsSource = nameIsCustom
       ? normalizeLabels((base as any)?.client_payload?.labels)
-      : ne.labels;
+      : (ne as any)?.labels || [];
     for (const l of Array.from(needed.values()) as string[])
       if (!labelsSource.includes(String(l))) return false;
   }
-  // phase: check in payload.phase or client_payload.phase
   const phaseSpec = (spec as any).phase;
   if (phaseSpec) {
     const phase =
@@ -210,7 +679,6 @@ function matchesTrigger(
       if (!phase || String(phase) !== String(phaseSpec)) return false;
     }
   }
-  // filters: array of { expression: ${{ ... }} } – match if ANY expression is truthy
   const filters = (spec as any).filters;
   if (Array.isArray(filters) && filters.length) {
     const anyTrue = filters.some((f: any) => evaluateFilter(f, ne));
@@ -249,11 +717,28 @@ function attachDocCommands(
   neCtx: ReturnType<typeof normalizeNE>,
 ): any {
   const out = { ...(payload || {}) } as any;
-  if (Array.isArray(doc?.set_labels) && doc.set_labels.length) {
-    out.set_labels = resolveTemplates(doc.set_labels, neCtx);
+  // pre_set_labels first
+  if (
+    Array.isArray((doc as any).pre_set_labels) &&
+    (doc as any).pre_set_labels.length
+  ) {
+    out.pre_set_labels = resolveTemplates((doc as any).pre_set_labels, neCtx);
   }
-  if (Array.isArray(doc?.script) && doc.script.length) {
-    out.script = resolveTemplates(doc.script, neCtx);
+  // then script
+  if (Array.isArray((doc as any).script) && (doc as any).script.length) {
+    out.script = resolveTemplates((doc as any).script, neCtx);
+  }
+  // then set_labels
+  if (
+    Array.isArray((doc as any).set_labels) &&
+    (doc as any).set_labels.length
+  ) {
+    out.set_labels = resolveTemplates((doc as any).set_labels, neCtx);
+  }
+  // propagate env (evaluated earlier into neCtx.enriched.derived.doc_env)
+  const docEnv = (neCtx as any)?.enriched?.derived?.doc_env;
+  if (docEnv && typeof docEnv === "object") {
+    out.env = { ...docEnv };
   }
   return out;
 }
@@ -276,16 +761,89 @@ function resolveTemplateString(
   s: string,
   ctx: ReturnType<typeof normalizeNE>,
 ): any {
+  // Full-string template
   const m = TMPL_RE.exec(s);
-  if (!m) return s;
-  const expr = m[1];
+  if (m) {
+    const expr = m[1];
+    try {
+      const compiled = preprocessExpression(expr);
+      const eventArg = buildExpressionEvent((ctx as any)?.payload);
+      const vars = (ctx as any)?.enriched?.derived?.vars || {};
+      const secrets = (ctx as any)?.enriched?.derived?.secrets || {};
+      const fn = new Function(
+        "event",
+        "ne",
+        "env",
+        "vars",
+        "secrets",
+        `return (${compiled});`,
+      );
+      return fn(eventArg, { ...ctx }, process.env, vars, secrets);
+    } catch {
+      return null;
+    }
+  }
+  // Inline replacements
+  return s.replace(/\$\{\{\s*([^}]+)\s*\}\}/g, (_m, expr) => {
+    try {
+      const compiled = preprocessExpression(String(expr));
+      const eventArg = buildExpressionEvent((ctx as any)?.payload);
+      const vars = (ctx as any)?.enriched?.derived?.vars || {};
+      const secrets = (ctx as any)?.enriched?.derived?.secrets || {};
+      const fn = new Function(
+        "event",
+        "ne",
+        "env",
+        "vars",
+        "secrets",
+        `return (${compiled});`,
+      );
+      const v = fn(eventArg, { ...ctx }, process.env, vars, secrets);
+      return v == null ? "" : String(v);
+    } catch {
+      return "";
+    }
+  });
+}
+
+function buildExpressionEvent(base: any): any {
   try {
-    // Provide a minimal sandbox with event (=payload), ne (=full object), env
-    const compiled = preprocessExpression(expr);
-    const fn = new Function("event", "ne", "env", `return (${compiled});`);
-    return fn(ctx.payload, { ...ctx }, process.env);
+    const e: any = base && typeof base === "object" ? { ...base } : {};
+    // Promote nested original_event for convenience in expressions
+    const oe =
+      e?.client_payload?.payload?.original_event ||
+      e?.client_payload?.original_event;
+    if (oe && typeof oe === "object") {
+      for (const k of [
+        "pull_request",
+        "issue",
+        "repository",
+        "labels",
+        "action",
+        "type",
+        "phase",
+      ]) {
+        if (e[k] == null && oe[k] != null) e[k] = oe[k];
+      }
+      // Derive type from original_event shape first
+      if (e.type == null) {
+        if (oe.pull_request) e.type = "pull_request";
+        else if (oe.issue) e.type = "issues";
+      }
+      if (e.action == null && typeof oe.action === "string")
+        e.action = oe.action;
+    }
+    // Fallback type from action when still unset
+    if (e && e.type == null) {
+      e.type =
+        e.action ||
+        e.event_type ||
+        (e.client_payload && e.client_payload.event_type) ||
+        undefined;
+    }
+    return e;
   } catch {
-    return null;
+    return base;
   }
 }
 
@@ -371,51 +929,6 @@ function transformPipeline(segment: string): string {
   return expr;
 }
 
-async function tryLoadRemoteYaml(
-  ne: ReturnType<typeof normalizeNE>,
-  localPath: string,
-  branch: string,
-): Promise<any[]> {
-  try {
-    const token =
-      process.env.A5C_AGENT_GITHUB_TOKEN || process.env.GITHUB_TOKEN;
-    if (!token) return [];
-    const repoInfo = inferRepoFromNE(ne);
-    if (!repoInfo) return [];
-    const { owner, repo } = repoInfo;
-    const { Octokit } = await import("@octokit/rest");
-    const octokit = new Octokit({ auth: token });
-    const paths = computeRemotePaths(localPath);
-    const docs: any[] = [];
-    for (const p of paths) {
-      try {
-        const { data } = await octokit.repos.getContent({
-          owner,
-          repo,
-          path: p,
-          ref: branch,
-        });
-        if (Array.isArray(data)) continue;
-        const encoding = (data as any).encoding || "base64";
-        const content: string = Buffer.from(
-          (data as any).content || "",
-          encoding,
-        ).toString("utf8");
-        const parsed = YAML.parseAllDocuments(content, { prettyErrors: false });
-        for (const d of parsed as any[]) {
-          try {
-            const obj = (d as any).toJSON();
-            if (obj && typeof obj === "object") docs.push(obj);
-          } catch {}
-        }
-      } catch {}
-    }
-    return docs;
-  } catch {
-    return [];
-  }
-}
-
 function inferRepoFromNE(
   ne: ReturnType<typeof normalizeNE>,
 ): { owner: string; repo: string } | null {
@@ -427,7 +940,7 @@ function inferRepoFromNE(
     }
     const url = (ne as any)?.payload?.repository?.html_url;
     if (typeof url === "string") {
-      const parsed = parseGithubEntity(url);
+      const parsed = parseGithubOwnerRepo(url);
       if (parsed) return { owner: parsed.owner, repo: parsed.repo };
     }
     return null;
@@ -438,46 +951,29 @@ function inferRepoFromNE(
 
 function computeRemotePaths(localPath: string): string[] {
   // Normalize input; if a directory, look for typical reactor locations
-  const rel = localPath.replace(/^[A-Za-z]:\\|^\/+/, "").replace(/\\/g, "/");
+  const relRaw = decodeURIComponent(localPath || "");
+  const isDir = relRaw.endsWith("/");
+  const rel = normalizeRepoPathStr(relRaw);
   const candidates: string[] = [];
-  if (rel.endsWith("/")) {
-    candidates.push(`${rel}.a5c/events/reactor.yaml`);
-    candidates.push(`${rel}.a5c/events/`);
+  if (!rel || rel === "/") {
+    candidates.push(".a5c/events/reactor.yaml");
+    return candidates;
+  }
+  if (isDir) {
+    // If a directory path is provided, try directory itself (recursive) and '<dir>/reactor.yaml'
+    candidates.push(rel);
+    candidates.push(`${rel}/reactor.yaml`);
   } else {
     candidates.push(rel);
   }
-  // Add defaults if the caller passed just a directory like ".a5c/events/"
-  if (
-    rel === ".a5c/events/" ||
-    rel.endsWith("/.a5c/events/") ||
-    rel === ".a5c/events"
-  ) {
-    candidates.push(".a5c/events/reactor.yaml");
+  // Special-case common root path
+  if (rel === ".a5c/events") {
+    candidates.push(`.a5c/events/reactor.yaml`);
   }
   return Array.from(new Set(candidates));
 }
 
-function parseGithubEntity(
-  url: string,
-): { owner: string; repo: string; number?: number } | null {
-  try {
-    const u = new URL(url);
-    const parts = u.pathname.split("/").filter(Boolean);
-    const idxRepos = parts[0] === "repos" ? 1 : 0;
-    const owner = parts[idxRepos];
-    const repo = parts[idxRepos + 1];
-    const numberStr = parts[idxRepos + 3];
-    const number = Number.parseInt(numberStr, 10);
-    if (!owner || !repo) return null;
-    return {
-      owner,
-      repo,
-      number: Number.isFinite(number) ? number : undefined,
-    };
-  } catch {
-    return null;
-  }
-}
+// Removed in favor of shared helper in src/utils/githubEntity.ts
 
 function toStr(v: any): string | undefined {
   if (v == null) return undefined;

@@ -43,6 +43,15 @@ jq '.type, .repo.full_name, .provenance.workflow?.name' out.json
 cat out.json | npx @a5c-ai/events validate --quiet
 ```
 
+Programmatic SDK example:
+
+- See SDK Quickstart: `docs/user/sdk-quickstart.md` (minimal example using `mapToNE` and optional `enrichGithub`).
+
+Ref note (important):
+
+- The NE schema defines `ref.type` as `branch | tag | unknown`. Pull request events use branch semantics and populate `ref.base` and `ref.head` with the base and head branch names respectively; there is no `pr` enum in `ref.type`.
+- Canonical references: see the NE Schema overview at `docs/cli/ne-schema.md#ref` and the JSON Schema at `docs/specs/ne.schema.json`.
+
 ## CI Checks
 
 For CI guidance and required checks, see `docs/ci/ci-checks.md`.
@@ -57,6 +66,8 @@ Triggers matrix (summary):
 
 ## CLI Reference
 
+Reactor: Apply rules to a normalized event and emit custom events — see `docs/cli/reference.md#events-reactor` for usage and examples.
+
 ### Mentions config (Quick Start)
 
 For the full, canonical list of Mentions flags and defaults, see the CLI reference. Quick examples:
@@ -65,7 +76,7 @@ For the full, canonical list of Mentions flags and defaults, see the CLI referen
 # Disable scanning of changed files (code‑comment mentions)
 events enrich --in ... --flag 'mentions.scan.changed_files=false'
 
-# Restrict by canonical language IDs (not extensions). IDs: js, ts, py, go, java, c, cpp, sh, yaml, md.
+# Restrict by language allowlist (accepts canonical IDs or common extensions; inputs normalize to IDs)
 events enrich --in ... --flag 'mentions.languages=ts,js'
 ```
 
@@ -112,17 +123,10 @@ Canonical reference and examples:
 
 #### Mentions flags
 
-For the authoritative list and defaults for Mentions controls during `enrich` (including `mentions.scan.changed_files`, `mentions.max_file_bytes`, and `mentions.languages`), see the CLI reference: `docs/cli/reference.md#events-enrich`.
+Canonical source: Mentions scanning flags and defaults are documented in the CLI reference. To avoid drift, this README links to the canonical list instead of duplicating it.
 
-Behavior:
-
-- Offline by default: without `--use-github`, no network calls occur. Output includes `enriched.github = { provider: 'github', partial: true, reason: 'flag:not_set' }`. For CI, `A5C_EVENTS_AUTO_USE_GITHUB=true` auto-enables when a token exists.
-- When `--use-github` is set but no token is configured, the CLI exits with code `3` (provider/network error) and prints an error. Use programmatic APIs with an injected Octokit for testing scenarios if needed.
-  - `--flag mentions.scan.changed_files=<true|false>` — enable scanning code comments in changed files for `@mentions` (default: `true`).
-  - `--flag mentions.max_file_bytes=<bytes>` — per‑file size cap when scanning code comments (default: `200KB` / `204800`). Files larger than this are skipped.
-    - `--flag mentions.languages=<values,...>` — optional allowlist of languages to scan. Accepts canonical IDs and common extensions (leading dot optional); values are normalized to IDs (e.g., `.tsx → ts`, `.jsx → js`, `.yml → yaml`). When omitted, the scanner uses filename/heuristics.
-    - `--flag mentions.scan.commit_messages=<true|false>` — enable scanning commit messages for `@mentions` (default: `true`).
-    - `--flag mentions.scan.issue_comments=<true|false>` — enable scanning issue comment bodies for `@mentions` (default: `true`).
+- docs/cli/reference.md#events-enrich
+- docs/cli/reference.md#mentions-scanning
 
 Quick examples:
 
