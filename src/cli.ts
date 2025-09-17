@@ -266,6 +266,12 @@ program
     "--branch <name>",
     "config branch for remote YAML when not present locally (default: env A5C_EVENT_CONFIG_BRANCH or 'main')",
   )
+  .option(
+    "--metadata-match <key=value...>",
+    "filter by doc.metadata key=val (repeatable)",
+    collectKeyValue,
+    {},
+  )
   .action(async (cmdOpts: any) => {
     try {
       const { code, output, errorMessage } = await handleReactor({
@@ -273,6 +279,7 @@ program
         out: cmdOpts.out,
         file: cmdOpts.file,
         branch: cmdOpts.branch || process.env.A5C_EVENT_CONFIG_BRANCH || "main",
+        metadataMatch: cmdOpts.metadataMatch || cmdOpts["metadata-match"] || {},
       });
       if (code !== 0) {
         if (errorMessage) process.stderr.write(errorMessage + "\n");

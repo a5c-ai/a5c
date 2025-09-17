@@ -2,7 +2,7 @@ name: Validation Request
 
 on:
   repository_dispatch:
-    types: [pull_request_ready_for_review]
+    types: [validation_request]
   workflow_dispatch: {}
 
 permissions:
