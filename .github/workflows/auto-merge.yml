@@ -13,7 +13,7 @@ jobs:
   enable-auto-merge:
     if: >-
       github.event.pull_request != null &&
-      contains(join(fromJson(toJson(github.event.pull_request.labels)).*.name, ','), 'automerge')
+      contains(github.event.pull_request.labels.*.name, 'automerge')
     runs-on: ubuntu-latest
     steps:
       - name: Enable GitHub native auto-merge (squash)
