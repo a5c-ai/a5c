@@ -122,32 +122,60 @@ async function fetchGithubYamlDocs(
     const docs: any[] = [];
     const targets = computeRemotePaths(p);
     for (const pathItem of targets) {
-      try {
-        const { data } = await octokit.repos.getContent({
-          owner,
-          repo,
-          path: pathItem,
-          ref,
-        });
-        if (Array.isArray(data)) continue;
-        const encoding = (data as any).encoding || "base64";
-        const content: string = Buffer.from(
-          (data as any).content || "",
-          encoding,
-        ).toString("utf8");
-        const parsed = YAML.parseAllDocuments(content, { prettyErrors: false });
-        for (const d of parsed as any[]) {
-          try {
-            const obj = (d as any).toJSON();
-            if (obj && typeof obj === "object") docs.push(obj);
-          } catch {}
-        }
-      } catch {}
+      await fetchGithubPath(octokit, owner, repo, ref, pathItem, docs);
     }
     return docs;
   } catch {
     return [];
   }
+}
+
+async function fetchGithubPath(
+  octokit: any,
+  owner: string,
+  repo: string,
+  ref: string,
+  pathItem: string,
+  docsOut: any[],
+): Promise<void> {
+  try {
+    const { data } = await octokit.repos.getContent({
+      owner,
+      repo,
+      path: pathItem,
+      ref,
+    });
+    if (Array.isArray(data)) {
+      for (const entry of data) {
+        const type = (entry as any).type;
+        const name = (entry as any).name || "";
+        const p = (entry as any).path || "";
+        if (type === "dir") {
+          await fetchGithubPath(octokit, owner, repo, ref, p, docsOut);
+        } else if (
+          type === "file" &&
+          (name.endsWith(".yaml") || name.endsWith(".yml"))
+        ) {
+          await fetchGithubPath(octokit, owner, repo, ref, p, docsOut);
+        }
+      }
+      return;
+    }
+    const name = (data as any).name || "";
+    if (!name.endsWith(".yaml") && !name.endsWith(".yml")) return;
+    const encoding = (data as any).encoding || "base64";
+    const content: string = Buffer.from(
+      (data as any).content || "",
+      encoding,
+    ).toString("utf8");
+    const parsed = YAML.parseAllDocuments(content, { prettyErrors: false });
+    for (const d of parsed as any[]) {
+      try {
+        const obj = (d as any).toJSON();
+        if (obj && typeof obj === "object") docsOut.push(obj);
+      } catch {}
+    }
+  } catch {}
 }
 
 function inferRefFromNE(
@@ -480,51 +508,6 @@ function transformPipeline(segment: string): string {
   return expr;
 }
 
-async function tryLoadRemoteYaml(
-  ne: ReturnType<typeof normalizeNE>,
-  localPath: string,
-  branch: string,
-): Promise<any[]> {
-  try {
-    const token =
-      process.env.A5C_AGENT_GITHUB_TOKEN || process.env.GITHUB_TOKEN;
-    if (!token) return [];
-    const repoInfo = inferRepoFromNE(ne);
-    if (!repoInfo) return [];
-    const { owner, repo } = repoInfo;
-    const { Octokit } = await import("@octokit/rest");
-    const octokit = new Octokit({ auth: token });
-    const paths = computeRemotePaths(localPath);
-    const docs: any[] = [];
-    for (const p of paths) {
-      try {
-        const { data } = await octokit.repos.getContent({
-          owner,
-          repo,
-          path: p,
-          ref: branch,
-        });
-        if (Array.isArray(data)) continue;
-        const encoding = (data as any).encoding || "base64";
-        const content: string = Buffer.from(
-          (data as any).content || "",
-          encoding,
-        ).toString("utf8");
-        const parsed = YAML.parseAllDocuments(content, { prettyErrors: false });
-        for (const d of parsed as any[]) {
-          try {
-            const obj = (d as any).toJSON();
-            if (obj && typeof obj === "object") docs.push(obj);
-          } catch {}
-        }
-      } catch {}
-    }
-    return docs;
-  } catch {
-    return [];
-  }
-}
-
 function inferRepoFromNE(
   ne: ReturnType<typeof normalizeNE>,
 ): { owner: string; repo: string } | null {
@@ -554,14 +537,15 @@ function computeRemotePaths(localPath: string): string[] {
     return candidates;
   }
   if (rel.endsWith("/")) {
-    // If a directory path is provided, try '<dir>/reactor.yaml'
+    // If a directory path is provided, try directory itself (recursive) and '<dir>/reactor.yaml'
+    candidates.push(rel);
     candidates.push(`${rel}reactor.yaml`);
   } else {
     candidates.push(rel);
   }
   // Special-case common root path
   if (rel === ".a5c/events/" || rel === ".a5c/events") {
-    candidates.push(".a5c/events/reactor.yaml");
+    candidates.push(`.a5c/events/reactor.yaml`);
   }
   return Array.from(new Set(candidates));
 }
