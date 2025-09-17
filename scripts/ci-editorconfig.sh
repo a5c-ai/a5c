@@ -33,7 +33,8 @@ echo "Using editorconfig-checker@${EC_VERSION}"
 
 # Determine if -format flag is supported by this version
 FORMAT_ARGS=()
-if npx --yes editorconfig-checker@"${EC_VERSION}" -h 2>&1 | rg -q "-format"; then
+# Detect support for -format flag without requiring ripgrep on runners
+if npx --yes editorconfig-checker@"${EC_VERSION}" -h 2>&1 | grep -q -- "-format"; then
   FORMAT_ARGS=(-format github-actions)
 fi
 
