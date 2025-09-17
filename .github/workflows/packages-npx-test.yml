@@ -2,7 +2,7 @@ name: Packages Npx Test
 
 on:
   repository_dispatch:
-    types: [packages-npx-test, pull_request_ready_for_review]
+    types: [pull_request_ready_for_review]
   workflow_dispatch: {}
 
 permissions:
