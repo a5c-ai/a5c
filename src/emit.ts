@@ -23,15 +23,11 @@ export async function handleEmit(
     await executeSideEffects(obj);
 
     const safe = redactObject(obj);
-    // Default sink selection:
-    // - explicit opts.sink wins
-    // - when --out is provided, default to file
-    // - otherwise: prefer github only if a token exists, else stdout
-    const hasToken = !!(
-      process.env.A5C_AGENT_GITHUB_TOKEN || process.env.GITHUB_TOKEN
-    );
-    const sink =
-      opts.sink || (opts.out ? "file" : hasToken ? "github" : "stdout");
+    // Default behavior:
+    // - If --sink is provided, honor it
+    // - Else if --out is provided, use file sink implicitly
+    // - Else default to stdout (not github) to avoid unexpected network/token requirements
+    const sink = opts.sink || (opts.out ? "file" : "stdout");
     if (sink === "file") {
       if (!opts.out) throw new Error("Missing --out for file sink");
       writeJSONFile(opts.out, safe);
