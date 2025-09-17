@@ -10,7 +10,7 @@ This repo uses a fast/slow split for CI to keep PR feedback under a few minutes 
 - Steps:
   - `npm ci`
   - `npm run lint` (eslint)
-  - `editorconfig-checker` via `scripts/ci-editorconfig.sh` — pinned version by default, override via `EDITORCONFIG_CHECKER_VERSION`
+- `editorconfig-checker` via `scripts/ci-editorconfig.sh` — pinned version by default, override via `EDITORCONFIG_CHECKER_VERSION`
   - `npm run typecheck` (tsc --noEmit)
   - `npm run test:ci` (vitest with coverage)
   - Artifacts: `coverage/lcov.info`, `coverage/coverage-summary.json`
@@ -127,9 +127,29 @@ Alternative — script/uploader for local or non–GitHub Actions CI. Do not com
 To ensure reproducible CI results, the EditorConfig checker is executed via `npx` with an explicit version pin:
 
 - Script: `scripts/ci-editorconfig.sh`
-- Default version: `3.3.0` (set inside the script)
+- Default version: `5.1.9` (set inside the script)
 - Override: set a repository or organization variable named `EDITORCONFIG_CHECKER_VERSION`.
-- Workflow wiring: `.github/workflows/quick-checks.yml` exports `EDITORCONFIG_CHECKER_VERSION: ${{ vars.EDITORCONFIG_CHECKER_VERSION || '3.3.0' }}`.
+- Workflow wiring: `.github/workflows/quick-checks.yml` exports `EDITORCONFIG_CHECKER_VERSION: ${{ vars.EDITORCONFIG_CHECKER_VERSION || '5.1.9' }}`.
+
+Workflow env snippet:
+
+```yaml
+env:
+  EDITORCONFIG_CHECKER_VERSION: ${{ vars.EDITORCONFIG_CHECKER_VERSION || '5.1.9' }}
+```
+
+Script resolution logic:
+
+```bash
+EC_VERSION="${EDITORCONFIG_CHECKER_VERSION:-5.1.9}"
+echo "Using editorconfig-checker@${EC_VERSION}"
+# Detect -format support and avoid forcing -color
+if npx --yes editorconfig-checker@"${EC_VERSION}" -h 2>&1 | rg -q "-format"; then
+  npx --yes editorconfig-checker@"${EC_VERSION}" -format github-actions -exclude "$EXCLUDE_REGEX"
+else
+  npx --yes editorconfig-checker@"${EC_VERSION}" -exclude "$EXCLUDE_REGEX"
+fi
+```
 
 Upgrade cadence: bump the default in the script intentionally during tooling upgrades; validate on a branch and update this doc with any notable changes.
 
