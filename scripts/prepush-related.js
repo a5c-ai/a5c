@@ -23,7 +23,12 @@ function run(cmd, opts = {}) {
 try {
   const base = process.env.A5C_BASE_REF || "origin/a5c/main";
   // List changed source files
-  const diffCmd = `git diff --name-only ${base}...HEAD -- 'src/**/*.{ts,tsx}' 'tests/**/*.{ts,tsx,js}' 'test/**/*.{ts,tsx,js}'`;
+  // Use Git pathspec globs; avoid shell brace expansion which Git doesn't support.
+  // Keep patterns quoted so the shell doesn't expand them before Git receives them.
+  const diffCmd = `git diff --name-only ${base}...HEAD -- \
+    'src/**/*.ts' 'src/**/*.tsx' \
+    'tests/**/*.ts' 'tests/**/*.tsx' 'tests/**/*.js' \
+    'test/**/*.ts' 'test/**/*.tsx' 'test/**/*.js'`;
   const out = sh(diffCmd);
   const files = out
     .split("\n")
@@ -31,16 +36,16 @@ try {
     .filter(Boolean);
   if (files.length === 0) {
     console.log("No relevant changed files; running full test suite.");
-    run("vitest run");
+    run("npx --yes vitest run");
     process.exit(0);
   }
   const list = files.map((f) => `'${f}'`).join(" ");
   console.log("Running related tests for changed files:", files);
-  run(`vitest related ${list}`);
+  run(`npx --yes vitest related ${list}`);
 } catch (err) {
   console.warn(
     "Related tests failed or unavailable, falling back to full run. Error:",
     err?.message,
   );
-  run("vitest run");
+  run("npx --yes vitest run");
 }
