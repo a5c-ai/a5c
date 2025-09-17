@@ -70,3 +70,7 @@ out.normalize.json
 .tmp_check.json
 .tmp/
 tmp-ctx-*
+
+# Ignore transient reactor tmp files
+tmp-react-*/
+tmp-react-*
