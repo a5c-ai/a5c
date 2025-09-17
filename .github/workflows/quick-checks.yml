@@ -198,6 +198,17 @@ jobs:
     timeout-minutes: 2
     steps:
       - uses: actions/checkout@v4
+      - name: Ensure ripgrep is installed
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! command -v rg >/dev/null 2>&1; then
+            echo "Installing ripgrep (rg)"
+            sudo apt-get update -y
+            sudo apt-get install -y --no-install-recommends ripgrep
+          else
+            echo "ripgrep already available"
+          fi
       - name: Check for banned phrase in docs
         shell: bash
         run: |
