@@ -202,7 +202,7 @@ program
   .option("--out <file>", "output JSON file path (for file sink)")
   .option("--sink <name>", "sink name (stdout|file|github)")
   .action(async (cmdOpts: any) => {
-    const { code, output } = await handleEmit({
+    const { code } = await handleEmit({
       in: cmdOpts.in,
       out: cmdOpts.out,
       sink: cmdOpts.sink,

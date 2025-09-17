@@ -157,10 +157,7 @@ function mapActor(payload: any): GHUser | undefined {
   return { id: a.id, login: a.login || a.name, type: a.type || "User" };
 }
 
-function coerceSource(val?: string): string | undefined {
-  if (!val) return val;
-  return val === "actions" ? "action" : val;
-}
+// removed unused helper coerceSource
 
 export function mapToNE(
   payload: any,
