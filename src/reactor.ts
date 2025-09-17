@@ -828,7 +828,7 @@ function buildExpressionEvent(base: any): any {
       // Derive type from original_event shape first
       if (e.type == null) {
         if (oe.pull_request) e.type = "pull_request";
-        else if (oe.issue) e.type = "issues";
+        else if (oe.issue) e.type = "issue";
       }
       if (e.action == null && typeof oe.action === "string")
         e.action = oe.action;
