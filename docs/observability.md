@@ -102,6 +102,8 @@ await context.with(
 );
 ```
 
+For a minimal SDK walkthrough that also covers normalization and optional GitHub enrichment, see `docs/user/sdk-quickstart.md`.
+
 ### Sample Usage (CLI)
 
 - Recommend users initialize OTEL via environment (e.g., `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_SERVICE_NAME=a5c-events-cli`) and run a vendor distro or SDK bootstrap script before invoking the CLI in CI.

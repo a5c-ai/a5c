@@ -30,6 +30,10 @@ npm install @a5c-ai/events
 npm install -g @a5c-ai/events
 ```
 
+Programmatic usage:
+
+- SDK Quickstart: see `docs/user/sdk-quickstart.md` for a minimal example using `mapToNE` and optional GitHub enrichment.
+
 Try it:
 
 ```bash
