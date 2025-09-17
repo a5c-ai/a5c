@@ -194,11 +194,6 @@ function explainMatchOne(
       reason: `type mismatch need=${name} have=${evtType}`,
     };
   if (nameIsCustom) {
-    if (evtType && evtType !== "repository_dispatch")
-      return {
-        matched: false,
-        reason: `custom requires repository_dispatch, have=${evtType}`,
-      };
     if (action !== name)
       return {
         matched: false,
@@ -645,27 +640,23 @@ function matchesTrigger(
   const eventType =
     (ne as any)?.type || toStr((base as any)?.event) || undefined;
 
-  // Custom event name: alias to repository_dispatch with payload.action == name
+  // Custom event name: alias by action only
   const nameIsCustom = !KNOWN_GH_EVENTS.has(name) && name !== "any";
   if (nameIsCustom) {
-    if (eventType && eventType !== "repository_dispatch") return false;
     if (action !== name) return false;
   } else {
     if (name !== "any" && eventType && eventType !== name) return false;
   }
 
   if (!spec || typeof spec !== "object") return true;
-  // types: sub-actions under GH event (e.g., pull_request: types: [opened])
   if (Array.isArray((spec as any).types) && KNOWN_GH_EVENTS.has(name)) {
     const set = new Set(((spec as any).types as any[]).map((v) => String(v)));
     if (!action || !set.has(action)) return false;
   }
-  // events: repository_dispatch event types
   if (Array.isArray((spec as any).events)) {
     const set = new Set(((spec as any).events as any[]).map((v) => String(v)));
     if (!action || !set.has(action)) return false;
   }
-  // labels: require all to be present; for custom events, read from client_payload.labels, else use NE labels
   if (Array.isArray((spec as any).labels)) {
     const needed = new Set((spec as any).labels.map((v: any) => String(v)));
     const labelsSource = nameIsCustom
@@ -674,7 +665,6 @@ function matchesTrigger(
     for (const l of Array.from(needed.values()) as string[])
       if (!labelsSource.includes(String(l))) return false;
   }
-  // phase: check in payload.phase or client_payload.phase
   const phaseSpec = (spec as any).phase;
   if (phaseSpec) {
     const phase =
@@ -686,7 +676,6 @@ function matchesTrigger(
       if (!phase || String(phase) !== String(phaseSpec)) return false;
     }
   }
-  // filters: array of { expression: ${{ ... }} } – match if ANY expression is truthy
   const filters = (spec as any).filters;
   if (Array.isArray(filters) && filters.length) {
     const anyTrue = filters.some((f: any) => evaluateFilter(f, ne));
