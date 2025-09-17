@@ -11,6 +11,9 @@ module.exports = {
   rules: {
     // Permit commits without a conventional type in release merge PRs
     "type-empty": [0],
+    // Do not enforce subject casing in lenient mode
+    // (release/main PRs may include auto-generated or title-cased subjects)
+    "subject-case": [0],
     // Keep scope formatting consistent when provided
     "scope-case": [2, "always", "kebab-case"],
     // Do not enforce header/body/footer lengths in CI
