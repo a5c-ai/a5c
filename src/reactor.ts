@@ -34,6 +34,21 @@ function logDebug(msg: string) {
   process.stderr.write(line + "\n");
 }
 
+function isReactorDoc(obj: any): boolean {
+  if (!obj || typeof obj !== "object") return false;
+  const keys = new Set(Object.keys(obj));
+  const interesting = [
+    "on",
+    "emit",
+    "set_labels",
+    "pre_set_labels",
+    "script",
+    "metadata",
+    "env",
+  ];
+  return interesting.some((k) => keys.has(k));
+}
+
 export async function handleReactor(opts: ReactorOptions): Promise<{
   code: number;
   output?: { events: ReactorOutputEvent[] };
@@ -50,7 +65,7 @@ export async function handleReactor(opts: ReactorOptions): Promise<{
     if (repo) logDebug(`inferred repo=${repo.owner}/${repo.repo}`);
 
     const docs = await loadReactorDocs(ne, rulesPath, branch);
-    logInfo(`loaded ${docs.length} reactor doc(s)`);
+    logInfo(`loaded ${docs.length} reactor handler(s)`);
 
     const events: ReactorOutputEvent[] = [];
     const match = opts.metadataMatch || {};
@@ -333,7 +348,7 @@ async function fetchGithubPath(
     for (const d of parsed as any[]) {
       try {
         const obj = (d as any).toJSON();
-        if (obj && typeof obj === "object") docsOut.push(obj);
+        if (isReactorDoc(obj)) docsOut.push(obj);
       } catch {}
     }
     logDebug(
@@ -387,7 +402,7 @@ function loadYamlDocuments(filePath: string): any[] {
     for (const d of docs as any[]) {
       try {
         const obj = (d as any).toJSON();
-        if (obj && typeof obj === "object") out.push(obj);
+        if (isReactorDoc(obj)) out.push(obj);
       } catch {}
     }
   }
@@ -606,12 +621,37 @@ function resolveTemplateString(
   if (!m) return s;
   const expr = m[1];
   try {
-    // Provide a minimal sandbox with event (=payload), ne (=full object), env
     const compiled = preprocessExpression(expr);
-    const fn = new Function("event", "ne", "env", `return (${compiled});`);
-    return fn(ctx.payload, { ...ctx }, process.env);
+    const eventArg = buildExpressionEvent((ctx as any)?.payload);
+    const vars = (ctx as any)?.enriched?.derived?.vars || {};
+    const secrets = (ctx as any)?.enriched?.derived?.secrets || {};
+    const fn = new Function(
+      "event",
+      "ne",
+      "env",
+      "vars",
+      "secrets",
+      `return (${compiled});`,
+    );
+    return fn(eventArg, { ...ctx }, process.env, vars, secrets);
   } catch {
     return null;
+  }
+}
+
+function buildExpressionEvent(base: any): any {
+  try {
+    const e: any = base && typeof base === "object" ? { ...base } : {};
+    if (e && e.type == null) {
+      e.type =
+        e.action ||
+        e.event_type ||
+        (e.client_payload && e.client_payload.event_type) ||
+        undefined;
+    }
+    return e;
+  } catch {
+    return base;
   }
 }
 
