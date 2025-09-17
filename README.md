@@ -57,7 +57,7 @@ events enrich --in ... --flag 'mentions.scan.changed_files=false'
 # Accepted values: canonical language IDs and common extensions (with or without a leading dot).
 # Values are normalized to IDs. Examples: `.tsx → ts`, `.jsx → js`, `.yml → yaml`.
 # Canonical IDs include: js, ts, py, go, java, c, cpp, sh, yaml, md.
-events enrich --in ... --flag "mentions.languages=ts,js,.yml,.tsx"
+events enrich --in ... --flag "mentions.languages=ts,js"    # or include extensions: --flag "mentions.languages=.yml,.tsx"
 ```
 
 Canonical reference and examples:
