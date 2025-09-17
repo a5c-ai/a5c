@@ -2,7 +2,7 @@
 
 ## Plan
 
-- Add `docs/schemas/observability.schema.json` (v0.1)
+- Add `legacy path under docs/schemas (removed)` (v0.1)
 - Ensure `.github/actions/obs-summary` and `obs-collector` include `schema_version`
 - Validate example `docs/examples/observability.json` against the schema
 - Add CI check using Ajv to validate emitted artifact when present
