@@ -1,3 +1,13 @@
+## <small>1.5.1 (2025-09-17)</small>
+
+* 📘 docs: SDK quickstart + links (fixes #794) (#823) ([0bdb9e3](https://github.com/a5c-ai/events/commit/0bdb9e3)), closes [#794](https://github.com/a5c-ai/events/issues/794) [#823](https://github.com/a5c-ai/events/issues/823) [#794](https://github.com/a5c-ai/events/issues/794)
+* Merge branch 'a5c/main' of https://github.com/a5c-ai/events into a5c/main ([b57c8e0](https://github.com/a5c-ai/events/commit/b57c8e0))
+* Merge pull request #822 from a5c-ai/main ([7e85e1d](https://github.com/a5c-ai/events/commit/7e85e1d)), closes [#822](https://github.com/a5c-ai/events/issues/822)
+* Merge pull request #824 from a5c-ai/a5c/main ([2aa89a9](https://github.com/a5c-ai/events/commit/2aa89a9)), closes [#824](https://github.com/a5c-ai/events/issues/824)
+* Merge pull request #825 from a5c-ai/a5c/main ([753ca32](https://github.com/a5c-ai/events/commit/753ca32)), closes [#825](https://github.com/a5c-ai/events/issues/825)
+* fix(reactor): normalize repository paths and clean reference handling in GitHub API calls ([7251338](https://github.com/a5c-ai/events/commit/7251338))
+* chore(workflow): disable cancellation of in-progress jobs in reactor concurrency group ([3983d14](https://github.com/a5c-ai/events/commit/3983d14))
+
 ## 1.5.0 (2025-09-17)
 
 * Merge branch 'a5c/main' of https://github.com/a5c-ai/events into a5c/main ([1a2d44f](https://github.com/a5c-ai/events/commit/1a2d44f))
