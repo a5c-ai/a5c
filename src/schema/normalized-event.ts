@@ -70,6 +70,21 @@ export const NormalizedEventSchema = z
     enriched: z.object({}).passthrough().optional(),
     labels: z.array(z.string()).optional(),
     provenance: ProvenanceSchema,
+    composed: z
+      .array(
+        z
+          .object({
+            key: z.string(),
+            reason: z.union([z.string(), z.null()]).optional(),
+            targets: z.array(z.string()).optional(),
+            labels: z.array(z.string()).optional(),
+            payload: z
+              .union([z.object({}).passthrough(), z.array(z.any()), z.null()])
+              .optional(),
+          })
+          .strict(),
+      )
+      .optional(),
   })
   .strict();
 

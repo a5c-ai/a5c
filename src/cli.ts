@@ -7,6 +7,7 @@ import { loadConfig, writeJSONFile } from "./config.js";
 import { cmdNormalize } from "./commands/normalize.js";
 import { handleEnrich } from "./enrich.js";
 import { handleReactor } from "./reactor.js";
+import { handleGenerateContext } from "./generateContext.js";
 import { handleEmit } from "./emit.js";
 import { redactObject } from "./utils/redact.js";
 import path from "node:path";
@@ -110,6 +111,41 @@ program
   });
 
 program
+  .command("generate_context")
+  .description("Render a prompt/context file from templates and event context")
+  .option("--in <file>", "input JSON event file (default: stdin)")
+  .option("--template <uri>", "root template URI (md/yaml)")
+  .option("--out <file>", "output file (default: stdout)")
+  .option(
+    "--var <key=value...>",
+    "extra template variables",
+    collectKeyValue,
+    {},
+  )
+  .option(
+    "--token <str>",
+    "GitHub token for github:// URIs (default: env tokens)",
+  )
+  .action(async (cmdOpts: any) => {
+    const { code, output, errorMessage } = await handleGenerateContext({
+      in: cmdOpts.in,
+      template: cmdOpts.template,
+      out: cmdOpts.out,
+      vars: cmdOpts.var,
+      token: cmdOpts.token,
+    });
+    if (code !== 0) {
+      if (errorMessage) process.stderr.write(errorMessage + "\n");
+      return process.exit(code);
+    }
+    if (typeof output === "string") {
+      if (cmdOpts.out) fs.writeFileSync(cmdOpts.out, output, "utf8");
+      else process.stdout.write(output);
+    }
+    process.exit(0);
+  });
+
+program
   .command("enrich")
   .description("Enrich a normalized event with metadata and derived info")
   .option("--in <file>", "input JSON file path")
@@ -135,12 +171,21 @@ program
       return process.exit(2);
     }
 
-    // Determine default --use-github behavior: enable when token exists unless explicitly disabled
+    // Determine --use-github behavior: offline by default; enable only when flag is set
+    // Optional escape hatch for CI: A5C_EVENTS_AUTO_USE_GITHUB=true auto-enables when a token exists
     const cfg = loadConfig();
     const token = cfg.githubToken;
     const explicitUseGithub = !!(cmdOpts.useGithub || cmdOpts["use-github"]);
-    const requestedUseGithub = explicitUseGithub || !!token;
-    if (requestedUseGithub && !token && explicitUseGithub) {
+    const autoEnv = String(
+      process.env.A5C_EVENTS_AUTO_USE_GITHUB || "",
+    ).toLowerCase();
+    const autoRequested =
+      autoEnv === "1" ||
+      autoEnv === "true" ||
+      autoEnv === "yes" ||
+      autoEnv === "on";
+    const requestedUseGithub = explicitUseGithub || (autoRequested && !!token);
+    if (explicitUseGithub && !token) {
       process.stderr.write(
         "GitHub enrichment failed: token is required when --use-github is set\n",
       );
@@ -193,7 +238,7 @@ program
   .option("--out <file>", "output JSON file path (for file sink)")
   .option("--sink <name>", "sink name (stdout|file|github)")
   .action(async (cmdOpts: any) => {
-    const { code, output } = await handleEmit({
+    const { code } = await handleEmit({
       in: cmdOpts.in,
       out: cmdOpts.out,
       sink: cmdOpts.sink,
@@ -215,12 +260,17 @@ program
     "--file <path>",
     "reactor rules file path (yaml), default .a5c/events/reactor.yaml",
   )
+  .option(
+    "--branch <name>",
+    "config branch for remote YAML when not present locally (default: env A5C_EVENT_CONFIG_BRANCH or 'main')",
+  )
   .action(async (cmdOpts: any) => {
     try {
       const { code, output, errorMessage } = await handleReactor({
         in: cmdOpts.in,
         out: cmdOpts.out,
         file: cmdOpts.file,
+        branch: cmdOpts.branch || process.env.A5C_EVENT_CONFIG_BRANCH || "main",
       });
       if (code !== 0) {
         if (errorMessage) process.stderr.write(errorMessage + "\n");

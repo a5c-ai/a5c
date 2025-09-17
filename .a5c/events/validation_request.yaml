@@ -1,0 +1,40 @@
+---
+on:
+  any:
+    - expression: ${{ env.VALIDATION_REQUEST_IN_PROGRESS_WARNING == 'true' && event.type == 'synchronize' && event.pull_request.labels | map(name) | contains('validation') }}
+script:
+  - |
+    echo "PR branch changed while validation is in progress - ${{ event.pull_request.html_url }}"
+---
+on:
+  pull_request:
+    filters:
+      - expression: ${{ event.pull_request.labels | map(name) | contains('validation_requested') && event.type == 'ready_for_review' }}
+emit:
+  pull_request_ready_for_review:
+    type: ready_for_review
+    payload:
+      original_event: ${{ event }}
+      pr_ref: ${{ event.pull_request.head.ref }}
+      base_ref: ${{ event.pull_request.base.ref }}
+      pull_request: ${{ event.pull_request }}
+set_labels:
+  - entity: ${{ event.pull_request.html_url }}
+    add_labels: [validation]
+    remove_labels: [validation_requested]
+script:
+  - |
+    echo "Validation request for PR ${{ event.pull_request.html_url }} added label validation"
+---
+on:
+  pull_request_ready_for_review:
+    labels: [validation]
+emit:
+  validation_request:
+    type: created
+    phase: validation
+    labels: [validation]
+    payload:
+      original_event: ${{ event.original_event }}
+      pull_request: ${{ event.pull_request }}
+      ref: ${{ event.ref }}

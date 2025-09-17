@@ -10,6 +10,7 @@ This repo uses a fast/slow split for CI to keep PR feedback under a few minutes 
 - Steps:
   - `npm ci`
   - `npm run lint` (eslint)
+- `editorconfig-checker` via `scripts/ci-editorconfig.sh` — pinned version by default, override via `EDITORCONFIG_CHECKER_VERSION`
   - `npm run typecheck` (tsc --noEmit)
   - `npm run test:ci` (vitest with coverage)
   - Artifacts: `coverage/lcov.info`, `coverage/coverage-summary.json`
@@ -96,7 +97,7 @@ Runs independently to surface TS errors early across supported Node versions. Qu
 - Steps: `./scripts/build.sh`
 
 - Name: `Tests`
-- Triggers: `push` and `pull_request` to `a5c/main` (lightweight; mirrors Quick Checks but uploads coverage artifacts for diagnostics)
+- Triggers: `push` to `a5c/main`, `main` and `pull_request` to `a5c/main` (PR run is lightweight; mirrors Quick Checks but uploads coverage artifacts for diagnostics)
 - Steps: `./scripts/install.sh`, `./scripts/build.sh`, `./scripts/test.sh`, CLI smoke tests, coverage artifact + step summary
 
 Heavier/longer gates run on protected branches to keep PRs snappy while maintaining strong guarantees before merge/deploy.
@@ -121,6 +122,37 @@ env:
 
 Alternative — script/uploader for local or non–GitHub Actions CI. Do not combine both methods in the same workflow to avoid duplicate uploads.
 
+## EditorConfig Checker Version Pinning
+
+To ensure reproducible CI results, the EditorConfig checker is executed via `npx` with an explicit version pin:
+
+- Script: `scripts/ci-editorconfig.sh`
+- Default version: `5.1.9` (set inside the script)
+- Override: set a repository or organization variable named `EDITORCONFIG_CHECKER_VERSION`.
+- Workflow wiring: `.github/workflows/quick-checks.yml` exports `EDITORCONFIG_CHECKER_VERSION: ${{ vars.EDITORCONFIG_CHECKER_VERSION || '5.1.9' }}`.
+
+Workflow env snippet:
+
+```yaml
+env:
+  EDITORCONFIG_CHECKER_VERSION: ${{ vars.EDITORCONFIG_CHECKER_VERSION || '5.1.9' }}
+```
+
+Script resolution logic:
+
+```bash
+EC_VERSION="${EDITORCONFIG_CHECKER_VERSION:-5.1.9}"
+echo "Using editorconfig-checker@${EC_VERSION}"
+# Detect -format support and avoid forcing -color
+if npx --yes editorconfig-checker@"${EC_VERSION}" -h 2>&1 | rg -q "-format"; then
+  npx --yes editorconfig-checker@"${EC_VERSION}" -format github-actions -exclude "$EXCLUDE_REGEX"
+else
+  npx --yes editorconfig-checker@"${EC_VERSION}" -exclude "$EXCLUDE_REGEX"
+fi
+```
+
+Upgrade cadence: bump the default in the script intentionally during tooling upgrades; validate on a branch and update this doc with any notable changes.
+
 ## Commit Hygiene (PR)
 
 - Name: `Commit Hygiene`
@@ -131,7 +163,7 @@ Alternative — script/uploader for local or non–GitHub Actions CI. Do not com
 
 The agent router (`.github/workflows/a5c.yml`) listens for `workflow_run.completed` events from:
 
-- `Build`, `Deploy`, `Packages Npx Test`, `Lint`, `Tests`, `Quick Checks`, `Typecheck`, `Commit Hygiene`.
+- `Build`, `Deploy`, `Packages Npx Test`, `Lint`, `Tests`, `PR Quick Tests`, `Quick Checks`, `Typecheck`, `Commit Hygiene`, `Docs Lint`, `Release`.
   It filters to failed runs on `a5c/main` and `main` and can dispatch follow-ups automatically.
 
 ## Repository Settings (Recommended)

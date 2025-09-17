@@ -22,8 +22,6 @@ jobs:
   reactor:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -64,6 +62,7 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
           NPM_CONFIG_USERCONFIG: ${{ env.NPM_CONFIG_USERCONFIG }}
           GITHUB_TOKEN: ${{ secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+          A5C_EVENT_CONFIG_BRANCH: ${{ env.A5C_EVENT_CONFIG_BRANCH || 'a5c/main' }}
         run: |
           npx -y "$A5C_PKG_SPEC" enrich \
             --in "$GITHUB_EVENT_PATH" \
@@ -75,7 +74,6 @@ jobs:
           npx -y "$A5C_PKG_SPEC" reactor \
             --in out.enrich.json \
             --out out.reactor.json \
-            --file example/.a5c/events/validation_request.yaml
           # list of events to emit
           jq -r '.events[]' out.reactor.json
           cat out.reactor.json

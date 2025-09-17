@@ -1,12 +1,11 @@
 [![99% built by agents](https://img.shields.io/badge/99%25-built%20by%20agents-blue.svg)](https://a5c.ai) [![codecov](https://codecov.io/gh/a5c-ai/events/branch/a5c/main/graph/badge.svg)](https://app.codecov.io/gh/a5c-ai/events/tree/a5c/main)
 
-
 # @a5c-ai/events – Events SDK & CLI
 
 Normalize and enrich GitHub (and other) events for agentic workflows. Use the CLI in CI or locally to turn raw webhook/Actions payloads into a compact, consistent schema that downstream agents and automations can trust.
 
 - Quick install via npm
-- Commands: `events mentions`, `events normalize`, `events enrich`, `events emit`, `events validate` (see `docs/cli/reference.md#events-emit` for `emit` options and examples)
+- Commands: `events mentions`, `events normalize`, `events enrich`, `events reactor`, `events emit`, `events validate` (see `docs/cli/reference.md#events-reactor` and `docs/cli/reference.md#events-emit` for options and examples)
 - Output: JSON to stdout or file
 - Extensible via provider adapters and enrichers
 
@@ -44,27 +43,36 @@ jq '.type, .repo.full_name, .provenance.workflow?.name' out.json
 cat out.json | npx @a5c-ai/events validate --quiet
 ```
 
+## CI Checks
+
+For CI guidance and required checks, see `docs/ci/ci-checks.md`.
+
+Validate locally: `npm run -s validate:examples` (details in `docs/ci/ci-checks.md`).
+
+Triggers matrix (summary):
+
+- Pull requests → Quick feedback: `Quick Checks` (lint, typecheck, unit tests + coverage), `Lint`, `Typecheck`, `Commit Hygiene`, and `Tests` (lightweight; mirrors Quick Checks but uploads coverage artifacts).
+- Push to protected branches (`a5c/main`, `main`) → Heavier gates: `Build`, `Tests` (full install/build/test with coverage artifacts).
+- Branch semantics: `a5c/main` is development/staging; `main` is production.
+
 ## CLI Reference
 
 ### Mentions config (Quick Start)
 
-Use a simple example, then see the CLI reference for the canonical flags and defaults:
+For the full, canonical list of Mentions flags and defaults, see the CLI reference. Quick examples:
 
 ```bash
-# Disable scanning of changed files (code-comment mentions)
+# Disable scanning of changed files (code‑comment mentions)
 events enrich --in ... --flag 'mentions.scan.changed_files=false'
 
-# Restrict code‑comment scanning to canonical language IDs
-# Pass language IDs, not extensions: js, ts, py, go, java, c, cpp, sh, yaml, md.
-# Extensions are normalized internally for detection (.tsx→ts, .jsx→js, .yml→yaml),
-# but the allowlist compares the language IDs directly (values like .ts will not match).
-events enrich --in ... --flag "mentions.languages=ts,js"
+# Restrict by canonical language IDs (not extensions). IDs: js, ts, py, go, java, c, cpp, sh, yaml, md.
+events enrich --in ... --flag 'mentions.languages=ts,js'
 ```
 
 Canonical reference and examples:
 
 - docs/cli/reference.md#events-enrich
-- docs/cli/reference.md#mentions-scanning-controls-code-comments-in-changed-files
+- docs/cli/reference.md#mentions-scanning
 
 `events mentions`
 
@@ -97,7 +105,7 @@ Canonical reference and examples:
 - `--flag include_patch=<true|false>`: include diff patches in files (default: false)
 - `--flag commit_limit=<n>`: max commits to include (default: 50)
 - Mentions scanning flags are documented once in the CLI reference at `docs/cli/reference.md#events-enrich` and are the canonical source of truth for wording and defaults.
-- `--use-github`: enable GitHub API enrichment (requires `GITHUB_TOKEN`)
+- `--use-github`: enable GitHub API enrichment (requires `A5C_AGENT_GITHUB_TOKEN` or `GITHUB_TOKEN`; `A5C_AGENT_GITHUB_TOKEN` takes precedence when both are set). For CI convenience, you may set `A5C_EVENTS_AUTO_USE_GITHUB=true` to auto-enable when a token is present; otherwise behavior remains offline by default.
 - `--select <paths>`: comma-separated dot paths to include in output
   - `--filter <expr>`: filter expression `path[=value]`; if not matching, exits with code 2 and no output (see CLI reference example: docs/cli/reference.md#events-enrich)
 - `--label <key=value...>`: attach labels to top‑level `labels[]`
@@ -108,12 +116,11 @@ For the authoritative list and defaults for Mentions controls during `enrich` (i
 
 Behavior:
 
-- Offline by default: without `--use-github`, no network calls occur. Output includes `enriched.github = { provider: 'github', partial: true, reason: 'flag:not_set' }`.
+- Offline by default: without `--use-github`, no network calls occur. Output includes `enriched.github = { provider: 'github', partial: true, reason: 'flag:not_set' }`. For CI, `A5C_EVENTS_AUTO_USE_GITHUB=true` auto-enables when a token exists.
 - When `--use-github` is set but no token is configured, the CLI exits with code `3` (provider/network error) and prints an error. Use programmatic APIs with an injected Octokit for testing scenarios if needed.
   - `--flag mentions.scan.changed_files=<true|false>` — enable scanning code comments in changed files for `@mentions` (default: `true`).
   - `--flag mentions.max_file_bytes=<bytes>` — per‑file size cap when scanning code comments (default: `200KB` / `204800`). Files larger than this are skipped.
-    - `--flag mentions.languages=<lang,...>` — optional allowlist of canonical language codes to scan (e.g., `js,ts,py,go,yaml,md`). When omitted, the scanner uses filename/heuristics.
-      - Mapping note: extensions are normalized to codes during detection (e.g., `.tsx → ts`, `.jsx → js`, `.yml → yaml`), but the filter list compares codes.
+    - `--flag mentions.languages=<values,...>` — optional allowlist of languages to scan. Accepts canonical IDs and common extensions (leading dot optional); values are normalized to IDs (e.g., `.tsx → ts`, `.jsx → js`, `.yml → yaml`). When omitted, the scanner uses filename/heuristics.
     - `--flag mentions.scan.commit_messages=<true|false>` — enable scanning commit messages for `@mentions` (default: `true`).
     - `--flag mentions.scan.issue_comments=<true|false>` — enable scanning issue comment bodies for `@mentions` (default: `true`).
 
@@ -176,13 +183,13 @@ If you pass `--use-github` without a token, the CLI exits with code `3` and prin
 Notes:
 
 - Minimal offline examples may omit `enriched.github`. Both shapes validate against the NE schema. See also: `docs/examples/enrich.offline.stub.json`.
-For detailed command usage and examples, see docs/cli/reference.md.
+  For detailed command usage and examples, see docs/cli/reference.md.
 
 ### Mentions scanning examples
 
 Examples are centralized in the CLI Reference:
 
-- docs/cli/reference.md#mentions-scanning-controls-code-comments-in-changed-files
+- docs/cli/reference.md#mentions-scanning
 
 ### Rules quick-start (composed events)
 
@@ -343,19 +350,37 @@ See also sample outputs:
 
 You can optionally upload coverage to Codecov. This repo does not enable uploads by default.
 
-Opt-in steps:
+Opt-in steps (aligned with `docs/ci/ci-checks.md`):
 
-- Create a Codecov project for this repository and add a repo Secret or Variable named `CODECOV_TOKEN`.
-- Add the following step to your tests workflow after coverage is generated:
+- Define `CODECOV_TOKEN` via repo/org Secret or Variable.
+- Use the guarded upload step after coverage is generated:
 
 ```yaml
+env:
+  CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN || vars.CODECOV_TOKEN || '' }}
+
 - name: Upload coverage to Codecov (optional)
   if: ${{ env.CODECOV_TOKEN != '' }}
-  run: |
-    bash scripts/coverage-upload.sh
+  uses: codecov/codecov-action@v4
+  with:
+    token: ${{ env.CODECOV_TOKEN }}
+    files: coverage/lcov.info
+    flags: pr
+    fail_ci_if_error: false
 ```
 
-Note: The Codecov badge is shown at the top of this README and links to the tree view for `a5c/main`: https://app.codecov.io/gh/a5c-ai/events/tree/a5c/main
+Alternatively, use the repo script:
+
+```yaml
+env:
+  CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN || vars.CODECOV_TOKEN || '' }}
+
+- name: Upload coverage to Codecov (optional)
+  if: ${{ env.CODECOV_TOKEN != '' }}
+  run: bash scripts/coverage-upload.sh
+```
+
+Note: The Codecov badge at the top links to the tree view for `a5c/main`: https://app.codecov.io/gh/a5c-ai/events/tree/a5c/main
 
 ### Auth tokens: precedence & redaction
 
