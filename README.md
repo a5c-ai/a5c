@@ -72,7 +72,7 @@ events enrich --in ... --flag 'mentions.languages=ts,js'
 Canonical reference and examples:
 
 - docs/cli/reference.md#events-enrich
-- docs/cli/reference.md#mentions-scanning-controls-code-comments-in-changed-files
+- docs/cli/reference.md#mentions-scanning
 
 `events mentions`
 
@@ -189,7 +189,7 @@ Notes:
 
 Examples are centralized in the CLI Reference:
 
-- docs/cli/reference.md#mentions-scanning-controls-code-comments-in-changed-files
+- docs/cli/reference.md#mentions-scanning
 
 ### Rules quick-start (composed events)
 
