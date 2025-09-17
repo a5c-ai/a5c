@@ -27,16 +27,11 @@ EXCLUDE_REGEX='(^LICENSE$|^docs/|\.out$|^run\.log$|^run\.view\.err$|^actionlint$
 rm -f .editorconfig-checker.json || true
 
 # Resolve version: allow override via EDITORCONFIG_CHECKER_VERSION, default pinned
-# Note: quote the default, not the variable expansion, to avoid literal quotes in value
-EC_VERSION="${EDITORCONFIG_CHECKER_VERSION:-3.3.0}"
+EC_VERSION="${EDITORCONFIG_CHECKER_VERSION:-3.4.0}"
+echo "Using editorconfig-checker@${EC_VERSION}"
 
-# Detect support for github-actions formatter (older versions may not support -format)
-FORMAT_ARGS=""
-if npx --yes "editorconfig-checker@${EC_VERSION}" -help 2>&1 | grep -q -- "-format"; then
-  FORMAT_ARGS="-format github-actions"
-fi
-
-# Execute. Avoid forcing color: older versions only support -no-color.
-npx --yes "editorconfig-checker@${EC_VERSION}" \
-  ${FORMAT_ARGS} \
+# Execute with consistent flags for CI annotations
+npx --yes editorconfig-checker@"${EC_VERSION}" \
+  -color \
+  -format github-actions \
   -exclude "$EXCLUDE_REGEX" || exit $?

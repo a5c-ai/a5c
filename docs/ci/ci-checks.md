@@ -127,9 +127,24 @@ Alternative — script/uploader for local or non–GitHub Actions CI. Do not com
 To ensure reproducible CI results, the EditorConfig checker is executed via `npx` with an explicit version pin:
 
 - Script: `scripts/ci-editorconfig.sh`
-- Default version: `3.3.0` (set inside the script)
+- Default version: `3.4.0` (set inside the script)
 - Override: set a repository or organization variable named `EDITORCONFIG_CHECKER_VERSION`.
-- Workflow wiring: `.github/workflows/quick-checks.yml` exports `EDITORCONFIG_CHECKER_VERSION: ${{ vars.EDITORCONFIG_CHECKER_VERSION || '3.3.0' }}`.
+- Workflow wiring: `.github/workflows/quick-checks.yml` exports `EDITORCONFIG_CHECKER_VERSION: ${{ vars.EDITORCONFIG_CHECKER_VERSION || '3.4.0' }}`.
+
+Workflow env snippet:
+
+```yaml
+env:
+  EDITORCONFIG_CHECKER_VERSION: ${{ vars.EDITORCONFIG_CHECKER_VERSION || '3.4.0' }}
+```
+
+Script resolution logic:
+
+```bash
+EC_VERSION="${EDITORCONFIG_CHECKER_VERSION:-3.4.0}"
+echo "Using editorconfig-checker@${EC_VERSION}"
+npx --yes editorconfig-checker@"${EC_VERSION}" -color -format github-actions -exclude "$EXCLUDE_REGEX"
+```
 
 Upgrade cadence: bump the default in the script intentionally during tooling upgrades; validate on a branch and update this doc with any notable changes.
 
