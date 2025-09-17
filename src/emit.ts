@@ -8,6 +8,14 @@ export interface EmitOptions {
   sink?: "stdout" | "file" | "github";
 }
 
+function isDebug(): boolean {
+  const lvl = String(process.env.A5C_LOG_LEVEL || "").toLowerCase();
+  return lvl === "debug" || lvl === "trace";
+}
+function dbg(msg: string) {
+  if (isDebug()) process.stderr.write(`[emit] ${msg}\n`);
+}
+
 export async function handleEmit(
   opts: EmitOptions,
 ): Promise<{ code: number; output: any }> {
@@ -23,11 +31,7 @@ export async function handleEmit(
     await executeSideEffects(obj);
 
     const safe = redactObject(obj);
-    // Default behavior:
-    // - If --sink is provided, honor it
-    // - Else if --out is provided, use file sink implicitly
-    // - Else default to stdout (not github) to avoid unexpected network/token requirements
-    const sink = opts.sink || (opts.out ? "file" : "stdout");
+    const sink = opts.sink || (opts.out ? "file" : "github");
     if (sink === "file") {
       if (!opts.out) throw new Error("Missing --out for file sink");
       writeJSONFile(opts.out, safe);
@@ -75,11 +79,17 @@ async function executeSideEffects(obj: any): Promise<void> {
   const items = Array.isArray(obj?.events) ? obj.events : [obj];
   for (const ev of items) {
     const cp = ev.client_payload || ev.payload || {};
-    if (cp && Array.isArray(cp.set_labels) && cp.set_labels.length) {
-      await applyLabels(cp.set_labels);
+    try {
+      (globalThis as any).__A5C_EMIT_CTX__ = { event: cp };
+    } catch {}
+    if (cp && Array.isArray(cp.pre_set_labels) && cp.pre_set_labels.length) {
+      await applyLabels(cp.pre_set_labels);
     }
     if (cp && Array.isArray(cp.script) && cp.script.length) {
       await runScripts(cp.script);
+    }
+    if (cp && Array.isArray(cp.set_labels) && cp.set_labels.length) {
+      await applyLabels(cp.set_labels);
     }
   }
 }
@@ -92,16 +102,32 @@ async function applyLabels(entries: any[]): Promise<void> {
   for (const entry of entries) {
     try {
       const entityUrl = String(entry.entity || "");
-      // Expect PR/Issue URLs like https://api.github.com/repos/:owner/:repo/issues/:number or html urls
       const parsed = parseGithubEntity(entityUrl);
       if (!parsed) continue;
       const { owner, repo, number } = parsed;
       const add: string[] = normalizeLabelsArray(entry.add_labels);
       const remove: string[] = normalizeLabelsArray(entry.remove_labels);
-      if (add.length) {
-        await ensureLabelsExist(octokit as any, owner, repo, add);
+      dbg(
+        `labels target ${owner}/${repo}#${number} add=[${add.join(",")}] remove=[${remove.join(",")}]`,
+      );
+      let current: Set<string> = new Set();
+      try {
+        const resp = await octokit.issues.listLabelsOnIssue({
+          owner,
+          repo,
+          issue_number: number,
+          per_page: 100,
+        });
+        const names = Array.isArray(resp.data)
+          ? resp.data.map((l: any) => String(l.name))
+          : [];
+        current = new Set(names);
+        dbg(`current labels: [${names.join(",")}]`);
+      } catch (e: any) {
+        dbg(`listLabelsOnIssue failed: ${e?.status || "?"} ${e?.message || e}`);
       }
       if (add.length) {
+        await ensureLabelsExist(octokit as any, owner, repo, add);
         await octokit.issues.addLabels({
           owner,
           repo,
@@ -110,6 +136,10 @@ async function applyLabels(entries: any[]): Promise<void> {
         });
       }
       for (const label of remove) {
+        if (!current.has(label)) {
+          dbg(`skip remove '${label}' (not present)`);
+          continue;
+        }
         try {
           await octokit.issues.removeLabel({
             owner,
@@ -117,7 +147,11 @@ async function applyLabels(entries: any[]): Promise<void> {
             issue_number: number,
             name: label,
           });
-        } catch {}
+        } catch (e: any) {
+          dbg(
+            `removeLabel '${label}' failed: ${e?.status || "?"} ${e?.message || e}`,
+          );
+        }
       }
     } catch {}
   }
@@ -132,14 +166,13 @@ function normalizeLabelsArray(v: any): string[] {
     .filter(Boolean);
 }
 
-export function parseGithubEntity(
+function parseGithubEntity(
   url: string,
 ): { owner: string; repo: string; number: number } | null {
   try {
     if (!url) return null;
     const u = new URL(url);
     const parts = u.pathname.split("/").filter(Boolean);
-    // Accept both /repos/:owner/:repo/issues/:number and /:owner/:repo/pull/:number or /:owner/:repo/issues/:number
     const idxRepos = parts[0] === "repos" ? 1 : 0;
     const owner = parts[idxRepos];
     const repo = parts[idxRepos + 1];
@@ -148,7 +181,6 @@ export function parseGithubEntity(
     if (!owner || !repo) return null;
     let number = Number.parseInt(numberStr, 10);
     if (!Number.isFinite(number)) {
-      // Try alternative: .../pull/123
       const altIdx =
         parts.indexOf("pull") >= 0 ? parts.indexOf("pull") + 1 : -1;
       if (altIdx > 0) number = Number.parseInt(parts[altIdx], 10);
@@ -164,8 +196,13 @@ async function runScripts(lines: string[]): Promise<void> {
   // Execute each line via sh -c in a minimal environment
   const { exec } = await import("node:child_process");
   for (const line of lines) {
-    const cmd = String(line || "").trim();
+    let cmd = String(line || "").trim();
     if (!cmd) continue;
+    // Expand ${{ }} using client payload context when possible
+    try {
+      const ctx = (globalThis as any).__A5C_EMIT_CTX__ || {};
+      cmd = expandInlineTemplates(cmd, ctx);
+    } catch {}
     await new Promise<void>((resolve, reject) => {
       exec(
         cmd,
@@ -179,40 +216,17 @@ async function runScripts(lines: string[]): Promise<void> {
   }
 }
 
-function resolveOwnerRepo(cp: any): { owner: string; repo: string } | null {
-  try {
-    if (!cp || typeof cp !== "object") return null;
-    const full = cp?.repository?.full_name || cp?.repo_full_name;
-    if (typeof full === "string" && full.includes("/")) {
-      const [owner, repo] = full.split("/");
-      if (owner && repo) return { owner, repo };
+function expandInlineTemplates(s: string, ctx: any): string {
+  return String(s).replace(/\$\{\{\s*([^}]+)\s*\}\}/g, (_m, expr) => {
+    try {
+      const fn = new Function("event", "env", `return (${expr});`);
+      const event = ctx?.event || ctx;
+      const v = fn(event, process.env);
+      return v == null ? "" : String(v);
+    } catch {
+      return "";
     }
-    const html =
-      cp?.repository?.html_url ||
-      cp?.pull_request?.html_url ||
-      cp?.issue?.html_url ||
-      cp?.repo_html_url;
-    if (typeof html === "string") {
-      const parsed = parseGithubEntity(html);
-      if (parsed) return { owner: parsed.owner, repo: parsed.repo };
-    }
-    const labels = Array.isArray(cp?.set_labels) ? cp.set_labels : [];
-    for (const entry of labels) {
-      const ent = entry?.entity;
-      if (typeof ent === "string") {
-        const parsed = parseGithubEntity(ent);
-        if (parsed) return { owner: parsed.owner, repo: parsed.repo };
-      }
-    }
-    const oeFull = cp?.original_event?.repository?.full_name;
-    if (typeof oeFull === "string" && oeFull.includes("/")) {
-      const [owner, repo] = oeFull.split("/");
-      if (owner && repo) return { owner, repo };
-    }
-    return null;
-  } catch {
-    return null;
-  }
+  });
 }
 
 async function ensureLabelsExist(
@@ -251,4 +265,40 @@ function generateLabelColor(name: string): string {
   g = Math.max(min, Math.min(max, g));
   b = Math.max(min, Math.min(max, b));
   return [r, g, b].map((v) => v.toString(16).padStart(2, "0")).join("");
+}
+
+function resolveOwnerRepo(cp: any): { owner: string; repo: string } | null {
+  try {
+    if (!cp || typeof cp !== "object") return null;
+    const full = cp?.repository?.full_name || cp?.repo_full_name;
+    if (typeof full === "string" && full.includes("/")) {
+      const [owner, repo] = full.split("/");
+      if (owner && repo) return { owner, repo };
+    }
+    const html =
+      cp?.repository?.html_url ||
+      cp?.pull_request?.html_url ||
+      cp?.issue?.html_url ||
+      cp?.repo_html_url;
+    if (typeof html === "string") {
+      const parsed = parseGithubEntity(html);
+      if (parsed) return { owner: parsed.owner, repo: parsed.repo };
+    }
+    const labels = Array.isArray(cp?.set_labels) ? cp.set_labels : [];
+    for (const entry of labels) {
+      const ent = entry?.entity;
+      if (typeof ent === "string") {
+        const parsed = parseGithubEntity(ent);
+        if (parsed) return { owner: parsed.owner, repo: parsed.repo };
+      }
+    }
+    const oeFull = cp?.original_event?.repository?.full_name;
+    if (typeof oeFull === "string" && oeFull.includes("/")) {
+      const [owner, repo] = oeFull.split("/");
+      if (owner && repo) return { owner, repo };
+    }
+    return null;
+  } catch {
+    return null;
+  }
 }

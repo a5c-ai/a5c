@@ -617,26 +617,49 @@ function resolveTemplateString(
   s: string,
   ctx: ReturnType<typeof normalizeNE>,
 ): any {
+  // Full-string template
   const m = TMPL_RE.exec(s);
-  if (!m) return s;
-  const expr = m[1];
-  try {
-    const compiled = preprocessExpression(expr);
-    const eventArg = buildExpressionEvent((ctx as any)?.payload);
-    const vars = (ctx as any)?.enriched?.derived?.vars || {};
-    const secrets = (ctx as any)?.enriched?.derived?.secrets || {};
-    const fn = new Function(
-      "event",
-      "ne",
-      "env",
-      "vars",
-      "secrets",
-      `return (${compiled});`,
-    );
-    return fn(eventArg, { ...ctx }, process.env, vars, secrets);
-  } catch {
-    return null;
+  if (m) {
+    const expr = m[1];
+    try {
+      const compiled = preprocessExpression(expr);
+      const eventArg = buildExpressionEvent((ctx as any)?.payload);
+      const vars = (ctx as any)?.enriched?.derived?.vars || {};
+      const secrets = (ctx as any)?.enriched?.derived?.secrets || {};
+      const fn = new Function(
+        "event",
+        "ne",
+        "env",
+        "vars",
+        "secrets",
+        `return (${compiled});`,
+      );
+      return fn(eventArg, { ...ctx }, process.env, vars, secrets);
+    } catch {
+      return null;
+    }
   }
+  // Inline replacements
+  return s.replace(/\$\{\{\s*([^}]+)\s*\}\}/g, (_m, expr) => {
+    try {
+      const compiled = preprocessExpression(String(expr));
+      const eventArg = buildExpressionEvent((ctx as any)?.payload);
+      const vars = (ctx as any)?.enriched?.derived?.vars || {};
+      const secrets = (ctx as any)?.enriched?.derived?.secrets || {};
+      const fn = new Function(
+        "event",
+        "ne",
+        "env",
+        "vars",
+        "secrets",
+        `return (${compiled});`,
+      );
+      const v = fn(eventArg, { ...ctx }, process.env, vars, secrets);
+      return v == null ? "" : String(v);
+    } catch {
+      return "";
+    }
+  });
 }
 
 function buildExpressionEvent(base: any): any {
