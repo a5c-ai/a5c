@@ -125,21 +125,14 @@ events enrich --in FILE [--out FILE] [--rules FILE] \
 
 - `--in FILE`: input JSON (normalized event or raw GitHub payload)
 - `--out FILE`: write result JSON (stdout if omitted)
-- `--rules FILE`: YAML/JSON rules file (optional). When provided, matching rules emit `composed[]` with `{ key, reason, targets?, labels?, payload? }`.
+  - `--rules FILE`: YAML/JSON rules file (optional). When provided, matching rules emit `composed[]` with `{ key, reason, targets?, labels?, payload? }`.
   - `--flag KEY=VAL...`: enrichment flags (repeatable); notable flags:
-    - `include_patch=true|false` (default: `false`) – include diff patches; when `false`, patches are removed. Defaulting to false avoids leaking secrets via diffs and keeps outputs small; enable only when required.
+    - `include_patch=true|false` (default: `false`) – include diff patches; when `false`, patches are removed. Defaulting to false avoids leaking secrets and keeps outputs small; enable only when required.
     - `commit_limit=<n>` (default: `50`) – limit commits fetched for PR/push
     - `file_limit=<n>` (default: `200`) – limit files per compare list
-  - Mentions scanning flags:
-    - `mentions.scan.changed_files=true|false` (default: `true`) – enable/disable scanning code comments in changed files for `@mentions`
-    - `mentions.scan.commit_messages=true|false` (default: `true`) – enable/disable scanning commit messages for `@mentions`
-    - `mentions.scan.issue_comments=true|false` (default: `true`) – enable/disable scanning issue comment bodies for `@mentions`
-    - `mentions.max_file_bytes=<bytes>` (default: `204800` ≈ 200KB) – skip files larger than this when scanning
-    - `mentions.languages=<values,...>` – optional allowlist of languages to scan. Accepted values are canonical language IDs and common extensions (with or without a leading dot); values are normalized to IDs. Canonical IDs: `js, ts, py, go, java, c, cpp, sh, yaml, md`.
-      - Mapping note: common extensions normalize to IDs before comparison (e.g., `.tsx → ts`, `.jsx → js`, `.yml → yaml`).
-  - `--use-github`: enable GitHub API enrichment; equivalent to `--flag use_github=true` (requires `A5C_AGENT_GITHUB_TOKEN` or `GITHUB_TOKEN`). Without this flag, the CLI performs no network calls and sets `enriched.github = { provider: 'github', partial: true, reason: 'flag:not_set' }` (canonical and stable). See Behavior above for semantics and exit codes.
-  - Escape hatch for CI convenience: set environment variable `A5C_EVENTS_AUTO_USE_GITHUB=true` to auto-enable GitHub enrichment when a token is present (still no effect if no token). Default remains offline unless `--use-github` is explicitly provided.
-  - Notes: Mentions found in file diffs or changed files are emitted with `source: code_comment` and include `location.file` and `location.line` when available.
+    - Mentions scanning: see the dedicated subsection below for `mentions.*` controls
+  - `--use-github`: enable GitHub API enrichment; equivalent to `--flag use_github=true` (requires `A5C_AGENT_GITHUB_TOKEN` or `GITHUB_TOKEN`). See Behavior above for semantics and exit codes.
+  - Escape hatch for CI convenience: set environment variable `A5C_EVENTS_AUTO_USE_GITHUB=true` to auto‑enable GitHub enrichment when a token is present (no effect if no token). Default remains offline unless `--use-github` is explicitly provided.
 - `--label KEY=VAL...`: labels to attach
 - `--select PATHS`: comma-separated dot paths to include in output
 - `--filter EXPR`: filter expression `path[=value]`; if it doesn't pass, exits with code `2`
