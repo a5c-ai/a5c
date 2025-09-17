@@ -21,6 +21,7 @@ This project enforces unit test coverage using Vitest with a single source of tr
 - Used by:
   - `vitest.config.ts` (read at runtime; falls back to defaults if the file is missing)
   - `.github/workflows/tests.yml` PR feedback step (reads via `jq` to avoid drift)
+  - Optional PR coverage gate steps (see below)
 
 Default values (if the JSON file is missing):
 
@@ -33,6 +34,20 @@ To change thresholds:
 
 1. Edit `scripts/coverage-thresholds.json` and update the numbers.
 2. Commit the change; both local `vitest` runs and CI PR feedback will use the new thresholds.
+
+## Optional Hard Gate (REQUIRE_COVERAGE)
+
+PR workflows include an optional hard coverage gate controlled by a repository variable.
+
+- Control variable: `REQUIRE_COVERAGE` (Repository → Settings → Variables → Repository variables)
+- Behavior:
+  - When `REQUIRE_COVERAGE` is unset or set to anything other than the string `"true"`, CI provides soft feedback only (comments + labels), and does not fail based on coverage.
+  - When `REQUIRE_COVERAGE` is set to `"true"`, PR workflows will compare `coverage/coverage-summary.json` to `scripts/coverage-thresholds.json` and fail the job if any metric is below threshold. A summary table and the failing metrics are written to the job summary.
+- Workflows using the gate:
+  - `.github/workflows/pr-tests.yml`
+  - `.github/workflows/quick-checks.yml`
+
+This keeps the default contributor experience unchanged while allowing projects to opt into strict coverage enforcement without changing workflow YAML.
 
 ## Coverage Artifacts
 
