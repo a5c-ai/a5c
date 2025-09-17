@@ -97,7 +97,7 @@ Runs independently to surface TS errors early across supported Node versions. Qu
 - Steps: `./scripts/build.sh`
 
 - Name: `Tests`
-- Triggers: `push` and `pull_request` to `a5c/main` (lightweight; mirrors Quick Checks but uploads coverage artifacts for diagnostics)
+- Triggers: `push` to `a5c/main`, `main` and `pull_request` to `a5c/main` (PR run is lightweight; mirrors Quick Checks but uploads coverage artifacts for diagnostics)
 - Steps: `./scripts/install.sh`, `./scripts/build.sh`, `./scripts/test.sh`, CLI smoke tests, coverage artifact + step summary
 
 Heavier/longer gates run on protected branches to keep PRs snappy while maintaining strong guarantees before merge/deploy.
@@ -163,7 +163,7 @@ Upgrade cadence: bump the default in the script intentionally during tooling upg
 
 The agent router (`.github/workflows/a5c.yml`) listens for `workflow_run.completed` events from:
 
-- `Build`, `Deploy`, `Packages Npx Test`, `Lint`, `Tests`, `Quick Checks`, `Typecheck`, `Commit Hygiene`.
+- `Build`, `Deploy`, `Packages Npx Test`, `Lint`, `Tests`, `PR Quick Tests`, `Quick Checks`, `Typecheck`, `Commit Hygiene`, `Docs Lint`, `Release`.
   It filters to failed runs on `a5c/main` and `main` and can dispatch follow-ups automatically.
 
 ## Repository Settings (Recommended)
