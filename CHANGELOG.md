@@ -1,3 +1,8 @@
+## <small>1.4.1 (2025-09-17)</small>
+
+* Merge pull request #809 from a5c-ai/a5c/main ([0cb0c0c](https://github.com/a5c-ai/events/commit/0cb0c0c)), closes [#809](https://github.com/a5c-ai/events/issues/809)
+* fix: improve path handling in computeRemotePaths function ([6ad0c8e](https://github.com/a5c-ai/events/commit/6ad0c8e))
+
 ## 1.4.0 (2025-09-17)
 
 * 🧭 docs: clarify ref.type semantics in README + NE Schema (fixes #793) (#801) ([8eaf13a](https://github.com/a5c-ai/events/commit/8eaf13a)), closes [#793](https://github.com/a5c-ai/events/issues/793) [#801](https://github.com/a5c-ai/events/issues/801) [#793](https://github.com/a5c-ai/events/issues/793) [#793](https://github.com/a5c-ai/events/issues/793)
