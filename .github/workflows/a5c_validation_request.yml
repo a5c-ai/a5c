@@ -1,4 +1,4 @@
-name: Packages Npx Test
+name: Validation Request
 
 on:
   repository_dispatch:
