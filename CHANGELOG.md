@@ -1,3 +1,15 @@
+## 1.8.0 (2025-09-17)
+
+* 🧪 CI: export parseGithubEntity from emit (#838) ([37eb709](https://github.com/a5c-ai/events/commit/37eb709)), closes [#838](https://github.com/a5c-ai/events/issues/838) [#834](https://github.com/a5c-ai/events/issues/834) [#834](https://github.com/a5c-ai/events/issues/834)
+* 🧪 Fix tests: export parseGithubEntity from emit.ts (#836) ([c58f262](https://github.com/a5c-ai/events/commit/c58f262)), closes [#836](https://github.com/a5c-ai/events/issues/836) [#832](https://github.com/a5c-ai/events/issues/832) [#832](https://github.com/a5c-ai/events/issues/832) [#832](https://github.com/a5c-ai/events/issues/832)
+* 🧹 Refactor: Deduplicate parseGithubEntity (#842) ([b395b70](https://github.com/a5c-ai/events/commit/b395b70)), closes [#842](https://github.com/a5c-ai/events/issues/842) [#840](https://github.com/a5c-ai/events/issues/840)
+* Merge branch 'a5c/main' of https://github.com/a5c-ai/events into a5c/main ([70e961f](https://github.com/a5c-ai/events/commit/70e961f))
+* Merge branch 'main' into a5c/main ([2879529](https://github.com/a5c-ai/events/commit/2879529))
+* Merge pull request #843 from a5c-ai/a5c/main ([ceb6017](https://github.com/a5c-ai/events/commit/ceb6017)), closes [#843](https://github.com/a5c-ai/events/issues/843)
+* feat(reactor): improve event filtering and matching logic ([aaa4246](https://github.com/a5c-ai/events/commit/aaa4246))
+* fix(build): export parseGithubEntity from emit.ts\n\n- Unblocks unit test in test/emit.labels.test.t ([544db9f](https://github.com/a5c-ai/events/commit/544db9f))
+* fix(validation): correct label filtering in validation request workflow ([017eca1](https://github.com/a5c-ai/events/commit/017eca1))
+
 ## <small>1.7.1 (2025-09-17)</small>
 
 * fix(build): export parseGithubEntity and resolveOwnerRepo on main (fixes #837)\n\n- Unblocks unit te ([845436a](https://github.com/a5c-ai/events/commit/845436a))
