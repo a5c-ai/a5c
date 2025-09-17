@@ -75,19 +75,15 @@ jobs:
           jq -e '.enriched and .payload and (.labels // []) != null' out.enrich.json >/dev/null
           cat out.enrich.json
           # Only run reactor if a config is present in repo
-          if [ -f .a5c/events/reactor.yaml ] || [ -f .a5c/events/reactor.yml ]; then
-            echo "Reactor config found; running reactor"
-            npx -y "$A5C_PKG_SPEC" reactor \
-              --in out.enrich.json \
-              --out out.reactor.json \
-            # list of events to emit
-            jq -r '.events[]' out.reactor.json || true
-            cat out.reactor.json || true
-            # emit the events using the CLI (repository_dispatch)
-            npx -y "$A5C_PKG_SPEC" emit \
-              --in out.reactor.json \
-              --sink github
-            echo "Done emitting events via emit command"
-          else
-            echo "No .a5c/events/reactor.yaml found in repo; skipping reactor run"
-          fi
+          echo "Reactor config found; running reactor"
+          npx -y "$A5C_PKG_SPEC" reactor \
+            --in out.enrich.json \
+            --out out.reactor.json \
+          # list of events to emit
+          jq -r '.events[]' out.reactor.json || true
+          cat out.reactor.json || true
+          # emit the events using the CLI (repository_dispatch)
+          npx -y "$A5C_PKG_SPEC" emit \
+            --in out.reactor.json \
+            --sink github
+          echo "Done emitting events via emit command"
