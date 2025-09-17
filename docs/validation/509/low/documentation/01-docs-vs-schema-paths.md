@@ -1,5 +1,5 @@
 # [Validator] [Documentation] - Align schema path references
 
-The repo contains both `docs/specs/observability.schema.json` (authoritative) and an older `docs/schemas/observability.schema.json`. Ensure all docs/tests reference the `docs/specs/...` path consistently and mark `docs/schemas/...` as legacy or remove in a follow-up.
+The repo contains `docs/specs/observability.schema.json` as the authoritative path. An older legacy copy previously lived under `docs/schemas` and has been removed. Ensure all docs/tests reference the `docs/specs/...` path consistently.
 
 Scope: Non-blocking.

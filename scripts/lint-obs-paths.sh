@@ -24,7 +24,10 @@ for f in "${OBS_FILES[@]}"; do
 done
 
 # Guard 3: Ensure no references to the legacy exact path string exist in repo
-if rg -n -S 'docs/schemas/observability\.schema\.json' -g '!*package-lock.json' . >/dev/null; then
+if rg -n -S 'docs/schemas/observability\.schema\.json' \
+  -g '!*package-lock.json' \
+  -g '!scripts/lint-obs-paths.sh' \
+  . >/dev/null; then
   echo "::error title=Legacy Path Reference Found::References to docs/schemas/observability.schema.json detected; update to $ALLOWED."
   rg -n -S 'docs/schemas/observability\.schema\.json' -g '!*package-lock.json' . || true
   exit 1

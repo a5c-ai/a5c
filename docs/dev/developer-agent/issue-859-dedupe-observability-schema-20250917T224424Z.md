@@ -10,8 +10,8 @@
 
 ## Plan
 
-1. Remove `docs/schemas/observability.schema.json`
-2. Replace any repo references to `docs/schemas/observability.schema.json`
+1. Remove legacy duplicate under docs/schemas
+2. Replace any repo references to the legacy docs/schemas path
 3. Add CI/script guard to forbid duplicates
 4. Run local validation and grep checks
 5. Document results here
