@@ -7,6 +7,7 @@ export interface ReactorOptions {
   in?: string;
   out?: string;
   file?: string;
+  branch?: string;
 }
 
 export interface ReactorOutputEvent {
@@ -23,7 +24,15 @@ export async function handleReactor(opts: ReactorOptions): Promise<{
     const inputObj = readInput(opts.in);
     const ne = normalizeNE(inputObj);
     const rulesPath = resolveRulesPath(opts.file);
-    const docs = loadYamlDocuments(rulesPath);
+    let docs = loadYamlDocuments(rulesPath);
+    if (!docs.length) {
+      const remote = await tryLoadRemoteYaml(
+        ne,
+        rulesPath,
+        opts.branch || process.env.A5C_EVENT_CONFIG_BRANCH || "main",
+      );
+      if (remote && remote.length) docs = remote;
+    }
     const events: ReactorOutputEvent[] = [];
     for (const doc of docs) {
       if (!doc || typeof doc !== "object") continue;
@@ -162,11 +171,11 @@ function matchesTrigger(
   const eventType = ne.type || toStr(base.event) || undefined;
 
   // Custom event name: match against action/event_type
-  const nameIsCustom = !KNOWN_GH_EVENTS.has(name);
+  const nameIsCustom = !KNOWN_GH_EVENTS.has(name) && name !== "any";
   if (nameIsCustom) {
     if (action !== name) return false;
   } else {
-    if (eventType && eventType !== name) return false;
+    if (name !== "any" && eventType && eventType !== name) return false;
   }
 
   if (!spec || typeof spec !== "object") return true;
@@ -360,6 +369,114 @@ function transformPipeline(segment: string): string {
     expr = `${expr}`;
   }
   return expr;
+}
+
+async function tryLoadRemoteYaml(
+  ne: ReturnType<typeof normalizeNE>,
+  localPath: string,
+  branch: string,
+): Promise<any[]> {
+  try {
+    const token =
+      process.env.A5C_AGENT_GITHUB_TOKEN || process.env.GITHUB_TOKEN;
+    if (!token) return [];
+    const repoInfo = inferRepoFromNE(ne);
+    if (!repoInfo) return [];
+    const { owner, repo } = repoInfo;
+    const { Octokit } = await import("@octokit/rest");
+    const octokit = new Octokit({ auth: token });
+    const paths = computeRemotePaths(localPath);
+    const docs: any[] = [];
+    for (const p of paths) {
+      try {
+        const { data } = await octokit.repos.getContent({
+          owner,
+          repo,
+          path: p,
+          ref: branch,
+        });
+        if (Array.isArray(data)) continue;
+        const encoding = (data as any).encoding || "base64";
+        const content: string = Buffer.from(
+          (data as any).content || "",
+          encoding,
+        ).toString("utf8");
+        const parsed = YAML.parseAllDocuments(content, { prettyErrors: false });
+        for (const d of parsed as any[]) {
+          try {
+            const obj = (d as any).toJSON();
+            if (obj && typeof obj === "object") docs.push(obj);
+          } catch {}
+        }
+      } catch {}
+    }
+    return docs;
+  } catch {
+    return [];
+  }
+}
+
+function inferRepoFromNE(
+  ne: ReturnType<typeof normalizeNE>,
+): { owner: string; repo: string } | null {
+  try {
+    const full = (ne as any)?.payload?.repository?.full_name;
+    if (typeof full === "string" && full.includes("/")) {
+      const [owner, repo] = full.split("/");
+      if (owner && repo) return { owner, repo };
+    }
+    const url = (ne as any)?.payload?.repository?.html_url;
+    if (typeof url === "string") {
+      const parsed = parseGithubEntity(url);
+      if (parsed) return { owner: parsed.owner, repo: parsed.repo };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function computeRemotePaths(localPath: string): string[] {
+  // Normalize input; if a directory, look for typical reactor locations
+  const rel = localPath.replace(/^[A-Za-z]:\\|^\/+/, "").replace(/\\/g, "/");
+  const candidates: string[] = [];
+  if (rel.endsWith("/")) {
+    candidates.push(`${rel}.a5c/events/reactor.yaml`);
+    candidates.push(`${rel}.a5c/events/`);
+  } else {
+    candidates.push(rel);
+  }
+  // Add defaults if the caller passed just a directory like ".a5c/events/"
+  if (
+    rel === ".a5c/events/" ||
+    rel.endsWith("/.a5c/events/") ||
+    rel === ".a5c/events"
+  ) {
+    candidates.push(".a5c/events/reactor.yaml");
+  }
+  return Array.from(new Set(candidates));
+}
+
+function parseGithubEntity(
+  url: string,
+): { owner: string; repo: string; number?: number } | null {
+  try {
+    const u = new URL(url);
+    const parts = u.pathname.split("/").filter(Boolean);
+    const idxRepos = parts[0] === "repos" ? 1 : 0;
+    const owner = parts[idxRepos];
+    const repo = parts[idxRepos + 1];
+    const numberStr = parts[idxRepos + 3];
+    const number = Number.parseInt(numberStr, 10);
+    if (!owner || !repo) return null;
+    return {
+      owner,
+      repo,
+      number: Number.isFinite(number) ? number : undefined,
+    };
+  } catch {
+    return null;
+  }
 }
 
 function toStr(v: any): string | undefined {

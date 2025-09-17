@@ -1,12 +1,15 @@
 ---
 on:
   any:
+    - expression: ${{ env.VALIDATION_REQUEST_IN_PROGRESS_WARNING == 'true' && event.type == 'synchronize' && event.pull_request.labels | map(name) | contains('validation') }}
+script:
+  - |
+    echo "PR branch changed while validation is in progress - ${{ event.pull_request.html_url }}"
 ---
 on:
   pull_request:
     filters:
-      - expression: ${{ event.pull_request.labels | map(name) | contains('validation') && event.type == 'ready_for_review' }}
-      - expression: ${{ event.pull_request.labels | map(name) | contains('validation') && event.type == 'synchronize' }}
+      - expression: ${{ event.pull_request.labels | map(name) | contains('validation_requested') && event.type == 'ready_for_review' }}
 emit:
   pull_request_ready_for_review:
     type: ready_for_review

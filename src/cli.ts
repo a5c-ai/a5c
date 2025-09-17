@@ -224,12 +224,17 @@ program
     "--file <path>",
     "reactor rules file path (yaml), default .a5c/events/reactor.yaml",
   )
+  .option(
+    "--branch <name>",
+    "config branch for remote YAML when not present locally (default: env A5C_EVENT_CONFIG_BRANCH or 'main')",
+  )
   .action(async (cmdOpts: any) => {
     try {
       const { code, output, errorMessage } = await handleReactor({
         in: cmdOpts.in,
         out: cmdOpts.out,
         file: cmdOpts.file,
+        branch: cmdOpts.branch || process.env.A5C_EVENT_CONFIG_BRANCH || "main",
       });
       if (code !== 0) {
         if (errorMessage) process.stderr.write(errorMessage + "\n");
