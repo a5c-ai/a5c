@@ -1,3 +1,9 @@
+## 1.11.0 (2025-09-17)
+
+* Merge pull request #849 from a5c-ai/a5c/main ([38a9f5c](https://github.com/a5c-ai/events/commit/38a9f5c)), closes [#849](https://github.com/a5c-ai/events/issues/849)
+* feat(workflow): add version command execution in reactor workflow ([952dffc](https://github.com/a5c-ai/events/commit/952dffc))
+* refactor(reactor): enhance event debugging and payload handling ([19d0af8](https://github.com/a5c-ai/events/commit/19d0af8))
+
 ## 1.10.0 (2025-09-17)
 
 * Merge branch 'a5c/main' of https://github.com/a5c-ai/events into a5c/main ([b8c32c5](https://github.com/a5c-ai/events/commit/b8c32c5))
