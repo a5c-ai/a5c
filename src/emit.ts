@@ -166,7 +166,7 @@ function normalizeLabelsArray(v: any): string[] {
     .filter(Boolean);
 }
 
-function parseGithubEntity(
+export function parseGithubEntity(
   url: string,
 ): { owner: string; repo: string; number: number } | null {
   try {
@@ -267,7 +267,9 @@ function generateLabelColor(name: string): string {
   return [r, g, b].map((v) => v.toString(16).padStart(2, "0")).join("");
 }
 
-function resolveOwnerRepo(cp: any): { owner: string; repo: string } | null {
+export function resolveOwnerRepo(
+  cp: any,
+): { owner: string; repo: string } | null {
   try {
     if (!cp || typeof cp !== "object") return null;
     const full = cp?.repository?.full_name || cp?.repo_full_name;
