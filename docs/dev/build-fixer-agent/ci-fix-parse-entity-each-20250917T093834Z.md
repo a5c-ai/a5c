@@ -6,8 +6,8 @@
   - generateContext each block didn’t bind `this`, causing list rendering mismatch
 
 ## Plan
+
 - Export `parseGithubEntity` from src/emit.ts
 - Ensure `{{#each}}` binds `this` for array items in src/generateContext.ts
 - Run unit tests locally
 - Open PR with details
-
