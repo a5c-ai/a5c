@@ -15,3 +15,4 @@ Add a conditional hard gate in PR tests that fails when coverage is below thresh
 
 - Thresholds already loaded in vitest and workflows; we keep single source of truth.
 - Logs will show a table of actual vs thresholds and failing metrics.
+  \n## PR\nhttps://github.com/a5c-ai/events/pull/756
