@@ -51,8 +51,8 @@ Validate locally: `npm run -s validate:examples` (details in `docs/ci/ci-checks.
 
 Triggers matrix (summary):
 
-- Pull requests → Quick feedback: `Quick Checks` (lint, typecheck, unit tests + coverage), `Lint`, `Typecheck`, `Commit Hygiene`.
-- Push to protected branches (`a5c/main`, `main`) → Heavier gates: `Build`, `Tests` (full install/build/test with coverage artifacts).
+- Pull requests → Quick feedback: `Quick Checks` (lint, typecheck, unit tests + coverage), `Lint`, `Typecheck`, `Commit Hygiene`, and `Tests` (lightweight; mirrors Quick Checks but uploads coverage artifacts).
+- Push to protected branches (`a5c/main`, `main`) → Heavier gates: `Build`; `Tests` (full install/build/test with coverage artifacts).
 - Branch semantics: `a5c/main` is development/staging; `main` is production.
 
 ## CLI Reference
@@ -108,7 +108,7 @@ Canonical reference and examples:
 - `--flag include_patch=<true|false>`: include diff patches in files (default: false)
 - `--flag commit_limit=<n>`: max commits to include (default: 50)
 - Mentions scanning flags are documented once in the CLI reference at `docs/cli/reference.md#events-enrich` and are the canonical source of truth for wording and defaults.
-- `--use-github`: enable GitHub API enrichment (requires `GITHUB_TOKEN`). For CI convenience, you may set `A5C_EVENTS_AUTO_USE_GITHUB=true` to auto-enable when a token is present; otherwise behavior remains offline by default.
+- `--use-github`: enable GitHub API enrichment (requires `A5C_AGENT_GITHUB_TOKEN` or `GITHUB_TOKEN`; `A5C_AGENT_GITHUB_TOKEN` takes precedence when both are set). For CI convenience, you may set `A5C_EVENTS_AUTO_USE_GITHUB=true` to auto-enable when a token is present; otherwise behavior remains offline by default.
 - `--select <paths>`: comma-separated dot paths to include in output
   - `--filter <expr>`: filter expression `path[=value]`; if not matching, exits with code 2 and no output (see CLI reference example: docs/cli/reference.md#events-enrich)
 - `--label <key=value...>`: attach labels to top‑level `labels[]`
