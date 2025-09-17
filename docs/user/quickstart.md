@@ -39,8 +39,10 @@ Offline (no network calls):
 ```bash
 events enrich --in ne.json --out enriched.json
 jq '.enriched.github' enriched.json
-# => { "provider": "github", "partial": true, "reason": "github_enrich_disabled" }
+# => { "provider": "github", "partial": true, "reason": "flag:not_set" }
 ```
+
+> Note: The offline GitHub enrich stub uses a canonical, stable reason value: `flag:not_set`.
 
 With GitHub API calls enabled:
 
