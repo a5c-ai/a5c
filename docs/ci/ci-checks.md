@@ -127,23 +127,27 @@ Alternative — script/uploader for local or non–GitHub Actions CI. Do not com
 To ensure reproducible CI results, the EditorConfig checker is executed via `npx` with an explicit version pin:
 
 - Script: `scripts/ci-editorconfig.sh`
-- Default version: `3.4.0` (set inside the script)
+- Default version: `5.1.9` (set inside the script)
 - Override: set a repository or organization variable named `EDITORCONFIG_CHECKER_VERSION`.
-- Workflow wiring: `.github/workflows/quick-checks.yml` exports `EDITORCONFIG_CHECKER_VERSION: ${{ vars.EDITORCONFIG_CHECKER_VERSION || '3.4.0' }}`.
+- Workflow wiring: `.github/workflows/quick-checks.yml` exports `EDITORCONFIG_CHECKER_VERSION: ${{ vars.EDITORCONFIG_CHECKER_VERSION || '5.1.9' }}`.
 
 Workflow env snippet:
 
 ```yaml
 env:
-  EDITORCONFIG_CHECKER_VERSION: ${{ vars.EDITORCONFIG_CHECKER_VERSION || '3.4.0' }}
+  EDITORCONFIG_CHECKER_VERSION: ${{ vars.EDITORCONFIG_CHECKER_VERSION || '5.1.9' }}
 ```
 
 Script resolution logic:
 
 ```bash
-EC_VERSION="${EDITORCONFIG_CHECKER_VERSION:-3.4.0}"
+EC_VERSION="${EDITORCONFIG_CHECKER_VERSION:-5.1.9}"
 echo "Using editorconfig-checker@${EC_VERSION}"
-npx --yes editorconfig-checker@"${EC_VERSION}" -color -format github-actions -exclude "$EXCLUDE_REGEX"
+FORMAT_ARGS=""
+if npx --yes "editorconfig-checker@${EC_VERSION}" -help 2>&1 | grep -q -- "-format"; then
+  FORMAT_ARGS="-format github-actions"
+fi
+npx --yes editorconfig-checker@"${EC_VERSION}" ${FORMAT_ARGS} -exclude "$EXCLUDE_REGEX"
 ```
 
 Upgrade cadence: bump the default in the script intentionally during tooling upgrades; validate on a branch and update this doc with any notable changes.
