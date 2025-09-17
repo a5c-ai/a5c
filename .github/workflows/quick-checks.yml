@@ -135,7 +135,8 @@ jobs:
           fail_ci_if_error: false
           verbose: true
       - name: "Coverage gate (optional, REQUIRE_COVERAGE)"
-        if: vars.REQUIRE_COVERAGE == 'true'
+        if: ${{ vars.REQUIRE_COVERAGE == 'true' }}
+        shell: bash
         run: |
           set -euo pipefail
           echo "REQUIRE_COVERAGE=true -> enforcing thresholds from scripts/coverage-thresholds.json"
@@ -161,14 +162,15 @@ jobs:
             fs.writeFileSync("/tmp/cov.json", JSON.stringify(pct));
           '
           read -r LINES_P BRANCHES_P FUNCS_P STMTS_P < <(jq -r '[.lines,.branches,.functions,.statements] | @tsv' /tmp/cov.json)
-          FAILS=()
           cmp() { awk -v a="$1" -v b="$2" 'BEGIN{ if (a+0 < b+0) exit 1; else exit 0 }'; }
-          cmp "$LINES_P" "$LINES_T" || FAILS+=("lines")
-          cmp "$BRANCHES_P" "$BRANCHES_T" || FAILS+=("branches")
-          cmp "$FUNCS_P" "$FUNCS_T" || FAILS+=("functions")
-          cmp "$STMTS_P" "$STMTS_T" || FAILS+=("statements")
+          FAILS=()
+          cmp "$LINES_P" "$LINES_T" || FAILS+=("lines: ${LINES_P}% < ${LINES_T}%")
+          cmp "$BRANCHES_P" "$BRANCHES_T" || FAILS+=("branches: ${BRANCHES_P}% < ${BRANCHES_T}%")
+          cmp "$FUNCS_P" "$FUNCS_T" || FAILS+=("functions: ${FUNCS_P}% < ${FUNCS_T}%")
+          cmp "$STMTS_P" "$STMTS_T" || FAILS+=("statements: ${STMTS_P}% < ${STMTS_T}%")
           {
             echo "## Coverage Gate"
+            echo "REQUIRE_COVERAGE=true; failing when below thresholds"
             echo ""
             echo "| Metric | Actual | Threshold |"
             echo "|---|---:|---:|"
@@ -176,15 +178,17 @@ jobs:
             printf "| Branches | %s%% | %s%% |\n" "$BRANCHES_P" "$BRANCHES_T"
             printf "| Functions | %s%% | %s%% |\n" "$FUNCS_P" "$FUNCS_T"
             printf "| Statements | %s%% | %s%% |\n" "$STMTS_P" "$STMTS_T"
-            echo ""
             if [ ${#FAILS[@]} -gt 0 ]; then
-              echo "Failed metrics: ${FAILS[*]}"
+              echo ""
+              echo "Failures: ${FAILS[*]}"
             else
+              echo ""
               echo "All metrics meet or exceed thresholds."
             fi
-          } >> "$GITHUB_STEP_SUMMARY"
+          } | tee -a "$GITHUB_STEP_SUMMARY"
           if [ ${#FAILS[@]} -gt 0 ]; then
             echo "::error title=Coverage Gate Failed::Below thresholds for: ${FAILS[*]}"
+            echo "Coverage below thresholds; failing per REQUIRE_COVERAGE=true" >&2
             exit 1
           fi
 
