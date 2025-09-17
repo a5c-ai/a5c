@@ -135,12 +135,21 @@ program
       return process.exit(2);
     }
 
-    // Determine default --use-github behavior: enable when token exists unless explicitly disabled
+    // Determine --use-github behavior: offline by default; enable only when flag is set
+    // Optional escape hatch for CI: A5C_EVENTS_AUTO_USE_GITHUB=true auto-enables when a token exists
     const cfg = loadConfig();
     const token = cfg.githubToken;
     const explicitUseGithub = !!(cmdOpts.useGithub || cmdOpts["use-github"]);
-    const requestedUseGithub = explicitUseGithub || !!token;
-    if (requestedUseGithub && !token && explicitUseGithub) {
+    const autoEnv = String(
+      process.env.A5C_EVENTS_AUTO_USE_GITHUB || "",
+    ).toLowerCase();
+    const autoRequested =
+      autoEnv === "1" ||
+      autoEnv === "true" ||
+      autoEnv === "yes" ||
+      autoEnv === "on";
+    const requestedUseGithub = explicitUseGithub || (autoRequested && !!token);
+    if (explicitUseGithub && !token) {
       process.stderr.write(
         "GitHub enrichment failed: token is required when --use-github is set\n",
       );

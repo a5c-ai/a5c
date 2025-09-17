@@ -134,17 +134,29 @@ jobs:
           VERSION=$(node -p "require('./package.json').version")
           NAME=$(node -p "require('./package.json').name")
           echo "Attempt publish ${NAME}@${VERSION} to registry.npmjs.org"
-          # Check if already published on npmjs
+          # Fast pre-check (can be stale due to npm propagation); best-effort only
           if npm view "${NAME}@${VERSION}" version --registry=https://registry.npmjs.org > /dev/null 2>&1; then
             echo "Version already exists on npmjs, skipping publish."
             exit 0
           fi
+
           # Temporarily override project .npmrc to ensure scoped package publishes to npmjs (not GitHub Packages)
           BACKUP_NPMRC=false
           if [ -f .npmrc ]; then
             mv .npmrc .npmrc.gpr
             BACKUP_NPMRC=true
           fi
+          # Always restore .npmrc on exit
+          cleanup() {
+            if [ "$BACKUP_NPMRC" = true ]; then
+              rm -f .npmrc || true
+              mv .npmrc.gpr .npmrc || true
+            else
+              rm -f .npmrc || true
+            fi
+          }
+          trap cleanup EXIT
+
           cat > .npmrc <<'NPMRC'
           fund=false
           audit=false
@@ -152,11 +164,33 @@ jobs:
           //registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}
           @a5c-ai:registry=https://registry.npmjs.org/
           NPMRC
+
           echo "Auth check against npmjs: $(npm whoami --registry=https://registry.npmjs.org || echo 'not authenticated')"
-          # Publish to npmjs overriding any publishConfig registry
-          npm publish --registry=https://registry.npmjs.org --access public
-          # Restore original .npmrc if it existed
-          if [ "$BACKUP_NPMRC" = true ]; then
-            rm -f .npmrc
-            mv .npmrc.gpr .npmrc
-          fi
+
+          # Retry helper for transient errors; treat already-published conflicts as success
+          attempts=0
+          max_attempts=3
+          backoff=5
+          while true; do
+            attempts=$((attempts+1))
+            echo "npm publish attempt ${attempts}/${max_attempts}"
+            if out=$(npm publish --registry=https://registry.npmjs.org --access public 2>&1); then
+              echo "$out"
+              break
+            fi
+            rc=$?
+            echo "$out"
+            # If version is already published, consider success and exit 0
+            if echo "$out" | grep -Eiq 'You cannot publish over the previously published versions|EPUBLISHCONFLICT|previously published'; then
+              echo "Version already exists on npmjs (detected after publish). Skipping as success."
+              exit 0
+            fi
+            # Retry on transient errors
+            if [ $attempts -lt $max_attempts ] && echo "$out" | grep -Eiq '(5[0-9]{2}|Bad Gateway|Service Unavailable|ETIMEDOUT|ECONNRESET|EAI_AGAIN|ESOCKETTIMEDOUT|network error|socket hang up|fetch failed|rate limit)'; then
+              echo "Transient error detected. Sleeping ${backoff}s before retry..."
+              sleep "$backoff"
+              backoff=$((backoff*2))
+              continue
+            fi
+            exit "$rc"
+          done

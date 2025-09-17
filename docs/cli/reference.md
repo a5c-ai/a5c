@@ -1,11 +1,11 @@
 ---
 title: CLI Reference
-description: Commands, flags, and examples for the Events CLI (`mentions`, `normalize`, `enrich`, `emit`, `validate`).
+description: Commands, flags, and examples for the Events CLI (`mentions`, `normalize`, `enrich`, `reactor`, `emit`, `validate`).
 ---
 
 # CLI Reference
 
-The CLI transforms provider payloads into a Normalized Event (NE), extracts mentions, and can enrich with repository context. Implemented with `commander` (see `src/cli.ts`).
+The CLI transforms provider payloads into a Normalized Event (NE), extracts mentions, can enrich with repository context, and can apply a reactor to generate custom events. Implemented with `commander` (see `src/cli.ts`).
 
 ## Commands
 
@@ -110,7 +110,7 @@ Behavior:
   }
   ```
 
-  Note: Some older docs or validation notes may reference a legacy offline reason value. The canonical offline reason is `flag:not_set`.
+  Note: Some older docs or validation notes may reference a legacy offline reason value. The canonical offline reason is `flag:not_set` and is treated as a stable contract across minor releases.
 
 - Online enrichment: pass `--use-github` with a valid token to populate fields like `enriched.github.pr.mergeable_state`, `enriched.github.pr.files[]`, `enriched.github.branch_protection`, etc.
 - Missing token with `--use-github`: the CLI exits with code `3` (provider/network error) and prints an error message; no JSON is written.
@@ -131,7 +131,7 @@ events enrich --in FILE [--out FILE] [--rules FILE] \
   - `commit_limit=<n>` (default: `50`) – limit commits fetched for PR/push
   - `file_limit=<n>` (default: `200`) – limit files per compare list
   - Mentions scanning: see the dedicated subsection below for `mentions.*` controls
-- `--use-github`: enable GitHub API enrichment; equivalent to `--flag use_github=true` (requires `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`). Without this flag, the CLI performs no network calls and sets `enriched.github = { provider: 'github', partial: true, reason: 'flag:not_set' }`. With the flag but no token, the CLI exits with code `3` and prints an error (no JSON output).
+  - `--use-github`: enable GitHub API enrichment; equivalent to `--flag use_github=true` (requires `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`). See Behavior above for semantics and exit codes.
 - `--label KEY=VAL...`: labels to attach
 - `--select PATHS`: comma-separated dot paths to include in output
 - `--filter EXPR`: filter expression `path[=value]`; if it doesn't pass, exits with code `2`
@@ -142,7 +142,7 @@ events enrich --in FILE [--out FILE] [--rules FILE] \
 - `mentions.scan.commit_messages=true|false` (default: `true`) – enable/disable scanning commit messages for `@mentions`.
 - `mentions.scan.issue_comments=true|false` (default: `true`) – enable/disable scanning issue comment bodies for `@mentions`.
 - `mentions.max_file_bytes=<bytes>` (default: `204800` ≈ 200KB) – skip scanning any single file larger than this cap.
-- `mentions.languages=<lang,...>` (optional) – only scan files whose detected language matches the allowlist. Use canonical language IDs, not extensions: `js, ts, py, go, java, c, cpp, sh, yaml, md`.
+- `mentions.languages=<lang,...>` (optional) – only scan files whose detected language matches the allowlist. Use canonical language IDs. Common extensions are accepted (with/without a leading dot) and normalized to IDs. Canonical IDs: `js, ts, py, go, java, c, cpp, sh, yaml, md`.
 
 Language allowlist details:
 
@@ -278,18 +278,123 @@ Inspect composed if present:
 jq '(.composed // []) | map({key, reason})'
 ```
 
-### `events emit`
+### `events reactor`
 
-Emit a JSON event to a sink (stdout or file). The payload is redacted before being written.
+Apply reactor rules to a Normalized Event and produce custom events. Reads from stdin by default; writes to stdout unless `--out` is provided. Rules are YAML; multiple YAML documents in a single file are supported.
 
 Usage:
 
 ```bash
-events emit [--in FILE] [--sink <stdout|file>] [--out FILE]
+events reactor [--in FILE] [--out FILE] [--file PATH]
+```
+
+- `--in FILE`: input JSON file path (default: stdin)
+- `--out FILE`: output JSON file path (default: stdout)
+- `--file PATH`: reactor rules file path (YAML). Default: `.a5c/events/reactor.yaml`
+
+Rules structure (YAML):
+
+```yaml
+# One or more YAML documents, each with `on` and `emit` keys
+on: <event-name | map | list>
+emit:
+  <custom_event_type>:
+    type: <string> # optional
+    phase: <string> # optional
+    labels: [<string>...] # optional
+    payload: # optional; supports template expressions
+      key: "${{ ne.type }}"
+```
+
+Trigger matching:
+
+- `on` accepts:
+  - GitHub event names like `push`, `pull_request`, `issues`, `issue_comment`, `workflow_run`, `repository_dispatch`.
+  - Custom event names (e.g., `my_event`) matched against the input action or `client_payload.event_type`.
+  - A mapping form for more control: `on: { pull_request: { types: [opened, synchronize], labels: [documentation] } }`.
+  - Lists or single strings: `on: [pull_request, issues]`.
+- Filters supported in mapping form:
+  - `types: [subactions...]` – for GitHub events (e.g., `opened`, `synchronize`).
+  - `events: [event_type...]` – for `repository_dispatch` event types.
+  - `labels: [label...]` – requires all labels; uses NE `labels[]` for GH events or `client_payload.labels` for custom events.
+  - `phase: <string | [..]>` – matches `payload.phase` or `client_payload.phase` for custom events.
+
+Templating:
+
+- `emit.*.payload` supports simple template strings of the form `${{ <js expression> }}` evaluated with:
+  - `event` – the raw payload (`ne.payload`)
+  - `ne` – normalized wrapper `{ provider?, type?, payload, labels[], enriched? }`
+  - `env` – `process.env`
+    If evaluation fails, the value becomes `null`.
+
+Output shape:
+
+```json
+{
+  "events": [
+    {
+      "event_type": "custom.name",
+      "client_payload": {
+        /* from emit spec */
+      }
+    }
+  ]
+}
+```
+
+Exit codes:
+
+- `0`: success
+- `1`: failure (invalid input JSON, missing/invalid rules file, YAML parse error)
+
+Examples:
+
+```bash
+# Defaults: stdin -> stdout, rules at .a5c/events/reactor.yaml
+cat samples/pull_request.synchronize.json | events reactor
+
+# Explicit files
+events reactor --in samples/pull_request.synchronize.json \
+  --file samples/reactor/sample.yaml \
+  --out out.events.json
+
+# Minimal rules file with two documents (---):
+cat > .a5c/events/reactor.yaml <<'YAML'
+on: pull_request
+emit:
+  a5c.reviewer.ping:
+    labels: [documentation]
+    payload:
+      pr: "${{ event.pull_request.number }}"
+---
+on: repository_dispatch
+emit:
+  a5c.pipeline.phase:
+    payload:
+      phase: "${{ event.client_payload.phase }}"
+YAML
+
+events reactor --in samples/pull_request.synchronize.json | jq '.events | length'
+```
+
+Notes:
+
+- Reactor parses multiple YAML docs via `yaml.parseAllDocuments` and accumulates emitted events from all matching documents.
+- Default rules path is `.a5c/events/reactor.yaml` when `--file` is omitted.
+- Custom event names in `on:` match against the input action or `client_payload.event_type`.
+
+### `events emit`
+
+Emit a JSON event to a sink (`stdout`, `file`, or `github`). The payload is redacted before being written or dispatched.
+
+Usage:
+
+```bash
+events emit [--in FILE] [--sink <stdout|file|github>] [--out FILE]
 ```
 
 - `--in FILE`: input JSON file (reads from stdin if omitted)
-- `--sink <name>`: sink name; `stdout` (default) or `file`
+- `--sink <name>`: sink name; `stdout` (default), `file`, or `github`
 - `--out FILE`: output file path (required when `--sink file`)
 
 Behavior:
@@ -297,6 +402,20 @@ Behavior:
 - Redaction: payload is masked using the same rules as other commands (see `src/utils/redact.ts`). Sensitive keys and common secret patterns are redacted before emission.
 - Defaults: when `--sink` is omitted, `stdout` is used. When `--sink file` is set, `--out` is required; otherwise the command exits with code `1` and writes an error to stderr.
 - Auto-sink: if `--out` is provided without `--sink`, the sink is treated as `file`.
+
+GitHub sink
+
+Dispatches a `repository_dispatch` event to the repository in `GITHUB_REPOSITORY`.
+
+- Required env:
+  - `GITHUB_TOKEN` (or `A5C_AGENT_GITHUB_TOKEN`) — token with `repo` scope that can call the Repository Dispatch API.
+  - `GITHUB_REPOSITORY` — target repository in `owner/repo` form.
+- Event mapping (per `src/emit.ts`):
+  - `event_type` is taken from `event.event_type || event.type || "custom"`.
+  - `client_payload` is taken from `event.client_payload || event.payload || event`.
+  - If the input is `{ events: [...] }`, each item is dispatched; otherwise, the single input object is dispatched once.
+- Redaction applies before dispatch. Ensure secrets aren't included; redaction masks common keys but cannot guarantee all sensitive data is removed.
+- Rate limits and permissions apply. The token must have permission on the target repo. Dispatches are best-effort; failures exit with code `1` and print an error.
 
 Examples:
 
@@ -319,12 +438,34 @@ events emit --in samples/push.json --out out.json
 # Enrich then emit to artifact file
 events enrich --in samples/pr.json --out enriched.json \
   && events emit --in enriched.json --sink file --out artifact.json
+
+# Dispatch to GitHub (repository_dispatch)
+export GITHUB_TOKEN=ghp_...                 # or A5C_AGENT_GITHUB_TOKEN
+export GITHUB_REPOSITORY=a5c-ai/events      # owner/repo
+
+# Minimal event (type inferred → "custom")
+events emit --in samples/push.json --sink github
+
+# Explicit event_type and client_payload
+cat > /tmp/dispatch.json << 'JSON'
+{ "event_type": "ci:notify", "client_payload": { "status": "ok", "run_id": 123 } }
+JSON
+events emit --in /tmp/dispatch.json --sink github
+
+# Batch dispatch (array under `events[]`)
+cat > /tmp/batch.json << 'JSON'
+{ "events": [
+  { "type": "ci:notify", "payload": { "status": "ok" } },
+  { "type": "ci:notify", "payload": { "status": "failed", "reason": "lint" } }
+]}
+JSON
+events emit --in /tmp/batch.json --sink github
 ```
 
 Exit codes:
 
 - `0`: success
-- `1`: error (I/O, JSON parse, or missing `--out` for file sink)
+- `1`: error (I/O, JSON parse, missing `--out` for file sink, or GitHub dispatch failure/missing env)
 
 ### `events validate`
 
