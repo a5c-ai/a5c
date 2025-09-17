@@ -31,16 +31,16 @@ try {
     .filter(Boolean);
   if (files.length === 0) {
     console.log("No relevant changed files; running full test suite.");
-    run("vitest run");
+    run("npx --yes vitest run");
     process.exit(0);
   }
   const list = files.map((f) => `'${f}'`).join(" ");
   console.log("Running related tests for changed files:", files);
-  run(`vitest related ${list}`);
+  run(`npx --yes vitest related ${list}`);
 } catch (err) {
   console.warn(
     "Related tests failed or unavailable, falling back to full run. Error:",
     err?.message,
   );
-  run("vitest run");
+  run("npx --yes vitest run");
 }
