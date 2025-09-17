@@ -14,3 +14,8 @@
 ## Notes
 
 Failure: TypeError: fn.parseGithubEntity is not a function (test/emit.labels.test.ts)
+
+## Results (20250917T160142Z)
+
+- Exported parseGithubEntity and resolveOwnerRepo from src/emit.ts
+- Local tests: PASS (162/162)
