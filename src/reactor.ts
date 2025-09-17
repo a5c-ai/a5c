@@ -41,16 +41,11 @@ function logDebug(msg: string) {
 function isReactorDoc(obj: any): boolean {
   if (!obj || typeof obj !== "object") return false;
   const keys = new Set(Object.keys(obj));
-  const interesting = [
-    "on",
-    "emit",
-    "set_labels",
-    "pre_set_labels",
-    "script",
-    "metadata",
-    "env",
-  ];
-  return interesting.some((k) => keys.has(k));
+  const hasOn = keys.has("on");
+  const hasEmit = keys.has("emit");
+  const hasCommands =
+    keys.has("set_labels") || keys.has("pre_set_labels") || keys.has("script");
+  return hasOn || hasEmit || hasCommands;
 }
 
 export async function handleReactor(opts: ReactorOptions): Promise<{
@@ -490,11 +485,16 @@ async function fetchGithubPath(
       encoding,
     ).toString("utf8");
     const parsed = YAML.parseAllDocuments(content, { prettyErrors: false });
+    let docIdx = 0;
     for (const d of parsed as any[]) {
       try {
         const obj = (d as any).toJSON();
-        if (isReactorDoc(obj)) docsOut.push(obj);
+        if (isReactorDoc(obj)) {
+          (obj as any).__source = `${normPath}#${docIdx}`;
+          docsOut.push(obj);
+        }
       } catch {}
+      docIdx++;
     }
     logDebug(
       `fetchGithubPath: parsed YAML file '${name}' (docsOut=${docsOut.length})`,
@@ -544,11 +544,16 @@ function loadYamlDocuments(filePath: string): any[] {
   for (const fp of files) {
     const raw = fs.readFileSync(fp, "utf8");
     const docs = YAML.parseAllDocuments(raw, { prettyErrors: false });
+    let docIdx = 0;
     for (const d of docs as any[]) {
       try {
         const obj = (d as any).toJSON();
-        if (isReactorDoc(obj)) out.push(obj);
+        if (isReactorDoc(obj)) {
+          (obj as any).__source = `${fp}#${docIdx}`;
+          out.push(obj);
+        }
       } catch {}
+      docIdx++;
     }
   }
   logDebug(`loadYamlDocuments: loaded ${out.length} from local '${filePath}'`);
