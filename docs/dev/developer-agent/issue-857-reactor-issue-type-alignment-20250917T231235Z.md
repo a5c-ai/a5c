@@ -17,3 +17,9 @@ Reactor `buildExpressionEvent` assigns `type = "issues"` when `original_event.is
 - docs/specs/README.md — normalized types list.
 - src/reactor.ts — `buildExpressionEvent`.
 - tests: `test/reactor.filters.test.ts` as a pattern for reactor tests.
+
+## Results
+
+- Updated src/reactor.ts to set type 'issue' when original_event.issue exists.
+- Added unit test test/reactor.issue-type.test.ts validating the behavior.
+- All tests pass locally (npm test).
