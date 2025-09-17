@@ -2,7 +2,7 @@
 
 ## Context
 
-Product spec requests `ref.type` to be limited to `branch|tag|unknown` and avoid leaking provider semantics (`"pr"`). Historical notes referenced both `src/providers/github/map.ts` and `src/providers/github/normalize.ts`, but the canonical path is now `src/providers/github/map.ts` (via `mapToNE` / `GitHubProvider.normalize`). The legacy `normalize.ts` has been removed.
+Product spec requests `ref.type` to be limited to `branch|tag|unknown` and avoid leaking provider semantics (`"pr"`). Historical notes referenced multiple GitHub normalizers; the canonical path is now `src/providers/github/map.ts` (via `mapToNE` / `GitHubProvider.normalize`). Legacy code has been removed.
 
 ## Plan
 
