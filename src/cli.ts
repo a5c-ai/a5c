@@ -20,6 +20,21 @@ program
   .description("Events CLI - mentions, normalize and enrich")
   .version(readVersion());
 
+// Explicit `version` subcommand for parity with flag usage
+program
+  .command("version")
+  .description("Print CLI version")
+  .option("--json", "print as JSON {version}")
+  .action((opts: any) => {
+    const v = readVersion();
+    if (opts.json) {
+      process.stdout.write(JSON.stringify({ version: v }) + "\n");
+    } else {
+      process.stdout.write(v + "\n");
+    }
+    process.exit(0);
+  });
+
 program
   .command("mentions")
   .description("Extract mentions from text or file")
