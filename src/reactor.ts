@@ -24,15 +24,11 @@ export async function handleReactor(opts: ReactorOptions): Promise<{
     const inputObj = readInput(opts.in);
     const ne = normalizeNE(inputObj);
     const rulesPath = resolveRulesPath(opts.file);
-    let docs = loadYamlDocuments(rulesPath);
-    if (!docs.length) {
-      const remote = await tryLoadRemoteYaml(
-        ne,
-        rulesPath,
-        opts.branch || process.env.A5C_EVENT_CONFIG_BRANCH || "main",
-      );
-      if (remote && remote.length) docs = remote;
-    }
+    const docs = await loadReactorDocs(
+      ne,
+      rulesPath,
+      opts.branch || process.env.A5C_EVENT_CONFIG_BRANCH || "main",
+    );
     const events: ReactorOutputEvent[] = [];
     for (const doc of docs) {
       if (!doc || typeof doc !== "object") continue;
@@ -54,6 +50,115 @@ export async function handleReactor(opts: ReactorOptions): Promise<{
   } catch (e: any) {
     const msg = String(e?.message || e);
     return { code: 1, errorMessage: `reactor: ${msg}` };
+  }
+}
+
+async function loadReactorDocs(
+  ne: ReturnType<typeof normalizeNE>,
+  pathOrUri: string,
+  branch: string,
+): Promise<any[]> {
+  // Support github:// and file:// directly
+  if (/^github:\/\//i.test(pathOrUri)) {
+    const parsed = parseGithubUri(pathOrUri);
+    if (!parsed) return [];
+    return await fetchGithubYamlDocs(
+      parsed.owner,
+      parsed.repo,
+      parsed.ref,
+      parsed.path,
+    );
+  }
+  if (/^file:\/\//i.test(pathOrUri)) {
+    const p = new URL(pathOrUri).pathname;
+    return loadYamlDocuments(p);
+  }
+  // If it's an existing local path, load from disk
+  if (fs.existsSync(pathOrUri)) {
+    return loadYamlDocuments(pathOrUri);
+  }
+  // Otherwise, treat as remote path within current repo/ref (or branch fallback)
+  const repoInfo = inferRepoFromNE(ne);
+  if (!repoInfo) return [];
+  const ref = inferRefFromNE(ne) || branch;
+  return await fetchGithubYamlDocs(
+    repoInfo.owner,
+    repoInfo.repo,
+    ref,
+    pathOrUri,
+  );
+}
+
+function parseGithubUri(
+  uri: string,
+): { owner: string; repo: string; ref: string; path: string } | null {
+  try {
+    const m =
+      /^github:\/\/([^/]+)\/([^/]+)\/(?:branch|ref|version)\/([^/]+)\/(.+)$/i.exec(
+        uri,
+      );
+    if (!m) return null;
+    const [, owner, repo, ref, p] = m;
+    return { owner, repo, ref, path: p };
+  } catch {
+    return null;
+  }
+}
+
+async function fetchGithubYamlDocs(
+  owner: string,
+  repo: string,
+  ref: string,
+  p: string,
+): Promise<any[]> {
+  try {
+    const token =
+      process.env.A5C_AGENT_GITHUB_TOKEN || process.env.GITHUB_TOKEN;
+    if (!token) return [];
+    const { Octokit } = await import("@octokit/rest");
+    const octokit = new Octokit({ auth: token });
+    const docs: any[] = [];
+    const targets = computeRemotePaths(p);
+    for (const pathItem of targets) {
+      try {
+        const { data } = await octokit.repos.getContent({
+          owner,
+          repo,
+          path: pathItem,
+          ref,
+        });
+        if (Array.isArray(data)) continue;
+        const encoding = (data as any).encoding || "base64";
+        const content: string = Buffer.from(
+          (data as any).content || "",
+          encoding,
+        ).toString("utf8");
+        const parsed = YAML.parseAllDocuments(content, { prettyErrors: false });
+        for (const d of parsed as any[]) {
+          try {
+            const obj = (d as any).toJSON();
+            if (obj && typeof obj === "object") docs.push(obj);
+          } catch {}
+        }
+      } catch {}
+    }
+    return docs;
+  } catch {
+    return [];
+  }
+}
+
+function inferRefFromNE(
+  ne: ReturnType<typeof normalizeNE>,
+): string | undefined {
+  try {
+    const pr = (ne as any)?.payload?.pull_request;
+    const ref = pr?.head?.ref || (ne as any)?.payload?.ref;
+    if (typeof ref === "string" && ref.length)
+      return ref.replace(/^refs\/heads\//, "");
+    return undefined;
+  } catch {
+    return undefined;
   }
 }
 
