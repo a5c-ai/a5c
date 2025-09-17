@@ -19,3 +19,14 @@ Using `@latest` in CI can introduce flakiness when upstream releases change beha
 ## Notes
 
 Default aligns with prior validation guidance. Override by setting repo Variable `EDITORCONFIG_CHECKER_VERSION`.
+
+## Results
+
+- Updated `scripts/ci-editorconfig.sh` to resolve `EC_VERSION` from `$EDITORCONFIG_CHECKER_VERSION` with default `3.4.0`, and log chosen version.
+- Updated `.github/workflows/quick-checks.yml` to pass `EDITORCONFIG_CHECKER_VERSION: ${{ vars.EDITORCONFIG_CHECKER_VERSION || '3.4.0' }}`.
+- Updated `docs/ci/ci-checks.md` with pinning policy, env snippet, and bump instructions.
+- Ran pre-push checks (lint-staged + full tests): all passed locally in CI harness.
+
+## Links
+
+- PR: https://github.com/a5c-ai/events/pull/761
