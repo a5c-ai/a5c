@@ -159,6 +159,7 @@ jobs:
         if: steps.filter-self.outputs.skip != 'true'
         with:
           fetch-depth: 0
+          ref: a5c/main
           token: ${{ steps.a5c-token.outputs.a5c_token || secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
       - name: Run A5C
         id: agents

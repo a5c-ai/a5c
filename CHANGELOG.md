@@ -1,3 +1,27 @@
+## <small>1.4.1 (2025-09-17)</small>
+
+* Merge pull request #809 from a5c-ai/a5c/main ([0cb0c0c](https://github.com/a5c-ai/events/commit/0cb0c0c)), closes [#809](https://github.com/a5c-ai/events/issues/809)
+* fix: improve path handling in computeRemotePaths function ([6ad0c8e](https://github.com/a5c-ai/events/commit/6ad0c8e))
+
+## 1.4.0 (2025-09-17)
+
+* 🧭 docs: clarify ref.type semantics in README + NE Schema (fixes #793) (#801) ([8eaf13a](https://github.com/a5c-ai/events/commit/8eaf13a)), closes [#793](https://github.com/a5c-ai/events/issues/793) [#801](https://github.com/a5c-ai/events/issues/801) [#793](https://github.com/a5c-ai/events/issues/793) [#793](https://github.com/a5c-ai/events/issues/793)
+* 🧰 docs: Consolidate mentions flags — single source (CLI) (#803) ([12a31c6](https://github.com/a5c-ai/events/commit/12a31c6)), closes [#803](https://github.com/a5c-ai/events/issues/803) [#797](https://github.com/a5c-ai/events/issues/797) [#797](https://github.com/a5c-ai/events/issues/797)
+* Merge branch 'a5c/main' of https://github.com/a5c-ai/events into a5c/main ([36c23eb](https://github.com/a5c-ai/events/commit/36c23eb))
+* Merge pull request #802 from a5c-ai/a5c/build-fix/packages-npx-test-checkout-20250917 ([b35d2f2](https://github.com/a5c-ai/events/commit/b35d2f2)), closes [#802](https://github.com/a5c-ai/events/issues/802)
+* Merge pull request #804 from a5c-ai/a5c/docs/product-audit-flows-792 ([1d5118c](https://github.com/a5c-ai/events/commit/1d5118c)), closes [#804](https://github.com/a5c-ai/events/issues/804) [#792](https://github.com/a5c-ai/events/issues/792)
+* Merge pull request #805 from a5c-ai/a5c/main ([50fdf7d](https://github.com/a5c-ai/events/commit/50fdf7d)), closes [#805](https://github.com/a5c-ai/events/issues/805)
+* Merge pull request #806 from a5c-ai/a5c/main ([9a8ad92](https://github.com/a5c-ai/events/commit/9a8ad92)), closes [#806](https://github.com/a5c-ai/events/issues/806)
+* Update a5c.yml ([a0f0a00](https://github.com/a5c-ai/events/commit/a0f0a00))
+* feat: enhance CLI and emit functionality with single event option ([226990f](https://github.com/a5c-ai/events/commit/226990f))
+* refactor: enhance reactor document loading and streamline configuration handling ([02f54c4](https://github.com/a5c-ai/events/commit/02f54c4))
+* refactor: streamline reactor execution in CI workflow ([5426d88](https://github.com/a5c-ai/events/commit/5426d88))
+* docs: add Core Product Flows and worklog for #792 ([be9f835](https://github.com/a5c-ai/events/commit/be9f835)), closes [#792](https://github.com/a5c-ai/events/issues/792)
+* docs(dev): start build-fix log for Packages Npx Test (.nvmrc missing) ([be32723](https://github.com/a5c-ai/events/commit/be32723))
+* ci: add checkout step to packages-npx-test to ensure .nvmrc present before setup-node (fix run 17794 ([95be672](https://github.com/a5c-ai/events/commit/95be672))
+* chore: comment out Node setup and checkout steps in CI workflows ([275da76](https://github.com/a5c-ai/events/commit/275da76))
+* build: commitlint lenient: disable subject-case on main PRs\n\n- Fix failing Commitlint job on PRs t ([bc5eb27](https://github.com/a5c-ai/events/commit/bc5eb27))
+
 ## <small>1.3.1 (2025-09-17)</small>
 
 * ✅ ci: actionlint strict opt‑in via REQUIRE_ACTIONLINT (fixes #764) (#768) ([689c47f](https://github.com/a5c-ai/events/commit/689c47f)), closes [#764](https://github.com/a5c-ai/events/issues/764) [#768](https://github.com/a5c-ai/events/issues/768) [#764](https://github.com/a5c-ai/events/issues/764) [#764](https://github.com/a5c-ai/events/issues/764)
