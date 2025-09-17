@@ -33,7 +33,12 @@ function vitestCmd() {
 }
 
 try {
-  const base = process.env.A5C_BASE_REF || "origin/a5c/main";
+  let base = process.env.A5C_BASE_REF || "origin/a5c/main";
+  try {
+    require("node:child_process").execSync(`git ls-remote --exit-code --heads origin a5c/main`, {stdio: "ignore"});
+  } catch {
+    base = process.env.A5C_BASE_REF || "origin/main";
+  }
   // List changed source files
   // Use Git pathspec globs; avoid shell brace expansion which Git doesn't support.
   // Keep patterns quoted so the shell doesn't expand them before Git receives them.
