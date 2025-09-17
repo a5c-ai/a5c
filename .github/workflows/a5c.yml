@@ -99,6 +99,7 @@ on:
         Commitlint,
         Docs Lint,
         Release,
+        Auto Merge,
       ]
 
   # Manual Triggers
