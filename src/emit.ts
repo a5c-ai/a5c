@@ -43,11 +43,6 @@ export async function handleEmit(
 async function emitToGithub(obj: any): Promise<void> {
   const token = process.env.A5C_AGENT_GITHUB_TOKEN || process.env.GITHUB_TOKEN;
   if (!token) throw new Error("github sink requires GITHUB_TOKEN");
-  // Determine repo/owner
-  const repoFull = process.env.GITHUB_REPOSITORY;
-  if (!repoFull || !repoFull.includes("/"))
-    throw new Error("github sink requires GITHUB_REPOSITORY env (owner/repo)");
-  const [owner, repo] = repoFull.split("/");
   const { Octokit } = await import("@octokit/rest");
   const octokit = new Octokit({ auth: token });
   // Support either { events: [...] } or a single event object
@@ -55,6 +50,14 @@ async function emitToGithub(obj: any): Promise<void> {
   for (const ev of events) {
     const event_type: string = ev.event_type || ev.type || "custom";
     const client_payload: any = ev.client_payload || ev.payload || ev;
+    const repoTarget = resolveOwnerRepo(client_payload);
+    if (!repoTarget) {
+      process.stderr.write(
+        `[emit] github sink: unable to resolve owner/repo for event_type=${event_type}; skipping dispatch\n`,
+      );
+      continue;
+    }
+    const { owner, repo } = repoTarget;
     await octokit.repos.createDispatchEvent({
       owner,
       repo,
@@ -91,6 +94,9 @@ async function applyLabels(entries: any[]): Promise<void> {
       const { owner, repo, number } = parsed;
       const add: string[] = normalizeLabelsArray(entry.add_labels);
       const remove: string[] = normalizeLabelsArray(entry.remove_labels);
+      if (add.length) {
+        await ensureLabelsExist(octokit as any, owner, repo, add);
+      }
       if (add.length) {
         await octokit.issues.addLabels({
           owner,
@@ -167,4 +173,78 @@ async function runScripts(lines: string[]): Promise<void> {
       );
     });
   }
+}
+
+function resolveOwnerRepo(cp: any): { owner: string; repo: string } | null {
+  try {
+    if (!cp || typeof cp !== "object") return null;
+    const full = cp?.repository?.full_name || cp?.repo_full_name;
+    if (typeof full === "string" && full.includes("/")) {
+      const [owner, repo] = full.split("/");
+      if (owner && repo) return { owner, repo };
+    }
+    const html =
+      cp?.repository?.html_url ||
+      cp?.pull_request?.html_url ||
+      cp?.issue?.html_url ||
+      cp?.repo_html_url;
+    if (typeof html === "string") {
+      const parsed = parseGithubEntity(html);
+      if (parsed) return { owner: parsed.owner, repo: parsed.repo };
+    }
+    const labels = Array.isArray(cp?.set_labels) ? cp.set_labels : [];
+    for (const entry of labels) {
+      const ent = entry?.entity;
+      if (typeof ent === "string") {
+        const parsed = parseGithubEntity(ent);
+        if (parsed) return { owner: parsed.owner, repo: parsed.repo };
+      }
+    }
+    const oeFull = cp?.original_event?.repository?.full_name;
+    if (typeof oeFull === "string" && oeFull.includes("/")) {
+      const [owner, repo] = oeFull.split("/");
+      if (owner && repo) return { owner, repo };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+async function ensureLabelsExist(
+  octokit: any,
+  owner: string,
+  repo: string,
+  labels: string[],
+): Promise<void> {
+  const unique = Array.from(new Set(labels.map((n) => String(n))));
+  for (const name of unique) {
+    try {
+      await octokit.issues.createLabel({
+        owner,
+        repo,
+        name,
+        color: generateLabelColor(name),
+      });
+    } catch (e: any) {
+      const msg = String(e?.message || e || "");
+      if (!/422|already exists|exists/i.test(msg) && !/409/.test(msg)) {
+        // ignore other errors (permissions, etc.)
+      }
+    }
+  }
+}
+
+function generateLabelColor(name: string): string {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+  let r = (h & 0xff) ^ 0x55;
+  let g = ((h >> 8) & 0xff) ^ 0x55;
+  let b = ((h >> 16) & 0xff) ^ 0x55;
+  const min = 40;
+  const max = 215;
+  r = Math.max(min, Math.min(max, r));
+  g = Math.max(min, Math.min(max, g));
+  b = Math.max(min, Math.min(max, b));
+  return [r, g, b].map((v) => v.toString(16).padStart(2, "0")).join("");
 }
