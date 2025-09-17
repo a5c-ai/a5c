@@ -8,11 +8,30 @@ export interface ReactorOptions {
   out?: string;
   file?: string;
   branch?: string;
+  metadataMatch?: Record<string, string>;
 }
 
 export interface ReactorOutputEvent {
   event_type: string;
   client_payload: any;
+}
+
+// Lightweight logging helpers (GitHub Actions compatible)
+const LOG_LEVEL = String(process.env.A5C_LOG_LEVEL || "info").toLowerCase();
+const IS_ACTIONS =
+  String(process.env.GITHUB_ACTIONS || "").toLowerCase() === "true";
+function logInfo(msg: string) {
+  const line = IS_ACTIONS ? `::notice::${msg}` : `[reactor] ${msg}`;
+  process.stderr.write(line + "\n");
+}
+function logWarn(msg: string) {
+  const line = IS_ACTIONS ? `::warning::${msg}` : `[reactor] WARN: ${msg}`;
+  process.stderr.write(line + "\n");
+}
+function logDebug(msg: string) {
+  if (!(LOG_LEVEL === "debug" || LOG_LEVEL === "trace")) return;
+  const line = IS_ACTIONS ? `::debug::${msg}` : `[reactor] DEBUG: ${msg}`;
+  process.stderr.write(line + "\n");
 }
 
 export async function handleReactor(opts: ReactorOptions): Promise<{
@@ -21,36 +40,157 @@ export async function handleReactor(opts: ReactorOptions): Promise<{
   errorMessage?: string;
 }> {
   try {
+    logInfo(`starting reactor (file=${opts.file || "(default)"})`);
     const inputObj = readInput(opts.in);
     const ne = normalizeNE(inputObj);
     const rulesPath = resolveRulesPath(opts.file);
-    const docs = await loadReactorDocs(
-      ne,
-      rulesPath,
-      opts.branch || process.env.A5C_EVENT_CONFIG_BRANCH || "main",
-    );
+    const branch = opts.branch || process.env.A5C_EVENT_CONFIG_BRANCH || "main";
+    logDebug(`resolved rulesPath=${rulesPath}, branch=${branch}`);
+    const repo = inferRepoFromNE(ne);
+    if (repo) logDebug(`inferred repo=${repo.owner}/${repo.repo}`);
+
+    const docs = await loadReactorDocs(ne, rulesPath, branch);
+    logInfo(`loaded ${docs.length} reactor doc(s)`);
+
     const events: ReactorOutputEvent[] = [];
+    const match = opts.metadataMatch || {};
     for (const doc of docs) {
       if (!doc || typeof doc !== "object") continue;
+      const metadata = (doc as any).metadata || {};
+      if (!metadataMatches(metadata, match)) {
+        logDebug(`doc filtered by metadata (needed=${JSON.stringify(match)})`);
+        continue;
+      }
       const onSpec: any = (doc as any).on;
       const emitSpec: any = (doc as any).emit;
+      const docEnvSpec: any[] = Array.isArray((doc as any).env)
+        ? (doc as any).env
+        : [];
+      const secrets: Record<string, string | undefined> = buildSecretsEnv();
+      const varsEnv: Record<string, string | undefined> = buildVarsEnv();
+      const docEnv = evaluateDocEnv(docEnvSpec, {
+        event: ne.payload,
+        env: process.env,
+        secrets,
+        vars: varsEnv,
+      });
       if (!onSpec || !emitSpec) continue;
-      const matched = matchesAnyTrigger(onSpec, ne);
+      const matched = matchesAnyTrigger(
+        onSpec,
+        withDocEnv(ne, docEnv, secrets, varsEnv),
+      );
+      logDebug(`doc matched=${matched}`);
       if (!matched) continue;
-      // Build events from emit map
       if (emitSpec && typeof emitSpec === "object") {
         for (const [eventType, spec] of Object.entries(emitSpec)) {
-          const payload = buildClientPayload(spec, ne);
-          const merged = attachDocCommands(payload, doc, ne);
+          const payload = buildClientPayload(
+            spec,
+            withDocEnv(ne, docEnv, secrets, varsEnv),
+          );
+          const merged = attachDocCommands(
+            payload,
+            doc,
+            withDocEnv(ne, docEnv, secrets, varsEnv),
+          );
           events.push({ event_type: eventType, client_payload: merged });
         }
       }
     }
+    logInfo(`reactor produced ${events.length} event(s)`);
     return { code: 0, output: { events } };
   } catch (e: any) {
     const msg = String(e?.message || e);
+    logWarn(`reactor failed: ${msg}`);
     return { code: 1, errorMessage: `reactor: ${msg}` };
   }
+}
+
+function metadataMatches(
+  meta: Record<string, any>,
+  match: Record<string, string>,
+): boolean {
+  const entries = Object.entries(match || {});
+  for (const [k, v] of entries) {
+    if (v == null) continue;
+    if (String(meta?.[k]) !== String(v)) return false;
+  }
+  return true;
+}
+
+function buildSecretsEnv(): Record<string, string | undefined> {
+  const out: Record<string, string | undefined> = {};
+  for (const [k, v] of Object.entries(process.env)) {
+    if (
+      k &&
+      (k.startsWith("A5C_") ||
+        k.startsWith("GITHUB_") ||
+        k.startsWith("SECRET_") ||
+        k === "GITHUB_TOKEN")
+    ) {
+      out[k] = v;
+    }
+  }
+  return out;
+}
+
+function buildVarsEnv(): Record<string, string | undefined> {
+  const out: Record<string, string | undefined> = {};
+  for (const [k, v] of Object.entries(process.env)) {
+    if (
+      k &&
+      (k.startsWith("A5C_") || k.startsWith("VAR_") || k === "A5C_MCPS_PATH")
+    ) {
+      out[k] = v;
+    }
+  }
+  return out;
+}
+
+function withDocEnv(
+  ne: ReturnType<typeof normalizeNE>,
+  env: Record<string, string>,
+  secrets: Record<string, any>,
+  vars: Record<string, any>,
+) {
+  // Attach doc env into enriched.derived.flags for expression visibility; do not mutate input
+  const copy: any = { ...ne };
+  copy.enriched = { ...(ne as any).enriched };
+  copy.enriched.derived = {
+    ...((ne as any).enriched?.derived || {}),
+    doc_env: env,
+    secrets,
+    vars,
+  };
+  return copy as ReturnType<typeof normalizeNE>;
+}
+
+function evaluateDocEnv(
+  spec: any[],
+  ctx: { event: any; env: any; secrets: any; vars: any },
+): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const item of spec) {
+    const name = String(item?.name || "");
+    if (!name) continue;
+    const val = resolveTemplateString(String(item?.value ?? ""), {
+      ...(normalizeNE({
+        provider: "github",
+        payload: ctx.event,
+        labels: [],
+        enriched: { derived: {} },
+      }) as any),
+      enriched: {
+        derived: {
+          flags: {},
+          doc_env: out,
+          secrets: ctx.secrets,
+          vars: ctx.vars,
+        },
+      },
+    } as any);
+    out[name] = String(val ?? "");
+  }
+  return out;
 }
 
 async function loadReactorDocs(
@@ -58,9 +198,9 @@ async function loadReactorDocs(
   pathOrUri: string,
   branch: string,
 ): Promise<any[]> {
-  // Support github:// and file:// directly
   if (/^github:\/\//i.test(pathOrUri)) {
     const parsed = parseGithubUri(pathOrUri);
+    logDebug(`loadReactorDocs: github uri parsed=${JSON.stringify(parsed)}`);
     if (!parsed) return [];
     return await fetchGithubYamlDocs(
       parsed.owner,
@@ -71,16 +211,22 @@ async function loadReactorDocs(
   }
   if (/^file:\/\//i.test(pathOrUri)) {
     const p = new URL(pathOrUri).pathname;
+    logDebug(`loadReactorDocs: file uri path=${p}`);
     return loadYamlDocuments(p);
   }
-  // If it's an existing local path, load from disk
   if (fs.existsSync(pathOrUri)) {
+    const isDir = isDirectorySafe(pathOrUri);
+    logDebug(
+      `loadReactorDocs: local path exists (dir=${isDir}) -> ${pathOrUri}`,
+    );
     return loadYamlDocuments(pathOrUri);
   }
-  // Otherwise, treat as remote path within current repo/ref (or branch fallback)
   const repoInfo = inferRepoFromNE(ne);
-  if (!repoInfo) return [];
   const ref = inferRefFromNE(ne) || branch;
+  logDebug(
+    `loadReactorDocs: remote from event repo=${JSON.stringify(repoInfo)} ref=${ref} path=${pathOrUri}`,
+  );
+  if (!repoInfo) return [];
   return await fetchGithubYamlDocs(
     repoInfo.owner,
     repoInfo.repo,
@@ -102,7 +248,8 @@ function parseGithubUri(
     const ref = decodeURIComponent(refRaw);
     const p = decodeURIComponent(pRaw);
     return { owner, repo, ref, path: p };
-  } catch {
+  } catch (e: any) {
+    logWarn(`parseGithubUri failed: ${e?.message || e}`);
     return null;
   }
 }
@@ -116,19 +263,27 @@ async function fetchGithubYamlDocs(
   try {
     const token =
       process.env.A5C_AGENT_GITHUB_TOKEN || process.env.GITHUB_TOKEN;
-    if (!token) return [];
+    if (!token) {
+      logWarn("fetchGithubYamlDocs: missing token; skipping remote load");
+      return [];
+    }
     const { Octokit } = await import("@octokit/rest");
     const octokit = new Octokit({ auth: token });
     const docs: any[] = [];
     const cleanRef = decodeURIComponent(ref || "");
     const basePath = normalizeRepoPathStr(decodeURIComponent(p || ""));
     const targets = computeRemotePaths(basePath);
+    logInfo(
+      `remote discovery from ${owner}/${repo}@${cleanRef} base='${basePath}' targets=${JSON.stringify(targets)}`,
+    );
     for (const pathItem of targets) {
       await fetchGithubPath(octokit, owner, repo, cleanRef, pathItem, docs);
       if (docs.length) break;
     }
+    logInfo(`remote discovery loaded ${docs.length} YAML doc(s)`);
     return docs;
-  } catch {
+  } catch (e: any) {
+    logWarn(`fetchGithubYamlDocs failed: ${e?.message || e}`);
     return [];
   }
 }
@@ -143,6 +298,7 @@ async function fetchGithubPath(
 ): Promise<void> {
   try {
     const normPath = normalizeRepoPathStr(pathItem);
+    logDebug(`fetchGithubPath: GET contents path='${normPath}' ref='${ref}'`);
     const { data } = await octokit.repos.getContent({
       owner,
       repo,
@@ -150,6 +306,7 @@ async function fetchGithubPath(
       ref,
     });
     if (Array.isArray(data)) {
+      logDebug(`fetchGithubPath: directory entries=${data.length}`);
       for (const entry of data) {
         const type = (entry as any).type;
         const name = (entry as any).name || "";
@@ -179,7 +336,12 @@ async function fetchGithubPath(
         if (obj && typeof obj === "object") docsOut.push(obj);
       } catch {}
     }
-  } catch {}
+    logDebug(
+      `fetchGithubPath: parsed YAML file '${name}' (docsOut=${docsOut.length})`,
+    );
+  } catch (e: any) {
+    logDebug(`fetchGithubPath error: ${e?.message || e}`);
+  }
 }
 
 function normalizeRepoPathStr(p: string): string {
@@ -229,6 +391,7 @@ function loadYamlDocuments(filePath: string): any[] {
       } catch {}
     }
   }
+  logDebug(`loadYamlDocuments: loaded ${out.length} from local '${filePath}'`);
   return out;
 }
 
@@ -395,11 +558,28 @@ function attachDocCommands(
   neCtx: ReturnType<typeof normalizeNE>,
 ): any {
   const out = { ...(payload || {}) } as any;
-  if (Array.isArray(doc?.set_labels) && doc.set_labels.length) {
-    out.set_labels = resolveTemplates(doc.set_labels, neCtx);
+  // pre_set_labels first
+  if (
+    Array.isArray((doc as any).pre_set_labels) &&
+    (doc as any).pre_set_labels.length
+  ) {
+    out.pre_set_labels = resolveTemplates((doc as any).pre_set_labels, neCtx);
   }
-  if (Array.isArray(doc?.script) && doc.script.length) {
-    out.script = resolveTemplates(doc.script, neCtx);
+  // then script
+  if (Array.isArray((doc as any).script) && (doc as any).script.length) {
+    out.script = resolveTemplates((doc as any).script, neCtx);
+  }
+  // then set_labels
+  if (
+    Array.isArray((doc as any).set_labels) &&
+    (doc as any).set_labels.length
+  ) {
+    out.set_labels = resolveTemplates((doc as any).set_labels, neCtx);
+  }
+  // propagate env (evaluated earlier into neCtx.enriched.derived.doc_env)
+  const docEnv = (neCtx as any)?.enriched?.derived?.doc_env;
+  if (docEnv && typeof docEnv === "object") {
+    out.env = { ...docEnv };
   }
   return out;
 }
