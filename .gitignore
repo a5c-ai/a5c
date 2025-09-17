@@ -68,3 +68,4 @@ out.normalize.json
 
 # temp status/check artifacts (never commit)
 .tmp_check.json
+.tmp/
