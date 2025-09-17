@@ -2,7 +2,7 @@
 
 ## Context
 
-Product spec requests `ref.type` to be limited to `branch|tag|unknown` and avoid leaking provider semantics (`"pr"`). Current code sets `ref.type: "pr"` for PR events in `src/providers/github/map.ts` and `src/providers/github/normalize.ts`. Tests also assert `"pr"`.
+Product spec requests `ref.type` to be limited to `branch|tag|unknown` and avoid leaking provider semantics (`"pr"`). Historical notes referenced both `src/providers/github/map.ts` and `src/providers/github/normalize.ts`, but the canonical path is now `src/providers/github/map.ts` (via `mapToNE` / `GitHubProvider.normalize`). The legacy `normalize.ts` has been removed.
 
 ## Plan
 
