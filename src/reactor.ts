@@ -1051,10 +1051,25 @@ function transformPipeline(segment: string): string {
       expr = `(${expr}).map(x => x${accessor})`;
       continue;
     }
+    const mapAttrMatch = /^map\(attribute=['\"]([^'\"]+)['\"]\)$/.exec(t);
+    if (mapAttrMatch) {
+      const prop = mapAttrMatch[1].trim();
+      const accessor = /[^a-zA-Z0-9_]/.test(prop)
+        ? `[${JSON.stringify(prop)}]`
+        : `.${prop}`;
+      expr = `(${expr}).map(x => x${accessor})`;
+      continue;
+    }
     const containsMatch = /^contains\((.+)\)$/.exec(t);
     if (containsMatch) {
       const arg = containsMatch[1].trim();
       expr = `(${expr}).includes(${arg})`;
+      continue;
+    }
+    const joinMatch = /^join\((.+)\)$/.exec(t);
+    if (joinMatch) {
+      const arg = joinMatch[1].trim();
+      expr = `(${expr}).join(${arg})`;
       continue;
     }
     const loadYamlMatch =

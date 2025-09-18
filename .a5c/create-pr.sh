@@ -39,6 +39,24 @@ if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   cd "$REPO_DIR" || { echo "Cannot cd to $REPO_DIR" >&2; exit 1; }
   echo "Now in repository $PWD"
 
+  # Ensure subsequent fetch/push use the authenticated remote
+  git remote set-url origin "$REMOTE_URL" >/dev/null 2>&1 || true
+
+  # Proactively fetch target refs that may not be present in a shallow clone
+  FETCH_REFS=""
+  [ -n "$BASE_BRANCH" ] && FETCH_REFS="$FETCH_REFS $BASE_BRANCH"
+  [ -n "$GITHUB_REF" ] && FETCH_REFS="$FETCH_REFS $GITHUB_REF"
+  # Remove potential refs/heads/ prefix for fetch
+  CLEAN_FETCH_REFS=""
+  for r in $FETCH_REFS; do
+    case "$r" in
+      refs/heads/*) r=${r#refs/heads/} ;;
+    esac
+    CLEAN_FETCH_REFS="$CLEAN_FETCH_REFS $r"
+  done
+  # Fetch quietly; ignore failures for non-existent refs
+  git fetch --no-tags --depth=1 origin $CLEAN_FETCH_REFS >/dev/null 2>&1 || true
+
   # Normalize and check out requested ref as a proper local branch
   REF_BRANCH="$GITHUB_REF"
   case "$REF_BRANCH" in
@@ -49,13 +67,25 @@ if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     if git ls-remote --exit-code --heads origin "$REF_BRANCH" >/dev/null 2>&1; then
       git checkout -B "$REF_BRANCH" "origin/$REF_BRANCH"
     else
-      # ensure base exists locally, then branch from it
-      git checkout -B "$BASE_BRANCH" "origin/$BASE_BRANCH" || git checkout "$BASE_BRANCH"
+      # ensure base exists locally, fallback to origin default branch if missing
+      if git ls-remote --exit-code --heads origin "$BASE_BRANCH" >/dev/null 2>&1; then
+        git checkout -B "$BASE_BRANCH" "origin/$BASE_BRANCH" || git checkout "$BASE_BRANCH"
+      else
+        DEFAULT_BRANCH=$(git remote show origin 2>/dev/null | awk '/HEAD branch/ {print $NF}' || echo main)
+        git checkout -B "$DEFAULT_BRANCH" "origin/$DEFAULT_BRANCH" || git checkout "$DEFAULT_BRANCH" || git checkout -B main
+        BASE_BRANCH="$DEFAULT_BRANCH"
+      fi
       git checkout -B "$REF_BRANCH" "$BASE_BRANCH"
     fi
   else
-    # ensure base exists locally and check it out
-    git checkout -B "$BASE_BRANCH" "origin/$BASE_BRANCH" || git checkout "$BASE_BRANCH"
+    # ensure base exists locally and check it out, fallback when missing
+    if git ls-remote --exit-code --heads origin "$BASE_BRANCH" >/dev/null 2>&1; then
+      git checkout -B "$BASE_BRANCH" "origin/$BASE_BRANCH" || git checkout "$BASE_BRANCH"
+    else
+      DEFAULT_BRANCH=$(git remote show origin 2>/dev/null | awk '/HEAD branch/ {print $NF}' || echo main)
+      git checkout -B "$DEFAULT_BRANCH" "origin/$DEFAULT_BRANCH" || git checkout "$DEFAULT_BRANCH" || git checkout -B main
+      BASE_BRANCH="$DEFAULT_BRANCH"
+    fi
   fi
 fi
 
@@ -76,7 +106,13 @@ git fetch origin "$BASE_BRANCH" >/dev/null 2>&1 || true
 if git ls-remote --exit-code --heads origin "$HEAD_BRANCH" >/dev/null 2>&1; then
   echo "Branch $HEAD_BRANCH already exists on origin"
 else
-  git checkout -B "$BASE_BRANCH" "origin/$BASE_BRANCH" || git checkout "$BASE_BRANCH"
+  if git ls-remote --exit-code --heads origin "$BASE_BRANCH" >/dev/null 2>&1; then
+    git checkout -B "$BASE_BRANCH" "origin/$BASE_BRANCH" || git checkout "$BASE_BRANCH"
+  else
+    DEFAULT_BRANCH=$(git remote show origin 2>/dev/null | awk '/HEAD branch/ {print $NF}' || echo main)
+    git checkout -B "$DEFAULT_BRANCH" "origin/$DEFAULT_BRANCH" || git checkout "$DEFAULT_BRANCH" || git checkout -B main
+    BASE_BRANCH="$DEFAULT_BRANCH"
+  fi
   git pull --ff-only origin "$BASE_BRANCH" || true
   git checkout -B "$HEAD_BRANCH" "$BASE_BRANCH"
 

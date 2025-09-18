@@ -22,6 +22,15 @@ if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   fi
   cd "$REPO_DIR" || { echo "Cannot cd to $REPO_DIR" >&2; exit 1; }
   echo "Now in repository $PWD"
+  git remote set-url origin "$REMOTE_URL" >/dev/null 2>&1 || true
+  # Proactively fetch ref to avoid shallow missing refs
+  CLEAN_REF="$GITHUB_REF"
+  case "$CLEAN_REF" in
+    refs/heads/*) CLEAN_REF=${CLEAN_REF#refs/heads/} ;;
+  esac
+  if [ -n "$CLEAN_REF" ]; then
+    git fetch --no-tags --depth=1 origin "$CLEAN_REF" >/dev/null 2>&1 || true
+  fi
   REF_BRANCH="$GITHUB_REF"
   case "$REF_BRANCH" in
     refs/heads/*) REF_BRANCH=${REF_BRANCH#refs/heads/} ;;
