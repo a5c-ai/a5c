@@ -31,16 +31,16 @@ on:
   pull_request:
     filters:
       # PR is ready for review, opened, reopened
-      - expression: ${{ (event.type == 'opened' || event.type == 'reopened' || event.type == 'ready_for_review')}}
+      - expression: ${{ (event.type == 'opened' || event.type == 'reopened' || event.type == 'ready_for_review') && event.pull_request.labels | map(attribute='name') | contains('validation') == false }}
       # validation label was added
       - expression: ${{ event.type == 'labeled' && event.label.name == 'validation' }}
     skip:
       # is a draft PR or already merged
       - expression: ${{ event.pull_request.draft == true || event.pull_request.merged == true }}
       # doesn't have the 'validation' label
-      - expression: ${{ (event.type != 'labeled' && event.labels | contains('validation') == false) || (event.type == 'labeled' && event.label.name != 'validation') }}
+      - expression: ${{ (event.type != 'labeled' && event.pull_request.labels | map(attribute='name') | contains('validation') == false) || (event.type == 'labeled' && event.label.name != 'validation') }}
       # if validation in progress or already requested
-      - expression: ${{ event.labels | contains('validation_in_progress') || event.labels | contains('validation_requested') }}
+      - expression: ${{ event.pull_request.labels | map(attribute='name') | contains('validation_in_progress') || event.pull_request.labels | map(attribute='name') | contains('validation_requested') }}
 emit:
   validation_request:
     type: pr_ready

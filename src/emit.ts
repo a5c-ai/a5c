@@ -560,21 +560,21 @@ function resolvePkgSpec(): string {
     if (process.env.A5C_PKG_SPEC) return String(process.env.A5C_PKG_SPEC);
     // Attempt to read our own package name@version from the dist context
     // This file runs from dist; walk up to find package.json
-    let dir = process.cwd();
-    for (let i = 0; i < 5; i++) {
-      const candidate = path.join(dir, "package.json");
-      try {
-        const raw = fs.readFileSync(candidate, "utf8");
-        const pkg = JSON.parse(raw);
-        const name = pkg?.name;
-        const version = pkg?.version;
-        if (name && version) return `${name}@${version}`;
-        if (name) return String(name);
-      } catch {}
-      const parent = path.dirname(dir);
-      if (parent === dir) break;
-      dir = parent;
-    }
+    // let dir = process.cwd();
+    // for (let i = 0; i < 5; i++) {
+    //   const candidate = path.join(dir, "package.json");
+    //   try {
+    //     const raw = fs.readFileSync(candidate, "utf8");
+    //     const pkg = JSON.parse(raw);
+    //     const name = pkg?.name;
+    //     const version = pkg?.version;
+    //     if (name && version) return `${name}@${version}`;
+    //     if (name) return String(name);
+    //   } catch {}
+    //   const parent = path.dirname(dir);
+    //   if (parent === dir) break;
+    //   dir = parent;
+    // }
   } catch {}
   // Fallback to published tag
   return "@a5c-ai/events@latest";
