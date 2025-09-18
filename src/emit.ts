@@ -1,5 +1,7 @@
 import fs from "node:fs";
 import { writeJSONFile, readJSONFile } from "./config.js";
+import os from "node:os";
+import path from "node:path";
 import { parseGithubEntity as parseGithubEntityUtil } from "./utils/githubEntity.js";
 import { redactObject } from "./utils/redact.js";
 import { createLogger } from "./log.js";
@@ -46,6 +48,27 @@ export async function handleEmit(
   }
 }
 
+function writeTempEventJson(obj: any): string {
+  try {
+    const dir = process.env.RUNNER_TEMP || process.env.TEMP || os.tmpdir();
+    const file = path.join(
+      dir,
+      `a5c-event-${Date.now()}-${Math.random().toString(36).slice(2)}.json`,
+    );
+    fs.writeFileSync(file, JSON.stringify(obj, null, 2), "utf8");
+    return file;
+  } catch {
+    // Fallback to current working directory
+    const file = `a5c-event-${Date.now()}.json`;
+    try {
+      fs.writeFileSync(file, JSON.stringify(obj, null, 2), "utf8");
+      return file;
+    } catch {
+      return "";
+    }
+  }
+}
+
 async function emitToGithub(obj: any): Promise<void> {
   const token = process.env.A5C_AGENT_GITHUB_TOKEN || process.env.GITHUB_TOKEN;
   if (!token) throw new Error("github sink requires GITHUB_TOKEN");
@@ -80,6 +103,14 @@ async function executeSideEffects(obj: any): Promise<void> {
     try {
       (globalThis as any).__A5C_EMIT_CTX__ = { event: cp };
     } catch {}
+    // Prepare temp file with the current event payload for scripts
+    const tmpEventPath = writeTempEventJson(cp);
+    const scriptEnv = {
+      ...(cp.env || {}),
+      EVENT_PATH: tmpEventPath,
+      A5C_EVENT_PATH: tmpEventPath,
+    };
+    cp.env = scriptEnv;
     // Fill missing entity from context
     const defaultEntity = inferEntityUrl(cp);
     if (cp && Array.isArray(cp.pre_set_labels) && cp.pre_set_labels.length) {
@@ -92,7 +123,11 @@ async function executeSideEffects(obj: any): Promise<void> {
     }
     if (cp && Array.isArray(cp.script) && cp.script.length) {
       dbg(`execute script lines=${cp.script.length}`);
-      await runScripts(cp.script, cp);
+      await runScripts(cp.script, {
+        event: cp,
+        env: scriptEnv,
+        event_path: tmpEventPath,
+      });
     }
     if (cp && Array.isArray(cp.set_labels) && cp.set_labels.length) {
       const filled = cp.set_labels.map((e: any) => ({
@@ -191,13 +226,17 @@ async function runScripts(lines: string[], ctx?: any): Promise<void> {
     if (!cmd) continue;
     // Expand ${{ }} using client payload context when possible
     try {
-      const ctx = (globalThis as any).__A5C_EMIT_CTX__ || {};
-      cmd = expandInlineTemplates(cmd, ctx);
+      const gctx = (globalThis as any).__A5C_EMIT_CTX__ || {};
+      const fullCtx = ctx || gctx;
+      cmd = expandInlineTemplates(cmd, fullCtx);
     } catch {}
     await new Promise<void>((resolve, reject) => {
       const child = exec(
         cmd,
-        { env: { ...process.env, ...(ctx?.env || {}) }, windowsHide: true },
+        {
+          env: { ...process.env, ...((ctx as any)?.env || {}) },
+          windowsHide: true,
+        },
         (err, stdout, stderr) => {
           if (stdout)
             try {
@@ -218,9 +257,15 @@ async function runScripts(lines: string[], ctx?: any): Promise<void> {
 function expandInlineTemplates(s: string, ctx: any): string {
   return String(s).replace(/\$\{\{\s*([^}]+)\s*\}\}/g, (_m, expr) => {
     try {
-      const fn = new Function("event", "env", `return (${expr});`);
+      const fn = new Function(
+        "event",
+        "env",
+        "event_path",
+        `return (${expr});`,
+      );
       const event = ctx?.event || ctx;
-      const v = fn(event, process.env);
+      const mergedEnv = { ...process.env, ...(ctx?.env || {}) };
+      const v = fn(event, mergedEnv, ctx?.event_path);
       return v == null ? "" : String(v);
     } catch {
       return "";
