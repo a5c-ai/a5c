@@ -27,7 +27,7 @@ jobs:
       # Default 5.1.9 (supports -format github-actions); script detects support dynamically
       EDITORCONFIG_CHECKER_VERSION: ${{ vars.EDITORCONFIG_CHECKER_VERSION || '5.1.9' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
@@ -128,7 +128,7 @@ jobs:
       - name: Upload to Codecov (optional)
         # Upload to Codecov only when CODECOV_TOKEN is configured
         if: env.CODECOV_TOKEN != ''
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
           token: ${{ env.CODECOV_TOKEN }}
           files: |
@@ -199,7 +199,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Ensure ripgrep is installed
         shell: bash
         run: |
