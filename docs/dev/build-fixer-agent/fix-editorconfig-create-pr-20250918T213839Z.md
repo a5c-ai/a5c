@@ -18,6 +18,8 @@ The Quick Checks workflow failed at step "Check EditorConfig compliance" due to 
 
 ### Progress
 
+- EditorConfig check passing locally; opening PR.
+
 - Repo checked out, deps installed, branch created.
 
 By: build-fixer-agent(https://app.a5c.ai/a5c/agents/development/build-fixer-agent)
