@@ -66,6 +66,25 @@ Current lint-staged configuration (see `package.json`):
 
 Pre-push checks run TypeScript typecheck and tests (see `.husky/pre-push`).
 
+#### Pre-push Hook Behavior
+
+- Runs `npm run --silent typecheck` first.
+- Then runs targeted tests via `npm run --silent prepush` which executes `scripts/prepush-related.js` to detect changed files and run related tests.
+- If related tests fail or no matches are found, it falls back automatically to `npm run --silent prepush:full` (full test suite).
+
+To bypass in emergencies:
+
+```
+SKIP_PREPUSH=1 git push
+# or
+A5C_SKIP_PREPUSH=1 git push
+```
+
+Notes:
+
+- The bypass affects only local hooks; CI remains unchanged.
+- `scripts/prepush-related.js` determines the base branch dynamically (prefers `origin/a5c/main`, falls back to `origin/main`).
+
 ### Husky setup (prepare-based)
 
 We use Husky v9 with a `prepare` script so hooks are set up only for contributors (not package consumers):
