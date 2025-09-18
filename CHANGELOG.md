@@ -1,3 +1,9 @@
+## 1.13.0 (2025-09-18)
+
+* Merge pull request #935 from a5c-ai/a5c/main ([4c9fa1d](https://github.com/a5c-ai/events/commit/4c9fa1d)), closes [#935](https://github.com/a5c-ai/events/issues/935)
+* feat(cli): introduce predefined CLI command templates and run command ([8943664](https://github.com/a5c-ai/events/commit/8943664))
+* chore(deps): align vitest and coverage plugin to v3.2.4; verify tests pass (#933) ([1cdbb3b](https://github.com/a5c-ai/events/commit/1cdbb3b)), closes [#933](https://github.com/a5c-ai/events/issues/933)
+
 ## 1.12.0 (2025-09-18)
 
 * Merge branch 'a5c/main' of https://github.com/a5c-ai/events into a5c/main ([fa5a51a](https://github.com/a5c-ai/events/commit/fa5a51a))
