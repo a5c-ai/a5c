@@ -21,3 +21,14 @@ Start: 2025-09-18T11:17:00Z
 - Default format: `pretty`; recommend `json` in CI.
 
 ## Next
+
+End: 2025-09-18T11:27:59Z
+
+## Results
+
+- Implemented global flags in src/cli.ts (preAction hook maps to env).
+- Added src/log.ts (zero-deps logger).
+- Wired src/reactor.ts and src/emit.ts to shared logger.
+- Updated docs: docs/observability.md, docs/cli/reference.md, docs/user/sdk-quickstart.md.
+- Added tests: test/cli.help.flags.test.ts, test/log.logger.test.ts.
+- All tests passing: npm test.
