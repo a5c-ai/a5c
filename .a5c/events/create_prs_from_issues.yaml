@@ -42,7 +42,7 @@ pre_set_labels:
     remove_labels: [create_pr_requested]
 env:
   - name: HEAD_BRANCH
-    value: issue/a5c/{{ event.issue.number }}
+    value: issue/a5c/${{ event.issue.number }}
   - name: BASE_BRANCH
     value: a5c/main
   - name: PR_TITLE
