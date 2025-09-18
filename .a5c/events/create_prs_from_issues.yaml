@@ -58,7 +58,7 @@ env:
   - name: INITIAL_COMMIT_FILE_CONTENT
     value: ${{ event.issue.body }}
   - name: INITIAL_COMMIT_FILE_NAME
-    value: /docs/issues/issue-${{ event.issue.number }}.md
+    value: docs/issues/issue-${{ event.issue.number }}.md
 script_template_uri: github://a5c-ai/events/branch/a5c%2Fmain/.a5c/create-pr.sh #optional - falls back to ${{ env.A5C_AGENT_SCRIPT_URI || vars.A5C_AGENT_SCRIPT_URI || 'github://a5c-ai/events/branch/a5c%2Fmain/.a5c/agent.sh' }}
 set_labels:
   - entity: ${{ event.issue.html_url }}
