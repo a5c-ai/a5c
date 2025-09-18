@@ -318,7 +318,10 @@ function evalExpr(expr: string, ctx: Context, currentUri: string): any {
     `return (${compiled});`,
   );
   const include = (u: string) => renderTemplate(u, ctx, currentUri);
-  return fn(ctx.event, ctx.event, ctx.env, ctx.vars, include);
+  // Bind JS `this` to the loop item when present so that
+  // expressions like `{{ this }}` inside `{{#each}}` resolve correctly.
+  const thisArg = ctx?.vars?.this;
+  return fn.call(thisArg, ctx.event, ctx.event, ctx.env, ctx.vars, include);
 }
 
 function preprocess(expr: string): string {
