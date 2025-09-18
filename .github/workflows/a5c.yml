@@ -159,7 +159,7 @@ jobs:
         if: steps.filter-self.outputs.skip != 'true'
         uses: a5c-ai/generate-token-action@main
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         if: steps.filter-self.outputs.skip != 'true'
         with:
           fetch-depth: 0
