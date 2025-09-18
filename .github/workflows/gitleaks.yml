@@ -24,19 +24,44 @@ jobs:
         with:
           fetch-depth: 0
 
+      # Prefer official Gitleaks action when a license is available
       - name: Run Gitleaks (fast PR scan)
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && secrets.GITLEAKS_LICENSE != ''
         uses: gitleaks/gitleaks-action@v2
+        env:
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
         with:
           # Fast, workspace-only scan for PRs to reduce noise and time
           args: "detect --no-git --redact --config-path gitleaks.toml --report-format sarif --report-path gitleaks.sarif"
 
       - name: Run Gitleaks (push scan)
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' && secrets.GITLEAKS_LICENSE != ''
         uses: gitleaks/gitleaks-action@v2
+        env:
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
         with:
           # Full scan against repo history on protected branches
           args: "detect --redact --config-path gitleaks.toml --report-format sarif --report-path gitleaks.sarif"
+
+      # Fallback to TruffleHog when no Gitleaks license is configured
+      - name: Run TruffleHog (fast PR scan fallback)
+        if: github.event_name == 'pull_request' && secrets.GITLEAKS_LICENSE == ''
+        run: |
+          echo "Running TruffleHog fallback: PR workspace scan"
+          docker run --rm -v "$PWD:/pwd" trufflesecurity/trufflehog:latest filesystem \
+            --directory=/pwd \
+            --no-update \
+            --only-verified \
+            --fail
+
+      - name: Run TruffleHog (push scan fallback)
+        if: github.event_name == 'push' && secrets.GITLEAKS_LICENSE == ''
+        run: |
+          echo "Running TruffleHog fallback: full repository filesystem scan"
+          docker run --rm -v "$PWD:/pwd" trufflesecurity/trufflehog:latest filesystem \
+            --directory=/pwd \
+            --no-update \
+            --fail
 
       - name: Upload SARIF results
         if: always() && hashFiles('gitleaks.sarif') != ''
