@@ -30,7 +30,8 @@ exclude = [
   "^schema:",
   "example.com",
   "localhost(:[0-9]+)?$",
-  "127\\.0\\.0\\.1(:[0-9]+)?$"
+  "127\\.0\\.0\\.1(:[0-9]+)?$",
+  "^https://github\\.com/a5c-ai/events/issues(/.*)?$"
 ]
 
 # Do not require HTTPS strictly (some resources are http-only)
