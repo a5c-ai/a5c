@@ -15,3 +15,10 @@ Issue: #898 – docs example uses `github://a5c-ai/events/a5c/main/README.md`, b
 
 - Uses Octokit `repos.getContent` with provided token or env token.
 - Integration test skips when neither `A5C_AGENT_GITHUB_TOKEN` nor `GITHUB_TOKEN` is set.
+
+## Results
+
+- Implemented longest-prefix ref split in `src/generateContext.ts` for `github://` URIs.
+- Added `test/generateContext.github.test.ts` (skips without token).
+- Updated `docs/cli/reference.md` with note about slash-containing refs and optional URL-encoding.
+- Built, linted, typechecked, and ran tests: all passing locally.
