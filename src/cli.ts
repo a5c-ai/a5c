@@ -20,6 +20,54 @@ program
   .description("Events CLI - mentions, normalize and enrich")
   .version(readVersion());
 
+// Global logging flags (mapped to env for downstream code)
+program
+  .option(
+    "--log-level <level>",
+    "logging level (info|debug|warn|error); maps to A5C_LOG_LEVEL",
+  )
+  .addOption(
+    new Option(
+      "--log-format <format>",
+      "logging format (pretty|json); maps to A5C_LOG_FORMAT",
+    ).choices(["pretty", "json"] as any),
+  );
+
+// Normalize and export logging opts to env before any command action
+program.hook("preAction", (thisCmd) => {
+  const opts = thisCmd.optsWithGlobals?.() || thisCmd.opts?.() || {};
+  const lvl = opts.logLevel || opts["log-level"]; // commander camelCase
+  const fmt = opts.logFormat || opts["log-format"]; // commander camelCase
+  if (lvl) {
+    const v = String(lvl).toLowerCase();
+    const allowed = new Set([
+      "debug",
+      "info",
+      "warn",
+      "error",
+      "trace",
+      "warning",
+    ]);
+    if (!allowed.has(v)) {
+      process.stderr.write(
+        `invalid --log-level: ${lvl} (expected info|debug|warn|error)\n`,
+      );
+      process.exit(2);
+    }
+    process.env.A5C_LOG_LEVEL = v === "warning" ? "warn" : v;
+  }
+  if (fmt) {
+    const v = String(fmt).toLowerCase();
+    if (!(v === "pretty" || v === "json")) {
+      process.stderr.write(
+        `invalid --log-format: ${fmt} (expected pretty|json)\n`,
+      );
+      process.exit(2);
+    }
+    process.env.A5C_LOG_FORMAT = v;
+  }
+});
+
 // Explicit `version` subcommand for parity with flag usage
 program
   .command("version")

@@ -7,6 +7,15 @@ description: Commands, flags, and examples for the Events CLI (`mentions`, `norm
 
 The CLI transforms provider payloads into a Normalized Event (NE), extracts mentions, can enrich with repository context, and can apply a reactor to generate custom events. Implemented with `commander` (see `src/cli.ts`).
 
+## Global Flags
+
+These flags can be used with any subcommand and affect logging across the CLI:
+
+- `--log-level <info|debug|warn|error>` — maps to env `A5C_LOG_LEVEL`.
+- `--log-format <pretty|json>` — maps to env `A5C_LOG_FORMAT`.
+
+Defaults: `info` level and `pretty` format. In CI, prefer `--log-format=json` for structured logs.
+
 ## Commands
 
 ### `events version`
