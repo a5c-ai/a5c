@@ -54,8 +54,11 @@ if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     esac
     CLEAN_FETCH_REFS="$CLEAN_FETCH_REFS $r"
   done
-  # Fetch quietly; ignore failures for non-existent refs
-  git fetch --no-tags --depth=1 origin $CLEAN_FETCH_REFS >/dev/null 2>&1 || true
+  # Fetch target branches explicitly by refspec (robust even with shallow default)
+  for r in $CLEAN_FETCH_REFS; do
+    [ -n "$r" ] || continue
+    git fetch --no-tags --depth=1 origin "+refs/heads/$r:refs/remotes/origin/$r" >/dev/null 2>&1 || true
+  done
 
   # Normalize and check out requested ref as a proper local branch
   REF_BRANCH="$GITHUB_REF"
@@ -101,7 +104,7 @@ if printf '%s' "$HEAD_BRANCH" | grep -q '{{'; then
 fi
 
 # Create branch if it doesn't exist (idempotent)
-git fetch origin "$BASE_BRANCH" >/dev/null 2>&1 || true
+git fetch --no-tags --depth=1 origin "+refs/heads/$BASE_BRANCH:refs/remotes/origin/$BASE_BRANCH" >/dev/null 2>&1 || true
 
 if git ls-remote --exit-code --heads origin "$HEAD_BRANCH" >/dev/null 2>&1; then
   echo "Branch $HEAD_BRANCH already exists on origin"
@@ -140,8 +143,13 @@ if command -v gh >/dev/null 2>&1; then
         DRAFT_OPT="--draft"
       fi
 
+      # Sanitize labels: split, trim, drop empties, dedupe
+      CLEAN_LABELS=""
       if [ -n "${PR_LABELS}" ]; then
-        gh pr create --base "$BASE_BRANCH" --head "$HEAD_BRANCH" --title "$PR_TITLE" --body-file "$PR_BODY_FILE" ${DRAFT_OPT} --label "$PR_LABELS"
+        CLEAN_LABELS=$(printf '%s' "$PR_LABELS" | tr ',' '\n' | sed 's/^ *//; s/ *$//' | awk 'length>0{ if(!seen[$0]++){ if (out) out=out "," $0; else out=$0 } } END{ print out }')
+      fi
+      if [ -n "${CLEAN_LABELS}" ]; then
+        gh pr create --base "$BASE_BRANCH" --head "$HEAD_BRANCH" --title "$PR_TITLE" --body-file "$PR_BODY_FILE" ${DRAFT_OPT} --label "$CLEAN_LABELS"
       else
         gh pr create --base "$BASE_BRANCH" --head "$HEAD_BRANCH" --title "$PR_TITLE" --body-file "$PR_BODY_FILE" ${DRAFT_OPT}
       fi

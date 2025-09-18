@@ -1060,6 +1060,16 @@ function transformPipeline(segment: string): string {
       expr = `(${expr}).map(x => x${accessor})`;
       continue;
     }
+    const mapAttrNoQuoteMatch = /^map\(attribute=([^\)]+)\)$/.exec(t);
+    if (mapAttrNoQuoteMatch) {
+      const raw = mapAttrNoQuoteMatch[1].trim();
+      const prop = raw.replace(/^['\"]/, "").replace(/['\"]$/, "");
+      const accessor = /[^a-zA-Z0-9_]/.test(prop)
+        ? `[${JSON.stringify(prop)}]`
+        : `.${prop}`;
+      expr = `(${expr}).map(x => x${accessor})`;
+      continue;
+    }
     const containsMatch = /^contains\((.+)\)$/.exec(t);
     if (containsMatch) {
       const arg = containsMatch[1].trim();

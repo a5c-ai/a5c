@@ -29,7 +29,7 @@ if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     refs/heads/*) CLEAN_REF=${CLEAN_REF#refs/heads/} ;;
   esac
   if [ -n "$CLEAN_REF" ]; then
-    git fetch --no-tags --depth=1 origin "$CLEAN_REF" >/dev/null 2>&1 || true
+    git fetch --no-tags --depth=1 origin "+refs/heads/$CLEAN_REF:refs/remotes/origin/$CLEAN_REF" >/dev/null 2>&1 || true
   fi
   REF_BRANCH="$GITHUB_REF"
   case "$REF_BRANCH" in
