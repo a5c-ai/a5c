@@ -1,15 +1,15 @@
-# Resolved: Spec vs implementation (include_patch)
+# [Resolved] Spec default vs implementation: include_patch
 
-Priority: none (resolved)
+Priority: resolved
 Category: documentation
 
-Status:
+Outcome:
 
-- Specs and implementation both default `include_patch` to `false`.
-- Source of truth: `docs/cli/reference.md#events-enrich`.
-- Implementation: `src/enrich.ts` uses `opts.flags?.include_patch ?? false`.
-- Resolution PR: #892
+- Implementation and docs both default `include_patch` to `false`.
+- Users must opt-in via `--flag include_patch=true` to include diff patches.
 
-Rationale:
+References:
 
-- Defaulting to `false` is safer (diffs can contain secrets) and produces smaller outputs. Users may opt‑in as needed with `--flag include_patch=true`.
+- Code: `src/enrich.ts` (default false)
+- Docs: `docs/cli/reference.md#events-enrich`
+- Tests: `tests/enrich.flags.test.ts`, `tests/cli.enrich.flags.test.ts`

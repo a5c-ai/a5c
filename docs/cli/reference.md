@@ -250,6 +250,25 @@ events enrich --in FILE [--out FILE] [--rules FILE] \
 - `--select PATHS`: comma-separated dot paths to include in output
 - `--filter EXPR`: filter expression `path[=value]`; if it doesn't pass, exits with code `2`
 
+Input default in GitHub Actions:
+
+- If `--in` is omitted, the CLI reads from `GITHUB_EVENT_PATH` when set (GitHub Actions). This mirrors `normalize --source actions` behavior. When the env var is missing, the CLI exits with code `2` and prints a clear error.
+
+Example (omitting `--in` in Actions):
+
+```yaml
+jobs:
+  enrich:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: npx @a5c-ai/events enrich --use-github --out enriched.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
 ### Mentions scanning
 
 - `mentions.scan.changed_files=true|false` (default: `true`) – when `true`, scan changed files' patches for `@mentions` within code comments and add to `enriched.mentions[]` with `source="code_comment"` and `location` hints.
@@ -416,6 +435,43 @@ Inspect composed if present:
 # Given prior command output on stdin
 jq '(.composed // []) | map({key, reason})'
 ```
+
+### `events generate_context`
+
+Render a prompt/context file from templates and event context. Supports local files and `github://` URIs, basic templating (`{{ expr }}`, `{{#if}}`, `{{#each}}`, and partials `{{> uri }}`), and variable injection via `--var`.
+
+Usage:
+
+```bash
+events generate_context [--in FILE] --template <uri> [--out FILE] [--var KEY=VAL...] [--token STRING]
+```
+
+- `--in FILE`: input JSON event (defaults to stdin when omitted)
+- `--template <uri>`: root template URI (file path or `github://owner/repo/ref/path`)
+- `--out FILE`: write output to file (defaults to stdout)
+- `--var KEY=VAL...`: additional template variables (repeatable). Inside templates, variables are available under `vars.*` and the input event under `event.*`.
+- `--token STRING`: GitHub token for `github://` includes (defaults to `A5C_AGENT_GITHUB_TOKEN` or `GITHUB_TOKEN`)
+
+Examples:
+
+```bash
+# Local file input to stdout
+events generate_context --in samples/pull_request.synchronize.json \
+  --template docs/examples/context.md
+
+# Pipe normalized event and write to file
+events normalize --in samples/pull_request.synchronize.json \
+  | events generate_context --template docs/examples/context.md --out out.md
+
+# Include a file from GitHub at a specific ref
+events generate_context --in samples/push.json \
+  --template 'github://a5c-ai/events/main/docs/examples/context.md'
+```
+
+Notes:
+
+- Template expressions support `{{ expr }}` with access to `event`, `env`, `vars`, and an `include(uri)` helper. Use `{{#each}}` to iterate arrays (current item available as `{{ this }}`).
+- For GitHub includes, pass a token via `--token` or env (`A5C_AGENT_GITHUB_TOKEN` preferred).
 
 ### `events reactor`
 
