@@ -1,0 +1,37 @@
+# Lychee configuration for docs link checking
+# Keep checks fast and reduce false positives
+
+# General
+max_retries = 2
+retry_wait_time = 2
+timeout = 10
+max_concurrency = 16
+user_agent = "a5c-ai/events-docs-link-check"
+cache = true
+max_cache_age = "1d"
+
+# Accept statuses that are often false positives for bots
+# - 429 Too Many Requests (rate limiting)
+# - 403 Forbidden (bot or geo blocks)
+accept = [200, 201, 202, 203, 204, 206, 301, 302, 303, 307, 308, 403, 429]
+
+# Exclude patterns (private/schemes/placeholders)
+exclude = [
+  "^mailto:",
+  "^tel:",
+  "^data:",
+  "^about:",
+  "^javascript:",
+  "^vscode:",
+  "^chrome:",
+  "^file:",
+  "^#",              # intra-doc anchors only
+  "\\{\\{.*\\}\\}", # templated placeholders
+  "^schema:",
+  "example.com",
+  "localhost(:[0-9]+)?$",
+  "127\\.0\\.0\\.1(:[0-9]+)?$"
+]
+
+# Do not require HTTPS strictly (some resources are http-only)
+require_https = false
