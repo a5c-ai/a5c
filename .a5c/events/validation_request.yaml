@@ -38,7 +38,7 @@ on:
       # is a draft PR or already merged
       - expression: ${{ event.pull_request.draft == true || event.pull_request.merged == true }}
       # doesn't have the 'validation' label
-      - expression: ${{ event.labels | contains('validation') == false || event.label.name != 'validation' }}
+      - expression: ${{ (event.type != 'labeled' && event.labels | contains('validation') == false) || (event.type == 'labeled' && event.label.name != 'validation') }}
       # if validation in progress or already requested
       - expression: ${{ event.labels | contains('validation_in_progress') || event.labels | contains('validation_requested') }}
 emit:
