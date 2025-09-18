@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import YAML from "yaml";
+import { execFileSync } from "node:child_process";
 import { readJSONFile } from "./config.js";
 import {
   parseGithubEntity,
@@ -820,9 +821,21 @@ function resolveTemplateString(
         "env",
         "vars",
         "secrets",
+        "read_github_content",
+        "load_yaml",
+        "select",
         `return (${compiled});`,
       );
-      return fn(eventArg, { ...ctx }, process.env, vars, secrets);
+      return fn(
+        eventArg,
+        { ...ctx },
+        process.env,
+        vars,
+        secrets,
+        readGithubContentSync,
+        loadYAMLHelper,
+        selectHelper,
+      );
     } catch {
       return null;
     }
@@ -840,9 +853,21 @@ function resolveTemplateString(
         "env",
         "vars",
         "secrets",
+        "read_github_content",
+        "load_yaml",
+        "select",
         `return (${compiled});`,
       );
-      const v = fn(eventArg, { ...ctx }, process.env, vars, secrets);
+      const v = fn(
+        eventArg,
+        { ...ctx },
+        process.env,
+        vars,
+        secrets,
+        readGithubContentSync,
+        loadYAMLHelper,
+        selectHelper,
+      );
       return v == null ? "" : String(v);
     } catch {
       return "";
@@ -1012,6 +1037,18 @@ function transformPipeline(segment: string): string {
       expr = `(${expr}).includes(${arg})`;
       continue;
     }
+    const loadYamlMatch =
+      /^load_yaml\(\)$/.exec(t) || t === "load_yaml" ? ["load_yaml"] : null;
+    if (loadYamlMatch) {
+      expr = `load_yaml(${expr})`;
+      continue;
+    }
+    const selectMatch = /^select\((.+)\)$/.exec(t);
+    if (selectMatch) {
+      const arg = selectMatch[1].trim();
+      expr = `select(${expr}, ${arg})`;
+      continue;
+    }
     // Unknown operator, keep as-is
     expr = `${expr}`;
   }
@@ -1081,4 +1118,61 @@ function normalizeLabels(v: any): string[] {
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean);
+}
+
+// Helper functions available to expression evaluation
+function readGithubContentSync(
+  repoHtmlUrlOrOwnerRepo: string,
+  ref: string,
+  filePath: string,
+): string {
+  try {
+    const token =
+      process.env.A5C_AGENT_GITHUB_TOKEN || process.env.GITHUB_TOKEN;
+    const parsed = parseGithubOwnerRepo(String(repoHtmlUrlOrOwnerRepo));
+    const owner = parsed?.owner;
+    const repo = parsed?.repo;
+    if (!owner || !repo || !ref || !filePath) return "";
+    const clean = String(filePath).replace(/^\/+/, "");
+    const url = `https://raw.githubusercontent.com/${owner}/${repo}/${encodeURIComponent(
+      ref,
+    )}/${clean}`;
+    const args = ["-sSL", url];
+    if (token) args.splice(0, 0, "-H", `Authorization: Bearer ${token}`);
+    const buf = execFileSync("curl", args, {
+      stdio: ["ignore", "pipe", "ignore"],
+    });
+    return buf.toString("utf8");
+  } catch {
+    return "";
+  }
+}
+
+function loadYAMLHelper(s: string): any {
+  try {
+    if (s == null) return null;
+    // load first document by default; if multiple docs, return array
+    const docs = YAML.parseAllDocuments(String(s), { prettyErrors: false });
+    if (!docs || !docs.length) return null;
+    if (docs.length === 1) return (docs[0] as any).toJSON();
+    return docs.map((d: any) => d.toJSON());
+  } catch {
+    return null;
+  }
+}
+
+function selectHelper(obj: any, pathExpr: string): any {
+  try {
+    const p = String(pathExpr || "").trim();
+    if (!p) return obj;
+    const parts = p.split(".");
+    let cur: any = obj;
+    for (const key of parts) {
+      if (cur == null) return undefined;
+      cur = cur[key as any];
+    }
+    return cur;
+  } catch {
+    return undefined;
+  }
 }

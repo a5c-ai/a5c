@@ -59,6 +59,8 @@ export async function handleEnrich(opts: {
           baseEvent?.after ||
             baseEvent?.workflow_run?.id ||
             baseEvent?.pull_request?.id ||
+            baseEvent?.issue?.id ||
+            baseEvent?.comment?.id ||
             "temp-" + Math.random().toString(36).slice(2),
         ),
         provider: "github",
@@ -66,13 +68,23 @@ export async function handleEnrich(opts: {
           ? "pull_request"
           : baseEvent?.workflow_run
             ? "workflow_run"
-            : baseEvent?.ref
-              ? "push"
-              : "commit",
+            : baseEvent?.comment && baseEvent?.issue
+              ? "issue_comment"
+              : baseEvent?.issue
+                ? "issues"
+                : baseEvent?.client_payload
+                  ? "repository_dispatch"
+                  : baseEvent?.ref
+                    ? "push"
+                    : "commit",
         occurred_at: new Date(
           baseEvent?.head_commit?.timestamp ||
             baseEvent?.workflow_run?.updated_at ||
             baseEvent?.pull_request?.updated_at ||
+            baseEvent?.comment?.updated_at ||
+            baseEvent?.comment?.created_at ||
+            baseEvent?.issue?.updated_at ||
+            baseEvent?.issue?.created_at ||
             Date.now(),
         ).toISOString(),
         payload: baseEvent,

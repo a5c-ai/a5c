@@ -7,6 +7,8 @@ on:
       - expression: ${{ (event.type == 'opened' || event.type == 'reopened')}}
       # label triage was added
       - expression: ${{ event.type == 'labeled' && event.label.name == 'triage' }}
+      # triage enabled in this repo on the a5c/main branch (can be current or event.repository.default_branch) - reads from github content for the current branch (read_github_content fallback to empty string)
+      - expression: ${{ read_github_content(event.repository.html_url, "a5c/main", '.a5c/triage.yaml') | load_yaml | select('triage.enabled') }}
     skip:
       # is a issue or already closed
       - expression: ${{ event.issue.closed == true }}
