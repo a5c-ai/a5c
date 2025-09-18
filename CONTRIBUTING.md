@@ -89,12 +89,18 @@ Notes:
 If you must bypass locally (e.g., to unblock a hotfix), you can temporarily set one of:
 
 ```
+# Pre-commit bypass
 SKIP_PRECOMMIT=1 git commit -m "wip: bypass pre-commit"
 # or
 A5C_SKIP_PRECOMMIT=1 git commit -m "wip: bypass pre-commit"
+
+# Pre-push bypass
+SKIP_PREPUSH=1 git push
+# or
+A5C_SKIP_PREPUSH=1 git push
 ```
 
-The script also recognizes the legacy `SKIP_CHECKS=1`. Use the explicit vars above when possible. Please follow up with a separate commit to address issues.
+The scripts also recognize the legacy `SKIP_CHECKS=1` in some hooks. Use the explicit vars above when possible. Please follow up with a separate commit to address issues.
 
 ### Configuration
 
