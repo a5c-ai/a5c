@@ -2,18 +2,39 @@
 on:
   any:
     filters:
+      - expression: ${{ env.A5C_GLOBAL_HANDLER == 'true' }}
+    skip:
+      - expression: ${{ event.labels | contains('a5c') == false }}
+script:
+  - |
+    echo "Global handler for 'any' for events containing 'a5c' label"
+---
+on:
+  any:
+    filters:
       - expression: ${{ env.VALIDATION_REQUEST_IN_PROGRESS_WARNING == 'true' && event.type == 'synchronize' && event.labels | contains('validation') }}
 script:
   - |
     echo "PR branch changed while validation is in progress - ${{ event.pull_request.html_url }}"
 ---
+name: Validation Request
 on:
   pull_request:
     filters:
-      - expression: ${{ event.labels | contains('validation') && event.type == 'ready_for_review' }}
+      # PR is ready for review, opened, reopened
+      - expression: ${{ (event.type == 'opened' || event.type == 'reopened' || event.type == 'ready_for_review')}}
+      # validation label was added
+      - expression: ${{ event.type == 'labeled' && event.label.name == 'validation' }}
+    skip:
+      # is a draft PR or already merged
+      - expression: ${{ event.pull_request.draft == true || event.pull_request.merged == true }}
+      # doesn't have the 'validation' label
+      - expression: ${{ event.labels | contains('validation') == false || event.label.name != 'validation' }}
+      # if validation in progress or already requested
+      - expression: ${{ event.labels | contains('validation_in_progress') || event.labels | contains('validation_requested') }}
 emit:
-  pull_request_ready_for_review:
-    type: ready_for_review
+  validation_request:
+    type: pr_ready
     payload:
       original_event: ${{ event }}
       pr_ref: ${{ event.pull_request.head.ref }}
@@ -26,18 +47,6 @@ set_labels:
 script:
   - |
     echo "Validation request for PR ${{ event.pull_request.html_url }} added label validation"
----
-on:
-  pull_request_ready_for_review:
-    filters:
-      - expression: ${{ event.labels | contains('validation') }}
-emit:
-  validation_request:
-    type: created
-    payload:
-      original_event: ${{ event.original_event }}
-      pull_request: ${{ event.pull_request }}
-      ref: ${{ event.ref }}
 ---
 on:
   validation_request:
