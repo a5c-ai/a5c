@@ -1,3 +1,20 @@
+## <small>1.11.3 (2025-09-18)</small>
+
+* 🚦 Gate CodeQL when GHAS is disabled (avoid CI failure) (#919) ([e97f7fc](https://github.com/a5c-ai/events/commit/e97f7fc)), closes [#919](https://github.com/a5c-ai/events/issues/919)
+* 🚧 ci: reduce Gitleaks fallback noise on push (verified-only) (#924) ([35c359a](https://github.com/a5c-ai/events/commit/35c359a)), closes [#924](https://github.com/a5c-ai/events/issues/924) [#924](https://github.com/a5c-ai/events/issues/924)
+* Merge branch 'a5c/main' of https://github.com/a5c-ai/events into a5c/main ([d4b07eb](https://github.com/a5c-ai/events/commit/d4b07eb))
+* Merge branch 'a5c/main' of https://github.com/a5c-ai/events into a5c/main ([5cd91db](https://github.com/a5c-ai/events/commit/5cd91db))
+* Merge pull request #922 from a5c-ai/a5c/fix/genctx-each-this-issue-920 ([58d451c](https://github.com/a5c-ai/events/commit/58d451c)), closes [#922](https://github.com/a5c-ai/events/issues/922) [#920](https://github.com/a5c-ai/events/issues/920)
+* Merge pull request #927 from a5c-ai/a5c/main ([7712f5b](https://github.com/a5c-ai/events/commit/7712f5b)), closes [#927](https://github.com/a5c-ai/events/issues/927)
+* chore(dev): add build-fixer note for generateContext this binding (#923) ([2ebc057](https://github.com/a5c-ai/events/commit/2ebc057)), closes [#923](https://github.com/a5c-ai/events/issues/923)
+* chore(merge): resolve conflict in generateContext.ts aligning with base 'this' binding strategy ([11cdace](https://github.com/a5c-ai/events/commit/11cdace))
+* fix(generate-context): bind JS this to each item so {{ this }} resolves correctly (fixes #920) ([7ad249e](https://github.com/a5c-ai/events/commit/7ad249e)), closes [#920](https://github.com/a5c-ai/events/issues/920)
+* fix(validation): enhance pull request label validation logic ([7547981](https://github.com/a5c-ai/events/commit/7547981))
+* fix(workflow): add Gitleaks license gate with TruffleHog fallback for org scans\n\n- Use gitleaks ac ([b71392b](https://github.com/a5c-ai/events/commit/b71392b)), closes [#918](https://github.com/a5c-ai/events/issues/918)
+* docs(build): note gitleaks v2 failure and planned fix (#921) ([44f7eeb](https://github.com/a5c-ai/events/commit/44f7eeb)), closes [#921](https://github.com/a5c-ai/events/issues/921)
+* docs(dev): results and verification for generate_context each/this fix ([8573af7](https://github.com/a5c-ai/events/commit/8573af7))
+* refactor: streamline context generation and template rendering ([8c9c754](https://github.com/a5c-ai/events/commit/8c9c754))
+
 ## <small>1.11.2 (2025-09-18)</small>
 
 * ✨ CLI logging flags: --log-level/--log-format (Option A) (#895) ([92f3b3a](https://github.com/a5c-ai/events/commit/92f3b3a)), closes [#895](https://github.com/a5c-ai/events/issues/895) [#880](https://github.com/a5c-ai/events/issues/880) [#880](https://github.com/a5c-ai/events/issues/880) [#880](https://github.com/a5c-ai/events/issues/880)
