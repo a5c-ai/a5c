@@ -56,13 +56,12 @@ When multiple jobs or a matrix run produce per-job artifacts, an aggregate artif
   - Honor existing ids from environment: `GITHUB_RUN_ID`, `GITHUB_WORKFLOW`, `GITHUB_REF`, `TRACE_ID`, `REQUEST_ID`.
   - Allow override via `A5C_CORRELATION_ID`.
 
-### CLI Behavior (current and proposed)
+### CLI Behavior
 
-> Status: Proposed. Not yet implemented in CLI. This PR documents the toggles and proposes CLI flags; implementation to follow if accepted (issue #795).
-
-- Current: CLI prints human messages; tests ensure outputs are safe for logging.
-- Proposed: Add an env toggle for JSON logs: `A5C_LOG_FORMAT=json|pretty` (default pretty for humans; CI examples recommend `json`).
-- Proposed: Add level filter via `A5C_LOG_LEVEL=info|debug|warn|error` (fallback to `info`).
+- Implemented: Global flags and env toggles control CLI logging.
+  - `--log-format <pretty|json>` ↔ `A5C_LOG_FORMAT`
+  - `--log-level <info|debug|warn|error>` ↔ `A5C_LOG_LEVEL`
+- Defaults: `pretty` format for humans, `info` level. In CI, prefer `--log-format=json` (or `A5C_LOG_FORMAT=json`).
 
 ### SDK Integration
 
@@ -77,7 +76,7 @@ export interface LoggerLike {
 }
 ```
 
-Consumers pass a `LoggerLike` to APIs; when omitted, a default console-based logger is used. When `A5C_LOG_FORMAT=json`, default logger emits JSON lines with the fields above.
+Consumers pass a `LoggerLike` to APIs; when omitted, a default console-based logger is used. When `A5C_LOG_FORMAT=json`, the CLI’s default logger emits JSON lines with the fields above.
 
 ## Tracing (OpenTelemetry)
 
@@ -125,9 +124,9 @@ try {
 }
 ```
 
-## Proposed Runtime Shim (separate PR)
+## Runtime Shim
 
-File: `src/log.ts` (not implemented here). Responsibilities:
+File: `src/log.ts`. Responsibilities:
 
 - Resolve `A5C_LOG_LEVEL` and `A5C_LOG_FORMAT`.
 - Build a default `LoggerLike` that emits JSON or pretty output.
@@ -149,9 +148,7 @@ export interface LoggerOptions {
   format?: "json" | "pretty";
   correlationId?: string;
 }
-export function createDefaultLogger(opts?: LoggerOptions): LoggerLike {
-  /* impl in follow-up */
-}
+export function createDefaultLogger(opts?: LoggerOptions): LoggerLike {}
 export function withCorr(logger: LoggerLike, corr: string): LoggerLike {
   /* impl in follow-up */
 }
@@ -159,8 +156,8 @@ export function withCorr(logger: LoggerLike, corr: string): LoggerLike {
 
 ## Env and CI Guidance
 
-- Set `A5C_LOG_FORMAT=json` in CI for machine parsing.
-- Set `A5C_LOG_LEVEL=info` (or `debug` for triage builds only).
+- Set `A5C_LOG_FORMAT=json` (or `--log-format=json`) in CI for machine parsing.
+- Set `A5C_LOG_LEVEL=info` (or `--log-level=debug` for triage builds only).
 - Propagate GitHub context to logs and traces using default envs in Actions (`GITHUB_SHA`, `GITHUB_RUN_ID`, etc.).
 - If using OTEL, set `OTEL_SERVICE_NAME`, `OTEL_EXPORTER_OTLP_ENDPOINT`, and sampling envs per your backend.
 
@@ -172,10 +169,8 @@ export function withCorr(logger: LoggerLike, corr: string): LoggerLike {
 
 ## Follow‑ups
 
-1. Implement `src/log.ts` shim with zero external deps and tests.
-2. Wire optional OTEL spans guarded by a dynamic import/try-catch.
-3. Add CLI flags `--log-format`, `--log-level` mirroring env toggles.
-4. Cookbook examples in `docs/recipes/*.md` for pino, loglevel, Sentry, OTEL.
+1. Wire optional OTEL spans guarded by a dynamic import/try-catch.
+2. Cookbook examples in `docs/recipes/*.md` for pino, loglevel, Sentry, OTEL.
 
 ## Dashboard wiring
 
