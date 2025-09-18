@@ -47,10 +47,16 @@ Programmatic SDK example:
 
 - See SDK Quickstart: `docs/user/sdk-quickstart.md` (minimal example using `mapToNE` and optional `enrichGithub`).
 
+End-to-end CI example:
+
+- End-to-end GitHub Actions recipe (normalize → enrich → reactor → emit): `docs/ci/actions-e2e-example.md`
+
 Ref note (important):
 
 - The NE schema defines `ref.type` as `branch | tag | unknown`. Pull request events use branch semantics and populate `ref.base` and `ref.head` with the base and head branch names respectively; there is no `pr` enum in `ref.type`.
 - Canonical references: see the NE Schema overview at `docs/cli/ne-schema.md#ref` and the JSON Schema at `docs/specs/ne.schema.json`.
+
+Normalized types (GitHub adapter): `workflow_run`, `pull_request`, `push`, `issue`, `issue_comment`, `check_run`, and now also `release`, `deployment`, `job` (from `workflow_job`), `step` (when granular), and `alert` (code/secret scanning).
 
 ## CI Checks
 
@@ -197,6 +203,8 @@ Examples are centralized in the CLI Reference:
 
 ### Rules quick-start (composed events)
 
+Note: The CLI Reference is the single source of truth for flags/options.
+
 Define a minimal rule in YAML and evaluate it with `enrich --rules` to emit composed events. This example matches the included PR sample (`samples/pull_request.synchronize.json`) which carries a `documentation` label.
 
 ```bash
@@ -234,40 +242,9 @@ events enrich --in samples/pull_request.synchronize.json \
 - When no rules match, `.composed` may be absent or `null`. Guard with `(.composed // [])` as shown.
 - Learn more:
   - Specs §6.1: docs/specs/README.md#61-rule-engine-and-composed-events
-  - Full CLI options: docs/cli/reference.md
+  - CLI Reference — Events Reactor: docs/cli/reference.md#events-reactor
 
-### Rules quick-start (composed events)
-
-Define a minimal rule in YAML and evaluate it with `enrich --rules` to emit composed events. This example matches the included PR sample (`samples/pull_request.synchronize.json`) which carries a `documentation` label.
-
-```bash
-# 1) Create a tiny rules file
-cat > rules.sample.yml <<'YAML'
-rules:
-  - name: pr_labeled_documentation
-    on: pull_request
-    when:
-      all:
-        - { path: "$.payload.pull_request.labels[*].name", contains: "documentation" }
-    emit:
-      key: pr_labeled_documentation
-      reason: "PR has documentation label"
-      targets: [developer-agent]
-YAML
-
-# 2) Enrich with rules and inspect composed outputs
-events enrich --in samples/pull_request.synchronize.json \
-  --rules rules.sample.yml \
-  | jq '(.composed // []) | map({key, reason})'
-```
-
-Notes:
-
-- Real‑world rules can combine predicates (`all/any/not`, `eq`, `in`, `contains`, `exists`) and project fields into `emit.payload`. See the richer sample at `samples/rules/conflicts.yml`.
-- When no rules match, `.composed` may be absent or `null`. Guard with `(.composed // [])` as shown.
-- Learn more:
-  - Specs §6.1: docs/specs/README.md#61-rule-engine-and-composed-events
-  - Full CLI options: docs/cli/reference.md
+## Normalized Event Schema (MVP)
 
 ## Normalized Event Schema (MVP)
 
@@ -634,31 +611,7 @@ events enrich --in samples/pull_request.synchronize.json \
   # note: `reason` may be omitted depending on rule configuration
 ```
 
-### Rules quick-start
-
-Evaluate simple YAML/JSON rules during enrichment to emit composed events (`.composed[]`). This enables lightweight routing/triggers without extra services.
-
-Minimal example using included samples:
-
-```bash
-# Offline mode (no GitHub API). May yield no matches if PR state
-# like mergeability cannot be determined without API lookups.
-events enrich --in samples/pull_request.synchronize.json \
-  --rules samples/rules/conflicts.yml \
-  | jq '(.composed // []) | map({key, labels})'
-
-# Recommended: enable GitHub lookups for PR rules using PR state
-export GITHUB_TOKEN=ghp_your_token_here
-events enrich --in samples/pull_request.synchronize.json \
-  --use-github \
-  --rules samples/rules/conflicts.yml \
-  | jq '(.composed // []) | map({key, reason, labels})'
-```
-
-See also:
-
-- [Specs §6.1 Rule Engine and Composed Events](docs/specs/README.md#61-rule-engine-and-composed-events)
-- [Full CLI reference](docs/cli/reference.md) — see also offline examples under `docs/examples/`.
+## Coverage (Optional)
 
 ## Coverage (Optional)
 

@@ -47,6 +47,8 @@ jobs:
       - name: Check EditorConfig compliance
         run: |
           bash scripts/ci-editorconfig.sh
+      - name: Observability schema path guard
+        run: bash scripts/lint-obs-paths.sh
       - name: Typecheck (tsc --noEmit)
         run: npm run -s typecheck
       - name: Unit tests (vitest)

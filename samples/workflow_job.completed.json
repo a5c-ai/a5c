@@ -1,0 +1,11 @@
+{
+  "repository": { "id": 1, "name": "events", "full_name": "a5c-ai/events" },
+  "workflow_job": {
+    "id": 4242,
+    "run_id": 123,
+    "head_branch": "feature/job",
+    "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "started_at": "2024-06-15T00:00:00Z",
+    "completed_at": "2024-06-15T00:10:00Z"
+  }
+}

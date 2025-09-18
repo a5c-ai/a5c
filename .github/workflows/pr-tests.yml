@@ -16,9 +16,13 @@ permissions:
 
 jobs:
   vitest:
-    name: Unit Tests (PR)
+    name: Unit Tests (PR) - Node v${{ matrix.node-version }}
     runs-on: ubuntu-latest
     timeout-minutes: 6
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [20, 22]
     env:
       # Optional: enable Codecov uploads when token is set (secret or variable)
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN || vars.CODECOV_TOKEN || '' }}
@@ -28,7 +32,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version-file: .nvmrc
+          node-version: ${{ matrix.node-version }}
           cache: npm
       - name: Install
         run: npm ci
@@ -38,7 +42,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: pr-coverage-lcov
+          name: pr-coverage-lcov-node-${{ matrix.node-version }}
           path: |
             coverage/lcov.info
             coverage/coverage-summary.json
@@ -50,7 +54,7 @@ jobs:
           token: ${{ env.CODECOV_TOKEN }}
           files: |
             coverage/lcov.info
-          flags: pr
+          flags: pr-node-${{ matrix.node-version }}
           fail_ci_if_error: false
           verbose: true
       - name: "PR feedback: coverage thresholds -> comment + labels"
@@ -114,7 +118,7 @@ jobs:
           {
             echo "<!-- a5c:coverage-feedback -->"
             echo "## 🧪 Coverage Feedback"
-            echo "Status: ${STATUS}"
+            echo "Status: ${STATUS} (Node ${{ matrix.node-version }})"
             echo ""
             echo "| Metric | Actual | Threshold |"
             echo "|---|---:|---:|"
@@ -198,3 +202,28 @@ jobs:
             echo "Coverage below thresholds; failing per REQUIRE_COVERAGE=true" >&2
             exit 1
           fi
+
+  smoke-cli:
+    name: CLI Smoke - ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 5
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [windows-latest, macos-latest]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Build
+        run: npm run -s build
+      - name: CLI --help
+        run: node dist/cli.js --help
+      - name: CLI normalize --help
+        run: node dist/cli.js normalize --help

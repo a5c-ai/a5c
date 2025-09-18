@@ -6,7 +6,7 @@ Implement provider-aware normalization mapping for GitHub events to NE schema fi
 
 ## Plan
 
-- Create `src/providers/github/normalize.ts` with mapper for workflow_run, pull_request, push, issue_comment.
+- Implement provider mapper in `src/providers/github/map.ts` (`mapToNE`) for `workflow_run`, `pull_request`, `push`, `issue_comment`. Note: the earlier `src/providers/github/normalize.ts` path has been removed in favor of this canonical implementation.
 - Update `src/normalize.ts` to dispatch to provider-aware normalizer, preserve labels/provenance.
 - Add unit tests using `tests/fixtures/github/*.json`.
 - Run `npm test` and iterate to green.

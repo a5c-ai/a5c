@@ -183,3 +183,5 @@ export function withCorr(logger: LoggerLike, corr: string): LoggerLike {
 - Optionally publish to a long-lived sink (e.g., S3, GCS) via a follow-up workflow for dashboards.
 - Minimal GitHub-native option: use step summaries and repository insights with CSV/JSON exports.
 - For matrices, aggregate per-job artifacts into `observability.aggregate.json` for charting (p95 durations, cache hit ratios).
+
+> Note: The canonical schema path is \`docs/specs/observability.schema.json\`.

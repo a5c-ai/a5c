@@ -88,6 +88,8 @@ Notes:
 
 - `--select` and `--filter` are implemented and applied after normalization.
 
+Supported provider → NE types (GitHub): `workflow_run`, `pull_request`, `push`, `issue`, `issue_comment`, `check_run`, plus `release`, `deployment` (from `deployment`/`deployment_status`), `job` (from `workflow_job`), `step` (when granular step context exists), and `alert` (e.g., code/secret scanning alerts).
+
 ### `events enrich`
 
 Enrich a normalized event (or raw GitHub payload) with repository and provider metadata.
