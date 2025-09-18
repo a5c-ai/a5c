@@ -1,25 +1,15 @@
-# Spec default vs implementation: include_patch
+# Resolved: Spec vs implementation (include_patch)
 
-Priority: medium
+Priority: none (resolved)
 Category: documentation
 
-Observation:
+Status:
 
-- Specs state `include_patch` default is `false` (docs/specs/README.md §4.1 and §4.1 notes).
-- Current implementation defaults to `true` in `src/enrich.ts`:
-  ```ts
-  const includePatch = toBool(opts.flags?.include_patch ?? true);
-  ```
-  Impact:
-- Users following specs may expect patches omitted unless explicitly enabled; current behavior includes patches by default.
+- Specs and implementation both default `include_patch` to `false`.
+- Source of truth: `docs/cli/reference.md#events-enrich`.
+- Implementation: `src/enrich.ts` uses `opts.flags?.include_patch ?? false`.
+- Resolution PR: #892
 
-Options:
+Rationale:
 
-1. Align code to specs: change default to `false` and update any affected docs/tests.
-2. Adjust specs/docs: document that default is `true` and highlight `--flag include_patch=false` to omit patches.
-
-Recommendation:
-
-- Prefer Option 1 for security: diffs can contain secrets; safer default is to omit `patch` fields.
-
-Status: non-blocking for PR #114.
+- Defaulting to `false` is safer (diffs can contain secrets) and produces smaller outputs. Users may opt‑in as needed with `--flag include_patch=true`.
