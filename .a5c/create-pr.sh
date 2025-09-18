@@ -39,13 +39,23 @@ if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   cd "$REPO_DIR" || { echo "Cannot cd to $REPO_DIR" >&2; exit 1; }
   echo "Now in repository $PWD"
 
-  # Check out requested ref if provided
-  if [ "$GITHUB_REF" != "main" ]; then
-    if git ls-remote --exit-code --heads origin "$GITHUB_REF" >/dev/null 2>&1; then
-      git checkout "$GITHUB_REF"
+  # Normalize and check out requested ref as a proper local branch
+  REF_BRANCH="$GITHUB_REF"
+  case "$REF_BRANCH" in
+    refs/heads/*) REF_BRANCH=${REF_BRANCH#refs/heads/} ;;
+  esac
+
+  if [ -n "$REF_BRANCH" ] && [ "$REF_BRANCH" != "$BASE_BRANCH" ]; then
+    if git ls-remote --exit-code --heads origin "$REF_BRANCH" >/dev/null 2>&1; then
+      git checkout -B "$REF_BRANCH" "origin/$REF_BRANCH"
     else
-      git checkout -B "$GITHUB_REF"
+      # ensure base exists locally, then branch from it
+      git checkout -B "$BASE_BRANCH" "origin/$BASE_BRANCH" || git checkout "$BASE_BRANCH"
+      git checkout -B "$REF_BRANCH" "$BASE_BRANCH"
     fi
+  else
+    # ensure base exists locally and check it out
+    git checkout -B "$BASE_BRANCH" "origin/$BASE_BRANCH" || git checkout "$BASE_BRANCH"
   fi
 fi
 

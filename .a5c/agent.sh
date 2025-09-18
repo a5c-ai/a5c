@@ -22,12 +22,19 @@ if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   fi
   cd "$REPO_DIR" || { echo "Cannot cd to $REPO_DIR" >&2; exit 1; }
   echo "Now in repository $PWD"
-  if [ "$GITHUB_REF" != "main" ]; then
-    if git ls-remote --exit-code --heads origin "$GITHUB_REF" >/dev/null 2>&1; then
-      git checkout "$GITHUB_REF"
+  REF_BRANCH="$GITHUB_REF"
+  case "$REF_BRANCH" in
+    refs/heads/*) REF_BRANCH=${REF_BRANCH#refs/heads/} ;;
+  esac
+  if [ -n "$REF_BRANCH" ] && [ "$REF_BRANCH" != "main" ]; then
+    if git ls-remote --exit-code --heads origin "$REF_BRANCH" >/dev/null 2>&1; then
+      git checkout -B "$REF_BRANCH" "origin/$REF_BRANCH"
     else
-      git checkout -B "$GITHUB_REF"
+      git checkout -B main origin/main || git checkout main
+      git checkout -B "$REF_BRANCH" main
     fi
+  else
+    git checkout -B main origin/main || git checkout main
   fi
   # stay in cloned repo for subsequent commands
 fi
