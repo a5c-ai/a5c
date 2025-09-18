@@ -16,3 +16,9 @@
 
 - This preserves Handlebars-like `{{ this }}` semantics for loop body.
 - No template syntax changes required.
+
+## Results
+
+- Applied fix in src/generateContext.ts
+- Vitest: 179 passed, 1 skipped
+- PR: https://github.com/a5c-ai/events/pull/922
