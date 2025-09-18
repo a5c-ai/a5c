@@ -12,13 +12,14 @@ on:
   check_run:
   check_suite:
 permissions:
-  contents: read
+  contents: write
   packages: read
   id-token: write
   actions: write
   statuses: write
   checks: write
   repository-projects: write
+  pull-requests: write
 jobs:
   reactor:
     runs-on: ubuntu-latest

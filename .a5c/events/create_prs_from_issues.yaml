@@ -15,7 +15,7 @@ on:
       # is a issue or already closed
       - expression: ${{ event.issue.closed == true }}
       # doesn't have the 'create_pr' label
-      - expression: ${{ event.labels | contains('create_pr') == false || event.label.name != 'create_pr' }}
+      - expression: ${{ (event.type != 'labeled' && event.labels | contains('create_pr') == false) || (event.type == 'labeled' && event.label.name != 'create_pr') }}
       # if triage in progress or already requested
       - expression: ${{ event.labels | contains('create_pr_in_progress') || event.labels | contains('create_pr_requested') }}
 emit:
@@ -27,12 +27,11 @@ emit:
 set_labels:
   - entity: ${{ event.issue.html_url }}
     add_labels: [create_pr_requested]
-    remove_labels: [created_pr]
 script:
   - |
     echo "Create PR request for issue ${{ event.issue.html_url }} added label create_pr"
 ---
-name: Create PR Agent Run
+name: Create PR Run
 metadata:
   runner-name: reactor
 on:
@@ -43,7 +42,7 @@ pre_set_labels:
     remove_labels: [create_pr_requested]
 env:
   - name: HEAD_BRANCH
-    value: issue/a5c/{{ event.issue.number }}
+    value: issue/a5c/${{ event.issue.number }}
   - name: BASE_BRANCH
     value: a5c/main
   - name: PR_TITLE
@@ -59,7 +58,7 @@ env:
   - name: INITIAL_COMMIT_FILE_CONTENT
     value: ${{ event.issue.body }}
   - name: INITIAL_COMMIT_FILE_NAME
-    value: /docs/issues/issue-${{ event.issue.number }}.md
+    value: docs/issues/issue-${{ event.issue.number }}.md
 script_template_uri: github://a5c-ai/events/branch/a5c%2Fmain/.a5c/create-pr.sh #optional - falls back to ${{ env.A5C_AGENT_SCRIPT_URI || vars.A5C_AGENT_SCRIPT_URI || 'github://a5c-ai/events/branch/a5c%2Fmain/.a5c/agent.sh' }}
 set_labels:
   - entity: ${{ event.issue.html_url }}

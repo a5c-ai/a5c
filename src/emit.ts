@@ -83,6 +83,11 @@ async function emitToGithub(obj: any): Promise<void> {
   const events = Array.isArray(obj?.events) ? obj.events : [obj];
   for (const ev of events) {
     const event_type: string = ev.event_type || ev.type || "custom";
+    // Skip command_only events; they are for side-effects only
+    if (event_type === "command_only") {
+      dbg("github sink: skip command_only event");
+      continue;
+    }
     const client_payload: any = ev.client_payload || ev.payload || ev;
     const repoTarget = resolveOwnerRepo(client_payload);
     if (!repoTarget) {
