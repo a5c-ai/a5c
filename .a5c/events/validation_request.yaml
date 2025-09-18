@@ -69,7 +69,6 @@ status-checks:
     pull_request_url: ${{ event.pull_request.html_url }}
 script:
   - |
-    set -euo pipefail
     echo "running agent for validation"
     npx -y "$A5C_PKG_SPEC" generate_context \
       --in "$A5C_EVENT_PATH" \

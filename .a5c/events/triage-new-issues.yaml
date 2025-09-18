@@ -46,7 +46,6 @@ env:
     value: ${{ env.A5C_TEMPLATE_URI || vars.A5C_TEMPLATE_URI  || event.client_payload.template || 'github://a5c-ai/events/branch/a5c%2Fmain/.a5c/main.md' }}
 script:
   - |
-    set -euo pipefail
     echo "running agent for triage"
     npx -y "$A5C_PKG_SPEC" generate_context \
       --in "$A5C_EVENT_PATH" \
