@@ -68,28 +68,17 @@ pre_set_labels:
     remove_labels: [validation_requested]
 env:
   - name: A5C_MCPS_PATH
-    value: ${{ vars.A5C_MCPS_PATH || '~/.a5c/mcps.json' }}
+    value: ${{ env.A5C_MCPS_PATH || vars.A5C_MCPS_PATH || '~/.a5c/mcps.json' }}
   - name: A5C_TEMPLATE_URI
     value: ${{ env.A5C_TEMPLATE_URI || vars.A5C_TEMPLATE_URI  || event.client_payload.template || 'github://a5c-ai/events/branch/a5c%2Fmain/.a5c/main.md' }}
+  - name: A5C_CLI_PROFILE
+    value: ${{ env.A5C_CLI_PROFILE || vars.A5C_CLI_PROFILE || 'azure_codex_gpt5' }}
 status-checks:
   - name: Validation/{{ event.type }}
     # sets state in queued / running before running script, and state: success/failure after (depending on the script shell return value)
     description: Validation of PR ({{ event.pull_request.title }})
     pull_request_url: ${{ event.pull_request.html_url }}
-script:
-  - |
-    echo "running agent for validation"
-    npx -y "$A5C_PKG_SPEC" generate_context \
-      --in "$A5C_EVENT_PATH" \
-      --template "$A5C_TEMPLATE_URI" \
-      --out /tmp/prompt.md
-    cat /tmp/prompt.md
-    npx -y "$A5C_PKG_SPEC" run \
-      --in /tmp/prompt.md \
-      --out /tmp/out.json \
-      --profile azure_codex_gpt5 \
-      --mcps "${A5C_MCPS_PATH:-~/.a5c/mcps.json}"
-    cat /tmp/out.json
+script_template_uri: github://a5c-ai/events/branch/a5c%2Fmain/.a5c/agent.sh
 set_labels:
   - entity: ${{ event.pull_request.html_url }}
     add_labels: [validated]
