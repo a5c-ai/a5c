@@ -19,3 +19,9 @@
 
 - `scripts/prepush-related.js` already implements “related tests with fallback”.
 - `package.json` has `prepush`, `prepush:full`, and `typecheck` scripts.
+
+## Results
+
+- `.husky/pre-push` enabled with env bypass and selective tests + fallback.
+- `CONTRIBUTING.md` updated with behavior and bypass flags.
+- Local typecheck passed; related tests executed successfully during push.
