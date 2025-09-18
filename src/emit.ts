@@ -120,8 +120,19 @@ async function executeSideEffects(obj: any): Promise<void> {
         (cp.env && cp.env.A5C_TEMPLATE_URI) ||
         process.env.A5C_TEMPLATE_URI ||
         "",
+      // Ensure package spec is available for re-entrant CLI execution
+      A5C_PKG_SPEC:
+        (cp.env && (cp.env as any).A5C_PKG_SPEC) ||
+        process.env.A5C_PKG_SPEC ||
+        resolvePkgSpec(),
     } as Record<string, string>;
     cp.env = scriptEnv;
+    const checksContext = await startStatusChecks(cp);
+    // Prepare script env for status checks. comma seperated: [commit_sha]-[context]
+    const status_checks = checksContext.targets
+      .map((t) => `${t.sha}-${t.context}`)
+      .join(",");
+    scriptEnv.A5C_STATUS_CHECKS = status_checks;
     // Fill missing entity from context
     const defaultEntity = inferEntityUrl(cp);
     if (cp && Array.isArray(cp.pre_set_labels) && cp.pre_set_labels.length) {
@@ -134,11 +145,17 @@ async function executeSideEffects(obj: any): Promise<void> {
     }
     if (cp && Array.isArray(cp.script) && cp.script.length) {
       dbg(`execute script lines=${cp.script.length}`);
-      await runScripts(cp.script, {
-        event: cp,
-        env: scriptEnv,
-        event_path: tmpEventPath,
-      });
+      try {
+        await runScripts(cp.script, {
+          event: cp,
+          env: scriptEnv,
+          event_path: tmpEventPath,
+        });
+        await finishStatusChecks(checksContext, true, cp);
+      } catch (e) {
+        await finishStatusChecks(checksContext, false, cp);
+        throw e;
+      }
     }
     if (cp && Array.isArray(cp.set_labels) && cp.set_labels.length) {
       const filled = cp.set_labels.map((e: any) => ({
@@ -217,6 +234,113 @@ async function applyLabels(entries: any[]): Promise<void> {
   }
 }
 
+type StatusChecksSpec = Array<{
+  name: string;
+  description?: string;
+  pull_request_url?: string;
+}>;
+
+async function startStatusChecks(cp: any): Promise<{
+  targets: Array<{ owner: string; repo: string; sha: string; context: string }>;
+}> {
+  const token = process.env.A5C_AGENT_GITHUB_TOKEN || process.env.GITHUB_TOKEN;
+  if (!token) return { targets: [] };
+  const { Octokit } = await import("@octokit/rest");
+  const octokit = new Octokit({ auth: token });
+  const spec: StatusChecksSpec = Array.isArray(cp?.status_checks)
+    ? cp.status_checks
+    : [];
+  if (!spec.length) return { targets: [] };
+  const repoInfo = resolveOwnerRepo(cp);
+  if (!repoInfo) return { targets: [] };
+  const { owner, repo } = repoInfo;
+  const sha = await resolveShaFromContext(octokit, cp, owner, repo);
+  if (!sha) return { targets: [] };
+  const targets: Array<{
+    owner: string;
+    repo: string;
+    sha: string;
+    context: string;
+  }> = [];
+  for (const item of spec) {
+    const context = expandAnyTemplates(item.name, { event: cp, env: cp.env });
+    const description = expandAnyTemplates(item.description || "Queued", {
+      event: cp,
+      env: cp.env,
+    });
+    await octokit.repos.createCommitStatus({
+      owner,
+      repo,
+      sha,
+      state: "queued",
+      context,
+      description,
+    } as any);
+    targets.push({ owner, repo, sha, context });
+  }
+  return { targets };
+}
+
+async function finishStatusChecks(
+  ctx: {
+    targets: Array<{
+      owner: string;
+      repo: string;
+      sha: string;
+      context: string;
+    }>;
+  },
+  success: boolean,
+  cp: any,
+): Promise<void> {
+  const token = process.env.A5C_AGENT_GITHUB_TOKEN || process.env.GITHUB_TOKEN;
+  if (!token) return;
+  if (!ctx || !ctx.targets || !ctx.targets.length) return;
+  const { Octokit } = await import("@octokit/rest");
+  const octokit = new Octokit({ auth: token });
+  const description = success ? "Completed" : "Failed";
+  for (const t of ctx.targets) {
+    await octokit.repos.createCommitStatus({
+      owner: t.owner,
+      repo: t.repo,
+      sha: t.sha,
+      state: success ? "success" : "failure",
+      context: t.context,
+      description,
+    } as any);
+  }
+}
+
+async function resolveShaFromContext(
+  octokit: any,
+  cp: any,
+  owner: string,
+  repo: string,
+): Promise<string | null> {
+  try {
+    // Prefer pull_request.head.sha
+    const pr =
+      cp?.pull_request ||
+      cp?.payload?.pull_request ||
+      cp?.original_event?.pull_request;
+    if (pr?.head?.sha) return String(pr.head.sha);
+    // Try event SHA
+    if (cp?.sha) return String(cp.sha);
+    if (cp?.payload?.sha) return String(cp.payload.sha);
+    // Fallback: latest commit on default branch
+    const repoResp = await octokit.repos.get({ owner, repo });
+    const defaultBranch = repoResp?.data?.default_branch || "main";
+    const refResp = await octokit.repos.getBranch({
+      owner,
+      repo,
+      branch: defaultBranch,
+    });
+    return String(refResp?.data?.commit?.sha || "");
+  } catch {
+    return null;
+  }
+}
+
 function normalizeLabelsArray(v: any): string[] {
   if (!v) return [];
   if (Array.isArray(v)) return v.map((x) => String(x));
@@ -282,6 +406,30 @@ function expandInlineTemplates(s: string, ctx: any): string {
       return "";
     }
   });
+}
+
+function expandAnyTemplates(s: string, ctx: any): string {
+  if (s == null) return s as any;
+  let out = String(s);
+  // Support both ${{ }} and {{ }} syntaxes
+  out = expandInlineTemplates(out, ctx);
+  out = out.replace(/\{\{\s*([^}]+)\s*\}\}/g, (_m, expr) => {
+    try {
+      const fn = new Function(
+        "event",
+        "env",
+        "event_path",
+        `return (${expr});`,
+      );
+      const event = ctx?.event || ctx;
+      const mergedEnv = { ...process.env, ...(ctx?.env || {}) };
+      const v = fn(event, mergedEnv, ctx?.event_path);
+      return v == null ? "" : String(v);
+    } catch {
+      return "";
+    }
+  });
+  return out;
 }
 
 async function ensureLabelsExist(
@@ -400,4 +548,29 @@ function inferEntityUrl(cp: any): string | null {
   } catch {
     return null;
   }
+}
+
+function resolvePkgSpec(): string {
+  try {
+    if (process.env.A5C_PKG_SPEC) return String(process.env.A5C_PKG_SPEC);
+    // Attempt to read our own package name@version from the dist context
+    // This file runs from dist; walk up to find package.json
+    let dir = process.cwd();
+    for (let i = 0; i < 5; i++) {
+      const candidate = path.join(dir, "package.json");
+      try {
+        const raw = fs.readFileSync(candidate, "utf8");
+        const pkg = JSON.parse(raw);
+        const name = pkg?.name;
+        const version = pkg?.version;
+        if (name && version) return `${name}@${version}`;
+        if (name) return String(name);
+      } catch {}
+      const parent = path.dirname(dir);
+      if (parent === dir) break;
+      dir = parent;
+    }
+  } catch {}
+  // Fallback to published tag
+  return "@a5c-ai/events@latest";
 }
