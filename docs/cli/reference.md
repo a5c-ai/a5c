@@ -436,7 +436,7 @@ Inspect composed if present:
 jq '(.composed // []) | map({key, reason})'
 ```
 
-### `events generate-context`
+### `events generate_context`
 
 Render a prompt/context file from templates and event context. Supports local files and `github://` URIs, basic templating (`{{ expr }}`, `{{#if}}`, `{{#each}}`, and partials `{{> uri }}`), and variable injection via `--var`.
 
