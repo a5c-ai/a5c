@@ -1,3 +1,12 @@
+## 1.12.0 (2025-09-18)
+
+* Merge branch 'a5c/main' of https://github.com/a5c-ai/events into a5c/main ([fa5a51a](https://github.com/a5c-ai/events/commit/fa5a51a))
+* Merge branch 'main' into a5c/main ([a9b27bc](https://github.com/a5c-ai/events/commit/a9b27bc))
+* Merge pull request #934 from a5c-ai/a5c/main ([f4ef075](https://github.com/a5c-ai/events/commit/f4ef075)), closes [#934](https://github.com/a5c-ai/events/issues/934)
+* feat(emit): add temporary event JSON file creation for script execution ([49831fc](https://github.com/a5c-ai/events/commit/49831fc))
+* fix(validation): improve script execution and label processing with context entity inference ([3e9e936](https://github.com/a5c-ai/events/commit/3e9e936))
+* docs: observability defaults aligned (pretty-by-default; JSON in CI) ([19c976c](https://github.com/a5c-ai/events/commit/19c976c)), closes [#904](https://github.com/a5c-ai/events/issues/904)
+
 ## <small>1.11.5 (2025-09-18)</small>
 
 * chore(deps)(deps-dev): bump @semantic-release/github ([7b0efba](https://github.com/a5c-ai/events/commit/7b0efba))
