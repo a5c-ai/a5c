@@ -143,8 +143,13 @@ if command -v gh >/dev/null 2>&1; then
         DRAFT_OPT="--draft"
       fi
 
+      # Sanitize labels: split, trim, drop empties, dedupe
+      CLEAN_LABELS=""
       if [ -n "${PR_LABELS}" ]; then
-        gh pr create --base "$BASE_BRANCH" --head "$HEAD_BRANCH" --title "$PR_TITLE" --body-file "$PR_BODY_FILE" ${DRAFT_OPT} --label "$PR_LABELS"
+        CLEAN_LABELS=$(printf '%s' "$PR_LABELS" | tr ',' '\n' | sed 's/^ *//; s/ *$//' | awk 'length>0{ if(!seen[$0]++){ if (out) out=out "," $0; else out=$0 } } END{ print out }')
+      fi
+      if [ -n "${CLEAN_LABELS}" ]; then
+        gh pr create --base "$BASE_BRANCH" --head "$HEAD_BRANCH" --title "$PR_TITLE" --body-file "$PR_BODY_FILE" ${DRAFT_OPT} --label "$CLEAN_LABELS"
       else
         gh pr create --base "$BASE_BRANCH" --head "$HEAD_BRANCH" --title "$PR_TITLE" --body-file "$PR_BODY_FILE" ${DRAFT_OPT}
       fi
