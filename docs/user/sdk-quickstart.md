@@ -94,5 +94,6 @@ This is entirely optional; without OTEL, the above imports won’t be used and y
 ## See also
 
 - CLI reference: docs/cli/reference.md
+- CLI context generation: docs/cli/reference.md#events-generate-context
 - Observability: docs/observability.md
 - NE schema overview: docs/cli/ne-schema.md

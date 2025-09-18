@@ -90,6 +90,88 @@ Notes:
 
 Supported provider → NE types (GitHub): `workflow_run`, `pull_request`, `push`, `issue`, `issue_comment`, `check_run`, plus `release`, `deployment` (from `deployment`/`deployment_status`), `job` (from `workflow_job`), `step` (when granular step context exists), and `alert` (e.g., code/secret scanning alerts).
 
+### `events generate-context`
+
+Render a prompt/context document from a root template with lightweight templating and includes, using a normalized event (or raw payload) as input. The command name in the CLI is `generate_context` (underscore); this reference uses `generate-context` for readability.
+
+Usage:
+
+```bash
+events generate_context \
+  [--in FILE] \
+  --template <uri> \
+  [--out FILE] \
+  [--var KEY=VAL ...] \
+  [--token STRING]
+```
+
+Flags:
+
+- `--in FILE`: input JSON file (NE or raw provider payload). If omitted, reads from stdin.
+- `--template <uri>`: root template URI. Supports `file://` and `github://owner/repo/ref/path/to/file` schemes, and relative file paths.
+- `--out FILE`: write rendered output to file (default: stdout).
+- `--var KEY=VAL` (repeatable): extra template variables available under `vars.KEY`.
+- `--token STRING`: GitHub token used for `github://` URIs. Defaults to `A5C_AGENT_GITHUB_TOKEN` or `GITHUB_TOKEN` when not provided explicitly.
+
+Templating features:
+
+- Variables: `{{ expr }}` with a small JS expression scope. Available names: `event` (alias `github`), `env`, `vars`, and `include(uri)`.
+- Conditionals: `{{#if expr}}...{{/if}}`
+- Each loop: `{{#each expr}}...{{/each}}` with the current item bound to `this` (use `{{ this }}` or `{{ this.prop }}`).
+- Includes: `{{> uri key=value }}` — renders another URI with optional additional `vars` merged.
+- URI interpolation: `$ {{ ... }}` inside URIs, for example `{{> github://a5c-ai/events/${{ env.BRANCH || 'a5c/main' }}/docs/cli/reference.md }}`.
+
+Notes and safety:
+
+- Expressions are evaluated in-process for convenience; avoid rendering untrusted templates.
+- When using `github://...`, a token is required for private repos and recommended for public repos to avoid rate limits. Provide `--token` or set `A5C_AGENT_GITHUB_TOKEN`/`GITHUB_TOKEN`.
+
+Examples:
+
+1. Local files (input file and template from disk):
+
+```bash
+# Prepare a tiny template and event file
+cat > /tmp/main.md <<'MD'
+Hello {{ event.repo?.full_name || event.repository?.full_name }}
+{{#if env.USER}}User: {{ env.USER }}{{/if}}
+Labels: {{#each event.labels}}{{ this }} {{/each}}
+Include:
+{{> file:///tmp/part.md name=World }}
+MD
+echo 'Part {{ vars.name }}!' > /tmp/part.md
+
+# Use a sample payload from the repo
+cp samples/pull_request.synchronize.json /tmp/event.json
+
+events generate_context --in /tmp/event.json --template file:///tmp/main.md
+```
+
+2. Stdin/stdout pipeline:
+
+```bash
+cat samples/pull_request.synchronize.json \
+  | events generate_context --template file:///tmp/main.md \
+  | sed -n '1,5p'
+```
+
+3. Template from GitHub (github:// URI):
+
+```bash
+# Render this repo's README.md with minimal interpolation
+export GITHUB_TOKEN="${GITHUB_TOKEN:-$A5C_AGENT_GITHUB_TOKEN}"
+events generate_context \
+  --in samples/pull_request.synchronize.json \
+  --template github://a5c-ai/events/a5c/main/README.md \
+  | head -n 10
+```
+
+Troubleshooting:
+
+- Missing token for `github://...` may fail with an authentication or rate-limit error. Provide `--token` or export `A5C_AGENT_GITHUB_TOKEN`/`GITHUB_TOKEN`.
+- If a `github://owner/repo/ref/path` points to a directory, an error is returned; provide a file path.
+- For private repos, ensure the token has `repo` scope.
+
 ### `events enrich`
 
 Enrich a normalized event (or raw GitHub payload) with repository and provider metadata.

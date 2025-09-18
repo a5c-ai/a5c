@@ -5,7 +5,7 @@
 Normalize and enrich GitHub (and other) events for agentic workflows. Use the CLI in CI or locally to turn raw webhook/Actions payloads into a compact, consistent schema that downstream agents and automations can trust.
 
 - Quick install via npm
-- Commands: `events mentions`, `events normalize`, `events enrich`, `events reactor`, `events emit`, `events validate` (see `docs/cli/reference.md#events-reactor` and `docs/cli/reference.md#events-emit` for options and examples)
+- Commands: `events mentions`, `events normalize`, `events enrich`, `events reactor`, `events emit`, `events validate`, `events generate-context` (see `docs/cli/reference.md#events-reactor`, `docs/cli/reference.md#events-emit`, and `docs/cli/reference.md#events-generate-context` for options and examples)
 - Output: JSON to stdout or file
 - Extensible via provider adapters and enrichers
 
