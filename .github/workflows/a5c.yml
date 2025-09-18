@@ -99,6 +99,7 @@ on:
         Commit Hygiene,
         Commitlint,
         Docs Lint,
+        Docs Links,
         Release,
         Auto Merge,
         CodeQL,
