@@ -725,12 +725,24 @@ function attachDocCommands(
   neCtx: ReturnType<typeof normalizeNE>,
 ): any {
   const out = { ...(payload || {}) } as any;
+  const exprEvent = buildExpressionEvent((neCtx as any)?.payload);
   // pre_set_labels first
   if (
     Array.isArray((doc as any).pre_set_labels) &&
     (doc as any).pre_set_labels.length
   ) {
-    out.pre_set_labels = resolveTemplates((doc as any).pre_set_labels, neCtx);
+    const resolved = resolveTemplates((doc as any).pre_set_labels, neCtx);
+    out.pre_set_labels = Array.isArray(resolved)
+      ? resolved.map((e: any) => ({
+          ...e,
+          entity:
+            e?.entity ||
+            exprEvent?.pull_request?.html_url ||
+            exprEvent?.issue?.html_url ||
+            e?.entity ||
+            null,
+        }))
+      : resolved;
   }
   // then script
   if (Array.isArray((doc as any).script) && (doc as any).script.length) {
@@ -741,13 +753,28 @@ function attachDocCommands(
     Array.isArray((doc as any).set_labels) &&
     (doc as any).set_labels.length
   ) {
-    out.set_labels = resolveTemplates((doc as any).set_labels, neCtx);
+    const resolved = resolveTemplates((doc as any).set_labels, neCtx);
+    out.set_labels = Array.isArray(resolved)
+      ? resolved.map((e: any) => ({
+          ...e,
+          entity:
+            e?.entity ||
+            exprEvent?.pull_request?.html_url ||
+            exprEvent?.issue?.html_url ||
+            e?.entity ||
+            null,
+        }))
+      : resolved;
   }
   // propagate env (evaluated earlier into neCtx.enriched.derived.doc_env)
   const docEnv = (neCtx as any)?.enriched?.derived?.doc_env;
   if (docEnv && typeof docEnv === "object") {
     out.env = { ...docEnv };
   }
+  // provide helpful context for downstream emit inference when needed
+  if (!out.pull_request && exprEvent?.pull_request)
+    out.pull_request = exprEvent.pull_request;
+  if (!out.issue && exprEvent?.issue) out.issue = exprEvent.issue;
   return out;
 }
 
