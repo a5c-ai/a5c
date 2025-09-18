@@ -2,15 +2,8 @@ name: Reactor
 env:
   A5C_LOG_LEVEL: ${{ github.event.inputs.debug || 'false' && 'debug' || 'info' }}
 on:
-  push:
-  pull_request:
-    types: [opened, reopened, ready_for_review]
-  issue_comment:
-  issues:
-  workflow_dispatch:
   repository_dispatch:
-  check_run:
-  check_suite:
+    types: [triage_new_issue, validation_request]
 permissions:
   contents: read
   packages: read
@@ -81,7 +74,7 @@ jobs:
             --in out.enrich.json \
             --file github://a5c-ai/events/branch/a5c%2Fmain/.a5c/events/ \
             --out out.reactor.json \
-            --metadata-match runner-name=reactor
+            --metadata-match runner-name=agents
           # list of events to emit
           jq -r '.events[]' out.reactor.json || true
           cat out.reactor.json || true

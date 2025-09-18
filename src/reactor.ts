@@ -118,12 +118,12 @@ export async function handleReactor(opts: ReactorOptions): Promise<{
       if (emitSpec && typeof emitSpec === "object") {
         for (const [eventType, spec] of Object.entries(emitSpec)) {
           const payload = buildClientPayload(spec, neWithEnv);
-          const merged = attachDocCommands(payload, doc, neWithEnv);
+          const merged = await attachDocCommands(payload, doc, neWithEnv);
           events.push({ event_type: eventType, client_payload: merged });
         }
       } else if (!emitSpec && hasCommands) {
         const payload = {};
-        const merged = attachDocCommands(payload, doc, neWithEnv);
+        const merged = await attachDocCommands(payload, doc, neWithEnv);
         const eventType = "command_only";
         logDebug(
           `handler#${idx} produced command-only event (event_type=${eventType})`,
@@ -729,13 +729,15 @@ function buildClientPayload(
   return out;
 }
 
-function attachDocCommands(
+async function attachDocCommands(
   payload: any,
   doc: any,
   neCtx: ReturnType<typeof normalizeNE>,
-): any {
+): Promise<any> {
   const out = { ...(payload || {}) } as any;
   const exprEvent = buildExpressionEvent((neCtx as any)?.payload);
+  // Materialize agent_run (env + optional script) before other steps
+  const agentMat = await materializeAgentRun(doc, neCtx);
   // pre_set_labels first
   if (
     Array.isArray((doc as any).pre_set_labels) &&
@@ -754,10 +756,24 @@ function attachDocCommands(
         }))
       : resolved;
   }
-  // then script
-  if (Array.isArray((doc as any).script) && (doc as any).script.length) {
-    out.script = resolveTemplates((doc as any).script, neCtx);
+  // then script: render script from template if provided, then append inline script
+  const scriptParts: string[] = [];
+  if (agentMat?.script && String(agentMat.script).trim().length)
+    scriptParts.push(String(agentMat.script));
+  const tplUri = (doc as any).script_template_uri;
+  if (typeof tplUri === "string" && tplUri.trim().length) {
+    const rendered = await renderScriptTemplate(tplUri.trim(), neCtx);
+    if (rendered) scriptParts.push(rendered);
   }
+  if (Array.isArray((doc as any).script) && (doc as any).script.length) {
+    const inline = resolveTemplates((doc as any).script, neCtx);
+    if (Array.isArray(inline)) {
+      for (const s of inline) scriptParts.push(String(s));
+    } else if (inline != null) {
+      scriptParts.push(String(inline));
+    }
+  }
+  if (scriptParts.length) out.script = scriptParts;
   // then set_labels
   if (
     Array.isArray((doc as any).set_labels) &&
@@ -780,6 +796,10 @@ function attachDocCommands(
   const docEnv = (neCtx as any)?.enriched?.derived?.doc_env;
   if (docEnv && typeof docEnv === "object") {
     out.env = { ...docEnv };
+  }
+  // merge agent_run derived envs (lower precedence than explicit env from doc)
+  if (agentMat?.env && typeof agentMat.env === "object") {
+    out.env = { ...(agentMat.env || {}), ...(out.env || {}) };
   }
   // provide helpful context for downstream emit inference when needed
   if (!out.pull_request && exprEvent?.pull_request)
@@ -1120,6 +1140,61 @@ function normalizeLabels(v: any): string[] {
     .filter(Boolean);
 }
 
+async function renderScriptTemplate(
+  rawUri: string,
+  neCtx: ReturnType<typeof normalizeNE>,
+): Promise<string | null> {
+  try {
+    const uri = resolveTemplates(rawUri, neCtx);
+    if (typeof uri !== "string" || !uri.trim()) return null;
+    // Reuse generate_context fetchers via lightweight inline fetch
+    if (/^github:\/\//i.test(uri)) {
+      const parsed = parseGithubUri(uri);
+      if (!parsed) return null;
+      const text = await fetchGithubFileText(
+        parsed.owner,
+        parsed.repo,
+        parsed.ref,
+        parsed.path,
+      );
+      return String(text || "");
+    }
+    if (/^file:\/\//i.test(uri)) {
+      const p = new URL(uri).pathname;
+      return fs.readFileSync(p, "utf8");
+    }
+    // local relative path
+    if (fs.existsSync(uri)) return fs.readFileSync(uri, "utf8");
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+async function fetchGithubFileText(
+  owner: string,
+  repo: string,
+  ref: string,
+  filePath: string,
+): Promise<string> {
+  const token = process.env.A5C_AGENT_GITHUB_TOKEN || process.env.GITHUB_TOKEN;
+  const { Octokit } = await import("@octokit/rest");
+  const octokit = new Octokit({ auth: token });
+  const { data } = await octokit.repos.getContent({
+    owner,
+    repo,
+    path: filePath,
+    ref,
+  });
+  if (Array.isArray(data)) return "";
+  const encoding = (data as any).encoding || "base64";
+  const content: string = Buffer.from(
+    (data as any).content || "",
+    encoding,
+  ).toString("utf8");
+  return content;
+}
+
 // Helper functions available to expression evaluation
 function readGithubContentSync(
   repoHtmlUrlOrOwnerRepo: string,
@@ -1174,5 +1249,67 @@ function selectHelper(obj: any, pathExpr: string): any {
     return cur;
   } catch {
     return undefined;
+  }
+}
+
+async function materializeAgentRun(
+  doc: any,
+  neCtx: ReturnType<typeof normalizeNE>,
+): Promise<{ env?: Record<string, string>; script?: string } | null> {
+  try {
+    const spec = (doc as any).agent_run;
+    if (!spec || typeof spec !== "object") return null;
+    const eventArg = buildExpressionEvent((neCtx as any)?.payload);
+    const baseEnv: Record<string, string> = {};
+    // Merge explicit envs from doc first
+    const docEnv = Array.isArray((doc as any).env) ? (doc as any).env : [];
+    for (const item of docEnv) {
+      const name = String(item?.name || "").trim();
+      if (!name) continue;
+      baseEnv[name] = String(resolveTemplates(item?.value ?? "", neCtx) ?? "");
+    }
+    // Then agent_run.envs (lower priority; will be overridden by docEnv)
+    const addEnv = Array.isArray((spec as any).envs) ? (spec as any).envs : [];
+    for (const item of addEnv) {
+      const name = String(item?.name || "").trim();
+      if (!name) continue;
+      if (baseEnv[name] == null)
+        baseEnv[name] = String(
+          resolveTemplates(item?.value ?? "", neCtx) ?? "",
+        );
+    }
+    // Compute defaults
+    const vars = (neCtx as any)?.enriched?.derived?.vars || {};
+    const envProc = process.env;
+    const template =
+      baseEnv.A5C_TEMPLATE_URI ||
+      vars.A5C_TEMPLATE_URI ||
+      eventArg?.client_payload?.template ||
+      "github://a5c-ai/events/branch/a5c%2Fmain/.a5c/main.md";
+    const mcps =
+      baseEnv.A5C_MCPS_PATH || vars.A5C_MCPS_PATH || "~/.a5c/mcps.json";
+    const profile = baseEnv.A5C_CLI_PROFILE || vars.A5C_CLI_PROFILE || "codex";
+    const scriptTpl =
+      (spec as any).script_template_uri ||
+      baseEnv.A5C_AGENT_SCRIPT_URI ||
+      vars.A5C_AGENT_SCRIPT_URI ||
+      "github://a5c-ai/events/branch/a5c%2Fmain/.a5c/agent.sh";
+    const envOut = {
+      ...baseEnv,
+      A5C_TEMPLATE_URI: String(template),
+      A5C_MCPS_PATH: String(mcps),
+      A5C_CLI_PROFILE: String(profile),
+    } as Record<string, string>;
+    let script: string | undefined;
+    if (scriptTpl && String(scriptTpl).trim().length) {
+      const rendered = await renderScriptTemplate(
+        String(scriptTpl).trim(),
+        neCtx,
+      );
+      if (rendered) script = rendered;
+    }
+    return { env: envOut, script };
+  } catch {
+    return null;
   }
 }
