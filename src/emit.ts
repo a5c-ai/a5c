@@ -49,23 +49,28 @@ export async function handleEmit(
 }
 
 function writeTempEventJson(obj: any): string {
+  // Prefer a deterministic /tmp/a5c-event.json path for portability across steps
+  // Fall back to OS temp dir or CWD if /tmp is unavailable
+  const preferred = "/tmp/a5c-event.json";
+  try {
+    // Ensure parent dir exists (no-op if already present)
+    fs.mkdirSync(path.dirname(preferred), { recursive: true });
+    fs.writeFileSync(preferred, JSON.stringify(obj, null, 2), "utf8");
+    return preferred;
+  } catch {}
   try {
     const dir = process.env.RUNNER_TEMP || process.env.TEMP || os.tmpdir();
-    const file = path.join(
-      dir,
-      `a5c-event-${Date.now()}-${Math.random().toString(36).slice(2)}.json`,
-    );
+    const file = path.join(dir, "a5c-event.json");
+    fs.writeFileSync(file, JSON.stringify(obj, null, 2), "utf8");
+    return file;
+  } catch {}
+  // Fallback to current working directory
+  try {
+    const file = path.resolve("a5c-event.json");
     fs.writeFileSync(file, JSON.stringify(obj, null, 2), "utf8");
     return file;
   } catch {
-    // Fallback to current working directory
-    const file = `a5c-event-${Date.now()}.json`;
-    try {
-      fs.writeFileSync(file, JSON.stringify(obj, null, 2), "utf8");
-      return file;
-    } catch {
-      return "";
-    }
+    return "";
   }
 }
 
@@ -107,9 +112,15 @@ async function executeSideEffects(obj: any): Promise<void> {
     const tmpEventPath = writeTempEventJson(cp);
     const scriptEnv = {
       ...(cp.env || {}),
+      // Fill well-known fallbacks for downstream scripts
       EVENT_PATH: tmpEventPath,
       A5C_EVENT_PATH: tmpEventPath,
-    };
+      // Inherit template URI from process env if not provided in payload env
+      A5C_TEMPLATE_URI:
+        (cp.env && cp.env.A5C_TEMPLATE_URI) ||
+        process.env.A5C_TEMPLATE_URI ||
+        "",
+    } as Record<string, string>;
     cp.env = scriptEnv;
     // Fill missing entity from context
     const defaultEntity = inferEntityUrl(cp);
@@ -231,7 +242,7 @@ async function runScripts(lines: string[], ctx?: any): Promise<void> {
       cmd = expandInlineTemplates(cmd, fullCtx);
     } catch {}
     await new Promise<void>((resolve, reject) => {
-      const child = exec(
+      exec(
         cmd,
         {
           env: { ...process.env, ...((ctx as any)?.env || {}) },
