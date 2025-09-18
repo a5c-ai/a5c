@@ -6,6 +6,7 @@ import {
   parseGithubEntity,
   parseGithubOwnerRepo,
 } from "./utils/githubEntity.js";
+import { createLogger } from "./log.js";
 
 export interface ReactorOptions {
   in?: string;
@@ -20,23 +21,13 @@ export interface ReactorOutputEvent {
   client_payload: any;
 }
 
-// Lightweight logging helpers (GitHub Actions compatible)
-const LOG_LEVEL = String(process.env.A5C_LOG_LEVEL || "info").toLowerCase();
-const IS_ACTIONS =
-  String(process.env.GITHUB_ACTIONS || "").toLowerCase() === "true";
-function logInfo(msg: string) {
-  const line = IS_ACTIONS ? `::notice::${msg}` : `[reactor] ${msg}`;
-  process.stderr.write(line + "\n");
-}
-function logWarn(msg: string) {
-  const line = IS_ACTIONS ? `::warning::${msg}` : `[reactor] WARN: ${msg}`;
-  process.stderr.write(line + "\n");
-}
-function logDebug(msg: string) {
-  if (!(LOG_LEVEL === "debug" || LOG_LEVEL === "trace")) return;
-  const line = IS_ACTIONS ? `::debug::${msg}` : `[reactor] DEBUG: ${msg}`;
-  process.stderr.write(line + "\n");
-}
+const logger = createLogger({ scope: "reactor" });
+const logInfo = (msg: string, ctx?: Record<string, unknown>) =>
+  logger.info(msg, ctx);
+const logWarn = (msg: string, ctx?: Record<string, unknown>) =>
+  logger.warn(msg, ctx);
+const logDebug = (msg: string, ctx?: Record<string, unknown>) =>
+  logger.debug(msg, ctx);
 
 function isReactorDoc(obj: any): boolean {
   if (!obj || typeof obj !== "object") return false;

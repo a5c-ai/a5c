@@ -1,0 +1,46 @@
+name: Docs Links
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - "docs/**"
+      - "README.md"
+      - ".github/workflows/docs-links.yml"
+      - "scripts/docs-link-check.sh"
+      - "lychee.toml"
+  push:
+    branches: [a5c/main]
+    paths:
+      - "docs/**"
+      - "README.md"
+      - ".github/workflows/docs-links.yml"
+      - "scripts/docs-link-check.sh"
+      - "lychee.toml"
+
+jobs:
+  links:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Cache lychee binary
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/lychee
+          key: ${{ runner.os }}-lychee-v0.15.1
+      - name: Make script executable
+        run: chmod +x scripts/docs-link-check.sh
+      - name: Run docs links check (lychee)
+        run: ./scripts/docs-link-check.sh
+      - name: Upload lychee summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lychee-summary
+          path: .tmp/lychee/**

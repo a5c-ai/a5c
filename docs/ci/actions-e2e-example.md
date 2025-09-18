@@ -1,99 +1,65 @@
----
-title: End-to-end Actions recipe
-description: Minimal GitHub Actions job wiring normalize → enrich (with --use-github) → reactor → emit (github dispatch)
----
+# GitHub Actions — End-to-End Example (normalize → enrich → reactor → emit)
 
-# End-to-end GitHub Actions recipe
+This example shows a cohesive CI job that runs the typical pipeline with the Events CLI.
 
-This example shows a single, copy‑pasteable job that runs the full pipeline:
-
-normalize → enrich (`--use-github`) → reactor (`--file`) → emit (`--sink github`).
-
-It demonstrates how to use `GITHUB_EVENT_PATH`, pass tokens via env, and gate by `--select/--filter` to keep runs focused.
-
-## Minimal job
+- Normalizes the current event (`GITHUB_EVENT_PATH`)
+- Enriches with GitHub API (`--use-github`)
+- Applies reactor rules
+- Emits a `repository_dispatch` to the same repo (as an example sink)
 
 ```yaml
 name: events-e2e
-
 on:
   workflow_run:
     workflows: ["CI"]
     types: [completed]
-  # or: push / pull_request / issues / repository_dispatch, etc.
-
 jobs:
-  events:
+  e2e:
     runs-on: ubuntu-latest
     permissions:
       contents: read
       actions: read
-      # required for repository_dispatch used by `emit --sink github`
-      repository-projects: read
-      pull-requests: read
-      issues: read
-      id-token: write
-      # repo scope for repository_dispatch; for GITHUB_TOKEN this is usually implied
-    env:
-      # Token precedence: A5C_AGENT_GITHUB_TOKEN is preferred over GITHUB_TOKEN when both are set
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      A5C_AGENT_GITHUB_TOKEN: ${{ secrets.A5C_AGENT_GITHUB_TOKEN || '' }}
-      # Optional: automatically enable enrichment in CI when a token is present
-      A5C_EVENTS_AUTO_USE_GITHUB: "true"
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-
       - name: Install CLI
-        run: |
-          npm -g i @a5c-ai/events
+        run: npm -g i @a5c-ai/events || true  # or use npx in each step
 
-      - name: Normalize current GitHub event to NE
+      - name: Normalize
         run: |
-          # Read the current event payload from GITHUB_EVENT_PATH
           events normalize \
             --source actions \
-            --in "$GITHUB_EVENT_PATH" \
             --select 'type,repo.full_name,provenance.workflow.name' \
-            --filter 'repo.full_name=${{ github.repository }}' \
             --out ne.json
 
-      - name: Enrich (uses GitHub API when token present)
+      - name: Enrich with GitHub
+        env:
+          # Prefer the agent-scoped token if available
+          A5C_AGENT_GITHUB_TOKEN: ${{ secrets.A5C_AGENT_GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Optional escape hatch to auto-enable when token is present
+          A5C_EVENTS_AUTO_USE_GITHUB: "true"
         run: |
-          # With A5C_EVENTS_AUTO_USE_GITHUB=true and a token available, enrichment is enabled.
-          # You can explicitly request API calls instead: add --use-github.
           events enrich \
+            --use-github \
             --in ne.json \
-            --select 'type,enriched.github.provider,labels' \
             --out ne.enriched.json
 
-      - name: Reactor (apply rules to produce custom events)
+      - name: Reactor (optional)
         run: |
-          # Place rules at .a5c/events/reactor.yaml in your repo, or pass --file <path>.
           events reactor \
             --in ne.enriched.json \
             --file .a5c/events/reactor.yaml \
-            --out composed.json
+            --out events.json
 
       - name: Emit to GitHub (repository_dispatch)
         env:
-          # Ensure target repo for dispatch is set; defaults to current repo when omitted.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
-          # This will dispatch each event under { events: [...] } to repository_dispatch
-          events emit --in composed.json --sink github
-
-      - name: Upload artifacts (optional)
-        uses: actions/upload-artifact@v4
-        with:
-          name: events-e2e
-          path: |
-            ne.json
-            ne.enriched.json
-            composed.json
+          events emit --in events.json --sink github || echo "no events to dispatch"
 ```
 
 Notes:

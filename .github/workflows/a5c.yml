@@ -94,12 +94,15 @@ on:
         Tests,
         PR Quick Tests,
         Quick Checks,
+        Gitleaks,
         Typecheck,
         Commit Hygiene,
         Commitlint,
         Docs Lint,
+        Docs Links,
         Release,
         Auto Merge,
+        CodeQL,
       ]
 
   # Manual Triggers

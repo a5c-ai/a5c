@@ -1,19 +1,20 @@
-# `include_patch` default mismatches specs (docs/specs/README.md §4.1)
+# [Resolved] `include_patch` default alignment (docs/specs/README.md §4.1)
 
-Priority: high
-Category: functionality
+Priority: resolved
+Category: functionality → documentation note
 
-Specs state that `include_patch` default is `false`, but `handleEnrich` currently computes:
+Resolution:
 
-```ts
-const includePatch = toBool(opts.flags?.include_patch ?? true);
-```
+- Current implementation defaults `include_patch` to `false` in `src/enrich.ts` and CLI docs reflect this default.
+- Tests cover both default removal and explicit opt-in:
+  - `tests/enrich.flags.test.ts` and `tests/cli.enrich.flags.test.ts`
+- Specs and CLI Reference both state the default is `false`.
 
-This yields a default of `true` when the flag is omitted, contradicting the spec.
+References:
 
-Options to resolve:
+- Code: `src/enrich.ts` (`const includePatch = toBool(opts.flags?.include_patch ?? false);`)
+- Docs: `docs/cli/reference.md#events-enrich` (flags), `README.md` (CLI section)
 
-- Change default to `false` (preferred to align with docs and to keep outputs lighter by default), or
-- Update the spec to reflect current behavior if we deliberately want patches by default.
+Action:
 
-Note: The PR verifies behavior for `include_patch=false` (patch omitted), which works, but default remains misaligned.
+- No code changes needed. This note remains for traceability and to avoid re-raising the concern.

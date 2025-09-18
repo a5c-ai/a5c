@@ -1,40 +1,47 @@
 version: 2
 updates:
-  # npm - development dependencies (safe to auto-merge)
-  - package-ecosystem: npm
+  - package-ecosystem: "npm"
     directory: "/"
-    target-branch: "a5c/main"
     schedule:
-      interval: weekly
-      day: sunday
-      time: "04:00"
-    allow:
-      - dependency-type: development
+      interval: "weekly"
+      # Optional time window; keeps runs predictable
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
     labels:
-      - dependencies
-      - automerge
-    open-pull-requests-limit: 10
-  # npm - production/runtime dependencies (no automerge by default)
-  - package-ecosystem: npm
-    directory: "/"
-    target-branch: "a5c/main"
-    schedule:
-      interval: weekly
-      day: sunday
-      time: "04:00"
-    allow:
-      - dependency-type: production
-    labels:
-      - dependencies
-    open-pull-requests-limit: 10
-  # GitHub Actions
-  - package-ecosystem: github-actions
+      - "dependencies"
+      - "ci"
+      - "automerge"
+    groups:
+      minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
+      types:
+        patterns:
+          - "@types/*"
+      typescript-eslint:
+        patterns:
+          - "@typescript-eslint/*"
+
+  - package-ecosystem: "github-actions"
     directory: "/.github/workflows"
-    target-branch: "a5c/main"
     schedule:
-      interval: weekly
-      day: sunday
-      time: "04:00"
+      interval: "weekly"
+      time: "09:00"
+      timezone: "UTC"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
     labels:
-      - dependencies
-    open-pull-requests-limit: 10
+      - "dependencies"
+      - "ci"
+      - "automerge"
+    groups:
+      actions-minor-patch:
+        update-types:
+          - "minor"
+          - "patch"

@@ -2,6 +2,7 @@ import fs from "node:fs";
 import { writeJSONFile, readJSONFile } from "./config.js";
 import { parseGithubEntity as parseGithubEntityUtil } from "./utils/githubEntity.js";
 import { redactObject } from "./utils/redact.js";
+import { createLogger } from "./log.js";
 
 export interface EmitOptions {
   in?: string;
@@ -9,13 +10,9 @@ export interface EmitOptions {
   sink?: "stdout" | "file" | "github";
 }
 
-function isDebug(): boolean {
-  const lvl = String(process.env.A5C_LOG_LEVEL || "").toLowerCase();
-  return lvl === "debug" || lvl === "trace";
-}
-function dbg(msg: string) {
-  if (isDebug()) process.stderr.write(`[emit] ${msg}\n`);
-}
+const logger = createLogger({ scope: "emit" });
+const dbg = (msg: string, ctx?: Record<string, unknown>) =>
+  logger.debug(msg, ctx);
 
 export async function handleEmit(
   opts: EmitOptions,

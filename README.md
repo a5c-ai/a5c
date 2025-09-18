@@ -5,7 +5,7 @@
 Normalize and enrich GitHub (and other) events for agentic workflows. Use the CLI in CI or locally to turn raw webhook/Actions payloads into a compact, consistent schema that downstream agents and automations can trust.
 
 - Quick install via npm
-- Commands: `events mentions`, `events normalize`, `events enrich`, `events reactor`, `events emit`, `events validate` (see `docs/cli/reference.md#events-reactor` and `docs/cli/reference.md#events-emit` for options and examples)
+- Commands: `events mentions`, `events normalize`, `events enrich`, `events generate_context`, `events reactor`, `events emit`, `events validate` (see `docs/cli/reference.md` for options and examples)
 - Output: JSON to stdout or file
 - Extensible via provider adapters and enrichers
 
@@ -90,6 +90,7 @@ Canonical reference and examples:
 
 - docs/cli/reference.md#events-enrich
 - docs/cli/reference.md#mentions-scanning
+- End-to-end Actions example: docs/ci/actions-e2e-example.md
 
 `events mentions`
 
@@ -439,7 +440,7 @@ Environment variables:
 - `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`: enables GitHub API enrichment
 - `DEBUG`: set to `true` to enable debug mode
 - `A5C_AGENT_GITHUB_TOKEN` or `GITHUB_TOKEN`: required when using `--use-github`
-- Debug flags TBD (`DEBUG=@a5c/events*`)
+- Logging toggles: see `docs/observability.md` (CLI flags for log format/level are proposed; current support is env-only in select paths)
 
 CLI behavior:
 
@@ -718,7 +719,7 @@ Environment variables:
 - `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN`: enables GitHub API enrichment
 - `DEBUG`: set to `true` to enable debug mode
 - `A5C_AGENT_GITHUB_TOKEN` or `GITHUB_TOKEN`: required when using `--use-github`
-- Debug flags TBD (`DEBUG=@a5c/events*`)
+- Logging toggles: see `docs/observability.md` (CLI flags for log format/level are proposed; current support is env-only in select paths)
 
 CLI behavior:
 

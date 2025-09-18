@@ -69,7 +69,7 @@ export interface LoggerLike {
 ```
 
 - If omitted, code paths fall back to `console` when logging is used.
-- For JSON logs in CLI/CI, environment toggles like `A5C_LOG_FORMAT=json` and `A5C_LOG_LEVEL=info|debug|warn|error` are proposed in docs/observability.md and may be wired via a future `createDefaultLogger()` helper (kept optional).
+- For JSON logs in CLI/CI, use `--log-format=json` and `--log-level=<...>` (or env `A5C_LOG_FORMAT`/`A5C_LOG_LEVEL`). The SDK remains logger-agnostic; you may pass a `LoggerLike` when available.
 
 ## OpenTelemetry (optional)
 
@@ -94,5 +94,6 @@ This is entirely optional; without OTEL, the above imports won’t be used and y
 ## See also
 
 - CLI reference: docs/cli/reference.md
+- CLI context generation: docs/cli/reference.md#events-generate-context
 - Observability: docs/observability.md
 - NE schema overview: docs/cli/ne-schema.md

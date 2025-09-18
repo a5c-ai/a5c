@@ -2,7 +2,7 @@
 
 ### Summary
 
-`enrich` supports flags `include_patch` (default true), `commit_limit` (default 50), `file_limit` (default 200), and `--use-github` wiring to `flags.use_github`. README and CLI reference should list defaults and accepted truthy values.
+`enrich` supports flags `include_patch` (default false), `commit_limit` (default 50), `file_limit` (default 200), and `--use-github` wiring to `flags.use_github`. README and CLI reference should list defaults and accepted truthy values.
 
 ### Recommendation
 
@@ -12,3 +12,4 @@
 ### Acceptance
 
 - Users can infer behavior and required env from documentation.
+- CLI reference anchor `docs/cli/reference.md#events-enrich` documents `include_patch` default as `false` (source of truth).
