@@ -25,3 +25,8 @@ Rewrite README to reflect the current implementation, name, purpose, and scope. 
 
 - Created working branch and this progress log
 - Next: Implement README rewrite
+
+## Results
+
+- README rewritten and merged via PR #939
+- Linked to issue #938 (closed)
