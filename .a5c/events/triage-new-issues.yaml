@@ -1,5 +1,7 @@
 ---
 name: Triage New Issues
+metadata:
+  runner-name: reactor
 on:
   issues:
     filters:
@@ -30,15 +32,15 @@ script:
   - |
     echo "Triage request for issue ${{ event.issue.html_url }} added label triage"
 ---
+name: Triage Agent Run
+metadata:
+  runner-name: agents
 on:
   triage_new_issue:
 pre_set_labels:
   - entity: ${{ event.issue.html_url }}
     add_labels: [triage_in_progress]
     remove_labels: [triage_requested]
-metadata:
-  # for running the reactor with --metadata-match runner-name=triage-runner
-  runner-name: triage-runner
 env:
   - name: A5C_MCPS_PATH
     value: ${{ vars.A5C_MCPS_PATH || '~/.a5c/mcps.json' }}
