@@ -16,3 +16,8 @@
 
 - No code changes; documentation only.
 - Cross-check related docs: `docs/cli/reference.md`, SDK quickstart.
+
+## Results
+
+- Updated `docs/observability.md` Structured Logging bullet to: default `pretty` for humans; JSON recommended for CI. No code changes.
+- Verified CLI flags and defaults in `src/log.ts` and `src/cli.ts` and tests `test/cli.help.flags.test.ts`.
