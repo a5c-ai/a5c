@@ -1,3 +1,19 @@
+## 1.17.0 (2025-09-18)
+
+* ✅ Fix failing golden enrich: issue_comment type (#952) ([6965aad](https://github.com/a5c-ai/events/commit/6965aad)), closes [#952](https://github.com/a5c-ai/events/issues/952) [#950](https://github.com/a5c-ai/events/issues/950)
+* 🐛 Update golden: issue_comment enrich type (fixes #944) (#948) ([71b0c2d](https://github.com/a5c-ai/events/commit/71b0c2d)), closes [#944](https://github.com/a5c-ai/events/issues/944) [#948](https://github.com/a5c-ai/events/issues/948)
+* 🧪 Add tests: enrich fallback + rules_status metadata (fixes #941) (#953) ([63ad92b](https://github.com/a5c-ai/events/commit/63ad92b)), closes [#941](https://github.com/a5c-ai/events/issues/941) [#953](https://github.com/a5c-ai/events/issues/953) [#941](https://github.com/a5c-ai/events/issues/941) [#941](https://github.com/a5c-ai/events/issues/941) [#941](https://github.com/a5c-ai/events/issues/941)
+* 🧪 Fix golden: issue_comment type for issue_comment.created.enrich.json (#951) ([6a446b7](https://github.com/a5c-ai/events/commit/6a446b7)), closes [#951](https://github.com/a5c-ai/events/issues/951) [#949](https://github.com/a5c-ai/events/issues/949) [#949](https://github.com/a5c-ai/events/issues/949) [#949](https://github.com/a5c-ai/events/issues/949)
+* 🧪 fix: update golden for issue_comment.created type (fixes #946) (#947) ([f938f20](https://github.com/a5c-ai/events/commit/f938f20)), closes [#946](https://github.com/a5c-ai/events/issues/946) [#947](https://github.com/a5c-ai/events/issues/947) [#946](https://github.com/a5c-ai/events/issues/946) [#946](https://github.com/a5c-ai/events/issues/946)
+* chore(docs,ci): add build-fixer notes and fix EOF whitespace for hooks (#945) ([a5ff863](https://github.com/a5c-ai/events/commit/a5ff863)), closes [#945](https://github.com/a5c-ai/events/issues/945)
+* Merge branch 'a5c/main' of https://github.com/a5c-ai/events into a5c/main ([13d8a76](https://github.com/a5c-ai/events/commit/13d8a76))
+* Merge pull request #954 from a5c-ai/a5c/main ([d7e16b6](https://github.com/a5c-ai/events/commit/d7e16b6)), closes [#954](https://github.com/a5c-ai/events/issues/954)
+* feat: add create PR script and event configuration ([915f63b](https://github.com/a5c-ai/events/commit/915f63b))
+* feat: enhance triage and validation workflows with new agent runs ([4fb9e99](https://github.com/a5c-ai/events/commit/4fb9e99))
+* feat: introduce agent script ([63fc7fb](https://github.com/a5c-ai/events/commit/63fc7fb))
+* fix(ci): normalize LF endings and add trailing newline to .a5c/agent.sh\n\nchore(docs): add progress ([e6fb366](https://github.com/a5c-ai/events/commit/e6fb366))
+* refactor: remove set -euo pipefail from triage and validation scripts ([88d406d](https://github.com/a5c-ai/events/commit/88d406d))
+
 ## 1.16.0 (2025-09-18)
 
 * 📝 README overhaul: reflect current implementation, name, purpose, scope (#939) ([787995f](https://github.com/a5c-ai/events/commit/787995f)), closes [#939](https://github.com/a5c-ai/events/issues/939) [#938](https://github.com/a5c-ai/events/issues/938) [#938](https://github.com/a5c-ai/events/issues/938)
