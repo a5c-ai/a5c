@@ -29,8 +29,6 @@ files = [
 regexes = [
   # Placeholder tokens often used in examples
   "(?i)(dummy|placeholder|example|sample)[-_]?(token|key|secret)",
-  # Base64 fragments in docs
-  "(?:[A-Za-z0-9+/]{20,}={0,2})",
 ]
 
 # You can customize rules here if needed in the future
