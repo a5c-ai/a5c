@@ -36,11 +36,13 @@ We include a Husky `commit-msg` hook that validates your commit message using Co
 
 ## Commit Hygiene and Pre-commit Hook
 
-For more details, see `docs/ci/commit-hygiene.md`. Run `npm run commit:prepare` if hooks are missing. You can bypass pre-commit with `A5C_SKIP_PRECOMMIT=1` or `SKIP_PRECOMMIT=1` in emergencies. The pre-commit also guards against Windows-invalid `:` in filenames.
+For more details, see `docs/ci/commit-hygiene.md`. Run `npm run commit:prepare` if hooks are missing. You can bypass pre-commit with `A5C_SKIP_PRECOMMIT=1` or `SKIP_PRECOMMIT=1` in emergencies (legacy `SKIP_CHECKS=1` is also honored). The pre-commit also guards against Windows-invalid `:` in filenames.
 
 We enforce fast pre-commit checks to keep branches healthy. The Husky pre-commit hook delegates to `scripts/precommit.sh`, which runs:
 
 - Filename guard: blocks Windows-invalid `:` in staged filenames.
+- Artifact guard: blocks committing generated artifacts under `coverage/**` and `dist/**`.
+- Size guard: fails if any staged file exceeds a size threshold (default 1 MiB).
 - Staged file hygiene: trailing whitespace and end-of-file newline checks (`git diff --cached --check`).
 - Lint-staged: runs ESLint/Prettier only on staged files per `package.json` `lint-staged` config.
 
@@ -93,6 +95,11 @@ A5C_SKIP_PRECOMMIT=1 git commit -m "wip: bypass pre-commit"
 ```
 
 The script also recognizes the legacy `SKIP_CHECKS=1`. Use the explicit vars above when possible. Please follow up with a separate commit to address issues.
+
+### Configuration
+
+- Max file size: override with `PRECOMMIT_MAX_SIZE_BYTES` (default `1048576` bytes, i.e., 1 MiB).
+- Blocked paths: any staged files under `coverage/**` or `dist/**` are rejected. If you must commit build outputs, place them outside these directories or adjust your workflow (e.g., publish artifacts).
 
 ### Running Checks Manually
 

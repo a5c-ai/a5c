@@ -5,7 +5,7 @@ echo "[precommit] Running checks..."
 
 # Allow bypass for emergencies
 if [[ "${SKIP_CHECKS:-0}" == "1" ]] || [[ -n "${A5C_SKIP_PRECOMMIT:-}" ]] || [[ -n "${SKIP_PRECOMMIT:-}" ]]; then
-  echo "[precommit] SKIP_CHECKS=1 set — skipping all checks"
+  echo "[precommit] Skip requested via A5C_SKIP_PRECOMMIT=1 or SKIP_PRECOMMIT=1 (or SKIP_CHECKS=1) — skipping all checks"
   exit 0
 fi
 
@@ -29,6 +29,51 @@ warn() {
 if echo "$STAGED" | grep -E ':' >/dev/null 2>&1; then
   echo "$STAGED" | grep -E ':' || true
   fail "Staged filenames contain ':' which breaks Windows checkouts. Please rename (use '-' instead)."
+fi
+
+# 2) Block common generated artifacts and large files in staged changes
+#    - Ban coverage/** and dist/** anywhere in the path
+#    - Fail if any single staged file exceeds the size threshold (default 1 MiB)
+
+# default to 1 MiB; allow override via PRECOMMIT_MAX_SIZE_BYTES
+MAX_SIZE_BYTES_DEFAULT=1048576
+MAX_SIZE_BYTES="${PRECOMMIT_MAX_SIZE_BYTES:-$MAX_SIZE_BYTES_DEFAULT}"
+
+blocked_paths=()
+oversized=()
+
+while IFS= read -r f; do
+  [ -z "$f" ] && continue
+  # Ignore deletions (already filtered), and only consider regular files
+  if [ ! -f "$f" ]; then
+    continue
+  fi
+  # coverage/** or dist/** anywhere in the path
+  case "$f" in
+    */coverage/*|coverage/*|*/dist/*|dist/*)
+      blocked_paths+=("$f")
+      ;;
+  esac
+  # Size check (portable using wc -c)
+  bytes=$(wc -c <"$f" | tr -d '[:space:]' || echo 0)
+  if [ "$bytes" -gt "$MAX_SIZE_BYTES" ]; then
+    oversized+=("$f ($bytes bytes)")
+  fi
+done <<EOF
+$STAGED
+EOF
+
+if [ ${#blocked_paths[@]} -gt 0 ]; then
+  printf "[precommit] The following staged paths are blocked (generated artifacts):\n" >&2
+  for p in "${blocked_paths[@]}"; do printf "  - %s\n" "$p" >&2; done
+  fail "Generated output is not committed. Remove coverage/** and dist/** from the commit."
+fi
+
+if [ ${#oversized[@]} -gt 0 ]; then
+  printf "[precommit] Max allowed file size: %s bytes (override with PRECOMMIT_MAX_SIZE_BYTES)\n" "$MAX_SIZE_BYTES" >&2
+  printf "[precommit] The following staged files exceed the size limit:\n" >&2
+  for p in "${oversized[@]}"; do printf "  - %s\n" "$p" >&2; done
+  fail "One or more staged files are too large. Consider using Git LFS or add to .gitignore if generated."
 fi
 
 # Whitespace and EOF newline checks using git's built-in checker
