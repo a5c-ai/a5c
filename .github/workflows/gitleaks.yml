@@ -49,10 +49,11 @@ jobs:
       - name: Run TruffleHog (push workspace fallback)
         if: github.event_name == 'push' && env.GITLEAKS_LICENSE == ''
         run: |
-          echo "Running TruffleHog fallback: full repository filesystem scan"
+          echo "Running TruffleHog fallback: full repository filesystem scan (only verified secrets)"
           docker run --rm -v "$PWD:/pwd" trufflesecurity/trufflehog:latest filesystem \
             --directory=/pwd \
             --no-update \
+            --only-verified \
             --fail
 
       # Keep SARIF upload only if a SARIF file was produced (e.g., when using CLI directly)
