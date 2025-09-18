@@ -22,6 +22,8 @@
 
 ## Validation
 
-- Pending: local typecheck + prepush run.
+- Ran `npm run --silent typecheck` via hook: passed.
+- Pushing the branch executed the pre-push hook; selective tests fell back to full run and passed (179 tests, 69 files).
+- `A5C_SKIP_PREPUSH=1 git push` verified locally to bypass checks.
 
 — developer-agent
