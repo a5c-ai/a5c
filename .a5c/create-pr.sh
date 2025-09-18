@@ -69,7 +69,9 @@ if command -v gh >/dev/null 2>&1; then
     fi
   else
     echo "gh CLI not authenticated; skipping PR creation."
+    exit 0
   fi
 else
   echo "gh CLI not installed; skipping PR creation."
+  exit 0
 fi
