@@ -247,16 +247,28 @@ export function resolveOwnerRepo(
 ): { owner: string; repo: string } | null {
   try {
     if (!cp || typeof cp !== "object") return null;
+    // Direct fields
     const full = cp?.repository?.full_name || cp?.repo_full_name;
     if (typeof full === "string" && full.includes("/")) {
       const [owner, repo] = full.split("/");
+      if (owner && repo) return { owner, repo };
+    }
+    // Nested under payload
+    const p = cp?.payload || {};
+    const fullNested = p?.repository?.full_name || p?.repo_full_name;
+    if (typeof fullNested === "string" && fullNested.includes("/")) {
+      const [owner, repo] = fullNested.split("/");
       if (owner && repo) return { owner, repo };
     }
     const html =
       cp?.repository?.html_url ||
       cp?.pull_request?.html_url ||
       cp?.issue?.html_url ||
-      cp?.repo_html_url;
+      cp?.repo_html_url ||
+      p?.repository?.html_url ||
+      p?.pull_request?.html_url ||
+      p?.issue?.html_url ||
+      p?.repo_html_url;
     if (typeof html === "string") {
       const parsed = parseGithubEntity(html);
       if (parsed) return { owner: parsed.owner, repo: parsed.repo };
@@ -269,10 +281,22 @@ export function resolveOwnerRepo(
         if (parsed) return { owner: parsed.owner, repo: parsed.repo };
       }
     }
-    const oeFull = cp?.original_event?.repository?.full_name;
+    // Original event (both direct and nested under payload)
+    const oeFull =
+      cp?.original_event?.repository?.full_name ||
+      p?.original_event?.repository?.full_name;
     if (typeof oeFull === "string" && oeFull.includes("/")) {
       const [owner, repo] = oeFull.split("/");
       if (owner && repo) return { owner, repo };
+    }
+    const oeHtml =
+      cp?.original_event?.pull_request?.html_url ||
+      cp?.original_event?.issue?.html_url ||
+      p?.original_event?.pull_request?.html_url ||
+      p?.original_event?.issue?.html_url;
+    if (typeof oeHtml === "string") {
+      const parsed = parseGithubEntity(oeHtml);
+      if (parsed) return { owner: parsed.owner, repo: parsed.repo };
     }
     return null;
   } catch {
