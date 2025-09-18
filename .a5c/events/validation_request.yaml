@@ -56,9 +56,10 @@ env:
 script:
   - |
     echo "running agent for validation"
-    # npx -y @a5c-ai/events@latest generate_context --in ${{ event_path }} \
-    #    --template ${{ env.A5C_TEMPLATE_URI }} \
-    #    --out - | npx -y @a5c-ai/runner run --cli=codex --prompt-file=- --mcps=~/.a5c/mcps.json
+    npx -y @a5c-ai/events@latest generate_context --in ${{ event_path }} \
+      --template ${{ env.A5C_TEMPLATE_URI }} \
+      --out -
+    # npx -y @a5c-ai/runner run --cli=codex --prompt-file=- --mcps=~/.a5c/mcps.json
 set_labels:
   - entity: ${{ event.pull_request.html_url }}
     add_labels: [validated]
