@@ -1,5 +1,4 @@
-#!/bin/bash
-# set -euo pipefail
+#!/bin/sh
 echo "running agent"
 npx -y "$A5C_PKG_SPEC" generate_context \
     --in "$A5C_EVENT_PATH" \

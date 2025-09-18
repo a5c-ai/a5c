@@ -1,5 +1,4 @@
-#!/bin/bash
-set -euo pipefail
+#!/bin/sh
 
 HEAD_BRANCH=${HEAD_BRANCH:-a5c/main}
 BASE_BRANCH=${BASE_BRANCH:-main}
