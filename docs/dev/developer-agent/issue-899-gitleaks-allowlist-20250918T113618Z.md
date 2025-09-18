@@ -16,3 +16,9 @@ Validator flagged an over-permissive Base64 allowlist pattern in `gitleaks.toml`
 
 - `.github/workflows/gitleaks.yml` already runs on `a5c/main` and `main`, with SARIF upload. No workflow change anticipated.
 - Path allowlists (docs/specs, docs/examples, tests/, test/, samples/, example/) remain to reduce noise.
+
+## Results
+
+- Removed global Base64 allowlist regex from `gitleaks.toml`.
+- Left path allowlists for docs/examples/tests intact.
+- Opened PR: https://github.com/a5c-ai/events/pull/905
