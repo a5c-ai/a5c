@@ -1,4 +1,4 @@
-name: Reactor
+name: Agent Run
 env:
   A5C_LOG_LEVEL: ${{ github.event.inputs.debug || 'false' && 'debug' || 'info' }}
 on:
@@ -13,7 +13,7 @@ permissions:
   checks: write
   repository-projects: write
 jobs:
-  reactor:
+  agent-run:
     runs-on: ubuntu-latest
     steps:
       # - name: Checkout
