@@ -80,14 +80,27 @@ async function executeSideEffects(obj: any): Promise<void> {
     try {
       (globalThis as any).__A5C_EMIT_CTX__ = { event: cp };
     } catch {}
+    // Fill missing entity from context
+    const defaultEntity = inferEntityUrl(cp);
     if (cp && Array.isArray(cp.pre_set_labels) && cp.pre_set_labels.length) {
-      await applyLabels(cp.pre_set_labels);
+      const filled = cp.pre_set_labels.map((e: any) => ({
+        ...e,
+        entity: e?.entity || defaultEntity,
+      }));
+      dbg(`execute pre_set_labels count=${filled.length}`);
+      await applyLabels(filled);
     }
     if (cp && Array.isArray(cp.script) && cp.script.length) {
-      await runScripts(cp.script);
+      dbg(`execute script lines=${cp.script.length}`);
+      await runScripts(cp.script, cp);
     }
     if (cp && Array.isArray(cp.set_labels) && cp.set_labels.length) {
-      await applyLabels(cp.set_labels);
+      const filled = cp.set_labels.map((e: any) => ({
+        ...e,
+        entity: e?.entity || defaultEntity,
+      }));
+      dbg(`execute set_labels count=${filled.length}`);
+      await applyLabels(filled);
     }
   }
 }
@@ -167,7 +180,7 @@ function normalizeLabelsArray(v: any): string[] {
 // Re-export the shared helper to preserve the public API
 export const parseGithubEntity = parseGithubEntityUtil;
 
-async function runScripts(lines: string[]): Promise<void> {
+async function runScripts(lines: string[], ctx?: any): Promise<void> {
   // Execute each line via sh -c in a minimal environment
   const { exec } = await import("node:child_process");
   for (const line of lines) {
@@ -179,10 +192,18 @@ async function runScripts(lines: string[]): Promise<void> {
       cmd = expandInlineTemplates(cmd, ctx);
     } catch {}
     await new Promise<void>((resolve, reject) => {
-      exec(
+      const child = exec(
         cmd,
-        { env: process.env, windowsHide: true },
-        (err, _stdout, _stderr) => {
+        { env: { ...process.env, ...(ctx?.env || {}) }, windowsHide: true },
+        (err, stdout, stderr) => {
+          if (stdout)
+            try {
+              process.stdout.write(String(stdout));
+            } catch {}
+          if (stderr)
+            try {
+              process.stderr.write(String(stderr));
+            } catch {}
           if (err) return reject(err);
           resolve();
         },
@@ -298,6 +319,24 @@ export function resolveOwnerRepo(
       const parsed = parseGithubEntity(oeHtml);
       if (parsed) return { owner: parsed.owner, repo: parsed.repo };
     }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function inferEntityUrl(cp: any): string | null {
+  try {
+    const pr = cp?.pull_request;
+    if (pr?.html_url) return String(pr.html_url);
+    const issue = cp?.issue;
+    if (issue?.html_url) return String(issue.html_url);
+    const p = cp?.payload || {};
+    if (p?.pull_request?.html_url) return String(p.pull_request.html_url);
+    if (p?.issue?.html_url) return String(p.issue.html_url);
+    const oe = cp?.original_event || p?.original_event;
+    if (oe?.pull_request?.html_url) return String(oe.pull_request.html_url);
+    if (oe?.issue?.html_url) return String(oe.issue.html_url);
     return null;
   } catch {
     return null;
