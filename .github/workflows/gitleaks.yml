@@ -1,0 +1,45 @@
+name: Gitleaks
+
+on:
+  pull_request:
+    branches: [a5c/main, main]
+    types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    branches: [a5c/main, main]
+
+concurrency:
+  group: gitleaks-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  scan:
+    name: Secret Scan (Gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks (fast PR scan)
+        if: github.event_name == 'pull_request'
+        uses: gitleaks/gitleaks-action@v2
+        with:
+          # Fast, workspace-only scan for PRs to reduce noise and time
+          args: "detect --no-git --redact --config-path gitleaks.toml --report-format sarif --report-path gitleaks.sarif"
+
+      - name: Run Gitleaks (push scan)
+        if: github.event_name == 'push'
+        uses: gitleaks/gitleaks-action@v2
+        with:
+          # Full scan against repo history on protected branches
+          args: "detect --redact --config-path gitleaks.toml --report-format sarif --report-path gitleaks.sarif"
+
+      - name: Upload SARIF results
+        if: always() && hashFiles('gitleaks.sarif') != ''
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: gitleaks.sarif
