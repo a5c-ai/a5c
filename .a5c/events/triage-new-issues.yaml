@@ -15,7 +15,7 @@ on:
       # is a issue or already closed
       - expression: ${{ event.issue.closed == true }}
       # doesn't have the 'triage' label
-      - expression: ${{ event.labels | contains('triage') == false || (event.type == 'labeled' && event.label.name != 'triage') }}
+      - expression: ${{ (event.type != 'labeled' && event.labels | contains('triage') == false) || (event.type == 'labeled' && event.label.name != 'triage') }}
       # if triage in progress or already requested
       - expression: ${{ event.labels | contains('triage_in_progress') || event.labels | contains('triage_requested') }}
 emit:
