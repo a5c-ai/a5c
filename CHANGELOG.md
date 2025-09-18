@@ -1,3 +1,11 @@
+## 1.16.0 (2025-09-18)
+
+* 📝 README overhaul: reflect current implementation, name, purpose, scope (#939) ([787995f](https://github.com/a5c-ai/events/commit/787995f)), closes [#939](https://github.com/a5c-ai/events/issues/939) [#938](https://github.com/a5c-ai/events/issues/938) [#938](https://github.com/a5c-ai/events/issues/938)
+* Merge pull request #942 from a5c-ai/a5c/main ([d5c3986](https://github.com/a5c-ai/events/commit/d5c3986)), closes [#942](https://github.com/a5c-ai/events/issues/942)
+* feat(triage): add workflow for triaging new issues ([762346f](https://github.com/a5c-ai/events/commit/762346f))
+* feat(triage): enable triage configuration and enhance event handling ([1c560ea](https://github.com/a5c-ai/events/commit/1c560ea))
+* fix(event): correct event trigger from 'issue' to 'issues' in triage workflow ([dea4a61](https://github.com/a5c-ai/events/commit/dea4a61))
+
 ## 1.15.0 (2025-09-18)
 
 * Merge pull request #937 from a5c-ai/a5c/main ([57fb8b3](https://github.com/a5c-ai/events/commit/57fb8b3)), closes [#937](https://github.com/a5c-ai/events/issues/937)
