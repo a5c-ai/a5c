@@ -1,3 +1,11 @@
+## <small>1.11.4 (2025-09-18)</small>
+
+* 🧪 fix: harden generateContext this binding in #each (fixes #926) (#928) ([a98a4f4](https://github.com/a5c-ai/events/commit/a98a4f4)), closes [#926](https://github.com/a5c-ai/events/issues/926) [#928](https://github.com/a5c-ai/events/issues/928) [#926](https://github.com/a5c-ai/events/issues/926)
+* Merge branch 'a5c/main' of https://github.com/a5c-ai/events into a5c/main ([459b919](https://github.com/a5c-ai/events/commit/459b919))
+* Merge pull request #930 from a5c-ai/a5c/main ([10ab099](https://github.com/a5c-ai/events/commit/10ab099)), closes [#930](https://github.com/a5c-ai/events/issues/930)
+* fix(emit): enhance resolveOwnerRepo function to support nested payload structures for owner/repo ext ([ebfab2b](https://github.com/a5c-ai/events/commit/ebfab2b))
+* chore(husky): enable pre-push typecheck + selective tests with env bypass; docs: add bypass flags (f ([d40e192](https://github.com/a5c-ai/events/commit/d40e192)), closes [#871](https://github.com/a5c-ai/events/issues/871) [#929](https://github.com/a5c-ai/events/issues/929)
+
 ## <small>1.11.3 (2025-09-18)</small>
 
 * 🚦 Gate CodeQL when GHAS is disabled (avoid CI failure) (#919) ([e97f7fc](https://github.com/a5c-ai/events/commit/e97f7fc)), closes [#919](https://github.com/a5c-ai/events/issues/919)
