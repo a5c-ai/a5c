@@ -180,6 +180,7 @@ Troubleshooting:
 - Missing token for `github://...` may fail with an authentication or rate-limit error. Provide `--token` or export `A5C_AGENT_GITHUB_TOKEN`/`GITHUB_TOKEN`.
 - If a `github://owner/repo/ref/path` points to a directory, an error is returned; provide a file path.
 - For private repos, ensure the token has `repo` scope.
+- Refs that contain slashes (e.g., `a5c/main`) are supported without URL-encoding. For maximum compatibility with older versions, you may also URL-encode the slash (`a5c%2Fmain`).
 
 ### `events enrich`
 
