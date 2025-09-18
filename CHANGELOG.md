@@ -1,3 +1,20 @@
+## <small>1.11.5 (2025-09-18)</small>
+
+* chore(deps)(deps-dev): bump @semantic-release/github ([7b0efba](https://github.com/a5c-ai/events/commit/7b0efba))
+* chore(deps)(deps-dev): bump lint-staged from 15.5.2 to 16.1.6 ([3dd56a0](https://github.com/a5c-ai/events/commit/3dd56a0))
+* chore(deps)(deps-dev): bump the minor-and-patch group with 4 updates ([e568208](https://github.com/a5c-ai/events/commit/e568208))
+* chore(deps)(deps): bump actions/checkout in /.github/workflows ([841748c](https://github.com/a5c-ai/events/commit/841748c))
+* chore(deps)(deps): bump actions/setup-python in /.github/workflows ([7a1e7a2](https://github.com/a5c-ai/events/commit/7a1e7a2))
+* chore(deps)(deps): bump codecov/codecov-action in /.github/workflows ([b91516d](https://github.com/a5c-ai/events/commit/b91516d))
+* Merge pull request #909 from a5c-ai/dependabot/github_actions/dot-github/workflows/codecov/codecov-a ([0b5182c](https://github.com/a5c-ai/events/commit/0b5182c)), closes [#909](https://github.com/a5c-ai/events/issues/909)
+* Merge pull request #910 from a5c-ai/dependabot/github_actions/dot-github/workflows/actions/setup-pyt ([add99bb](https://github.com/a5c-ai/events/commit/add99bb)), closes [#910](https://github.com/a5c-ai/events/issues/910)
+* Merge pull request #911 from a5c-ai/dependabot/github_actions/dot-github/workflows/actions/checkout- ([9eaa810](https://github.com/a5c-ai/events/commit/9eaa810)), closes [#911](https://github.com/a5c-ai/events/issues/911)
+* Merge pull request #913 from a5c-ai/dependabot/npm_and_yarn/minor-and-patch-9282712fcc ([695becb](https://github.com/a5c-ai/events/commit/695becb)), closes [#913](https://github.com/a5c-ai/events/issues/913)
+* Merge pull request #915 from a5c-ai/dependabot/npm_and_yarn/semantic-release/github-11.0.6 ([db8072e](https://github.com/a5c-ai/events/commit/db8072e)), closes [#915](https://github.com/a5c-ai/events/issues/915)
+* Merge pull request #916 from a5c-ai/dependabot/npm_and_yarn/lint-staged-16.1.6 ([883c303](https://github.com/a5c-ai/events/commit/883c303)), closes [#916](https://github.com/a5c-ai/events/issues/916)
+* Merge pull request #931 from a5c-ai/a5c/main ([efe97c7](https://github.com/a5c-ai/events/commit/efe97c7)), closes [#931](https://github.com/a5c-ai/events/issues/931)
+* fix(emit): enhance label processing and script execution with context entity inference ([e6f4825](https://github.com/a5c-ai/events/commit/e6f4825))
+
 ## <small>1.11.4 (2025-09-18)</small>
 
 * 🧪 fix: harden generateContext this binding in #each (fixes #926) (#928) ([a98a4f4](https://github.com/a5c-ai/events/commit/a98a4f4)), closes [#926](https://github.com/a5c-ai/events/issues/926) [#928](https://github.com/a5c-ai/events/issues/928) [#926](https://github.com/a5c-ai/events/issues/926)
