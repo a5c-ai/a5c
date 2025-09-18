@@ -1,3 +1,23 @@
+## <small>1.11.1 (2025-09-18)</small>
+
+* ✅ docs: add build-fixer notes for CI test fixes (PR #778) ([a7f9164](https://github.com/a5c-ai/events/commit/a7f9164)), closes [#778](https://github.com/a5c-ai/events/issues/778) [#778](https://github.com/a5c-ai/events/issues/778)
+* 🔧 chore(ci): add Dependabot config + safe auto-merge (#869) ([0f77680](https://github.com/a5c-ai/events/commit/0f77680)), closes [#869](https://github.com/a5c-ai/events/issues/869) [#855](https://github.com/a5c-ai/events/issues/855) [#855](https://github.com/a5c-ai/events/issues/855)
+* 🧪 CI: Expand PR test matrix (Node 20/22 + Windows/macOS smoke) (#865) ([86beca9](https://github.com/a5c-ai/events/commit/86beca9)), closes [#865](https://github.com/a5c-ai/events/issues/865) [#854](https://github.com/a5c-ai/events/issues/854) [#854](https://github.com/a5c-ai/events/issues/854) [#854](https://github.com/a5c-ai/events/issues/854)
+* 🧹 Deduplicate observability schema path (canonicalize to docs/specs) (#863) ([e20e881](https://github.com/a5c-ai/events/commit/e20e881)), closes [#863](https://github.com/a5c-ai/events/issues/863) [#859](https://github.com/a5c-ai/events/issues/859) [#859](https://github.com/a5c-ai/events/issues/859)
+* 🧹 Docs: Tidy README — de-duplicate ‘Rules quick-start’ (#862) ([6193b3d](https://github.com/a5c-ai/events/commit/6193b3d)), closes [#862](https://github.com/a5c-ai/events/issues/862) [#861](https://github.com/a5c-ai/events/issues/861) [#861](https://github.com/a5c-ai/events/issues/861)
+* 🚦 ci: enforce PR title Conventional Commits on a5c/main (fixes #852) (#866) ([0279d79](https://github.com/a5c-ai/events/commit/0279d79)), closes [#852](https://github.com/a5c-ai/events/issues/852) [#866](https://github.com/a5c-ai/events/issues/866) [#852](https://github.com/a5c-ai/events/issues/852) [#852](https://github.com/a5c-ai/events/issues/852) [#852](https://github.com/a5c-ai/events/issues/852)
+* 🛠️ Fix: reactor type 'issue' for original_event.issue (fixes #857) (#868) ([ce87414](https://github.com/a5c-ai/events/commit/ce87414)), closes [#857](https://github.com/a5c-ai/events/issues/857) [#868](https://github.com/a5c-ai/events/issues/868) [#857](https://github.com/a5c-ai/events/issues/857) [#857](https://github.com/a5c-ai/events/issues/857) [#857](https://github.com/a5c-ai/events/issues/857)
+* Merge pull request #850 from a5c-ai/a5c/main ([5021a9e](https://github.com/a5c-ai/events/commit/5021a9e)), closes [#850](https://github.com/a5c-ai/events/issues/850)
+* Merge pull request #886 from a5c-ai/docs/ci-actions-e2e-882 ([b2fb5f8](https://github.com/a5c-ai/events/commit/b2fb5f8)), closes [#886](https://github.com/a5c-ai/events/issues/886)
+* docs(dev): start log for Actions E2E recipe (issue #882) ([065c4aa](https://github.com/a5c-ai/events/commit/065c4aa)), closes [#882](https://github.com/a5c-ai/events/issues/882)
+* docs(validation): PR #886 non-blocking follow-ups (permissions trim, base branch guidance) ([8f3d46b](https://github.com/a5c-ai/events/commit/8f3d46b)), closes [#886](https://github.com/a5c-ai/events/issues/886)
+* chore(devlog): fix EOF newline and append results ([28938df](https://github.com/a5c-ai/events/commit/28938df))
+* chore(docs): fix EOF newline in Actions e2e doc ([7766a0b](https://github.com/a5c-ai/events/commit/7766a0b))
+* chore(samples): fix EOF newlines per pre-commit lint (#870) ([59e756d](https://github.com/a5c-ai/events/commit/59e756d)), closes [#870](https://github.com/a5c-ai/events/issues/870)
+* fix(reactor): align issue type in expressions (tests) ([b4664a2](https://github.com/a5c-ai/events/commit/b4664a2)), closes [#856](https://github.com/a5c-ai/events/issues/856)
+* test: assert cmdNormalize delegates to mapToNE; fix EOF newline (#864) ([03b0598](https://github.com/a5c-ai/events/commit/03b0598)), closes [#864](https://github.com/a5c-ai/events/issues/864)
+* refactor(reactor): improve event matching feedback and type inference ([c567989](https://github.com/a5c-ai/events/commit/c567989))
+
 ## 1.11.0 (2025-09-17)
 
 * Merge pull request #849 from a5c-ai/a5c/main ([38a9f5c](https://github.com/a5c-ai/events/commit/38a9f5c)), closes [#849](https://github.com/a5c-ai/events/issues/849)
