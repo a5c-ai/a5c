@@ -308,7 +308,8 @@ async function fetchGithubFile(
 
 function evalExpr(expr: string, ctx: Context, currentUri: string): any {
   // Provide helpers: event, env, vars, include(uri). Ensure template-level `this`
-  // resolves to the current item for {{#each}} blocks by binding function `this`.
+  // resolves to the current item for {{#each}} blocks via explicit `thisArg`.
+  // Additionally, evaluate in strict mode to avoid global-object fallback.
   const compiled = preprocess(expr);
   const fn = new Function(
     "event",
@@ -318,7 +319,9 @@ function evalExpr(expr: string, ctx: Context, currentUri: string): any {
     "include",
     "thisArg",
     // Evaluate inside a function so `this` can point to current item
-    "return (function(){ return (" + compiled + "); }).call(thisArg);",
+    "return (function(){ 'use strict'; return (" +
+      compiled +
+      "); }).call(thisArg);",
   );
   const include = (u: string) => renderTemplate(u, ctx, currentUri);
   const thisArg =
@@ -329,8 +332,13 @@ function evalExpr(expr: string, ctx: Context, currentUri: string): any {
 }
 
 function preprocess(expr: string): string {
-  // Reuse simple pipeline handling similar to reactor
-  return expr;
+  // Map leading `this` to explicit `thisArg` to avoid relying on JS `this` binding.
+  // Handles: `this`, `this.something`, `this["key"]` with possible leading spaces.
+  // Intentionally minimal to cover template use-cases; avoids altering strings.
+  const replaced = expr.replace(/^\s*this(?=(?:\s*$|[\.\[]))/, (m) =>
+    m.replace(/this$/, "thisArg"),
+  );
+  return replaced;
 }
 
 function expandDollarExpressions(s: string, ctx: Context): string {
