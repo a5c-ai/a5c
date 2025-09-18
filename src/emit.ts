@@ -114,7 +114,10 @@ async function applyLabels(entries: any[]): Promise<void> {
     try {
       const entityUrl = String(entry.entity || "");
       const parsed = parseGithubEntity(entityUrl);
-      if (!parsed) continue;
+      if (!parsed) {
+        dbg(`skip labels entry: cannot parse entity '${entityUrl}'`);
+        continue;
+      }
       const { owner, repo, number } = parsed;
       const add: string[] = normalizeLabelsArray(entry.add_labels);
       const remove: string[] = normalizeLabelsArray(entry.remove_labels);
