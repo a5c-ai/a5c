@@ -227,6 +227,7 @@ events enrich --in FILE [--out FILE] [--rules FILE] \
 ```
 
 - `--in FILE`: input JSON (normalized event or raw GitHub payload)
+  - If omitted, and `GITHUB_EVENT_PATH` is set (as in GitHub Actions), `events enrich` reads from that path by default. This mirrors the convenience of using `normalize --source actions` in workflows.
 - `--out FILE`: write result JSON (stdout if omitted)
   - `--rules FILE`: YAML/JSON rules file (optional). When provided, matching rules emit `composed[]` with `{ key, reason, targets?, labels?, payload? }`.
   - `--flag KEY=VAL...`: enrichment flags (repeatable); notable flags:
@@ -293,6 +294,31 @@ events enrich --in samples/pull_request.synchronize.json \
   --flag mentions.languages=ts,js \
   --flag mentions.max_file_bytes=102400 \
   | jq '.enriched.mentions // [] | map(select(.source=="code_comment")) | length'
+
+## GitHub Actions without --in
+
+In GitHub Actions, `GITHUB_EVENT_PATH` points to the triggering event payload. You can omit `--in` and pipe from `normalize` or pass the raw event directly:
+
+```yaml
+jobs:
+  enrich:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci
+      - name: Enrich event (auto-reads GITHUB_EVENT_PATH)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Option A: normalize then enrich (recommended)
+          events normalize --source actions | events enrich --use-github | jq '.enriched.github.provider'
+
+          # Option B: pass raw payload directly (minimal fallback if not normalized first)
+          events enrich --use-github | jq '.type'
+```
 
 ## Mentions from GitHub Issues
 
