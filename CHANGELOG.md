@@ -1,3 +1,12 @@
+## 1.19.0 (2025-09-18)
+
+* Merge pull request #973 from a5c-ai/a5c/main ([7ebcd0f](https://github.com/a5c-ai/events/commit/7ebcd0f)), closes [#973](https://github.com/a5c-ai/events/issues/973)
+* feat: add support for unquoted attribute mapping in transformPipeline function ([0009251](https://github.com/a5c-ai/events/commit/0009251))
+* feat: improve git fetch logic in create-pr.sh for target branches ([a0bb8ab](https://github.com/a5c-ai/events/commit/a0bb8ab))
+* feat: refine git fetch command in agent.sh for target branches ([80be194](https://github.com/a5c-ai/events/commit/80be194))
+* feat: refine validation request conditions in workflow YAML ([d721e1c](https://github.com/a5c-ai/events/commit/d721e1c))
+* feat: sanitize PR labels in create-pr.sh before creating pull requests ([d012f29](https://github.com/a5c-ai/events/commit/d012f29))
+
 ## 1.18.0 (2025-09-18)
 
 * Merge branch 'a5c/main' of https://github.com/a5c-ai/events into a5c/main ([d2a17c7](https://github.com/a5c-ai/events/commit/d2a17c7))
