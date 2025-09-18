@@ -9,6 +9,7 @@ import { handleEnrich } from "./enrich.js";
 import { handleReactor } from "./reactor.js";
 import { handleGenerateContext } from "./generateContext.js";
 import { handleEmit } from "./emit.js";
+import { handleRun } from "./commands/run.js";
 import { redactObject } from "./utils/redact.js";
 import path from "node:path";
 // Avoid loading heavy JSON Schema validator unless needed
@@ -423,6 +424,36 @@ program
       process.stderr.write(`validate: ${msg}\n`);
       process.exit(1);
     }
+  });
+
+program
+  .command("run")
+  .description(
+    "Run an AI provider CLI using predefined profiles (see predefined.yaml)",
+  )
+  .option(
+    "--in <uri>",
+    "prompt input (file://, github://, path, or '-' for stdin)",
+  )
+  .option("--out <file>", "output file to write final content (optional)")
+  .option("--profile <name>", "profile name from predefined.yaml")
+  .option("--model <name>", "model override for the selected profile")
+  .option("--mcps <file>", "path to mcps.json (default .a5c/mcps.json)")
+  .option(
+    "--config <uri>",
+    "path/URI to config YAML overriding predefined.yaml (file:// or github:// supported)",
+  )
+  .action(async (cmdOpts: any) => {
+    const { code, errorMessage } = await handleRun({
+      in: cmdOpts.in,
+      out: cmdOpts.out,
+      profile: cmdOpts.profile,
+      model: cmdOpts.model,
+      mcps: cmdOpts.mcps,
+      config: cmdOpts.config,
+    });
+    if (code !== 0 && errorMessage) process.stderr.write(errorMessage + "\n");
+    process.exit(code);
   });
 
 program.parseAsync(process.argv);
