@@ -14,6 +14,7 @@ updates:
     labels:
       - "dependencies"
       - "ci"
+      - "automerge"
     groups:
       minor-and-patch:
         update-types:
@@ -32,9 +33,13 @@ updates:
       interval: "weekly"
       time: "09:00"
       timezone: "UTC"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
     labels:
       - "dependencies"
       - "ci"
+      - "automerge"
     groups:
       actions-minor-patch:
         update-types:
