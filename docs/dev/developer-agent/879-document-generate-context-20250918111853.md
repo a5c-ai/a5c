@@ -18,3 +18,5 @@ Issue: #879
 ## Progress Log
 
 - [init] Branch created and note added as first commit.
+
+[update] Implemented README command entry and CLI reference section `events generate-context` with usage, flags, examples (local, stdin/stdout, github://). Added cross-link from SDK quickstart. Ran lint/typecheck/tests successfully.
