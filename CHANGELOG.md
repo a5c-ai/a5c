@@ -1,3 +1,8 @@
+## 1.15.0 (2025-09-18)
+
+* Merge pull request #937 from a5c-ai/a5c/main ([57fb8b3](https://github.com/a5c-ai/events/commit/57fb8b3)), closes [#937](https://github.com/a5c-ai/events/issues/937)
+* feat(validation): implement status checks for validation requests ([80d3c16](https://github.com/a5c-ai/events/commit/80d3c16))
+
 ## 1.14.0 (2025-09-18)
 
 * Merge pull request #936 from a5c-ai/a5c/main ([d5256e3](https://github.com/a5c-ai/events/commit/d5256e3)), closes [#936](https://github.com/a5c-ai/events/issues/936)
