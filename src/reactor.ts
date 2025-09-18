@@ -87,15 +87,24 @@ export async function handleReactor(opts: ReactorOptions): Promise<{
         secrets,
         vars: varsEnv,
       });
-      if (!onSpec || !emitSpec) {
-        logDebug(`handler#${idx} filtered: missing on/emit`);
+      const hasCommands =
+        (Array.isArray((doc as any).pre_set_labels) &&
+          (doc as any).pre_set_labels.length > 0) ||
+        (Array.isArray((doc as any).script) &&
+          (doc as any).script.length > 0) ||
+        (Array.isArray((doc as any).set_labels) &&
+          (doc as any).set_labels.length > 0);
+      if (!onSpec && !emitSpec && !hasCommands) {
+        logDebug(`handler#${idx} filtered: missing on/emit/commands`);
         continue;
       }
       const neWithEnv = withDocEnv(ne, docEnv, secrets, varsEnv);
       const dbgEvent = buildExpressionEvent((neWithEnv as any)?.payload);
-      const dbgLabels = Array.isArray(dbgEvent?.pull_request?.labels)
-        ? dbgEvent.pull_request.labels.map((x: any) => x?.name || x)
-        : (neWithEnv as any)?.labels || [];
+      const dbgLabels = Array.isArray(dbgEvent?.labels)
+        ? dbgEvent.labels
+        : Array.isArray(dbgEvent?.pull_request?.labels)
+          ? dbgEvent.pull_request.labels.map((x: any) => x?.name || x)
+          : (neWithEnv as any)?.labels || [];
       logDebug(
         `handler#${idx} on=${JSON.stringify(onSpec)} event.type=${dbgEvent?.type} action=${dbgEvent?.action} labels=${JSON.stringify(dbgLabels)}`,
       );
@@ -111,6 +120,14 @@ export async function handleReactor(opts: ReactorOptions): Promise<{
           const merged = attachDocCommands(payload, doc, neWithEnv);
           events.push({ event_type: eventType, client_payload: merged });
         }
+      } else if (!emitSpec && hasCommands) {
+        const payload = {};
+        const merged = attachDocCommands(payload, doc, neWithEnv);
+        const eventType = "command_only";
+        logDebug(
+          `handler#${idx} produced command-only event (event_type=${eventType})`,
+        );
+        events.push({ event_type: eventType, client_payload: merged });
       }
     }
     logInfo(`reactor produced ${events.length} event(s)`);
@@ -824,6 +841,31 @@ function buildExpressionEvent(base: any): any {
       if (e.action == null && typeof oe.action === "string")
         e.action = oe.action;
     }
+    // Promote labels to a flat array of strings at e.labels
+    const prLabels = Array.isArray(e?.pull_request?.labels)
+      ? e.pull_request.labels
+          .map((x: any) => (x && typeof x === "object" ? x.name : x))
+          .filter(Boolean)
+      : [];
+    const issueLabels = Array.isArray(e?.issue?.labels)
+      ? e.issue.labels
+          .map((x: any) => (x && typeof x === "object" ? x.name : x))
+          .filter(Boolean)
+      : [];
+    const cpLabels = Array.isArray(e?.client_payload?.labels)
+      ? (e.client_payload.labels as any[])
+          .map((x: any) => (x && typeof x === "object" ? x.name : x))
+          .filter(Boolean)
+      : [];
+    const promotedLabels = Array.from(
+      new Set(
+        [...(e.labels || []), ...prLabels, ...issueLabels, ...cpLabels].map(
+          (v: any) => String(v),
+        ),
+      ),
+    );
+    if (promotedLabels.length) e.labels = promotedLabels;
+
     // Fallback type from action when still unset
     if (e && e.type == null) {
       e.type =
