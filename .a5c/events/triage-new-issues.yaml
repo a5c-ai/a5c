@@ -1,7 +1,7 @@
 ---
 name: Triage New Issues
 on:
-  issue:
+  issues:
     filters:
       # issue is opened, reopened
       - expression: ${{ (event.type == 'opened' || event.type == 'reopened')}}
