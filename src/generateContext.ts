@@ -226,18 +226,43 @@ async function fetchResource(
     return fs.readFileSync(resolved, "utf8");
   }
   if (scheme === "github") {
-    // path: owner/repo/refOrVersion/remaining
-    const [owner, repo, refOrVersion, ...rest] = p.split("/");
-    const filePath = rest.join("/");
-    const ref = await resolveGithubRef(owner, repo, refOrVersion, ctx.token);
-    const content = await fetchGithubFile(
-      owner,
-      repo,
-      ref,
-      filePath,
-      ctx.token,
-    );
-    return content;
+    // Support refs with slashes by trying the longest possible ref prefix.
+    // Shape: owner/repo/<ref-with-optional-slashes>/<file-path>
+    const [owner, repo, ...rest] = p.split("/");
+    if (!owner || !repo || rest.length === 0)
+      throw new Error(
+        `Invalid github URI: expected github://owner/repo/ref/path, got '${rawUri}'`,
+      );
+
+    // Try longest-first split of rest = refParts + fileParts
+    // Ensure at least 1 segment for file path
+    let lastErr: any = null;
+    for (let i = rest.length - 1; i >= 1; i--) {
+      const refCandidateRaw = rest.slice(0, i).join("/");
+      const filePathCandidate = rest.slice(i).join("/");
+      // Preserve semver tag normalization for single-segment refs
+      const refCandidate = await resolveGithubRef(
+        owner,
+        repo,
+        refCandidateRaw,
+        ctx.token,
+      );
+      try {
+        const content = await fetchGithubFile(
+          owner,
+          repo,
+          refCandidate,
+          filePathCandidate,
+          ctx.token,
+        );
+        return content;
+      } catch (e: any) {
+        lastErr = e;
+        // continue trying shorter ref
+      }
+    }
+    // If all attempts failed, throw the last error for context
+    throw lastErr || new Error("Failed to fetch GitHub file: unknown error");
   }
   // Default: treat as file path
   return fs.readFileSync(path.resolve(p), "utf8");

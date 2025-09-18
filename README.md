@@ -47,6 +47,10 @@ Programmatic SDK example:
 
 - See SDK Quickstart: `docs/user/sdk-quickstart.md` (minimal example using `mapToNE` and optional `enrichGithub`).
 
+End-to-end CI example:
+
+- End-to-end GitHub Actions recipe (normalize → enrich → reactor → emit): `docs/ci/actions-e2e-example.md`
+
 Ref note (important):
 
 - The NE schema defines `ref.type` as `branch | tag | unknown`. Pull request events use branch semantics and populate `ref.base` and `ref.head` with the base and head branch names respectively; there is no `pr` enum in `ref.type`.

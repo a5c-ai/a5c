@@ -13,7 +13,6 @@ on:
   workflow_run:
     workflows: ["CI"]
     types: [completed]
-
 jobs:
   e2e:
     runs-on: ubuntu-latest
@@ -65,7 +64,31 @@ jobs:
 
 Notes:
 
-- The normalize step reads from `GITHUB_EVENT_PATH` when `--source actions` is used.
-- `--use-github` requires a token; prefer `A5C_AGENT_GITHUB_TOKEN` when available; otherwise `GITHUB_TOKEN`.
-- Exit codes: see `docs/cli/reference.md#exit-codes`.
-- For JSON logging toggles, see `docs/observability.md` (flags proposed; env-only level may be available in select paths).
+- Install vs npx: you can swap the install step for `npx -y @a5c-ai/events <cmd>` in each step if preferred.
+- Token precedence: runtime prefers `A5C_AGENT_GITHUB_TOKEN` over `GITHUB_TOKEN` when both are available.
+- Auto‑enrichment: `A5C_EVENTS_AUTO_USE_GITHUB=true` enables `--use-github` implicitly when a token is present. Without it (and without `--use-github`), enrichment runs offline and includes a stub at `enriched.github`.
+- Default reactor path: `.a5c/events/reactor.yaml`. Use `--file` to point elsewhere. For remote YAML, see `--branch` and `--metadata-match` flags in the CLI reference.
+
+## Exit codes and gating
+
+- Normalize `--filter`: when the filter does not match, the command exits with code `2` and emits no output. Use this to skip the rest of the pipeline for non‑target events (guard the subsequent steps with `if: success()` or `if: always()` and check files).
+- Enrich `--use-github` without a token exits with code `3` and prints an error (no JSON). Prefer using `A5C_EVENTS_AUTO_USE_GITHUB=true` so offline mode is used when no token is present.
+- Emit `--sink github` fails with code `1` on dispatch errors (missing env or permission). Ensure the job has `contents: read` and a token with repo permissions.
+- Canonical exit codes are listed in `docs/cli/reference.md#exit-codes`.
+
+## Variants
+
+- Selective fields: to keep artifacts small, prefer `--select 'type,repo.full_name,labels'` on `normalize`/`enrich` and pipe to files.
+- Mentions scanning: configure via `--flag mentions.*` (canonical list: `docs/cli/reference.md#mentions-scanning`).
+- File sink: replace the final step with `events emit --in composed.json --sink file --out artifact.json` to produce an artifact instead of a dispatch.
+
+## Troubleshooting
+
+- "GITHUB_EVENT_PATH is not set": pass `--in "$GITHUB_EVENT_PATH"` and `--source actions` in the normalize step (as in the example).
+- Missing token with `--use-github`: provide `A5C_AGENT_GITHUB_TOKEN` (preferred) or `GITHUB_TOKEN`, or remove `--use-github`/unset the auto env to run offline.
+- Permissions for repository_dispatch: ensure job `permissions` allow dispatch; use the default `GITHUB_TOKEN` or set a repo/org secret for a PAT if cross‑repo dispatching is needed.
+
+See also:
+
+- CLI reference: `docs/cli/reference.md`
+- Specs configuration: `docs/specs/README.md#5-configuration`
