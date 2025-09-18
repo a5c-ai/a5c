@@ -1,3 +1,10 @@
+## 1.14.0 (2025-09-18)
+
+* Merge pull request #936 from a5c-ai/a5c/main ([d5256e3](https://github.com/a5c-ai/events/commit/d5256e3)), closes [#936](https://github.com/a5c-ai/events/issues/936)
+* feat(validation): enhance event handling with global skip conditions and refined validation logic ([cae3ff2](https://github.com/a5c-ai/events/commit/cae3ff2))
+* chore: update package.json to include predefined.yaml and enhance temporary event JSON handling ([6d62270](https://github.com/a5c-ai/events/commit/6d62270))
+* refactor: Remove obsolete files related to scan timing, task start, and test outputs ([7048e59](https://github.com/a5c-ai/events/commit/7048e59))
+
 ## 1.13.0 (2025-09-18)
 
 * Merge pull request #935 from a5c-ai/a5c/main ([4c9fa1d](https://github.com/a5c-ai/events/commit/4c9fa1d)), closes [#935](https://github.com/a5c-ai/events/issues/935)
