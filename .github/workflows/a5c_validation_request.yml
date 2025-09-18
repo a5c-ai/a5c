@@ -21,7 +21,7 @@ jobs:
           echo "Event path: $GITHUB_EVENT_PATH"
           jq -r '.action // .event_type // .type // "?"' "$GITHUB_EVENT_PATH" || true
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         # with:
         # node-version-file: .nvmrc
         # Avoid setting global registry to GPR; use project .npmrc scoping instead
