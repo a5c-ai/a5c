@@ -49,7 +49,7 @@ When multiple jobs or a matrix run produce per-job artifacts, an aggregate artif
 
 ## Structured Logging
 
-- Output JSON logs by default when used as a CLI; SDK consumers can inject their logger.
+- Default CLI output is `pretty` for humans; prefer JSON in CI (`--log-format=json` or `A5C_LOG_FORMAT=json`). SDK consumers can inject their logger.
 - Suggested fields: `ts` (ISO), `level`, `msg`, `event`, `corr` (correlation id), `ctx` (small object), `error`.
 - Levels: `debug`, `info`, `warn`, `error`.
 - Correlation ids:
