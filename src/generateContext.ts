@@ -307,7 +307,8 @@ async function fetchGithubFile(
 }
 
 function evalExpr(expr: string, ctx: Context, currentUri: string): any {
-  // Provide helpers: event, env, vars, include(uri), and simple pipes map()/contains()
+  // Provide helpers: event, env, vars, include(uri). Ensure template-level `this`
+  // resolves to the current item for {{#each}} blocks by binding function `this`.
   const compiled = preprocess(expr);
   const fn = new Function(
     "event",
@@ -315,13 +316,16 @@ function evalExpr(expr: string, ctx: Context, currentUri: string): any {
     "env",
     "vars",
     "include",
-    `return (${compiled});`,
+    "thisArg",
+    // Evaluate inside a function so `this` can point to current item
+    "return (function(){ return (" + compiled + "); }).call(thisArg);",
   );
   const include = (u: string) => renderTemplate(u, ctx, currentUri);
-  // Bind JS `this` to the loop item when present so that
-  // expressions like `{{ this }}` inside `{{#each}}` resolve correctly.
-  const thisArg = ctx?.vars?.this;
-  return fn.call(thisArg, ctx.event, ctx.event, ctx.env, ctx.vars, include);
+  const thisArg =
+    ctx.vars && Object.prototype.hasOwnProperty.call(ctx.vars, "this")
+      ? ctx.vars.this
+      : undefined;
+  return fn(ctx.event, ctx.event, ctx.env, ctx.vars, include, thisArg);
 }
 
 function preprocess(expr: string): string {
