@@ -1,8 +1,0 @@
----
-on:
-  any:
-    filters:
-      - expression: ${{ env.TEST_OK == '1' }}
-emit:
-  test:
-    type: ok
