@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -eu
+
 HEAD_BRANCH=${HEAD_BRANCH:-a5c/main}
 BASE_BRANCH=${BASE_BRANCH:-main}
 PR_TITLE=${PR_TITLE:-"merge $HEAD_BRANCH into $BASE_BRANCH"}
@@ -15,26 +17,38 @@ INITIAL_COMMIT_FILE_NAME=${INITIAL_COMMIT_FILE_NAME:-docs/prs/$HEAD_BRANCH/initi
 GITHUB_REF=${GITHUB_REF:-$BASE_BRANCH}
 GITHUB_USERNAME=${GITHUB_USERNAME:-github-actions[bot]}
 GITHUB_EMAIL=${GITHUB_EMAIL:-github-actions[bot]@users.noreply.github.com}
+
 if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  REPO_DIR=repo
+  # Prefer token-authenticated URL to avoid interactive prompts
+  REMOTE_URL="https://github.com/${GITHUB_REPOSITORY}.git"
+  if [ "${GITHUB_TOKEN:-}" != "" ]; then
+    REMOTE_URL="https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+  elif [ "${GH_TOKEN:-}" != "" ]; then
+    REMOTE_URL="https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+  fi
+
+  rm -rf "$REPO_DIR"
+  if git clone "$REMOTE_URL" "$REPO_DIR" --depth 1 >/dev/null 2>&1; then
+    echo "Cloned repository to $PWD/$REPO_DIR"
+  else
+    echo "Clone failed; ensure GITHUB_TOKEN or GH_TOKEN is available and has repo scope." >&2
+    exit 0
+  fi
+
+  cd "$REPO_DIR" || { echo "Cannot cd to $REPO_DIR" >&2; exit 1; }
+  echo "Now in repository $PWD"
+
+  # Check out requested ref if provided
   if [ "$GITHUB_REF" != "main" ]; then
-    git clone "https://github.com/${GITHUB_REPOSITORY}.git" repo --depth 1
-    echo "Cloned repository to $PWD/repo"
-    cd repo
-    echo "Now in repository $PWD"
-    # check if branch exists
     if git ls-remote --exit-code --heads origin "$GITHUB_REF" >/dev/null 2>&1; then
       git checkout "$GITHUB_REF"
     else
       git checkout -B "$GITHUB_REF"
     fi
-  else
-    git clone "https://github.com/${GITHUB_REPOSITORY}.git" repo --depth 1
-    echo "Cloned repository to $PWD/repo"
-    cd repo
-    echo "Now in repository $PWD"
   fi
-  # exit 0
 fi
+
 git config user.name "$GITHUB_USERNAME"
 git config user.email "$GITHUB_EMAIL"
 
@@ -75,17 +89,16 @@ if command -v gh >/dev/null 2>&1; then
       PR_BODY_FILE=$(mktemp 2>/dev/null || echo "./pr-body.$$.md")
       printf "%s\n" "$PR_BODY" > "$PR_BODY_FILE"
 
-      DRAFT_FLAG=()
+      DRAFT_OPT=""
       if [ "${PR_DRAFT}" = "true" ]; then
-        DRAFT_FLAG=(--draft)
+        DRAFT_OPT="--draft"
       fi
 
-      LABEL_ARGS=()
       if [ -n "${PR_LABELS}" ]; then
-        LABEL_ARGS=(--label "$PR_LABELS")
+        gh pr create --base "$BASE_BRANCH" --head "$HEAD_BRANCH" --title "$PR_TITLE" --body-file "$PR_BODY_FILE" ${DRAFT_OPT} --label "$PR_LABELS"
+      else
+        gh pr create --base "$BASE_BRANCH" --head "$HEAD_BRANCH" --title "$PR_TITLE" --body-file "$PR_BODY_FILE" ${DRAFT_OPT}
       fi
-
-      gh pr create --base "$BASE_BRANCH" --head "$HEAD_BRANCH" --title "$PR_TITLE" --body-file "$PR_BODY_FILE" "${DRAFT_FLAG[@]}" "${LABEL_ARGS[@]}"
       rm -f "$PR_BODY_FILE"
     fi
   else
