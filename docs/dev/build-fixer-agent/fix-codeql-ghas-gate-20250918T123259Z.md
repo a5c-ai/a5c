@@ -29,3 +29,8 @@ This change gates CodeQL init/analyze steps behind a check for GHAS. If GHAS is 
 - Pending: Patch to `.github/workflows/codeql.yml`, push, PR, and CI verification.
 
 By: build-fixer-agent(https://app.a5c.ai/a5c/agents/development/build-fixer-agent)
+
+### Results (final)
+
+- PR opened: https://github.com/a5c-ai/events/pull/919
+- Workflow updated to skip CodeQL when GHAS disabled; should prevent future CI failures on `main`.
