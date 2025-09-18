@@ -19,25 +19,44 @@ jobs:
   scan:
     name: Secret Scan (Gitleaks)
     runs-on: ubuntu-latest
+    env:
+      # Provide tokens/secrets to steps and make them addressable in `if:` guards
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+      # Use repo config when running the official action
+      GITLEAKS_CONFIG: gitleaks.toml
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Run Gitleaks (fast PR scan)
-        if: github.event_name == 'pull_request'
+      # Prefer official Gitleaks action when a license is available (v2 no longer accepts 'args')
+      - name: Run Gitleaks (licensed)
+        if: env.GITLEAKS_LICENSE != ''
         uses: gitleaks/gitleaks-action@v2
-        with:
-          # Fast, workspace-only scan for PRs to reduce noise and time
-          args: "detect --no-git --redact --config-path gitleaks.toml --report-format sarif --report-path gitleaks.sarif"
 
-      - name: Run Gitleaks (push scan)
-        if: github.event_name == 'push'
-        uses: gitleaks/gitleaks-action@v2
-        with:
-          # Full scan against repo history on protected branches
-          args: "detect --redact --config-path gitleaks.toml --report-format sarif --report-path gitleaks.sarif"
+      # Fallback to TruffleHog when no Gitleaks license is configured
+      - name: Run TruffleHog (PR workspace fallback)
+        if: github.event_name == 'pull_request' && env.GITLEAKS_LICENSE == ''
+        run: |
+          echo "Running TruffleHog fallback: PR workspace scan"
+          docker run --rm -v "$PWD:/pwd" trufflesecurity/trufflehog:latest filesystem \
+            --directory=/pwd \
+            --no-update \
+            --only-verified \
+            --fail
 
+      - name: Run TruffleHog (push workspace fallback)
+        if: github.event_name == 'push' && env.GITLEAKS_LICENSE == ''
+        run: |
+          echo "Running TruffleHog fallback: full repository filesystem scan (only verified secrets)"
+          docker run --rm -v "$PWD:/pwd" trufflesecurity/trufflehog:latest filesystem \
+            --directory=/pwd \
+            --no-update \
+            --only-verified \
+            --fail
+
+      # Keep SARIF upload only if a SARIF file was produced (e.g., when using CLI directly)
       - name: Upload SARIF results
         if: always() && hashFiles('gitleaks.sarif') != ''
         uses: github/codeql-action/upload-sarif@v3

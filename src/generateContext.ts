@@ -71,12 +71,29 @@ async function renderString(
   ctx: Context,
   currentUri: string,
 ): Promise<string> {
-  // Includes: {{> uri }} or {{> uri key=value }}
+  // Includes: legacy {{> uri }} or {{> uri key=value }}
   let out = tpl;
   const includeRe = /\{\{>\s*([^}\s]+)(.*?)\}\}/g;
   out = await replaceAsync(
     out,
     includeRe,
+    async (_m, rawUri: string, args: string) => {
+      const argVars = parseArgs(args);
+      const merged: Context = {
+        ...ctx,
+        vars: { ...ctx.vars, ...argVars },
+      };
+      const dynUri = expandDollarExpressions(rawUri, merged);
+      const included = await renderTemplate(dynUri, merged, currentUri);
+      return included;
+    },
+  );
+
+  // Includes: new {{#include uri [key=value] }}
+  const includeHashRe = /\{\{#include\s+([^}\s]+)(.*?)\}\}/g;
+  out = await replaceAsync(
+    out,
+    includeHashRe,
     async (_m, rawUri: string, args: string) => {
       const argVars = parseArgs(args);
       const merged: Context = {
@@ -116,8 +133,7 @@ async function renderString(
   // Variables: {{ expr }}
   const varRe = /\{\{\s*([^}]+)\s*\}\}/g;
   out = out.replace(varRe, (_m, expr: string) => {
-    // Bind `this` to current vars to allow {{ this }} inside each blocks
-    const val = evalWithThis(expr, ctx, currentUri);
+    const val = evalExpr(expr, ctx, currentUri);
     return val == null ? "" : String(val);
   });
   return out;
@@ -291,24 +307,8 @@ async function fetchGithubFile(
 }
 
 function evalExpr(expr: string, ctx: Context, currentUri: string): any {
-  // Provide helpers: event, env, vars, include(uri), and simple pipes map()/contains()
-  const compiled = preprocess(expr);
-
-  const fn = new Function(
-    "event",
-    "github",
-    "env",
-    "vars",
-    "include",
-    `return (${compiled});`,
-  );
-  const include = (u: string) => renderTemplate(u, ctx, currentUri);
-  // Bind JS `this` to the current iteration item when available (e.g., {{ this }})
-  const thisArg: any = (ctx as any)?.vars?.this ?? undefined;
-  return fn.call(thisArg, ctx.event, ctx.event, ctx.env, ctx.vars, include);
-}
-
-function evalWithThis(expr: string, ctx: Context, currentUri: string): any {
+  // Provide helpers: event, env, vars, include(uri). Ensure template-level `this`
+  // resolves to the current item for {{#each}} blocks by binding function `this`.
   const compiled = preprocess(expr);
   const fn = new Function(
     "event",
@@ -316,28 +316,21 @@ function evalWithThis(expr: string, ctx: Context, currentUri: string): any {
     "env",
     "vars",
     "include",
-    `return (${compiled});`,
+    "thisArg",
+    // Evaluate inside a function so `this` can point to current item
+    "return (function(){ return (" + compiled + "); }).call(thisArg);",
   );
   const include = (u: string) => renderTemplate(u, ctx, currentUri);
-  try {
-    // Bind `this` to current item when available (ctx.vars.this),
-    // otherwise fall back to ctx.vars to keep simple cases working.
-    const thisArg =
-      ctx && ctx.vars && Object.prototype.hasOwnProperty.call(ctx.vars, "this")
-        ? ctx.vars.this
-        : ctx.vars;
-    return fn.call(thisArg, ctx.event, ctx.event, ctx.env, ctx.vars, include);
-  } catch {
-    // Fallback to non-bound eval
-    return evalExpr(expr, ctx, currentUri);
-  }
+  const thisArg =
+    ctx.vars && Object.prototype.hasOwnProperty.call(ctx.vars, "this")
+      ? ctx.vars.this
+      : undefined;
+  return fn(ctx.event, ctx.event, ctx.env, ctx.vars, include, thisArg);
 }
 
 function preprocess(expr: string): string {
-  // Map bare `this` to the current each-item value stored in vars.this
-  // Also map member access like `this.foo` -> `vars.this.foo`
-  // Do a conservative replacement on identifier boundaries
-  return expr.replace(/\bthis\b/g, "vars.this");
+  // Reuse simple pipeline handling similar to reactor
+  return expr;
 }
 
 function expandDollarExpressions(s: string, ctx: Context): string {
