@@ -212,6 +212,12 @@ function explainMatchOne(
       };
   }
   if (!spec || typeof spec !== "object") return { matched: true };
+  // skip/filter_out take precedence and negate matching when satisfied
+  const skipSpec = (spec as any).skip ?? (spec as any).filter_out;
+  if (skipSpec != null) {
+    const shouldSkip = evaluateSkip(skipSpec, ne);
+    if (shouldSkip) return { matched: false, reason: "skip matched" };
+  }
   if (Array.isArray((spec as any).types) && KNOWN_GH_EVENTS.has(name)) {
     const set = new Set(((spec as any).types as any[]).map((v) => String(v)));
     if (!action || !set.has(action))
@@ -660,6 +666,9 @@ function matchesTrigger(
   }
 
   if (!spec || typeof spec !== "object") return true;
+  // skip/filter_out take precedence; if true -> do not match
+  const skipSpec = (spec as any).skip ?? (spec as any).filter_out;
+  if (skipSpec != null && evaluateSkip(skipSpec, ne)) return false;
   if (Array.isArray((spec as any).types) && KNOWN_GH_EVENTS.has(name)) {
     const set = new Set(((spec as any).types as any[]).map((v) => String(v)));
     if (!action || !set.has(action)) return false;
@@ -916,6 +925,26 @@ function evaluateFilter(
   if (typeof expr !== "string" || !expr.trim()) return false;
   const value = resolveTemplateString(expr, neCtx);
   return Boolean(value);
+}
+
+function evaluateSkip(
+  skipSpec: any,
+  neCtx: ReturnType<typeof normalizeNE>,
+): boolean {
+  try {
+    const arr = Array.isArray(skipSpec) ? skipSpec : [skipSpec];
+    for (const it of arr) {
+      if (it == null) continue;
+      if (typeof it === "string") {
+        if (evaluateFilter({ expression: it }, neCtx)) return true;
+      } else if (typeof it === "object") {
+        if (evaluateFilter(it, neCtx)) return true;
+      }
+    }
+    return false;
+  } catch {
+    return false;
+  }
 }
 
 function preprocessExpression(expr: string): string {

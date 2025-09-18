@@ -43,7 +43,8 @@
   "files": [
     "dist",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "predefined.yaml"
   ],
   "publishConfig": {
     "access": "public"
