@@ -1,3 +1,9 @@
+## 1.20.0 (2025-09-18)
+
+* Merge pull request #975 from a5c-ai/a5c/main ([a7e3bf3](https://github.com/a5c-ai/events/commit/a7e3bf3)), closes [#975](https://github.com/a5c-ai/events/issues/975)
+* refactor: comment out package resolution logic in resolvePkgSpec function ([61e503c](https://github.com/a5c-ai/events/commit/61e503c))
+* feat: enhance validation request conditions in workflow YAML ([93abfbe](https://github.com/a5c-ai/events/commit/93abfbe))
+
 ## 1.19.0 (2025-09-18)
 
 * Merge pull request #973 from a5c-ai/a5c/main ([7ebcd0f](https://github.com/a5c-ai/events/commit/7ebcd0f)), closes [#973](https://github.com/a5c-ai/events/issues/973)
