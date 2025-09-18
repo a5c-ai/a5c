@@ -315,10 +315,24 @@ function evalExpr(expr: string, ctx: Context, currentUri: string): any {
     "env",
     "vars",
     "include",
-    `return (${compiled});`,
+    // Evaluate the expression with `this` bound to the current loop item (if any)
+    // so that usages of `{{ this }}` inside `#each` render correctly.
+    // We avoid strict mode here to allow dynamic `this` binding.
+    `return ((${compiled}));`,
   );
   const include = (u: string) => renderTemplate(u, ctx, currentUri);
-  return fn(ctx.event, ctx.event, ctx.env, ctx.vars, include);
+  const thisArg =
+    ctx && ctx.vars && Object.prototype.hasOwnProperty.call(ctx.vars, "this")
+      ? (ctx as any).vars.this
+      : undefined;
+  return (fn as any).call(
+    thisArg,
+    ctx.event,
+    ctx.event,
+    ctx.env,
+    ctx.vars,
+    include,
+  );
 }
 
 function preprocess(expr: string): string {
