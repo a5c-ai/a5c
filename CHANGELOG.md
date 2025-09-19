@@ -1,3 +1,8 @@
+## <small>1.20.1 (2025-09-19)</small>
+
+* Merge pull request #976 from a5c-ai/a5c/main ([1729a70](https://github.com/a5c-ai/events/commit/1729a70)), closes [#976](https://github.com/a5c-ai/events/issues/976)
+* fix: resolve pkg ([6b6aabf](https://github.com/a5c-ai/events/commit/6b6aabf))
+
 ## 1.20.0 (2025-09-18)
 
 * Merge pull request #975 from a5c-ai/a5c/main ([a7e3bf3](https://github.com/a5c-ai/events/commit/a7e3bf3)), closes [#975](https://github.com/a5c-ai/events/issues/975)
