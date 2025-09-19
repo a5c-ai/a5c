@@ -14,7 +14,7 @@ reasoning summaries: auto
 
 Repo: a5c-ai/events
 Ref: main
-Labels: 
+Labels:
 
 
 
