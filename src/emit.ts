@@ -116,6 +116,7 @@ async function executeSideEffects(obj: any): Promise<void> {
     // Prepare temp file with the current event payload for scripts
     const tmpEventPath = writeTempEventJson(cp);
     const scriptEnv = {
+      ...process.env,
       ...(cp.env || {}),
       // Fill well-known fallbacks for downstream scripts
       EVENT_PATH: tmpEventPath,
@@ -554,7 +555,7 @@ function inferEntityUrl(cp: any): string | null {
 
 function resolvePkgSpec(cp: any): string {
   try {
-    // if (process.env.A5C_PKG_SPEC) return String(process.env.A5C_PKG_SPEC);
+    if (process.env.A5C_PKG_SPEC) return String(process.env.A5C_PKG_SPEC);
     // Attempt to read our own package name@version from the dist context
     // This file runs from dist; walk up to find package.json
     // let dir = process.cwd();
@@ -572,8 +573,10 @@ function resolvePkgSpec(cp: any): string {
     //   if (parent === dir) break;
     //   dir = parent;
     // }
+    if (cp.env && (cp.env as any).A5C_PKG_SPEC)
+      return String((cp.env as any).A5C_PKG_SPEC);
     // (cp.env && (cp.env as any).A5C_PKG_SPEC) ||
   } catch {}
   // Fallback to published tag
-  return "@a5c-ai/events@latest";
+  return "@a5c-ai/events";
 }
