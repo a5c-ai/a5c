@@ -208,7 +208,7 @@ jobs:
           PATTERN='composed\\[\\]\\.payload[[:space:]]*[:=][[:space:]]*any'
           if command -v rg >/dev/null 2>&1; then
             # Use ripgrep if available; scan README and markdown under docs
-            if rg -n -S -e 'composed\\[\\]\\.payload\\s*[:=]\\s*any' README.md docs/**/*.md; then
+            if rg -n -S -g '*.md' -e 'composed\\[\\]\\.payload\\s*[:=]\\s*any' -- README.md docs; then
               echo "::error title=Docs Lint Failed::Found banned phrase 'composed[].payload: any' in docs. Update to 'object | array | null'."
               exit 1
             else
