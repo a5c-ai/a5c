@@ -126,10 +126,7 @@ async function executeSideEffects(obj: any): Promise<void> {
         process.env.A5C_TEMPLATE_URI ||
         "",
       // Ensure package spec is available for re-entrant CLI execution
-      A5C_PKG_SPEC:
-        (cp.env && (cp.env as any).A5C_PKG_SPEC) ||
-        process.env.A5C_PKG_SPEC ||
-        resolvePkgSpec(),
+      A5C_PKG_SPEC: resolvePkgSpec(cp),
     } as Record<string, string>;
     cp.env = scriptEnv;
     const checksContext = await startStatusChecks(cp);
@@ -555,9 +552,9 @@ function inferEntityUrl(cp: any): string | null {
   }
 }
 
-function resolvePkgSpec(): string {
+function resolvePkgSpec(cp: any): string {
   try {
-    if (process.env.A5C_PKG_SPEC) return String(process.env.A5C_PKG_SPEC);
+    // if (process.env.A5C_PKG_SPEC) return String(process.env.A5C_PKG_SPEC);
     // Attempt to read our own package name@version from the dist context
     // This file runs from dist; walk up to find package.json
     // let dir = process.cwd();
@@ -575,6 +572,7 @@ function resolvePkgSpec(): string {
     //   if (parent === dir) break;
     //   dir = parent;
     // }
+    // (cp.env && (cp.env as any).A5C_PKG_SPEC) ||
   } catch {}
   // Fallback to published tag
   return "@a5c-ai/events@latest";
