@@ -598,6 +598,7 @@ Behavior:
 - Redaction: payload is masked using the same rules as other commands (see `src/utils/redact.ts`). Sensitive keys and common secret patterns are redacted before emission.
 - Defaults: when `--sink` is omitted, `stdout` is used. When `--sink file` is set, `--out` is required; otherwise the command exits with code `1` and writes an error to stderr.
 - Auto-sink: if `--out` is provided without `--sink`, the sink is treated as `file`.
+- Safety by default: no GitHub API calls are performed unless you explicitly pass `--sink github`.
 
 GitHub sink
 

@@ -65,6 +65,8 @@ tmp.*.json
 a5c-ai-events-*.tgz
 out.enrich.json
 out.normalize.json
+out.ne.json
+out.enriched.json
 
 # temp status/check artifacts (never commit)
 .tmp_check.json
