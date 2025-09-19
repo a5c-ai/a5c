@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { minimatch } from "minimatch";
 import { readJSONFile } from "./config.js";
 
 export interface GenerateContextOptions {
@@ -72,37 +73,61 @@ async function renderString(
   currentUri: string,
 ): Promise<string> {
   // Includes: legacy {{> uri }} or {{> uri key=value }}
+  // Support quoted URIs and inline expressions inside the URI (both ${{ }} and {{ }})
   let out = tpl;
-  const includeRe = /\{\{>\s*([^}\s]+)(.*?)\}\}/g;
+  const includeRe = /\{\{>\s*(?:"([^"]+)"|'([^']+)'|([^\s}]+))(\s*.*?)?\}\}/g;
   out = await replaceAsync(
     out,
     includeRe,
-    async (_m, rawUri: string, args: string) => {
-      const argVars = parseArgs(args);
+    async (_m, g1: string, g2: string, g3: string, args: string) => {
+      const rawUri = g1 || g2 || g3 || "";
+      const argVars = parseArgs(args || "");
       const merged: Context = {
         ...ctx,
         vars: { ...ctx.vars, ...argVars },
       };
-      const dynUri = expandDollarExpressions(rawUri, merged);
-      const included = await renderTemplate(dynUri, merged, currentUri);
-      return included;
+      const afterDollar = expandDollarExpressions(rawUri, merged);
+      const dynUri = expandCurlyExpressionsForUri(
+        afterDollar,
+        merged,
+        currentUri,
+      );
+      try {
+        const included = await renderTemplate(dynUri, merged, currentUri);
+        return included;
+      } catch {
+        // Graceful on missing file(s)
+        return "";
+      }
     },
   );
 
-  // Includes: new {{#include uri [key=value] }}
-  const includeHashRe = /\{\{#include\s+([^}\s]+)(.*?)\}\}/g;
+  // Includes: new {{#include uri [key=value] }} with quoted URIs and inline expressions
+  const includeHashRe =
+    /\{\{#include\s*(?:"([^"]+)"|'([^']+)'|([^\s}]+))(\s*.*?)?\}\}/g;
   out = await replaceAsync(
     out,
     includeHashRe,
-    async (_m, rawUri: string, args: string) => {
-      const argVars = parseArgs(args);
+    async (_m, g1: string, g2: string, g3: string, args: string) => {
+      const rawUri = g1 || g2 || g3 || "";
+      const argVars = parseArgs(args || "");
       const merged: Context = {
         ...ctx,
         vars: { ...ctx.vars, ...argVars },
       };
-      const dynUri = expandDollarExpressions(rawUri, merged);
-      const included = await renderTemplate(dynUri, merged, currentUri);
-      return included;
+      const afterDollar = expandDollarExpressions(rawUri, merged);
+      const dynUri = expandCurlyExpressionsForUri(
+        afterDollar,
+        merged,
+        currentUri,
+      );
+      try {
+        const included = await renderTemplate(dynUri, merged, currentUri);
+        return included;
+      } catch {
+        // Graceful on missing file(s)
+        return "";
+      }
     },
   );
 
@@ -218,11 +243,113 @@ async function fetchResource(
   // Expand ${{ ... }} inside URI before resolution
   const expanded = expandDollarExpressions(rawUri, ctx);
   const { scheme, path: p } = resolveUri(expanded, base);
+  // If relative include and base is a GitHub URI, resolve against the GitHub file's directory
+  if (scheme === "file" && base && /^github:\/\//i.test(base)) {
+    // Try typed base first: github://owner/repo/(branch|ref|version)/<ref-raw>/<path>
+    const typedBase =
+      /^github:\/\/([^/]+)\/([^/]+)\/(?:branch|ref|version)\/([^/]+)\/(.+)$/i.exec(
+        base,
+      );
+    if (typedBase) {
+      const owner = typedBase[1];
+      const repo = typedBase[2];
+      const ref = decodeURIComponent(typedBase[3]);
+      const basePath = decodeURIComponent(typedBase[4]);
+      const dir = path.posix.dirname(basePath);
+      const filePath = path.posix.normalize(path.posix.join(dir, p));
+      if (hasGlob(filePath)) {
+        const files = await listGithubFiles(owner, repo, ref, dir);
+        const matches = files.filter((f) => minimatch(f, filePath));
+        const parts: string[] = [];
+        for (const m of matches) {
+          try {
+            parts.push(await fetchGithubFile(owner, repo, ref, m, ctx.token));
+          } catch {}
+        }
+        return parts.join("");
+      }
+      return await fetchGithubFile(owner, repo, ref, filePath, ctx.token);
+    }
+    // Fallback: generic github://owner/repo/<ref+path>
+    const genericBase = /^github:\/\/([^/]+)\/([^/]+)\/(.+)$/i.exec(base);
+    if (genericBase) {
+      const owner = genericBase[1];
+      const repo = genericBase[2];
+      const restRaw = genericBase[3];
+      const restDecoded = decodeURIComponent(restRaw);
+      const baseDirFull = path.posix.dirname(restDecoded);
+      const combined = path.posix.normalize(path.posix.join(baseDirFull, p));
+      if (hasGlob(combined)) {
+        // Best-effort: list from baseDirFull and filter
+        const firstSeg = restDecoded.split("/")[0] || "";
+        const remaining = restDecoded.slice(firstSeg.length + 1);
+        const refGuess = firstSeg;
+        const listDir = remaining ? path.posix.dirname(remaining) : "";
+        const files = await listGithubFiles(owner, repo, refGuess, listDir);
+        const matches = files
+          .map((f) => `${refGuess}/${f}`)
+          .filter((f) => minimatch(f, combined));
+        const parts: string[] = [];
+        for (const m of matches) {
+          const segs = m.split("/");
+          const refCand = segs[0];
+          const fileCand = segs.slice(1).join("/");
+          try {
+            parts.push(
+              await fetchGithubFile(owner, repo, refCand, fileCand, ctx.token),
+            );
+          } catch {}
+        }
+        return parts.join("");
+      }
+      // Longest-first split to determine ref vs file path
+      const parts = combined.split("/");
+      let lastErr: any = null;
+      for (let i = parts.length - 1; i >= 1; i--) {
+        const refCandidateRaw = parts.slice(0, i).join("/");
+        const filePathCandidate = parts.slice(i).join("/");
+        const refCandidate = await resolveGithubRef(
+          owner,
+          repo,
+          refCandidateRaw,
+          ctx.token,
+        );
+        try {
+          const content = await fetchGithubFile(
+            owner,
+            repo,
+            refCandidate,
+            filePathCandidate,
+            ctx.token,
+          );
+          return content;
+        } catch (e: any) {
+          lastErr = e;
+        }
+      }
+      throw lastErr || new Error("Failed to fetch GitHub file: unknown error");
+    }
+  }
   if (scheme === "file") {
     const resolved =
       base && base.startsWith("file://")
         ? path.resolve(path.dirname(new URL(base).pathname), p)
         : path.resolve(p);
+    if (hasGlob(resolved)) {
+      const dir =
+        fs.existsSync(resolved) && fs.statSync(resolved).isDirectory()
+          ? resolved
+          : path.dirname(resolved);
+      const all = listLocalFilesRecursive(dir);
+      const matches = all.filter((f) => minimatch(f, resolved, { dot: true }));
+      const parts: string[] = [];
+      for (const m of matches) {
+        try {
+          parts.push(fs.readFileSync(m, "utf8"));
+        } catch {}
+      }
+      return parts.join("");
+    }
     return fs.readFileSync(resolved, "utf8");
   }
   if (scheme === "github") {
@@ -244,6 +371,18 @@ async function fetchResource(
         ctx.token,
       );
       const filePath = decodeURIComponent(filePathRaw);
+      if (hasGlob(filePath)) {
+        const baseDir = findGlobBaseDir(filePath);
+        const files = await listGithubFiles(owner, repo, ref, baseDir);
+        const matches = files.filter((f) => minimatch(f, filePath));
+        const parts: string[] = [];
+        for (const m of matches) {
+          try {
+            parts.push(await fetchGithubFile(owner, repo, ref, m, ctx.token));
+          } catch {}
+        }
+        return parts.join("");
+      }
       return await fetchGithubFile(owner, repo, ref, filePath, ctx.token);
     }
 
@@ -283,8 +422,24 @@ async function fetchResource(
     }
     throw lastErr || new Error("Failed to fetch GitHub file: unknown error");
   }
-  // Default: treat as file path
-  return fs.readFileSync(path.resolve(p), "utf8");
+  // Default: treat as file path (with glob support)
+  const absolute = path.resolve(p);
+  if (hasGlob(absolute)) {
+    const dir =
+      fs.existsSync(absolute) && fs.statSync(absolute).isDirectory()
+        ? absolute
+        : path.dirname(absolute);
+    const all = listLocalFilesRecursive(dir);
+    const matches = all.filter((f) => minimatch(f, absolute, { dot: true }));
+    const parts: string[] = [];
+    for (const m of matches) {
+      try {
+        parts.push(fs.readFileSync(m, "utf8"));
+      } catch {}
+    }
+    return parts.join("");
+  }
+  return fs.readFileSync(absolute, "utf8");
 }
 
 async function resolveGithubRef(
@@ -323,6 +478,90 @@ async function fetchGithubFile(
     encoding,
   ).toString("utf8");
   return content;
+}
+
+function hasGlob(p: string): boolean {
+  return /[\*\?\[\]\{\}]/.test(p);
+}
+
+function listLocalFilesRecursive(root: string): string[] {
+  const out: string[] = [];
+  try {
+    const st = fs.statSync(root);
+    if (st.isFile()) return [path.resolve(root)];
+    if (!st.isDirectory()) return [];
+  } catch {
+    return [];
+  }
+  const stack: string[] = [path.resolve(root)];
+  while (stack.length) {
+    const cur = stack.pop()!;
+    let entries: string[] = [];
+    try {
+      entries = fs.readdirSync(cur);
+    } catch {
+      continue;
+    }
+    for (const name of entries) {
+      const full = path.join(cur, name);
+      try {
+        const st = fs.statSync(full);
+        if (st.isDirectory()) stack.push(full);
+        else if (st.isFile()) out.push(full);
+      } catch {}
+    }
+  }
+  return out;
+}
+
+function findGlobBaseDir(p: string): string {
+  const segs = p.split("/");
+  const out: string[] = [];
+  for (const s of segs) {
+    if (hasGlob(s)) break;
+    out.push(s);
+  }
+  return out.join("/");
+}
+
+async function listGithubFiles(
+  owner: string,
+  repo: string,
+  ref: string | undefined,
+  dir: string,
+): Promise<string[]> {
+  try {
+    const token =
+      process.env.A5C_AGENT_GITHUB_TOKEN || process.env.GITHUB_TOKEN;
+    const { Octokit } = await import("@octokit/rest");
+    const octokit = new Octokit({ auth: token });
+    const results: string[] = [];
+    async function walk(p: string): Promise<void> {
+      try {
+        const { data } = await octokit.repos.getContent({
+          owner,
+          repo,
+          path: p || "",
+          ref,
+        });
+        if (Array.isArray(data)) {
+          for (const entry of data) {
+            const type = (entry as any).type;
+            const ep = (entry as any).path || "";
+            if (type === "dir") await walk(ep);
+            else if (type === "file") results.push(ep);
+          }
+        } else {
+          const ep = (data as any).path || p;
+          results.push(ep);
+        }
+      } catch {}
+    }
+    await walk(dir);
+    return results;
+  } catch {
+    return [];
+  }
 }
 
 function evalExpr(expr: string, ctx: Context, currentUri: string): any {
@@ -369,4 +608,25 @@ function expandDollarExpressions(s: string, ctx: Context): string {
       return "";
     }
   });
+}
+
+// Expand {{ expr }} occurrences inside a URI string context without rendering full template,
+// so we can build dynamic include URIs from event/env/vars.
+function expandCurlyExpressionsForUri(
+  uriTpl: string,
+  ctx: Context,
+  currentUri: string,
+): string {
+  try {
+    return String(uriTpl).replace(/\{\{\s*([^}]+)\s*\}\}/g, (_m, expr) => {
+      try {
+        const val = evalExpr(String(expr), ctx, currentUri);
+        return val == null ? "" : String(val);
+      } catch {
+        return "";
+      }
+    });
+  } catch {
+    return String(uriTpl);
+  }
 }
