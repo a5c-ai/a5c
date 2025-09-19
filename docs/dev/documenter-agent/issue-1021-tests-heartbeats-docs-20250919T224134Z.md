@@ -18,3 +18,14 @@
 
 - The Tests workflow currently lacks heartbeat/alerts; examples exist in `a5c.yml` for scheduled pings.
 - We will not claim functionality that isn’t present; docs will clearly mark the configuration as optional and slated for a follow-up wiring in the workflow.
+
+## Changes (this PR)
+
+- Updated `docs/observability.md` with:
+  - CI Heartbeats for Tests (Healthchecks; `HEALTHCHECKS_TESTS_PING_URL`)
+  - Failure Alerts (Slack/Discord) with guarded examples
+  - Setup steps and cross-links
+
+## Next
+
+- Wire the documented steps into `.github/workflows/tests.yml` in a follow-up PR (developer task), keeping all guards conditional on secrets.
