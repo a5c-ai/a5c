@@ -19,3 +19,13 @@ Current behavior defaults sink to `github` when `--sink` and `--out` are both om
 ## Notes
 
 Touch only relevant code and docs; keep changes minimal and focused.
+
+## Results
+
+- Implemented default sink change in `src/emit.ts` to `stdout`.
+- Verified unit tests and build pass locally.
+- Updated CLI reference to include “Safety by default” note under `events emit`.
+
+## Next
+
+- Submit PR for review, then mark ready and request @validator-agent.
