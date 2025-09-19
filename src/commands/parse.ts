@@ -5,22 +5,20 @@ export interface ParseOptions {
   type?: string;
 }
 
-export type CodexEvent =
-  | {
-      type:
-        | "header"
-        | "user_instructions_event"
-        | "tokens_used"
-        | "thinking"
-        | "codex"
-        | "exec"
-        | "exec_result"
-        | "banner";
-      timestamp: string;
-      raw: string;
-      // Optional fields depending on type
-      fields?: Record<string, unknown>;
-    };
+export type CodexEvent = {
+  type:
+    | "user_instructions_event"
+    | "tokens_used"
+    | "thinking"
+    | "codex"
+    | "exec"
+    | "exec_result"
+    | "banner";
+  timestamp: string;
+  raw: string;
+  // Optional fields depending on type
+  fields?: Record<string, unknown>;
+};
 
 // Streaming, line-by-line parser for Codex stdout format
 export class CodexStdoutParser {
@@ -34,6 +32,13 @@ export class CodexStdoutParser {
     | "banner"
     | null = null;
   private bufferLines: string[] = [];
+  private currentExecMeta: {
+    command?: string;
+    cwd?: string;
+    status?: string;
+    durationMs?: number;
+    exitCode?: number;
+  } | null = null;
 
   // Regexes
   private readonly tsRe = /^\[(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})\]/;
@@ -46,6 +51,7 @@ export class CodexStdoutParser {
   private readonly bannerRule = /^-+$/;
   private readonly kvLine = /^([^:]+):\s*(.*)$/;
   private readonly successLine = /^(.+?)\s+succeeded\s+in\s+(\d+)ms:$/;
+  private readonly exitLine = /^(.+?)\s+exited\s+(\d+)\s+in\s+([0-9.]+)s:$/;
 
   parseLine(line: string): CodexEvent[] {
     const events: CodexEvent[] = [];
@@ -79,24 +85,25 @@ export class CodexStdoutParser {
       }
       if (this.headerUserInstructions.test(line)) {
         this.currentType = "user_instructions_event";
-        this.bufferLines = [];
+        this.bufferLines = [line];
         return events;
       }
       if (this.headerThinking.test(line)) {
         this.currentType = "thinking";
-        this.bufferLines = [];
+        this.bufferLines = [line];
         return events;
       }
       if (this.headerCodex.test(line)) {
         this.currentType = "codex";
-        this.bufferLines = [];
+        this.bufferLines = [line];
         return events;
       }
       // exec header
       const execM = this.headerExec.exec(line);
       if (execM) {
         this.currentType = "exec";
-        this.bufferLines = [];
+        this.bufferLines = [line];
+        this.currentExecMeta = { command: execM[1], cwd: execM[2] };
         // Emit exec header immediately with parsed command and path
         events.push({
           type: "exec",
@@ -130,16 +137,30 @@ export class CodexStdoutParser {
       // After an exec header, we expect an outcome line like: "<cmd> succeeded in Nms:" then body lines
       const m = this.successLine.exec(line);
       if (m) {
-        // Switch to exec_result and store metadata
+        // Switch to exec_result and store metadata; include this line in buffer
         this.currentType = "exec_result";
-        // Replace buffer with just body lines (none yet; body follows)
-        this.bufferLines = [];
-        events.push({
-          type: "exec_result",
-          timestamp: this.currentTimestamp,
-          raw: line,
-          fields: { command: m[1], durationMs: Number(m[2]) },
-        });
+        this.bufferLines = [line];
+        this.currentExecMeta = {
+          ...(this.currentExecMeta || {}),
+          command: this.currentExecMeta?.command || m[1],
+          status: "succeeded",
+          durationMs: Number(m[2]),
+        };
+        return events;
+      }
+      const e = this.exitLine.exec(line);
+      if (e) {
+        this.currentType = "exec_result";
+        this.bufferLines = [line];
+        const seconds = Number(e[3]);
+        const durationMs = Number.isFinite(seconds) ? Math.round(seconds * 1000) : undefined;
+        this.currentExecMeta = {
+          ...(this.currentExecMeta || {}),
+          command: this.currentExecMeta?.command || e[1],
+          status: "exited",
+          exitCode: Number(e[2]),
+          durationMs,
+        };
         return events;
       }
       return events;
@@ -189,19 +210,27 @@ export class CodexStdoutParser {
       this.currentTimestamp = null;
       this.currentType = null;
       this.bufferLines = [];
+      this.currentExecMeta = null;
       return;
     }
     const raw = this.bufferLines.join("\n");
+    const baseFields =
+      this.currentType === "exec_result"
+        ? { ...(this.currentExecMeta || {}) }
+        : this.currentType === "exec"
+        ? { ...(this.currentExecMeta || {}) }
+        : undefined;
     const evt: CodexEvent = {
       type: this.currentType,
       timestamp: this.currentTimestamp,
       raw,
-      fields: undefined,
+      fields: baseFields,
     };
     out.push(evt);
     this.currentTimestamp = null;
     this.currentType = null;
     this.bufferLines = [];
+    this.currentExecMeta = null;
   }
 }
 
