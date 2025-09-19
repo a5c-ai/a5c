@@ -141,6 +141,42 @@ Example snippet:
 
 `typecheck` uses `tsconfig.typecheck.json` and checks `src/**`. Tests are type-checked within the Vitest run. A separate `Typecheck` workflow runs on Node 20 and 22 for compatibility.
 
+## Coverage Gate Policy
+
+This repository supports an optional coverage hard gate for pull requests.
+
+- When it applies: PRs targeting `a5c/main`.
+- How it’s enabled: Maintainers toggle the repository variable `REQUIRE_COVERAGE` to `true`.
+  - Workflows check `vars.REQUIRE_COVERAGE == 'true'` and fail the PR if coverage is below thresholds.
+  - See: `.github/workflows/tests.yml`, `.github/workflows/pr-tests.yml`, `.github/workflows/quick-checks.yml`.
+- Thresholds source of truth: `scripts/coverage-thresholds.json`.
+  - Current values in this repo: `lines: 55`, `branches: 55`, `functions: 60`, `statements: 55`.
+  - If the file is missing, Vitest falls back to `lines: 60`, `branches: 55`, `functions: 60`, `statements: 60` (see `vitest.config.ts`).
+- Temporary override (exceptional cases): A maintainer can temporarily set `REQUIRE_COVERAGE` to `false` to allow merging while documenting the rationale in the PR.
+
+### Adjusting Thresholds
+
+1. Edit `scripts/coverage-thresholds.json` in a PR (example):
+
+   ```json
+   {
+     "lines": 60,
+     "branches": 55,
+     "functions": 60,
+     "statements": 60
+   }
+   ```
+
+2. Include a short rationale in the PR description (e.g., significant new surface added, temporary dip, or sustained improvements justifying a raise).
+3. When `REQUIRE_COVERAGE` is `true`, CI will enforce these thresholds on PRs into `a5c/main`.
+
+### Local Coverage
+
+- Run tests with coverage locally: `npm test` (Vitest produces `coverage/` and a `coverage-summary.json`).
+- CI publishes a coverage summary and, when gated, fails if below thresholds. For details, check the coverage gate steps in the workflows above.
+
+References: `vitest.config.ts`, `scripts/coverage-thresholds.json`.
+
 ## Getting Started
 
 1. Node: `nvm use` (repo includes `.nvmrc` → Node 20.x LTS)
