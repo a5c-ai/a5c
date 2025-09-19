@@ -157,3 +157,40 @@ We target Node 20.x LTS across CI and local development.
 - The repository includes an `.nvmrc` pinning Node `20` for local parity.
 - If you use `nvm`, run `nvm use` in the project root to select the correct version.
 - `package.json` declares `"engines": { "node": ">=20" }`; while Node 22 may work, CI validates and ships with Node 20.
+
+## Line Endings and .gitattributes
+
+This repository enforces LF (Unix-style) line endings via a root `.gitattributes`:
+
+- All text files normalize to LF: `* text=auto eol=lf`
+- Lockfiles (`package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`) are explicitly LF
+- Shell scripts (`*.sh`) are LF
+- Common binary formats (e.g., PNG/JPG/WEBP) are marked `binary`
+
+Why: consistent line endings prevent noisy diffs and merge conflicts across macOS, Linux, and Windows.
+
+### Windows guidance
+
+- Git will respect `.gitattributes` and keep LF endings in your working tree.
+- Recommended Git config for Windows contributors:
+
+```
+# Keep LF in the working tree and repository
+git config --global core.autocrlf false
+# Optional: make LF explicit
+git config --global core.eol lf
+```
+
+Most editors (VS Code, JetBrains, Notepad++, etc.) handle LF on Windows.
+- VS Code: set `"files.eol": "\n"` and ensure the status bar shows `LF`.
+
+If you ever need to re-normalize line endings locally after changing Git settings:
+
+```
+git rm --cached -r .
+git reset --hard
+# or, minimally normalize staged files
+# git add --renormalize .
+```
+
+Do not commit generated artifacts under `coverage/**` or `dist/**`.
