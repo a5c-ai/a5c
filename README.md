@@ -88,6 +88,21 @@ events enrich --in ... --flag 'mentions.languages=ts,js'
 
 Canonical flags and defaults live in `docs/cli/reference.md#events-enrich` and `#mentions-scanning`.
 
+### Reactor Quick Start
+
+Run the reactor locally against a bundled sample PR event using the default rules path `.a5c/events/reactor.yaml`:
+
+```bash
+npm run reactor:sample | jq '.events | length'
+# expected: 1
+
+# Or view the produced events
+npm run reactor:sample | jq
+```
+
+- Rules live at `.a5c/events/reactor.yaml` by default.
+- Full CLI reference: `docs/cli/reference.md#events-reactor`.
+
 ## Quick Start (SDK)
 
 See `docs/user/sdk-quickstart.md` for a minimal example using `mapToNE`, `enrichGithub`, and helpers.
