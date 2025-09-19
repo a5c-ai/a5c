@@ -72,35 +72,49 @@ async function renderString(
   currentUri: string,
 ): Promise<string> {
   // Includes: legacy {{> uri }} or {{> uri key=value }}
+  // Support quoted URIs and inline expressions inside the URI (both ${{ }} and {{ }})
   let out = tpl;
-  const includeRe = /\{\{>\s*([^}\s]+)(.*?)\}\}/g;
+  const includeRe = /\{\{>\s*(?:"([^"]+)"|'([^']+)'|([^\s}]+))(\s*.*?)?\}\}/g;
   out = await replaceAsync(
     out,
     includeRe,
-    async (_m, rawUri: string, args: string) => {
-      const argVars = parseArgs(args);
+    async (_m, g1: string, g2: string, g3: string, args: string) => {
+      const rawUri = g1 || g2 || g3 || "";
+      const argVars = parseArgs(args || "");
       const merged: Context = {
         ...ctx,
         vars: { ...ctx.vars, ...argVars },
       };
-      const dynUri = expandDollarExpressions(rawUri, merged);
+      const afterDollar = expandDollarExpressions(rawUri, merged);
+      const dynUri = expandCurlyExpressionsForUri(
+        afterDollar,
+        merged,
+        currentUri,
+      );
       const included = await renderTemplate(dynUri, merged, currentUri);
       return included;
     },
   );
 
-  // Includes: new {{#include uri [key=value] }}
-  const includeHashRe = /\{\{#include\s+([^}\s]+)(.*?)\}\}/g;
+  // Includes: new {{#include uri [key=value] }} with quoted URIs and inline expressions
+  const includeHashRe =
+    /\{\{#include\s*(?:"([^"]+)"|'([^']+)'|([^\s}]+))(\s*.*?)?\}\}/g;
   out = await replaceAsync(
     out,
     includeHashRe,
-    async (_m, rawUri: string, args: string) => {
-      const argVars = parseArgs(args);
+    async (_m, g1: string, g2: string, g3: string, args: string) => {
+      const rawUri = g1 || g2 || g3 || "";
+      const argVars = parseArgs(args || "");
       const merged: Context = {
         ...ctx,
         vars: { ...ctx.vars, ...argVars },
       };
-      const dynUri = expandDollarExpressions(rawUri, merged);
+      const afterDollar = expandDollarExpressions(rawUri, merged);
+      const dynUri = expandCurlyExpressionsForUri(
+        afterDollar,
+        merged,
+        currentUri,
+      );
       const included = await renderTemplate(dynUri, merged, currentUri);
       return included;
     },
@@ -218,6 +232,59 @@ async function fetchResource(
   // Expand ${{ ... }} inside URI before resolution
   const expanded = expandDollarExpressions(rawUri, ctx);
   const { scheme, path: p } = resolveUri(expanded, base);
+  // If relative include and base is a GitHub URI, resolve against the GitHub file's directory
+  if (scheme === "file" && base && /^github:\/\//i.test(base)) {
+    // Try typed base first: github://owner/repo/(branch|ref|version)/<ref-raw>/<path>
+    const typedBase =
+      /^github:\/\/([^/]+)\/([^/]+)\/(?:branch|ref|version)\/([^/]+)\/(.+)$/i.exec(
+        base,
+      );
+    if (typedBase) {
+      const owner = typedBase[1];
+      const repo = typedBase[2];
+      const ref = decodeURIComponent(typedBase[3]);
+      const basePath = decodeURIComponent(typedBase[4]);
+      const dir = path.posix.dirname(basePath);
+      const filePath = path.posix.normalize(path.posix.join(dir, p));
+      return await fetchGithubFile(owner, repo, ref, filePath, ctx.token);
+    }
+    // Fallback: generic github://owner/repo/<ref+path>
+    const genericBase = /^github:\/\/([^/]+)\/([^/]+)\/(.+)$/i.exec(base);
+    if (genericBase) {
+      const owner = genericBase[1];
+      const repo = genericBase[2];
+      const restRaw = genericBase[3];
+      const restDecoded = decodeURIComponent(restRaw);
+      const baseDirFull = path.posix.dirname(restDecoded);
+      const combined = path.posix.normalize(path.posix.join(baseDirFull, p));
+      // Longest-first split to determine ref vs file path
+      const parts = combined.split("/");
+      let lastErr: any = null;
+      for (let i = parts.length - 1; i >= 1; i--) {
+        const refCandidateRaw = parts.slice(0, i).join("/");
+        const filePathCandidate = parts.slice(i).join("/");
+        const refCandidate = await resolveGithubRef(
+          owner,
+          repo,
+          refCandidateRaw,
+          ctx.token,
+        );
+        try {
+          const content = await fetchGithubFile(
+            owner,
+            repo,
+            refCandidate,
+            filePathCandidate,
+            ctx.token,
+          );
+          return content;
+        } catch (e: any) {
+          lastErr = e;
+        }
+      }
+      throw lastErr || new Error("Failed to fetch GitHub file: unknown error");
+    }
+  }
   if (scheme === "file") {
     const resolved =
       base && base.startsWith("file://")
