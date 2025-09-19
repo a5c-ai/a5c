@@ -55,6 +55,16 @@ jq '.type, .repo.full_name, .provenance.workflow?.name' out.json
 events validate --in out.json --schema docs/specs/ne.schema.json --quiet
 ```
 
+### Smoke Test
+
+Run a fast, offline end-to-end check that chains normalize → enrich → validate using bundled samples. Produces `out.ne.json` and `out.enriched.json` in the repo root.
+
+```bash
+npm run smoke
+# expected: exit code 0, quiet validation
+ls -1 out.ne.json out.enriched.json
+```
+
 Enrich offline vs online:
 
 ```bash
