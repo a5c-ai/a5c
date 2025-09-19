@@ -48,7 +48,7 @@ events enrich \
   --out ne.enriched.json || cp ne.json ne.enriched.json
 
 # Generate agent context Markdown from a template
-events generate-context \
+events generate_context \
   --in ne.enriched.json \
   --template docs/cli/reference.md \
   --out context.md
@@ -102,7 +102,7 @@ jobs:
 
       - name: Generate agent context
         run: |
-          events generate-context \
+          events generate_context \
             --in ne.enriched.json \
             --template docs/cli/reference.md \
             --out context.md
