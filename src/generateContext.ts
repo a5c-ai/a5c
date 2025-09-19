@@ -226,7 +226,28 @@ async function fetchResource(
     return fs.readFileSync(resolved, "utf8");
   }
   if (scheme === "github") {
-    // Support refs with slashes by trying the longest possible ref prefix.
+    // Two supported shapes:
+    // 1) owner/repo/(branch|ref|version)/<ref-with-optional-%2F>/file-path
+    // 2) owner/repo/<ref-with-optional-slashes>/file-path
+    // Try typed form first for compatibility with reactor.ts
+    const typed =
+      /^([^/]+)\/([^/]+)\/(?:branch|ref|version)\/([^/]+)\/(.+)$/.exec(p);
+    if (typed) {
+      const owner = typed[1];
+      const repo = typed[2];
+      const refRaw = typed[3];
+      const filePathRaw = typed[4];
+      const ref = await resolveGithubRef(
+        owner,
+        repo,
+        decodeURIComponent(refRaw),
+        ctx.token,
+      );
+      const filePath = decodeURIComponent(filePathRaw);
+      return await fetchGithubFile(owner, repo, ref, filePath, ctx.token);
+    }
+
+    // Fallback: longest-first split of rest = refParts + fileParts
     // Shape: owner/repo/<ref-with-optional-slashes>/<file-path>
     const [owner, repo, ...rest] = p.split("/");
     if (!owner || !repo || rest.length === 0)
@@ -234,17 +255,16 @@ async function fetchResource(
         `Invalid github URI: expected github://owner/repo/ref/path, got '${rawUri}'`,
       );
 
-    // Try longest-first split of rest = refParts + fileParts
-    // Ensure at least 1 segment for file path
     let lastErr: any = null;
     for (let i = rest.length - 1; i >= 1; i--) {
       const refCandidateRaw = rest.slice(0, i).join("/");
-      const filePathCandidate = rest.slice(i).join("/");
-      // Preserve semver tag normalization for single-segment refs
+      const filePathCandidateRaw = rest.slice(i).join("/");
+      const decodedRefCandidateRaw = decodeURIComponent(refCandidateRaw);
+      const decodedFilePathCandidate = decodeURIComponent(filePathCandidateRaw);
       const refCandidate = await resolveGithubRef(
         owner,
         repo,
-        refCandidateRaw,
+        decodedRefCandidateRaw,
         ctx.token,
       );
       try {
@@ -252,7 +272,7 @@ async function fetchResource(
           owner,
           repo,
           refCandidate,
-          filePathCandidate,
+          decodedFilePathCandidate,
           ctx.token,
         );
         return content;
@@ -261,7 +281,6 @@ async function fetchResource(
         // continue trying shorter ref
       }
     }
-    // If all attempts failed, throw the last error for context
     throw lastErr || new Error("Failed to fetch GitHub file: unknown error");
   }
   // Default: treat as file path
@@ -272,7 +291,7 @@ async function resolveGithubRef(
   owner: string,
   repo: string,
   refOrVersion: string,
-  token?: string,
+  _token?: string,
 ): Promise<string> {
   if (!refOrVersion) return "main";
   if (/^v?\d+\.\d+\.\d+/.test(refOrVersion)) {
@@ -287,10 +306,10 @@ async function fetchGithubFile(
   repo: string,
   ref: string,
   filePath: string,
-  token?: string,
+  _token?: string,
 ): Promise<string> {
   const { Octokit } = await import("@octokit/rest");
-  const octokit = new Octokit({ auth: token });
+  const octokit = new Octokit({ auth: _token });
   const { data } = await octokit.repos.getContent({
     owner,
     repo,
