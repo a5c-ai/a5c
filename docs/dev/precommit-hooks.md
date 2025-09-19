@@ -11,7 +11,18 @@ The `.husky/pre-commit` hook delegates to `scripts/precommit.sh`, which enforces
 
 - Filename guard: blocks staged filenames containing `:` (breaks Windows checkouts).
 - Whitespace/newline hygiene: `git diff --cached --check` must pass.
+- Focused/skipped tests guard: fails if `describe/it/test .only(` or `.skip(` are staged under `test/` or `tests/`.
 - lint-staged: runs ESLint and Prettier on staged files only.
+
+### Focused/Skipped tests guard
+
+We prevent committing focused or skipped tests unintentionally:
+
+- Script: `scripts/lint-tests-focused.sh`
+- Checks patterns (exact): `describe.only(`, `it.only(`, `test.only(`, `describe.skip(`, `it.skip(`, `test.skip(`)
+- Scope: files under `test/` and `tests/` only
+
+The same script runs in CI Quick Checks before unit tests to fail fast.
 
 ### Optional: local secret scanning (Gitleaks)
 

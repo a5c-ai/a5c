@@ -51,6 +51,8 @@ jobs:
         run: bash scripts/lint-obs-paths.sh
       - name: Typecheck (tsc --noEmit)
         run: npm run -s typecheck
+      - name: Guard focused/skipped tests (.only/.skip)
+        run: bash scripts/lint-tests-focused.sh
       - name: Unit tests (vitest)
         run: npm run -s test:ci
       - name: Validate offline stub example (NE schema)
