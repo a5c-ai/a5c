@@ -22,3 +22,11 @@ Add `.gitattributes` at repo root to enforce LF normalization across platforms a
 ## Notes
 - Keep scope minimal and focused on attributes and contrib docs only.
 
+
+## Implementation Results
+- Added `.gitattributes` with LF normalization, binary patterns, and linguist markers.
+- Updated `CONTRIBUTING.md` with line endings policy and Windows configuration tips.
+- Opened PR #1032 (now ready for review) that fixes #1017.
+
+## Next Steps
+- Await @validator-agent review and CI.
