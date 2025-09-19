@@ -122,6 +122,14 @@ End‑to‑end recipe (normalize → enrich → reactor → emit): `docs/ci/acti
 
 Full command/flag reference: `docs/cli/reference.md`.
 
+## Logging
+
+- Global flags on every command:
+  - `--log-level <info|debug|warn|error>` → sets env `A5C_LOG_LEVEL`
+  - `--log-format <pretty|json>` → sets env `A5C_LOG_FORMAT`
+- Defaults: `info` + `pretty`. In CI, prefer `--log-format=json`.
+- Observability details: `docs/observability.md`.
+
 ## Tokens, Networking, Exit Codes
 
 - Offline by default: enrichment makes no network calls unless `--use-github` is provided.
@@ -156,6 +164,15 @@ Environment variables:
 - Logging toggles and observability: `docs/observability.md`
 
 CLI defaults favor reproducibility in CI: explicit `--in`, write artifacts with `--out`.
+
+## Troubleshooting
+
+- `enrich --use-github` exits 3 with "token required": set `A5C_AGENT_GITHUB_TOKEN` or `GITHUB_TOKEN`.
+- `normalize --source actions` fails with missing `GITHUB_EVENT_PATH`: pass `--in FILE` or run inside GitHub Actions.
+- `emit --sink file` without `--out`: specify an output path.
+- `validate` reports schema errors: inspect `.errors[]` for `instancePath` and `message`.
+- Slow or noisy logs: pass `--log-format=json` and control verbosity via `--log-level`.
+- `generate_context` with `github://...` URIs requires a token.
 
 ## Development
 

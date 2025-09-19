@@ -71,7 +71,7 @@ export async function handleEnrich(opts: {
             : baseEvent?.comment && baseEvent?.issue
               ? "issue_comment"
               : baseEvent?.issue
-                ? "issues"
+                ? "issue"
                 : baseEvent?.client_payload
                   ? "repository_dispatch"
                   : baseEvent?.ref

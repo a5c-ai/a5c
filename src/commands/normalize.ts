@@ -7,20 +7,12 @@ export async function runNormalize(opts: {
   in?: string;
   source?: string;
   labels?: string[];
-}): Promise<{ code: number; output: NormalizedEvent }> {
+}): Promise<{ code: number; output?: NormalizedEvent; errorMessage?: string }> {
   const normSource = normalizeSource(opts.source);
   if (!opts.in) {
     return {
       code: 2,
-      output: {
-        id: "error",
-        provider: "github",
-        type: "error",
-        occurred_at: new Date().toISOString(),
-        payload: {},
-        labels: opts.labels,
-        provenance: { source: normSource },
-      } as any,
+      errorMessage: "Missing required input: provide --in FILE",
     };
   }
   try {
@@ -30,19 +22,12 @@ export async function runNormalize(opts: {
       labels: opts.labels,
     });
     return { code: 0, output };
-  } catch {
-    return {
-      code: 2,
-      output: {
-        id: "error",
-        provider: "github",
-        type: "error",
-        occurred_at: new Date().toISOString(),
-        payload: {},
-        labels: opts.labels,
-        provenance: { source: normSource },
-      } as any,
-    };
+  } catch (e: any) {
+    const msg =
+      e?.code === "ENOENT"
+        ? `Input file not found: ${e?.path || opts.in}`
+        : `Invalid JSON or read error: ${e?.message || e}`;
+    return { code: 2, errorMessage: msg };
   }
 }
 // Command-layer wrapper to keep CLI thin
