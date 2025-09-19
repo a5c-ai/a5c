@@ -1,0 +1,13 @@
+{
+  "event_type": "command_only",
+  "client_payload": {
+    "actor": { "login": "local-user" },
+    "env": { "EXAMPLE_VAR": "example" },
+    "script": [
+      "echo 'EVENT_PATH='\"$EVENT_PATH\"",
+      "echo 'A5C_EVENT_PATH='\"$A5C_EVENT_PATH\"",
+      "echo 'EXAMPLE_VAR='\"$EXAMPLE_VAR\"",
+      "echo 'who=' ${{ event.actor?.login || 'unknown' }}"
+    ]
+  }
+}

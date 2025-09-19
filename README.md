@@ -131,7 +131,7 @@ End‑to‑end recipe (normalize → enrich → reactor → emit): `docs/ci/acti
 - `events mentions` — Extract `@mentions` from files/stdin.
 - `events generate_context` — Render templates from file/github URIs with the event as data.
 - `events reactor` — Apply rules to NE and emit composed events.
-- `events emit` — Emit composed events to sinks (stdout by default).
+- `events emit` — Emit composed events to sinks (stdout by default) and optionally run side-effects (labels, scripts, status checks). See `docs/cli/reference.md#events-emit`.
 - `events validate` — Validate NE (and enriched documents) against JSON Schema.
 - `events run` — Profile-based AI provider runner (experimental). See reference: `docs/cli/reference.md#events-run`.
 - `events parse` — Parse streaming provider logs to JSON events (experimental). See reference: `docs/cli/reference.md#events-parse`.
