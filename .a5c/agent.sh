@@ -68,5 +68,5 @@ npx -y "$A5C_PKG_SPEC" run \
 # cat /tmp/out.json
 
 # upload artifacts using gh cli
-npm i -g @actions/artifact @octokit/rest
-node -e 'import {DefaultArtifactClient} from "@actions/artifact";  const artifact = new DefaultArtifactClient(); artifact.uploadArtifact("parsed-codex", ["/tmp/parsed-codex.jsonl"], "/tmp/", { retentionDays: 30 })'
+# npm i -g @actions/artifact @octokit/rest
+# node -e 'import {DefaultArtifactClient} from "@actions/artifact";  const artifact = new DefaultArtifactClient(); artifact.uploadArtifact("parsed-codex", ["/tmp/parsed-codex.jsonl"], "/tmp/", { retentionDays: 30 })'
