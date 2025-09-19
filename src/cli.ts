@@ -10,6 +10,7 @@ import { handleReactor } from "./reactor.js";
 import { handleGenerateContext } from "./generateContext.js";
 import { handleEmit } from "./emit.js";
 import { handleRun } from "./commands/run.js";
+import { handleParse } from "./commands/parse.js";
 import { redactObject } from "./utils/redact.js";
 import path from "node:path";
 // Avoid loading heavy JSON Schema validator unless needed
@@ -452,6 +453,16 @@ program
       mcps: cmdOpts.mcps,
       config: cmdOpts.config,
     });
+    if (code !== 0 && errorMessage) process.stderr.write(errorMessage + "\n");
+    process.exit(code);
+  });
+
+program
+  .command("parse")
+  .description("Parse streamed stdout logs into JSON events (stdin->stdout)")
+  .option("--type <name>", "parser type (codex)")
+  .action(async (cmdOpts: any) => {
+    const { code, errorMessage } = await handleParse({ type: cmdOpts.type });
     if (code !== 0 && errorMessage) process.stderr.write(errorMessage + "\n");
     process.exit(code);
   });
