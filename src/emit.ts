@@ -5,6 +5,7 @@ import path from "node:path";
 import { parseGithubEntity as parseGithubEntityUtil } from "./utils/githubEntity.js";
 import { redactObject } from "./utils/redact.js";
 import { createLogger } from "./log.js";
+import { spawn } from "node:child_process";
 
 export interface EmitOptions {
   in?: string;
@@ -372,25 +373,13 @@ async function runScripts(lines: string[], ctx?: any): Promise<void> {
     const finalEnv = { ...process.env, ...((ctx as any)?.env || {}) };
     // debug log
     await new Promise<void>((resolve, reject) => {
-      exec(
-        cmd,
-        {
-          env: finalEnv,
-          windowsHide: true,
-        },
-        (err, stdout, stderr) => {
-          if (stdout)
-            try {
-              process.stdout.write(String(stdout));
-            } catch {}
-          if (stderr)
-            try {
-              process.stderr.write(String(stderr));
-            } catch {}
-          if (err) return reject(err);
-          resolve();
-        },
-      );
+      const child = spawn(cmd, {
+        shell: true,
+        stdio: "inherit",
+        env: finalEnv,
+      });      
+      child.on("close", (code: any) => resolve(code ?? 0));
+      child.on("error", () => reject(new Error("Failed to spawn process")));      
     });
   }
 }
