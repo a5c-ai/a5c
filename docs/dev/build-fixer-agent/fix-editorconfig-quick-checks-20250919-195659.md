@@ -18,3 +18,14 @@
 ## Notes
 
 No functional code changes; formatting only to satisfy EditorConfig.
+
+## Results
+
+- Removed trailing whitespace in .a5c/agent.sh and src/emit.ts
+- Added final newline to .github/workflows/agent-run.yaml
+- scripts/ci-editorconfig.sh passes locally
+- Pre-push hook ran full test suite: all tests passing
+
+## Next Steps
+
+- Await CI Quick Checks on PR
