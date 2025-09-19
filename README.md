@@ -4,7 +4,7 @@
 
 Turn raw GitHub Actions/webhook payloads into a consistent Normalized Event (NE) that agents and automations can trust. Enrich with repo context, extract @mentions, generate prompt context, apply rules, and emit composed events. Use it as a CLI in CI or as a programmatic SDK.
 
-- Commands: `events normalize`, `events enrich`, `events mentions`, `events generate_context`, `events reactor`, `events emit`, `events validate` (see docs for full flags)
+- Commands: `events normalize`, `events enrich`, `events mentions`, `events generate_context`, `events reactor`, `events emit`, `events validate`, `events run` (see docs for full flags)
 - Output: JSON to stdout or file
 - Provider: GitHub first; adapter surface enables more providers
 - Safe by default: offline enrichment unless explicitly enabled
@@ -118,6 +118,7 @@ End‑to‑end recipe (normalize → enrich → reactor → emit): `docs/ci/acti
 - `events reactor` — Apply rules to NE and emit composed events.
 - `events emit` — Emit composed events to sinks (stdout by default).
 - `events validate` — Validate NE (and enriched documents) against JSON Schema.
+- `events run` — Profile-based AI provider runner (experimental). See reference: `docs/cli/reference.md#events-run`.
 
 Full command/flag reference: `docs/cli/reference.md`.
 

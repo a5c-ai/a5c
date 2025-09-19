@@ -694,6 +694,88 @@ Exit codes:
 - 2: schema validation failed (invalid)
 - 1: other error (I/O, JSON parse)
 
+### `events run`
+
+Run an AI provider CLI from a predefined profile. Profiles and provider command templates are defined in `predefined.yaml` (bundled with the package). You can optionally provide a config that partially overrides `predefined.yaml`.
+
+Status: experimental (interfaces and defaults may evolve).
+
+Usage:
+
+```bash
+events run \
+  [--in <uri-or-path|->] \
+  [--out FILE] \
+  [--profile NAME] \
+  [--model NAME] \
+  [--mcps FILE] \
+  [--config <uri-or-path>]
+```
+
+Options:
+
+- `--in <uri-or-path|->`: prompt input. Supports `file://`, `github://owner/repo/ref/path`, plain paths, and `-` for stdin (default when omitted).
+- `--out FILE`: write the final message/content to this file. When omitted, the provider’s last-message temp file remains in a temp dir. Default internal path: `/tmp/events-run-out.json`.
+- `--profile NAME`: profile key from `profiles` in the config (defaults to the profile marked `default: true`, or the first profile).
+- `--model NAME`: override the model declared on the selected profile.
+- `--mcps FILE`: path to MCPs config (default: `.a5c/mcps.json`).
+- `--config <uri-or-path>`: a YAML file that overrides sections of `predefined.yaml`. Supports `file://` and `github://`.
+
+Provider and profiles format (excerpt from `predefined.yaml`):
+
+```yaml
+cli:
+  codex:
+    cli_command: "cat {{prompt_path}} | codex exec --dangerously-bypass-approvals-and-sandbox -c model={{model}} --output-last-message {{output_last_message_path}}"
+    install: "npm install -g @openai/codex@0.31.0"
+  claude_code:
+    cli_command: "cat {{prompt_path}} | claude --mcp-config {{mcp_config}} -p 'fulfill the request' --output-format stream-json --allowedTools Bash,Read,Glob,Grep,Write,MultiEdit,Edit,NotebookRead,NotebookEdit,WebFetch,TodoRead,TodoWrite,WebSearch,Task,Agent,mcp__github,mcp__agent_reporter --dangerously-skip-permissions --verbose --model {{model}}"
+    install: "npm install -g @anthropic-ai/claude-code"
+profiles:
+  openai_codex_gpt5:
+    default: true
+    cli: codex
+    model: gpt-5-2025-08-07
+  claude_code_sonnet4:
+    cli: claude_code
+    model: claude-sonnet-4-20250514
+```
+
+Examples:
+
+1. Minimal (use default profile), prompt from file, write output to `out.md`:
+
+```bash
+events run --in file://./prompt.md --out out.md
+```
+
+2. Override model, use explicit profile, and supply MCP settings:
+
+```bash
+events run \
+  --in file://./prompt.md \
+  --out out.md \
+  --profile openai_codex_gpt5 \
+  --model gpt-5 \
+  --mcps .a5c/mcps.json
+```
+
+3. Read prompt from GitHub, override config via `--config` also from GitHub:
+
+```bash
+events run \
+  --in github://a5c-ai/events/a5c/main/docs/examples/prompt.md \
+  --config github://a5c-ai/events/a5c/main/predefined.yaml \
+  --out out.md
+```
+
+Notes and behavior:
+
+- On first use, the selected provider may run an `install` command (e.g., `npm install -g @openai/codex`). This is executed automatically before invoking the provider CLI.
+- The CLI writes the provider’s “last message” to a temp file, and copies it to `--out` when provided.
+- `github://` URIs require a token (`A5C_AGENT_GITHUB_TOKEN` or `GITHUB_TOKEN`).
+- This command is a convenience wrapper; provider flags may change independently of this CLI. Treat as a workflow helper rather than a stable API surface.
+
 ## Global Options
 
 - `--help`: show command help
