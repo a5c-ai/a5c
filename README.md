@@ -134,6 +134,7 @@ End‑to‑end recipe (normalize → enrich → reactor → emit): `docs/ci/acti
 - `events emit` — Emit composed events to sinks (stdout by default).
 - `events validate` — Validate NE (and enriched documents) against JSON Schema.
 - `events run` — Profile-based AI provider runner (experimental). See reference: `docs/cli/reference.md#events-run`.
+- `events parse` — Parse streaming provider logs to JSON events (experimental). See reference: `docs/cli/reference.md#events-parse`.
 
 Full command/flag reference: `docs/cli/reference.md`.
 

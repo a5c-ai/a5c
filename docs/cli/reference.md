@@ -18,6 +18,52 @@ Defaults: `info` level and `pretty` format. In CI, prefer `--log-format=json` fo
 
 ## Commands
 
+### `events parse`
+
+Parse streamed stdout logs into JSON events (stdin→stdout). Each input line is processed incrementally; the command writes one compact JSON object per parsed event line and flushes any buffered event at EOF.
+
+Status: experimental; subject to change as parsers evolve.
+
+Usage:
+
+```bash
+events parse --type <name>
+```
+
+Flags:
+
+- `--type <name>`: parser type. Supported: `codex`.
+
+Behavior (codex):
+
+- Expects timestamped sections like `[YYYY-MM-DDTHH:MM:SS] thinking`, `exec <cmd> in <cwd>`, and result lines (e.g., `cmd succeeded in 123ms:`).
+- Emits objects with shape: `{ type, timestamp, raw, fields? }` (fields vary by subtype, e.g., `tokens_used`, `exec`, `exec_result`, `thinking`, `codex`, `banner`).
+- Streams: writes one JSON object per event line to stdout; trailing buffered content is flushed on EOF.
+
+Examples:
+
+```bash
+# Pipe provider logs into the parser and pretty-print
+my-codex-cli 2>&1 \
+  | events parse --type codex \
+  | jq '.type, .timestamp, .fields // {}'
+
+# From a saved log file
+cat /tmp/codex-session.log \
+  | events parse --type codex \
+  | jq -c . > /tmp/codex.events.jsonl
+```
+
+Exit codes:
+
+- `0`: success
+- `2`: unsupported `--type` or input/validation error specific to this command
+- `1`: unexpected failure
+
+Notes:
+
+- The `codex` parser is designed for human-oriented stdout from Codex-like CLIs. It is not a generic JSON log parser.
+
 ### `events version`
 
 Print the CLI/package version. Same value as `--version`.
