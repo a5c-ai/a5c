@@ -26,7 +26,6 @@ export async function handleGenerateContext(
       process.env.GITHUB_TOKEN;
     const rootUri = opts.template || "./README.md";
     const originalEvent = input.original_event || {};
-    console.log("originalEvent", originalEvent);
     const new_input = { ...input, ...originalEvent };
     const rendered = await renderTemplate(
       expandDollarExpressions(rootUri, {

@@ -52,7 +52,6 @@ function writeTempEventJson(obj: any): string {
   // Prefer a deterministic /tmp/a5c-event.json path for portability across steps
   // Fall back to OS temp dir or CWD if /tmp is unavailable
   const preferred = "/tmp/a5c-event.json";
-  console.log("event", obj);
   try {
     // Ensure parent dir exists (no-op if already present)
     fs.mkdirSync(path.dirname(preferred), { recursive: true });
@@ -371,7 +370,6 @@ async function runScripts(lines: string[], ctx?: any): Promise<void> {
     } catch {}
     const finalEnv = { ...process.env, ...((ctx as any)?.env || {}) };
     // debug log
-    console.log("finalEnv", finalEnv);
     await new Promise<void>((resolve, reject) => {
       exec(
         cmd,

@@ -5,18 +5,18 @@ cli:
     description: "Custom CLI"
     install: ""
   claude_code:
-    cli_command: "cat {{prompt_path}} | claude --mcp-config {{mcp_config}} -p 'fulfill the request' --output-format stream-json --allowedTools Bash,Read,Glob,Grep,Write,MultiEdit,Edit,NotebookRead,NotebookEdit,WebFetch,TodoRead,TodoWrite,WebSearch,Task,Agent,mcp__github,mcp__agent_reporter --dangerously-skip-permissions --verbose --model {{model}} --mcps={{mcp_config}}"
+    cli_command: "cat {{prompt_path}} | claude --mcp-config {{mcp_config}} -p 'fulfill the request' --output-format stream-json --allowedTools Bash,Read,Glob,Grep,Write,MultiEdit,Edit,NotebookRead,NotebookEdit,WebFetch,TodoRead,TodoWrite,WebSearch,Task,Agent,mcp__github,mcp__agent_reporter --dangerously-skip-permissions --verbose --model {{model}}"
     description: "Claude AI via claude-code CLI"
     install: "npm install -g @anthropic-ai/claude-code"
     stdin_enabled: false
   codex:
-    cli_command: "cat {{prompt_path}} | codex exec --dangerously-bypass-approvals-and-sandbox -c model={{model}} --output-last-message {{output_last_message_path}} --mcps={{mcp_config}}"
+    cli_command: "cat {{prompt_path}} | codex exec --dangerously-bypass-approvals-and-sandbox -c model={{model}} --output-last-message {{output_last_message_path}}"
     description: "OpenAI models via codex CLI"
     install: "npm install -g @openai/codex@0.31.0"
   jules:
     envs:
       GEMINI_API_KEY: "{{envs.GEMINI_API_KEY}}"
-    cli_command: "cat {{prompt_path}} | jules --model {{model}} --mcps={{mcp_config}}"
+    cli_command: "cat {{prompt_path}} | jules --model {{model}}"
     description: "Google Gemini via official Gemini CLI"
     install: "npm install -g @google/gemini"
 
