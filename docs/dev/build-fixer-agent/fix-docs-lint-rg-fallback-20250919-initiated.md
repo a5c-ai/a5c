@@ -22,3 +22,12 @@ Started: 2025-09-19T19:22:00Z
 
 - Ensure the new step exits non-zero if banned phrase is found.
 - Ensure it only scans README.md and docs/\*_/_.md (markdown files).
+
+## Progress
+
+- Implemented workflow change to remove apt install and add rg-or-grep fallback.
+- Opened PR: https://github.com/a5c-ai/events/pull/1012 (auto-merge enabled, squash).
+
+## Links
+
+- Failed run to address: https://github.com/a5c-ai/events/actions/runs/17867730945
