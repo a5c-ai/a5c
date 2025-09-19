@@ -161,6 +161,7 @@ Project structure:
 
 ## Links
 
+- How‑to guide: `docs/user/how-to.md`
 - CLI reference: `docs/cli/reference.md`
 - SDK quickstart: `docs/user/sdk-quickstart.md`
 - NE schema: `docs/specs/ne.schema.json`
