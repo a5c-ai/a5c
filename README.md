@@ -116,6 +116,7 @@ Full command/flag reference: `docs/cli/reference.md`.
 - Offline by default: enrichment makes no network calls unless `--use-github` is provided.
 - Tokens: `A5C_AGENT_GITHUB_TOKEN` or `GITHUB_TOKEN` (the former takes precedence). Some commands like `generate_context` may use tokens to fetch `github://` templates.
 - Exit codes: `0` success; `1` generic error; `2` input/validation error (missing `--in`, invalid JSON, filter mismatch); `3` provider/network error (e.g., `--use-github` without a token).
+- CI convenience: set `A5C_EVENTS_AUTO_USE_GITHUB=true` to auto‑enable `--use-github` when a token exists (default remains offline). See `docs/cli/reference.md#events-enrich`.
 
 ## NE Schema
 
