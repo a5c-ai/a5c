@@ -1,3 +1,8 @@
+## <small>1.20.3 (2025-09-19)</small>
+
+* Merge pull request #978 from a5c-ai/a5c/main ([9923e7a](https://github.com/a5c-ai/events/commit/9923e7a)), closes [#978](https://github.com/a5c-ai/events/issues/978)
+* fix: improve environment variable handling in runScripts function ([4f76e44](https://github.com/a5c-ai/events/commit/4f76e44))
+
 ## <small>1.20.2 (2025-09-19)</small>
 
 * Merge pull request #977 from a5c-ai/a5c/main ([6597013](https://github.com/a5c-ai/events/commit/6597013)), closes [#977](https://github.com/a5c-ai/events/issues/977)
