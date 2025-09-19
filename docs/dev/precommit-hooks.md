@@ -15,7 +15,7 @@ The `.husky/pre-commit` hook delegates to `scripts/precommit.sh`, which enforces
 
 ### Optional: local secret scanning (Gitleaks)
 
-- Opt-in local scan for staged changes using `gitleaks protect --staged --no-git -v`.
+- Opt-in local scan for staged changes using `gitleaks protect --staged -v`.
 - Disabled by default to keep commits fast. Enable by setting either:
   - `A5C_PRECOMMIT_GITLEAKS=1`, or
   - `PRECOMMIT_GITLEAKS=1`

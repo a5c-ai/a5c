@@ -100,7 +100,7 @@ if [[ "${A5C_PRECOMMIT_GITLEAKS:-0}" == "1" || "${PRECOMMIT_GITLEAKS:-0}" == "1"
   if command -v gitleaks >/dev/null 2>&1; then
     echo "[precommit] Running Gitleaks on staged changes (opt-in)"
     # Use verbose output; rely on default repo config if present
-    if ! gitleaks protect --staged --no-git -v; then
+    if ! gitleaks protect --staged -v; then
       echo -e "\n\033[31m[precommit] Gitleaks detected potential secrets in staged changes.\033[0m"
       echo "Review the findings and commit again."
       echo "- To bypass temporarily: unset A5C_PRECOMMIT_GITLEAKS/PRECOMMIT_GITLEAKS or commit with A5C_SKIP_PRECOMMIT=1"
