@@ -24,6 +24,10 @@ describe("events parse --type codex (integration)", () => {
         (o: any) => o.type === "exec_result" && /bash -lc 'ls -la'/.test(String(o.fields?.command || "")),
       ),
     ).toBe(true);
+    const thinking = objs.find((o: any) => o.type === "thinking");
+    const codex = objs.find((o: any) => o.type === "codex");
+    expect(String(thinking?.fields?.thought || "")).toContain("Exploring user request");
+    expect(String(codex?.fields?.explanation || "")).toContain("scan the repo");
   });
 });
 

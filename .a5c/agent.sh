@@ -54,15 +54,14 @@ npx -y "$A5C_PKG_SPEC" generate_context \
     --in "$A5C_EVENT_PATH" \
     --template "$A5C_TEMPLATE_URI" --out /tmp/prompt.md 
 
+echo "Prompt:"
+cat /tmp/prompt.md
+
+echo "Events:"
 npx -y "$A5C_PKG_SPEC" run \
     --in /tmp/prompt.md \
     --out /tmp/last_message.txt \
     --profile "$A5C_CLI_PROFILE" \
-    --mcps "$A5C_MCPS_PATH" > /tmp/full_output.txt
-echo "Output:"
-cat /tmp/full_output.txt
-cat /tmp/full_output.txt | npx -y "$A5C_PKG_SPEC" parse --type codex | tee /tmp/out.json
-echo "Events:"
-cat /tmp/out.json
-echo "Prompt:"
-cat /tmp/prompt.md
+    --mcps "$A5C_MCPS_PATH" | npx -y "$A5C_PKG_SPEC" parse --type codex
+# echo "Events:"
+# cat /tmp/out.json

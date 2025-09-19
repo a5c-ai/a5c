@@ -276,15 +276,21 @@ export class CodexStdoutParser {
     // Avoid duplicating the exec header event: it's emitted immediately on detection
     if (this.currentType !== "exec") {
       const raw = this.bufferLines.join("\n");
-      const baseFields =
-        this.currentType === "exec_result"
-          ? { ...(this.currentExecMeta || {}) }
-          : undefined;
+      let fields: Record<string, unknown> | undefined = undefined;
+      if (this.currentType === "exec_result") {
+        fields = { ...(this.currentExecMeta || {}) };
+      } else if (this.currentType === "thinking") {
+        const thought = this.stripHeaderAndTrim(raw, "thinking");
+        fields = { thought };
+      } else if (this.currentType === "codex") {
+        const explanation = this.stripHeaderAndTrim(raw, "codex");
+        fields = { explanation };
+      }
       const evt: CodexEvent = {
         type: this.currentType,
         timestamp: this.currentTimestamp,
         raw,
-        fields: baseFields,
+        fields,
       };
       out.push(evt);
     }
@@ -292,6 +298,15 @@ export class CodexStdoutParser {
     this.currentType = null;
     this.bufferLines = [];
     this.currentExecMeta = null;
+  }
+
+  private stripHeaderAndTrim(raw: string, header: string): string {
+    const lines = raw.split(/\r?\n/);
+    if (lines.length === 0) return "";
+    const first = lines[0];
+    const headerRe = new RegExp(`^${header}\\s*$`, "i");
+    const rest = headerRe.test(first) ? lines.slice(1) : lines;
+    return rest.join("\n").trim();
   }
 }
 

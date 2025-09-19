@@ -54,11 +54,12 @@ describe("CodexStdoutParser (unit)", () => {
     expect(String(failed?.raw || "")).toContain("error TS2688");
   });
 
-  it("captures user instructions body", () => {
+  it("adds thought/explanation fields for thinking/codex", () => {
     const events = parseAllLines(SAMPLE);
-    const ui = events.find((e) => e.type === "user_instructions_event");
-    expect(ui).toBeTruthy();
-    expect(String(ui?.raw || "")).toContain("# Prompt");
+    const thinking = events.find((e) => e.type === "thinking");
+    const codex = events.find((e) => e.type === "codex");
+    expect(String(thinking?.fields?.thought || "")).toContain("Exploring user request");
+    expect(String(codex?.fields?.explanation || "")).toContain("scan the repo");
   });
 });
 
