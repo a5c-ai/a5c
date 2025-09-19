@@ -19,6 +19,6 @@
 
 ## Done
 
-- [ ] Sections drafted
-- [ ] PR opened
+- [x] Sections drafted
+- [x] PR opened (#1031)
 - [ ] Ready for review
