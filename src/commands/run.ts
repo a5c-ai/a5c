@@ -334,6 +334,13 @@ async function runShell(
       stdio: "inherit",
       env: options?.env,
     });
+    // stdout and stderr should be capatured, analyzed and emitted in realtime
+    child.stdout?.on("data", (data) => {
+      process.stdout.write(data);
+    });
+    child.stderr?.on("data", (data) => {
+      process.stderr.write(data);
+    });
     child.on("close", (code) => resolve(code ?? 0));
     child.on("error", () => resolve(1));
   });
