@@ -52,7 +52,7 @@ git config user.email "$GITHUB_EMAIL"
 
 npx -y "$A5C_PKG_SPEC" generate_context \
     --in "$A5C_EVENT_PATH" \
-    --template "$A5C_TEMPLATE_URI" --out /tmp/prompt.md 
+    --template "$A5C_TEMPLATE_URI" --out /tmp/prompt.md
 
 echo "Prompt:"
 cat /tmp/prompt.md
