@@ -277,7 +277,7 @@ async function startStatusChecks(cp: any): Promise<{
       owner,
       repo,
       sha,
-      state: "queued",
+      state: "pending",
       context,
       description,
     } as any);

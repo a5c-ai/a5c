@@ -640,7 +640,7 @@ Supported side-effects (per `src/emit.ts`):
 - `status_checks[]`: optional GitHub commit status checks created before `script` and completed after it finishes.
   - Shape: `{ name: string, description?: string }`
   - Resolution: determines the target repo via `resolveOwnerRepo` (from fields like `repository.full_name`, nested payload URLs, or label target URLs). Determines the commit SHA via `pull_request.head.sha`, `sha`, or the default branch head when not present.
-  - Behavior: creates each status with `state=queued` before `script`, and updates to `success` or `failure` based on `script` result.
+  - Behavior: creates each status with `state=pending` before `script`, and updates to `success` or `failure` based on `script` result.
   - Requires `GITHUB_TOKEN` (or `A5C_AGENT_GITHUB_TOKEN`).
 
 Script environment (available to `script[]` commands):
