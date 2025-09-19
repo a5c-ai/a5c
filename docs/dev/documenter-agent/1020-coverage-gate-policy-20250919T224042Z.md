@@ -23,3 +23,9 @@
 ## Next
 
 - Implement docs, then open PR.
+
+## Results
+
+- CONTRIBUTING.md updated with Coverage Gate section (policy, enablement, thresholds, overrides, local usage).
+- PR opened: https://github.com/a5c-ai/events/pull/1040
+- Labels applied: docs, coverage, feedback-loop-optimizer, ci
