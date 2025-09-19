@@ -18,6 +18,52 @@ Defaults: `info` level and `pretty` format. In CI, prefer `--log-format=json` fo
 
 ## Commands
 
+### `events parse`
+
+Parse streamed stdout logs into JSON events (stdin→stdout). Each input line is processed incrementally; the command writes one compact JSON object per parsed event line and flushes any buffered event at EOF.
+
+Status: experimental; subject to change as parsers evolve.
+
+Usage:
+
+```bash
+events parse --type <name>
+```
+
+Flags:
+
+- `--type <name>`: parser type. Supported: `codex`.
+
+Behavior (codex):
+
+- Expects timestamped sections like `[YYYY-MM-DDTHH:MM:SS] thinking`, `exec <cmd> in <cwd>`, and result lines (e.g., `cmd succeeded in 123ms:`).
+- Emits objects with shape: `{ type, timestamp, raw, fields? }` (fields vary by subtype, e.g., `tokens_used`, `exec`, `exec_result`, `thinking`, `codex`, `banner`).
+- Streams: writes one JSON object per event line to stdout; trailing buffered content is flushed on EOF.
+
+Examples:
+
+```bash
+# Pipe provider logs into the parser and pretty-print
+my-codex-cli 2>&1 \
+  | events parse --type codex \
+  | jq '.type, .timestamp, .fields // {}'
+
+# From a saved log file
+cat /tmp/codex-session.log \
+  | events parse --type codex \
+  | jq -c . > /tmp/codex.events.jsonl
+```
+
+Exit codes:
+
+- `0`: success
+- `2`: unsupported `--type` or input/validation error specific to this command
+- `1`: unexpected failure
+
+Notes:
+
+- The `codex` parser is designed for human-oriented stdout from Codex-like CLIs. It is not a generic JSON log parser.
+
 ### `events version`
 
 Print the CLI/package version. Same value as `--version`.
@@ -581,7 +627,7 @@ Notes:
 
 ### `events emit`
 
-Emit an event or `{ events: [...] }` collection to a sink. Executes optional side-effects (labels, status checks, scripts) before emitting. Output is redacted.
+Emit an event or `{ events: [...] }` collection to a sink. Before emitting, `events emit` can optionally perform side-effects (labels, status checks, scripts). Output is redacted.
 
 Usage:
 
@@ -620,6 +666,57 @@ Notes:
 
 - Redaction masks common secrets (see `src/utils/redact.ts`).
 - Supplying `--out` without `--sink` implies `--sink file`.
+
+Side-effects
+
+`events emit` can perform side-effects before writing to the sink. Side-effects run in this order: `pre_set_labels` → `script` → `set_labels`. If any step fails, the command exits with code `1`.
+
+- Enable by including fields under the top-level object or under each item of `events[]` (the code treats both a single object or `{ events: [...] }`). Side-effects use `client_payload || payload || <event>` as their working context.
+- Use `event_type: "command_only"` to run side-effects without dispatching anything when `--sink github` is used (the GitHub sink skips dispatch for this event type).
+
+Supported side-effects (per `src/emit.ts`):
+
+- `pre_set_labels[]`: add/remove labels before `script` runs.
+  - Shape: `{ entity: <issue/pr URL>, add_labels?: string|string[], remove_labels?: string|string[] }`
+  - `entity` can be any supported Issue/PR URL, e.g.: `https://github.com/owner/repo/issues/123` or `https://github.com/owner/repo/pull/456`.
+  - If labels do not exist, they are auto-created with a deterministic color.
+  - Requires `GITHUB_TOKEN` (or `A5C_AGENT_GITHUB_TOKEN`).
+
+- `script[]`: array of shell commands executed with `sh -c`, inheriting env (see below). Template expressions in commands are supported:
+  - `${{ <js expression> }}` and `{{ <js expression> }}` are evaluated with arguments `(event, env, event_path)`, where `event` is the working client payload, `env` is the merged environment, and `event_path` is a temp JSON file path containing the current event.
+  - Example: `echo "Hello ${{ event.actor?.login || 'unknown' }}"`.
+  - Fail-fast: a non-zero exit from any command fails the step; commit status checks (when configured) are marked `failure`.
+
+- `set_labels[]`: add/remove labels after `script` completes.
+  - Same shape and requirements as `pre_set_labels`.
+
+- `status_checks[]`: optional GitHub commit status checks created before `script` and completed after it finishes.
+  - Shape: `{ name: string, description?: string }`
+  - Resolution: determines the target repo via `resolveOwnerRepo` (from fields like `repository.full_name`, nested payload URLs, or label target URLs). Determines the commit SHA via `pull_request.head.sha`, `sha`, or the default branch head when not present.
+  - Behavior: creates each status with `state=queued` before `script`, and updates to `success` or `failure` based on `script` result.
+  - Requires `GITHUB_TOKEN` (or `A5C_AGENT_GITHUB_TOKEN`).
+
+Script environment (available to `script[]` commands):
+
+- `EVENT_PATH` / `A5C_EVENT_PATH`: path to a temp JSON file of the current event (first tries `/tmp/a5c-event.json`, then `$RUNNER_TEMP/$TEMP`, then CWD).
+- `A5C_TEMPLATE_URI`: propagated from payload env (`client_payload.env.A5C_TEMPLATE_URI`) or process env; empty when unset.
+- `A5C_PKG_SPEC`: package spec to re-enter the CLI if needed (defaults to `@a5c-ai/events` when not set).
+- `A5C_STATUS_CHECKS`: when status checks are configured and a token is available, a comma-separated list of `sha-context` pairs for all checks created.
+
+Examples (side-effects):
+
+Offline, `script` only (safe locally):
+
+```bash
+events emit --in docs/examples/emit.side-effects.offline.json
+```
+
+With labels and status checks (requires token, repository context in payload):
+
+```bash
+export GITHUB_TOKEN=ghp_...
+events emit --in docs/examples/emit.side-effects.github.json
+```
 
 Examples:
 

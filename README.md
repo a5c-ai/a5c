@@ -88,6 +88,21 @@ events enrich --in ... --flag 'mentions.languages=ts,js'
 
 Canonical flags and defaults live in `docs/cli/reference.md#events-enrich` and `#mentions-scanning`.
 
+### Reactor Quick Start
+
+Run the reactor locally against a bundled sample PR event using the default rules path `.a5c/events/reactor.yaml`:
+
+```bash
+npm run reactor:sample | jq '.events | length'
+# expected: 1
+
+# Or view the produced events
+npm run reactor:sample | jq
+```
+
+- Rules live at `.a5c/events/reactor.yaml` by default.
+- Full CLI reference: `docs/cli/reference.md#events-reactor`.
+
 ## Quick Start (SDK)
 
 See `docs/user/sdk-quickstart.md` for a minimal example using `mapToNE`, `enrichGithub`, and helpers.
@@ -116,19 +131,20 @@ End‑to‑end recipe (normalize → enrich → reactor → emit): `docs/ci/acti
 - `events mentions` — Extract `@mentions` from files/stdin.
 - `events generate_context` — Render templates from file/github URIs with the event as data.
 - `events reactor` — Apply rules to NE and emit composed events.
-- `events emit` — Emit composed events to sinks (stdout by default).
+- `events emit` — Emit composed events to sinks (stdout by default) and optionally run side-effects (labels, scripts, status checks). See `docs/cli/reference.md#events-emit`.
 - `events validate` — Validate NE (and enriched documents) against JSON Schema.
 - `events run` — Profile-based AI provider runner (experimental). See reference: `docs/cli/reference.md#events-run`.
+- `events parse` — Parse streaming provider logs to JSON events (experimental). See reference: `docs/cli/reference.md#events-parse`.
 
 Full command/flag reference: `docs/cli/reference.md`.
 
 ## Logging
 
 - Global flags on every command:
-  - `--log-level <info|debug|warn|error>` → sets env `A5C_LOG_LEVEL`
-  - `--log-format <pretty|json>` → sets env `A5C_LOG_FORMAT`
-- Defaults: `info` + `pretty`. In CI, prefer `--log-format=json`.
-- Observability details: `docs/observability.md`.
+  - `--log-level <info|debug|warn|error>` → sets env `A5C_LOG_LEVEL` (default: `info`)
+  - `--log-format <pretty|json>` → sets env `A5C_LOG_FORMAT` (default: `pretty`)
+- In CI, prefer `--log-format=json` for structured logs.
+- See global flags in `docs/cli/reference.md#global-flags` and additional notes in `docs/observability.md`.
 
 ## Tokens, Networking, Exit Codes
 
@@ -136,6 +152,13 @@ Full command/flag reference: `docs/cli/reference.md`.
 - Tokens: `A5C_AGENT_GITHUB_TOKEN` or `GITHUB_TOKEN` (the former takes precedence). Some commands like `generate_context` may use tokens to fetch `github://` templates.
 - Exit codes: `0` success; `1` generic error; `2` input/validation error (missing `--in`, invalid JSON, filter mismatch); `3` provider/network error (e.g., `--use-github` without a token).
 - CI convenience: set `A5C_EVENTS_AUTO_USE_GITHUB=true` to auto‑enable `--use-github` when a token exists (default remains offline). See `docs/cli/reference.md#events-enrich`.
+
+## Troubleshooting
+
+- Offline vs online: enrichment is offline by default. Pass `--use-github` to enable API calls. Without a token, the CLI exits with code `3` and prints an error; no JSON is emitted by the CLI path. Details: `docs/cli/reference.md#events-enrich`.
+- Exit code 2: input/validation problems (e.g., missing `--in` when not running in GitHub Actions; invalid JSON; filter mismatch). Fix inputs or run in Actions where `GITHUB_EVENT_PATH` is available by default.
+- Exit code 3: provider/network problems (e.g., `--use-github` with missing/insufficient token; network failures). Provide `A5C_AGENT_GITHUB_TOKEN` or `GITHUB_TOKEN`.
+- Rate limits: for `github://` templates and online enrichment, prefer `A5C_AGENT_GITHUB_TOKEN` and run with `--log-format=json` to surface errors clearly in CI. Retries/backoff are limited; reduce calls or cache inputs when possible.
 
 ## NE Schema
 

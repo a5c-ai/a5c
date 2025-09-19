@@ -73,7 +73,7 @@ export async function handleEnrich(opts: {
               : baseEvent?.issue
                 ? "issue"
                 : baseEvent?.client_payload
-                  ? "repository_dispatch"
+                  ? "commit"
                   : baseEvent?.ref
                     ? "push"
                     : "commit",

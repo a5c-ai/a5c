@@ -9,12 +9,11 @@ export async function runNormalize(opts: {
   labels?: string[];
 }): Promise<{ code: number; output?: NormalizedEvent; errorMessage?: string }> {
   const normSource = normalizeSource(opts.source);
-  if (!opts.in) {
+  if (!opts.in)
     return {
       code: 2,
       errorMessage: "Missing required input: provide --in FILE",
     };
-  }
   try {
     const payload = readJSONFile<any>(opts.in) || {};
     const output = mapToNE(payload, {
