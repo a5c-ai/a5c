@@ -73,7 +73,7 @@ export async function handleEnrich(opts: {
               : baseEvent?.issue
                 ? "issue"
                 : baseEvent?.client_payload
-                  ? "commit"
+                  ? "custom"
                   : baseEvent?.ref
                     ? "push"
                     : "commit",
@@ -87,6 +87,24 @@ export async function handleEnrich(opts: {
             baseEvent?.issue?.created_at ||
             Date.now(),
         ).toISOString(),
+        repo:
+          baseEvent?.client_payload && baseEvent?.repository
+            ? {
+                id: Number(baseEvent.repository.id) || 0,
+                name: String(baseEvent.repository.name || ""),
+                full_name: String(baseEvent.repository.full_name || ""),
+                private: Boolean(baseEvent.repository.private),
+                visibility: (baseEvent.repository.visibility as any) ?? null,
+              }
+            : undefined,
+        actor:
+          baseEvent?.client_payload && baseEvent?.sender
+            ? {
+                id: Number(baseEvent.sender.id) || 0,
+                login: String(baseEvent.sender.login || ""),
+                type: String(baseEvent.sender.type || "User"),
+              }
+            : undefined,
         payload: baseEvent,
         labels: opts.labels || [],
         provenance: { source: "cli" },

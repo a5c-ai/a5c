@@ -20,8 +20,9 @@
 ## 3) Event Sources, Types, and Normalization Model
 
 - Sources: GitHub (Actions, webhooks), other VCS/providers via adapters.
-- Core types: repo, ref, commit, workflow_run, job, step, pull_request, issue, issue_comment, release, deployment, check_run, alert.
+- Core types: repo, ref, commit, workflow_run, job, step, pull_request, issue, issue_comment, release, deployment, check_run, alert, custom.
 - Note: GitHub webhook event name issues maps to NE value issue (singular), and GitHub webhook issue_comment maps directly to NE value issue_comment. See docs/specs/notes/issue-type-alignment.md.
+- Custom/dispatch: GitHub `repository_dispatch` payloads normalize to `type: custom`. The original `action` (dispatch event_type) and `client_payload` are preserved under `payload`.
 - Normalized Event (NE) schema (MVP):
   - id: provider-unique id
   - provider: "github"

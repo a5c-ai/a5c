@@ -39,7 +39,7 @@
         "deployment",
         "check_run",
         "alert",
-        "repository_dispatch"
+        "custom"
       ],
       "description": "Core normalized type"
     },
