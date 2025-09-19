@@ -52,16 +52,16 @@ git config user.email "$GITHUB_EMAIL"
 
 npx -y "$A5C_PKG_SPEC" generate_context \
     --in "$A5C_EVENT_PATH" \
-    --template "$A5C_TEMPLATE_URI" \
-    --out /tmp/prompt.md | tee /tmp/prompt.md | npx -y "$A5C_PKG_SPEC" run \
-    --in /tmp/prompt.md \
-    --out /tmp/out.json \
-    --profile "$A5C_CLI_PROFILE" \
-    --mcps "$A5C_MCPS_PATH" > /tmp/out.txt
-echo "Output:"
-cat /tmp/out.txt
-cat /tmp/out.txt | npx -y "$A5C_PKG_SPEC" parse --type codex | tee /tmp/out.json
-echo "Events:"
-cat /tmp/out.json
+    --template "$A5C_TEMPLATE_URI" --out /tmp/prompt.md 
+
 echo "Prompt:"
 cat /tmp/prompt.md
+
+echo "Events:"
+npx -y "$A5C_PKG_SPEC" run \
+    --in /tmp/prompt.md \
+    --out /tmp/last_message.txt \
+    --profile "$A5C_CLI_PROFILE" \
+    --mcps "$A5C_MCPS_PATH" | npx -y "$A5C_PKG_SPEC" parse --type codex
+# echo "Events:"
+# cat /tmp/out.json
