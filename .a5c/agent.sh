@@ -57,7 +57,10 @@ npx -y "$A5C_PKG_SPEC" generate_context \
     --in /tmp/prompt.md \
     --out /tmp/out.json \
     --profile "$A5C_CLI_PROFILE" \
-    --mcps "$A5C_MCPS_PATH" | npx -y "$A5C_PKG_SPEC" parse --type codex | tee /tmp/out.json
+    --mcps "$A5C_MCPS_PATH" > /tmp/out.txt
+echo "Output:"
+cat /tmp/out.txt
+cat /tmp/out.txt | npx -y "$A5C_PKG_SPEC" parse --type codex | tee /tmp/out.json
 echo "Events:"
 cat /tmp/out.json
 echo "Prompt:"

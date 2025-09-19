@@ -27,7 +27,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.build.json",
     "test": "vitest run",
     "validate:obs": "node scripts/validate-obs.cjs",
-    "test:ci": "vitest run --coverage --reporter=dot --reporter=junit --outputFile=junit.xml",
+    "test:ci": "vitest run --coverage",
     "flaky:detect": "node scripts/flaky-detector.cjs",
     "dev": "tsx watch src/cli.ts -- --help",
     "cli": "node dist/cli.js",

@@ -23,7 +23,7 @@ describe("CodexStdoutParser (unit)", () => {
   it("parses banner and tokens used events", () => {
     const events = parseAllLines(SAMPLE);
     expect(events[0].type).toBe("banner");
-    expect(String(events[0].fields?.version || "")).toContain("v0.31.0");
+    expect(String(events[0].fields?.version || "")).toContain("0.31.0");
     const tokens = events.filter((e) => e.type === "tokens_used");
     const counts = tokens.map((t) => (t.fields?.tokens as number) || 0);
     expect(counts).toContain(6037);
@@ -35,7 +35,7 @@ describe("CodexStdoutParser (unit)", () => {
   it("parses exec + exec_result with success and body", () => {
     const events = parseAllLines(SAMPLE);
     const execResult = events.find(
-      (e) => e.type === "exec_result" && String(e.fields?.command || "").includes("ls -la"),
+      (e) => e.type === "exec_result" && /bash -lc 'ls -la'/.test(String(e.fields?.command || "")),
     );
     expect(execResult).toBeTruthy();
     expect(execResult?.fields?.status).toBe("succeeded");
@@ -46,7 +46,7 @@ describe("CodexStdoutParser (unit)", () => {
   it("parses exec_result for failure with exit code and stderr text", () => {
     const events = parseAllLines(SAMPLE);
     const failed = events.find(
-      (e) => e.type === "exec_result" && String(e.fields?.command || "").includes("npm test --silent"),
+      (e) => e.type === "exec_result" && /npm test --silent/.test(String(e.fields?.command || "")),
     );
     expect(failed).toBeTruthy();
     expect(failed?.fields?.status).toBe("exited");

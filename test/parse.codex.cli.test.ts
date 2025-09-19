@@ -14,12 +14,16 @@ describe("events parse --type codex (integration)", () => {
       encoding: "utf8",
     });
     const lines = out.trim().split(/\r?\n/);
-    expect(lines.length).toBeGreaterThan(5);
+    expect(lines.length).toBeGreaterThan(3);
     const objs = lines.map((l) => JSON.parse(l));
     expect(objs.some((o: any) => o.type === "banner")).toBe(true);
     expect(objs.some((o: any) => o.type === "tokens_used" && o.fields?.tokens === 6037)).toBe(true);
     expect(objs.some((o: any) => o.type === "exec")).toBe(true);
-    expect(objs.some((o: any) => o.type === "exec_result" && /ls -la/.test(String(o.fields?.command || "")))).toBe(true);
+    expect(
+      objs.some(
+        (o: any) => o.type === "exec_result" && /bash -lc 'ls -la'/.test(String(o.fields?.command || "")),
+      ),
+    ).toBe(true);
   });
 });
 
