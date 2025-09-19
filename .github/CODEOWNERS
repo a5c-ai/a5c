@@ -7,6 +7,7 @@ scripts/** @a5c-ai/agents
 
 # Docs
 docs/** @a5c-ai/docs
+docs/oncall.md @a5c-ai/platform @a5c-ai/docs
 README.md @a5c-ai/docs
 
 # GitHub workflows and automation
