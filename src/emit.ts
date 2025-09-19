@@ -368,11 +368,14 @@ async function runScripts(lines: string[], ctx?: any): Promise<void> {
       const fullCtx = ctx || gctx;
       cmd = expandInlineTemplates(cmd, fullCtx);
     } catch {}
+    const finalEnv = { ...process.env, ...((ctx as any)?.env || {}) };
+    // debug log
+    console.log("finalEnv", finalEnv);
     await new Promise<void>((resolve, reject) => {
       exec(
         cmd,
         {
-          env: { ...process.env, ...((ctx as any)?.env || {}) },
+          env: finalEnv,
           windowsHide: true,
         },
         (err, stdout, stderr) => {
