@@ -218,6 +218,7 @@ git config --global core.eol lf
 ```
 
 Most editors (VS Code, JetBrains, Notepad++, etc.) handle LF on Windows.
+
 - VS Code: set `"files.eol": "\n"` and ensure the status bar shows `LF`.
 
 If you ever need to re-normalize line endings locally after changing Git settings:

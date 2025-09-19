@@ -1,0 +1,21 @@
+---
+# Sample reactor rules file
+# Save as: samples/reactor/sample.yaml (or copy to .a5c/events/reactor.yaml)
+
+# React on pull_request and emit a reviewer ping event for documentation-labelled PRs
+on: pull_request
+emit:
+  a5c.reviewer.ping:
+    labels: [documentation]
+    payload:
+      pr: "${{ event.pull_request.number }}"
+      repo: "${{ event.repository.full_name }}"
+
+---
+# React on repository_dispatch from the pipeline and forward phase changes
+on: repository_dispatch
+emit:
+  a5c.pipeline.phase:
+    payload:
+      phase: "${{ event.client_payload.phase }}"
+      run_id: "${{ event.client_payload.run_id }}"

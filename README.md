@@ -140,11 +140,11 @@ Full command/flag reference: `docs/cli/reference.md`.
 
 ## Logging
 
-- Control verbosity: `--log-level info|debug|warn|error` (default: `info`).
-- Output format: `--log-format pretty|json` (default: `pretty`). Use `json` in CI for structured logs.
-- Env equivalents: `A5C_LOG_LEVEL`, `A5C_LOG_FORMAT`.
-
-See global flags in `docs/cli/reference.md#global-flags` and additional notes in `docs/observability.md`.
+- Global flags on every command:
+  - `--log-level <info|debug|warn|error>` → sets env `A5C_LOG_LEVEL` (default: `info`)
+  - `--log-format <pretty|json>` → sets env `A5C_LOG_FORMAT` (default: `pretty`)
+- In CI, prefer `--log-format=json` for structured logs.
+- See global flags in `docs/cli/reference.md#global-flags` and additional notes in `docs/observability.md`.
 
 ## Tokens, Networking, Exit Codes
 
@@ -187,6 +187,15 @@ Environment variables:
 - Logging toggles and observability: `docs/observability.md`
 
 CLI defaults favor reproducibility in CI: explicit `--in`, write artifacts with `--out`.
+
+## Troubleshooting
+
+- `enrich --use-github` exits 3 with "token required": set `A5C_AGENT_GITHUB_TOKEN` or `GITHUB_TOKEN`.
+- `normalize --source actions` fails with missing `GITHUB_EVENT_PATH`: pass `--in FILE` or run inside GitHub Actions.
+- `emit --sink file` without `--out`: specify an output path.
+- `validate` reports schema errors: inspect `.errors[]` for `instancePath` and `message`.
+- Slow or noisy logs: pass `--log-format=json` and control verbosity via `--log-level`.
+- `generate_context` with `github://...` URIs requires a token.
 
 ## Development
 
