@@ -52,6 +52,7 @@ function writeTempEventJson(obj: any): string {
   // Prefer a deterministic /tmp/a5c-event.json path for portability across steps
   // Fall back to OS temp dir or CWD if /tmp is unavailable
   const preferred = "/tmp/a5c-event.json";
+  console.log("event", obj);
   try {
     // Ensure parent dir exists (no-op if already present)
     fs.mkdirSync(path.dirname(preferred), { recursive: true });
@@ -114,7 +115,7 @@ async function executeSideEffects(obj: any): Promise<void> {
       (globalThis as any).__A5C_EMIT_CTX__ = { event: cp };
     } catch {}
     // Prepare temp file with the current event payload for scripts
-    const tmpEventPath = writeTempEventJson(ev.original_event);
+    const tmpEventPath = writeTempEventJson(ev);
     const scriptEnv = {
       ...process.env,
       ...(cp.env || {}),

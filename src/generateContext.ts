@@ -25,15 +25,18 @@ export async function handleGenerateContext(
       process.env.A5C_AGENT_GITHUB_TOKEN ||
       process.env.GITHUB_TOKEN;
     const rootUri = opts.template || "./README.md";
+    const originalEvent = input.original_event || {};
+    console.log("originalEvent", originalEvent);
+    const new_input = { ...input, ...originalEvent };
     const rendered = await renderTemplate(
       expandDollarExpressions(rootUri, {
-        event: input,
+        event: new_input,
         env: process.env,
         vars: opts.vars || {},
         token,
       }),
       {
-        event: input,
+        event: new_input,
         env: process.env,
         vars: opts.vars || {},
         token,
