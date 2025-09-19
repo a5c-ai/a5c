@@ -28,6 +28,7 @@ function loadCoverageThresholds() {
 }
 
 const THRESHOLDS = loadCoverageThresholds();
+const REQUIRE_COVERAGE = process.env.REQUIRE_COVERAGE === "true";
 
 export default defineConfig({
   test: {
@@ -57,12 +58,17 @@ export default defineConfig({
         "node_modules/**",
         "coverage/**",
       ],
-      thresholds: {
-        lines: THRESHOLDS.lines,
-        branches: THRESHOLDS.branches,
-        functions: THRESHOLDS.functions,
-        statements: THRESHOLDS.statements,
-      },
+      // Only enforce thresholds when explicitly required (PR hard gate is handled in the workflow)
+      ...(REQUIRE_COVERAGE
+        ? {
+            thresholds: {
+              lines: THRESHOLDS.lines,
+              branches: THRESHOLDS.branches,
+              functions: THRESHOLDS.functions,
+              statements: THRESHOLDS.statements,
+            },
+          }
+        : {}),
     },
     // Include both TS and legacy JS tests (issue #251)
     include: [
