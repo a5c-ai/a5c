@@ -7,3 +7,9 @@
   - Replace `"repository_dispatch"` fallback with a supported NE type (`"commit"`)
   - Add tests for `issue` and `issue_comment` fallback paths
   - Validate with `docs/specs/ne.schema.json`
+
+## Results
+
+- Updated src/enrich.ts fallback mapping: issues→issue; repository_dispatch→commit.
+- Added tests: tests/enrich.fallback.type-mapping.test.ts.
+- All tests pass locally (vitest).
