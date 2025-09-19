@@ -13,14 +13,46 @@ The `.husky/pre-commit` hook delegates to `scripts/precommit.sh`, which enforces
 - Whitespace/newline hygiene: `git diff --cached --check` must pass.
 - lint-staged: runs ESLint and Prettier on staged files only.
 
+### Optional: local secret scanning (Gitleaks)
+
+- Opt-in local scan for staged changes using `gitleaks protect --staged --no-git -v`.
+- Disabled by default to keep commits fast. Enable by setting either:
+  - `A5C_PRECOMMIT_GITLEAKS=1`, or
+  - `PRECOMMIT_GITLEAKS=1`
+- If the `gitleaks` binary is not installed, the step is skipped with a notice.
+- CI remains the source of truth via `.github/workflows/gitleaks.yml`.
+
 ## Install
 
 Run `npm install` once; Husky will install hooks automatically. Node >= 20 is required.
+
+To enable local Gitleaks scan, install `gitleaks`:
+
+- macOS (Homebrew): `brew install gitleaks`
+- Linux (deb): `curl -sSL https://github.com/gitleaks/gitleaks/releases/latest/download/gitleaks_amd64.deb -o gitleaks.deb && sudo dpkg -i gitleaks.deb`
+- Linux (tar): download the tarball from Releases and place `gitleaks` in your `PATH`
+- Windows (scoop): `scoop install gitleaks`
+
+Then export one of the toggles in your shell profile (or inline for a single commit):
+
+```
+export A5C_PRECOMMIT_GITLEAKS=1
+# or
+export PRECOMMIT_GITLEAKS=1
+```
 
 ## Skipping
 
 - Skip pre-commit: set `A5C_SKIP_PRECOMMIT=1` or `SKIP_PRECOMMIT=1` (legacy `SKIP_CHECKS=1` also works)
 - Skip pre-push: set `A5C_SKIP_PREPUSH=1` or `SKIP_PREPUSH=1`
+
+To temporarily bypass only the local Gitleaks step, unset the toggle:
+
+```
+unset A5C_PRECOMMIT_GITLEAKS PRECOMMIT_GITLEAKS
+```
+
+For false positives, prefer adding allowlists to `gitleaks.toml` or using inline allowlist comments where supported; avoid disabling the scan globally.
 
 ## Pre-push details
 
