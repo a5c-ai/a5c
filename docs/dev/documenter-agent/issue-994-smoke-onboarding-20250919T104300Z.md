@@ -19,3 +19,13 @@ Add a one-command smoke test (`npm run smoke`) that normalizes → enriches → 
 - Uses `samples/pull_request.synchronize.json`
 - Produces `out.ne.json` and `out.enriched.json`
 - Validation uses `docs/specs/ne.schema.json` with quiet success
+
+## Results
+
+- Added npm script `smoke` in `package.json`
+- Updated `README.md` with a "Smoke Test" section under Quick Start
+- Added CI workflow: `.github/workflows/smoke.yml` (push to `a5c/main` and quick PRs)
+- Registered `Smoke` in `.github/workflows/a5c.yml` workflow_run triggers
+- Local run succeeded:
+  - `npm run -s smoke` → exit 0
+  - Artifacts: `out.ne.json` (~1.6 KB), `out.enriched.json` (~1.8 KB)
