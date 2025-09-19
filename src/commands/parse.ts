@@ -89,7 +89,10 @@ export class CodexStdoutParser {
     return events;
   }
 
-  private processWithinTimestamp(currentLine: string, events: CodexEvent[]): void {
+  private processWithinTimestamp(
+    currentLine: string,
+    events: CodexEvent[],
+  ): void {
     // Determine subtype if not set
     if (!this.currentType) {
       // Exec result header can appear as its own timestamped line
@@ -127,7 +130,7 @@ export class CodexStdoutParser {
       if (tokenM) {
         events.push({
           type: "tokens_used",
-          timestamp: this.currentTimestamp,
+          timestamp: this.currentTimestamp || "",
           raw: currentLine,
           fields: { tokens: Number(tokenM[1]) },
         });
@@ -157,7 +160,7 @@ export class CodexStdoutParser {
         // Emit exec header immediately with parsed command and path
         events.push({
           type: "exec",
-          timestamp: this.currentTimestamp,
+          timestamp: this.currentTimestamp || "",
           raw: currentLine,
           fields: { command: execM[1], cwd: execM[2] },
         });
