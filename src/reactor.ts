@@ -20,6 +20,7 @@ export interface ReactorOptions {
 export interface ReactorOutputEvent {
   event_type: string;
   client_payload: any;
+  original_event: any;
 }
 
 const logger = createLogger({ scope: "reactor" });
@@ -119,7 +120,11 @@ export async function handleReactor(opts: ReactorOptions): Promise<{
         for (const [eventType, spec] of Object.entries(emitSpec)) {
           const payload = buildClientPayload(spec, neWithEnv);
           const merged = await attachDocCommands(payload, doc, neWithEnv);
-          events.push({ event_type: eventType, client_payload: merged });
+          events.push({
+            event_type: eventType,
+            client_payload: merged,
+            original_event: ne,
+          });
         }
       } else if (!emitSpec && hasCommands) {
         const payload = {};
@@ -128,7 +133,11 @@ export async function handleReactor(opts: ReactorOptions): Promise<{
         logDebug(
           `handler#${idx} produced command-only event (event_type=${eventType})`,
         );
-        events.push({ event_type: eventType, client_payload: merged });
+        events.push({
+          event_type: eventType,
+          client_payload: merged,
+          original_event: ne,
+        });
       }
     }
     logInfo(`reactor produced ${events.length} event(s)`);

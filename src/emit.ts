@@ -114,7 +114,7 @@ async function executeSideEffects(obj: any): Promise<void> {
       (globalThis as any).__A5C_EMIT_CTX__ = { event: cp };
     } catch {}
     // Prepare temp file with the current event payload for scripts
-    const tmpEventPath = writeTempEventJson(cp);
+    const tmpEventPath = writeTempEventJson(ev.original_event);
     const scriptEnv = {
       ...process.env,
       ...(cp.env || {}),
