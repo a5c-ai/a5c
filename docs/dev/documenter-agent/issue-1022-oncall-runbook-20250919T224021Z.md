@@ -27,3 +27,11 @@ Add `docs/oncall.md` covering:
 - [ ] `docs/oncall.md` exists with required sections
 - [ ] Labels exist and are documented
 - [ ] CODEOWNERS entry added (optional but proposed)
+
+## Progress Update (commit 2)
+
+- [x] Drafted `docs/oncall.md`
+- [x] Ensured labels exist: `incident`, `sev:S1..S4`, `area:ci`, `area:tests`
+- [x] Added CODEOWNERS for `docs/oncall.md`
+
+Next: finalize PR and request review.
