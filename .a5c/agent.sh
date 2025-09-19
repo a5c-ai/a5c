@@ -62,11 +62,11 @@ npx -y "$A5C_PKG_SPEC" run \
     --in /tmp/prompt.md \
     --out /tmp/last_message.txt \
     --profile "$A5C_CLI_PROFILE" \
-    --mcps "$A5C_MCPS_PATH" | npx -y "$A5C_PKG_SPEC" parse --type codex | tee /tmp/parsed-codex.jsonl | jq -r '.raw'
+    --mcps "$A5C_MCPS_PATH" | npx -y "$A5C_PKG_SPEC" parse --type codex | tee /tmp/parsed-codex.jsonl | jq --unbuffered -r '.raw'
 
 # echo "Events:"
 # cat /tmp/out.json
 
 # upload artifacts using gh cli
-npm i -g @actions/artifact @octokit/rest
-node -e 'import {DefaultArtifactClient} from "@actions/artifact";  const artifact = new DefaultArtifactClient(); artifact.uploadArtifact("parsed-codex", ["/tmp/parsed-codex.jsonl"], { retentionDays: 30 })'
+# npm i -g @actions/artifact @octokit/rest
+# node -e 'import {DefaultArtifactClient} from "@actions/artifact";  const artifact = new DefaultArtifactClient(); artifact.uploadArtifact("parsed-codex", ["/tmp/parsed-codex.jsonl"], "/tmp/", { retentionDays: 30 })'

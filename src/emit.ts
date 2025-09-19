@@ -377,7 +377,7 @@ async function runScripts(lines: string[], ctx?: any): Promise<void> {
         shell: true,
         stdio: "inherit",
         env: finalEnv,
-      });      
+      });
       child.on("close", (code: any) => resolve(code ?? 0));
       child.on("error", () => reject(new Error("Failed to spawn process")));      
     });

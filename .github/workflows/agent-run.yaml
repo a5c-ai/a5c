@@ -90,3 +90,15 @@ jobs:
             --in out.reactor.json \
             --sink github
           echo "Done emitting events via emit command"
+      # upload artifacts
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: agent-output
+          path: |
+            /tmp/parsed-codex.jsonl
+            /tmp/prompt.md
+            /tmp/last_message.txt
+            /tmp/full_output.txt
+            /tmp/agent-output.md
+            /tmp/agent-output-*/**

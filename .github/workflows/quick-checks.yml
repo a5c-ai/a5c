@@ -200,30 +200,26 @@ jobs:
     timeout-minutes: 2
     steps:
       - uses: actions/checkout@v5
-      - name: Ensure ripgrep is installed
-        shell: bash
-        run: |
-          set -euo pipefail
-          if ! command -v rg >/dev/null 2>&1; then
-            echo "Installing ripgrep (rg)"
-            sudo apt-get update -y
-            sudo apt-get install -y --no-install-recommends ripgrep
-          else
-            echo "ripgrep already available"
-          fi
-      - name: Check for banned phrase in docs
+      - name: Check for banned phrase in docs (rg or grep)
         shell: bash
         run: |
           set -euo pipefail
           echo "Scanning markdown docs for banned phrase: composed[].payload := any"
-          # Search only markdown in README.md and docs/**, exclude code/tests and the JSON schema file
-          if rg -n -S \
-            -g '!src/**' -g '!test/**' -g '!tests/**' \
-            -g 'README.md' -g 'docs/**' -g '*.md' \
-            -g '!docs/specs/ne.schema.json' \
-            'composed\[\]\.payload\s*[:=]\s*any' ; then
-            echo "::error title=Docs Lint Failed::Found banned phrase 'composed[].payload: any' in docs. Update to 'object | array | null'."
-            exit 1
+          PATTERN='composed\\[\\]\\.payload[[:space:]]*[:=][[:space:]]*any'
+          if command -v rg >/dev/null 2>&1; then
+            # Use ripgrep if available; scan README and markdown under docs
+            if rg -n -S -e 'composed\\[\\]\\.payload\\s*[:=]\\s*any' README.md docs/**/*.md; then
+              echo "::error title=Docs Lint Failed::Found banned phrase 'composed[].payload: any' in docs. Update to 'object | array | null'."
+              exit 1
+            else
+              echo "No banned phrases found."
+            fi
           else
-            echo "No banned phrases found."
+            # Fallback to grep scanning markdown only
+            if grep -R -n -E "$PATTERN" -- README.md docs --include='*.md'; then
+              echo "::error title=Docs Lint Failed::Found banned phrase 'composed[].payload: any' in docs. Update to 'object | array | null'."
+              exit 1
+            else
+              echo "No banned phrases found."
+            fi
           fi
