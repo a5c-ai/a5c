@@ -47,7 +47,7 @@ export class CodexStdoutParser {
   private readonly headerCodex = /^codex\s*$/;
   private readonly headerExec = /^exec\s+(.+?)\s+in\s+(.+)\s*$/;
   private readonly headerTokensUsed = /^tokens used:\s*(\d+)\s*$/i;
-  private readonly bannerFirst = /^OpenAI Codex\s+v?(.+)$/;
+  private readonly bannerFirst = /^OpenAI Codex\s+(v?.+)$/;
   private readonly bannerRule = /^-+$/;
   private readonly kvLine = /^([^:]+):\s*(.*)$/;
   private readonly successLine = /^(.+?)\s+succeeded\s+in\s+(\d+)ms:$/;
@@ -64,39 +64,79 @@ export class CodexStdoutParser {
       // After timestamp, the next non-empty line defines the subtype
       this.currentType = null;
       this.bufferLines = [];
+      // Process remainder of the line after the timestamp if present
+      const rest = line.slice(tsMatch[0].length).trimStart();
+      if (rest.length > 0) {
+        this.processWithinTimestamp(rest, events);
+      }
       return events;
     }
 
     // If we don't have a timestamp yet, ignore preamble
     if (!this.currentTimestamp) return events;
 
+    this.processWithinTimestamp(line, events);
+    return events;
+  }
+
+  private processWithinTimestamp(line: string, events: CodexEvent[]): void {
     // Determine subtype if not set
     if (!this.currentType) {
+      // Exec result header can appear as its own timestamped line
+      const succ = this.successLine.exec(line);
+      if (succ) {
+        this.currentType = "exec_result";
+        this.bufferLines = [line];
+        this.currentExecMeta = {
+          ...(this.currentExecMeta || {}),
+          command: succ[1],
+          status: "succeeded",
+          durationMs: Number(succ[2]),
+        };
+        return;
+      }
+      const ex = this.exitLine.exec(line);
+      if (ex) {
+        this.currentType = "exec_result";
+        this.bufferLines = [line];
+        const seconds = Number(ex[3]);
+        const durationMs = Number.isFinite(seconds)
+          ? Math.round(seconds * 1000)
+          : undefined;
+        this.currentExecMeta = {
+          ...(this.currentExecMeta || {}),
+          command: ex[1],
+          status: "exited",
+          exitCode: Number(ex[2]),
+          durationMs,
+        };
+        return;
+      }
       // Tokens used is a single-line event with value
       const tokenM = this.headerTokensUsed.exec(line);
       if (tokenM) {
         events.push({
           type: "tokens_used",
-          timestamp: this.currentTimestamp,
+          timestamp: this.currentTimestamp || "",
           raw: line,
           fields: { tokens: Number(tokenM[1]) },
         });
-        return events;
+        return;
       }
       if (this.headerUserInstructions.test(line)) {
         this.currentType = "user_instructions_event";
         this.bufferLines = [line];
-        return events;
+        return;
       }
       if (this.headerThinking.test(line)) {
         this.currentType = "thinking";
         this.bufferLines = [line];
-        return events;
+        return;
       }
       if (this.headerCodex.test(line)) {
         this.currentType = "codex";
         this.bufferLines = [line];
-        return events;
+        return;
       }
       // exec header
       const execM = this.headerExec.exec(line);
@@ -107,21 +147,21 @@ export class CodexStdoutParser {
         // Emit exec header immediately with parsed command and path
         events.push({
           type: "exec",
-          timestamp: this.currentTimestamp,
+          timestamp: this.currentTimestamp || "",
           raw: line,
           fields: { command: execM[1], cwd: execM[2] },
         });
-        return events;
+        return;
       }
       // Banner start: first line with version
       const bannerM = this.bannerFirst.exec(line);
       if (bannerM) {
         this.currentType = "banner";
         this.bufferLines = [line];
-        return events;
+        return;
       }
       // Anything else: treat as body of previous header; but without type, we ignore
-      return events;
+      return;
     }
 
     // We have an active type; accumulate until we detect the next timestamp in caller
@@ -130,7 +170,7 @@ export class CodexStdoutParser {
     // Special handling for exec result: it has a structured closing line
     if (this.currentType === "exec_result") {
       // exec_result body can be multiline; no explicit terminator other than next timestamp
-      return events;
+      return;
     }
 
     if (this.currentType === "exec") {
@@ -146,7 +186,7 @@ export class CodexStdoutParser {
           status: "succeeded",
           durationMs: Number(m[2]),
         };
-        return events;
+        return;
       }
       const e = this.exitLine.exec(line);
       if (e) {
@@ -161,9 +201,9 @@ export class CodexStdoutParser {
           exitCode: Number(e[2]),
           durationMs,
         };
-        return events;
+        return;
       }
-      return events;
+      return;
     }
 
     if (this.currentType === "banner") {
@@ -189,7 +229,7 @@ export class CodexStdoutParser {
           const raw = this.bufferLines.join("\n");
           events.push({
             type: "banner",
-            timestamp: this.currentTimestamp,
+            timestamp: this.currentTimestamp || "",
             raw,
             fields,
           });
@@ -198,11 +238,11 @@ export class CodexStdoutParser {
           this.bufferLines = [];
         }
       }
-      return events;
+      return;
     }
 
     // For user_instructions_event, thinking, codex: no internal terminator; they end on next timestamp (handled by flush)
-    return events;
+    return;
   }
 
   flushIfAny(out: CodexEvent[]): void {
@@ -213,20 +253,21 @@ export class CodexStdoutParser {
       this.currentExecMeta = null;
       return;
     }
-    const raw = this.bufferLines.join("\n");
-    const baseFields =
-      this.currentType === "exec_result"
-        ? { ...(this.currentExecMeta || {}) }
-        : this.currentType === "exec"
-        ? { ...(this.currentExecMeta || {}) }
-        : undefined;
-    const evt: CodexEvent = {
-      type: this.currentType,
-      timestamp: this.currentTimestamp,
-      raw,
-      fields: baseFields,
-    };
-    out.push(evt);
+    // Avoid duplicating the exec header event: it's emitted immediately on detection
+    if (this.currentType !== "exec") {
+      const raw = this.bufferLines.join("\n");
+      const baseFields =
+        this.currentType === "exec_result"
+          ? { ...(this.currentExecMeta || {}) }
+          : undefined;
+      const evt: CodexEvent = {
+        type: this.currentType,
+        timestamp: this.currentTimestamp,
+        raw,
+        fields: baseFields,
+      };
+      out.push(evt);
+    }
     this.currentTimestamp = null;
     this.currentType = null;
     this.bufferLines = [];
