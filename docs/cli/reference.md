@@ -143,7 +143,7 @@ Notes:
 
 - `--select` and `--filter` are implemented and applied after normalization.
 
-Supported provider → NE types (GitHub): `workflow_run`, `pull_request`, `push`, `issue`, `issue_comment`, `check_run`, plus `release`, `deployment` (from `deployment`/`deployment_status`), `job` (from `workflow_job`), `step` (when granular step context exists), and `alert` (e.g., code/secret scanning alerts).
+Supported provider → NE types (GitHub): `workflow_run`, `pull_request`, `push`, `issue`, `issue_comment`, `check_run`, plus `release`, `deployment` (from `deployment`/`deployment_status`), `job` (from `workflow_job`), `step` (when granular step context exists), and `alert` (e.g., code/secret scanning alerts). GitHub `repository_dispatch` is normalized as `type: custom` with `payload.action` and `payload.client_payload` preserved.
 
 ### `events generate-context`
 

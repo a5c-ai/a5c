@@ -16,7 +16,7 @@ describe("enrich fallback NE.type mapping", () => {
     });
     expect(output.type).toBe("issue_comment");
   });
-  it("does not emit unsupported 'repository_dispatch' in fallback; uses 'commit' instead", async () => {
+  it("does not emit unsupported 'repository_dispatch' in fallback; uses 'custom' instead", async () => {
     const tmp = path.join(os.tmpdir(), `repo_dispatch_${Date.now()}.json`);
     const payload = {
       client_payload: { foo: "bar" },
@@ -26,7 +26,7 @@ describe("enrich fallback NE.type mapping", () => {
     fs.writeFileSync(tmp, JSON.stringify(payload), "utf8");
     const { output } = await handleEnrich({ in: tmp });
     expect(output.type).not.toBe("repository_dispatch");
-    expect(output.type).toBe("commit");
+    expect(output.type).toBe("custom");
     fs.unlinkSync(tmp);
   });
 });
