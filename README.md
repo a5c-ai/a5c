@@ -137,12 +137,27 @@ End‑to‑end recipe (normalize → enrich → reactor → emit): `docs/ci/acti
 
 Full command/flag reference: `docs/cli/reference.md`.
 
+## Logging
+
+- Control verbosity: `--log-level info|debug|warn|error` (default: `info`).
+- Output format: `--log-format pretty|json` (default: `pretty`). Use `json` in CI for structured logs.
+- Env equivalents: `A5C_LOG_LEVEL`, `A5C_LOG_FORMAT`.
+
+See global flags in `docs/cli/reference.md#global-flags` and additional notes in `docs/observability.md`.
+
 ## Tokens, Networking, Exit Codes
 
 - Offline by default: enrichment makes no network calls unless `--use-github` is provided.
 - Tokens: `A5C_AGENT_GITHUB_TOKEN` or `GITHUB_TOKEN` (the former takes precedence). Some commands like `generate_context` may use tokens to fetch `github://` templates.
 - Exit codes: `0` success; `1` generic error; `2` input/validation error (missing `--in`, invalid JSON, filter mismatch); `3` provider/network error (e.g., `--use-github` without a token).
 - CI convenience: set `A5C_EVENTS_AUTO_USE_GITHUB=true` to auto‑enable `--use-github` when a token exists (default remains offline). See `docs/cli/reference.md#events-enrich`.
+
+## Troubleshooting
+
+- Offline vs online: enrichment is offline by default. Pass `--use-github` to enable API calls. Without a token, the CLI exits with code `3` and prints an error; no JSON is emitted by the CLI path. Details: `docs/cli/reference.md#events-enrich`.
+- Exit code 2: input/validation problems (e.g., missing `--in` when not running in GitHub Actions; invalid JSON; filter mismatch). Fix inputs or run in Actions where `GITHUB_EVENT_PATH` is available by default.
+- Exit code 3: provider/network problems (e.g., `--use-github` with missing/insufficient token; network failures). Provide `A5C_AGENT_GITHUB_TOKEN` or `GITHUB_TOKEN`.
+- Rate limits: for `github://` templates and online enrichment, prefer `A5C_AGENT_GITHUB_TOKEN` and run with `--log-format=json` to surface errors clearly in CI. Retries/backoff are limited; reduce calls or cache inputs when possible.
 
 ## NE Schema
 
