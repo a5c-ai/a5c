@@ -1,3 +1,8 @@
+## <small>1.20.2 (2025-09-19)</small>
+
+* Merge pull request #977 from a5c-ai/a5c/main ([6597013](https://github.com/a5c-ai/events/commit/6597013)), closes [#977](https://github.com/a5c-ai/events/issues/977)
+* fix: update package resolution logic in resolvePkgSpec function ([1ecde45](https://github.com/a5c-ai/events/commit/1ecde45))
+
 ## <small>1.20.1 (2025-09-19)</small>
 
 * Merge pull request #976 from a5c-ai/a5c/main ([1729a70](https://github.com/a5c-ai/events/commit/1729a70)), closes [#976](https://github.com/a5c-ai/events/issues/976)
