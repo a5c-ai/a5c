@@ -1,6 +1,12 @@
 name: Agent Run
 env:
   A5C_LOG_LEVEL: ${{ github.event.inputs.debug || 'false' && 'debug' || 'info' }}
+  AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY || '' }}
+  AZURE_OPENAI_PROJECT_NAME: ${{ vars.AZURE_OPENAI_PROJECT_NAME || '' }}
+  OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY || '' }}
+  GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY || '' }}
+  ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY || '' }}
+  A5C_CLI_PROFILE: ${{ vars.A5C_CLI_PROFILE || 'azure_codex_gpt5' }}
 on:
   repository_dispatch:
     types: [triage_new_issue, validation_request]
