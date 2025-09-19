@@ -46,11 +46,10 @@ agent_run:
     # added to the env vars section
     - name: SOME_ENV
       value: some_value
-  template: github://a5c-ai/events/branch/a5c%2Fmain/.a5c/main.md #optional - falls back to ${{ env.A5C_TEMPLATE_URI || vars.A5C_TEMPLATE_URI  || event.client_payload.template || 'github://a5c-ai/events/branch/a5c%2Fmain/.a5c/main.md' }}
-  mcps: "~/.cursor/mcps.json" #optional - falls back to ${{ env.A5C_MCPS_PATH || vars.A5C_MCPS_PATH || '~/.a5c/mcps.json' }}
-  profile: azure_codex_gpt5 #optional - falls back to ${{ env.A5C_CLI_PROFILE || vars.A5C_CLI_PROFILE || 'codex' }}
-  # overrides the script_template_uri from the root section of this handler
-  script_template_uri: github://a5c-ai/events/branch/a5c%2Fmain/.a5c/agent.sh #optional - falls back to ${{ env.A5C_AGENT_SCRIPT_URI || vars.A5C_AGENT_SCRIPT_URI || 'github://a5c-ai/events/branch/a5c%2Fmain/.a5c/agent.sh' }}
+  template: github://a5c-ai/events/branch/a5c%2Fmain/.a5c/main.md
+  mcps: "~/.cursor/mcps.json"
+  profile: azure_codex_gpt5
+  script_template_uri: github://a5c-ai/events/branch/a5c%2Fmain/.a5c/agent.sh
 set_labels:
   - entity: ${{ event.issue.html_url }}
     add_labels: [triaged]

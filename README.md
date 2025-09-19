@@ -55,6 +55,16 @@ jq '.type, .repo.full_name, .provenance.workflow?.name' out.json
 events validate --in out.json --schema docs/specs/ne.schema.json --quiet
 ```
 
+### Smoke Test
+
+Run a fast, offline end-to-end check that chains normalize → enrich → validate using bundled samples. Produces `out.ne.json` and `out.enriched.json` in the repo root.
+
+```bash
+npm run smoke
+# expected: exit code 0, quiet validation
+ls -1 out.ne.json out.enriched.json
+```
+
 Enrich offline vs online:
 
 ```bash
@@ -116,6 +126,7 @@ Full command/flag reference: `docs/cli/reference.md`.
 - Offline by default: enrichment makes no network calls unless `--use-github` is provided.
 - Tokens: `A5C_AGENT_GITHUB_TOKEN` or `GITHUB_TOKEN` (the former takes precedence). Some commands like `generate_context` may use tokens to fetch `github://` templates.
 - Exit codes: `0` success; `1` generic error; `2` input/validation error (missing `--in`, invalid JSON, filter mismatch); `3` provider/network error (e.g., `--use-github` without a token).
+- CI convenience: set `A5C_EVENTS_AUTO_USE_GITHUB=true` to auto‑enable `--use-github` when a token exists (default remains offline). See `docs/cli/reference.md#events-enrich`.
 
 ## NE Schema
 

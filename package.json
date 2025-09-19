@@ -38,7 +38,8 @@
     "lint:filenames": "node scripts/lint-filenames.cjs",
     "validate:obs:file": "ajv compile -s docs/specs/observability.schema.json --spec=draft2020 -c ajv-formats",
     "validate:examples": "npm run -s build && node dist/cli.js normalize --in samples/workflow_run.completed.json --out /tmp/out.ne.json && (npx -y ajv-cli@5.0.0 validate -s docs/specs/ne.schema.json -d /tmp/out.ne.json --spec=draft2020 -c ajv-formats || node dist/cli.js validate --in /tmp/out.ne.json --schema docs/specs/ne.schema.json --quiet)",
-    "commit:prepare": "npx --yes husky && echo 'husky installed'"
+    "commit:prepare": "npx --yes husky && echo 'husky installed'",
+    "smoke": "node dist/cli.js normalize --in samples/pull_request.synchronize.json --out out.ne.json && node dist/cli.js enrich --in out.ne.json --out out.enriched.json && node dist/cli.js validate --in out.enriched.json --schema docs/specs/ne.schema.json --quiet"
   },
   "files": [
     "dist",
