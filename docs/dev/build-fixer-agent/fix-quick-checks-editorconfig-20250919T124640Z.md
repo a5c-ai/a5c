@@ -13,3 +13,13 @@ Branch: a5c/main
 ## Notes
 
 Initial reproduction shows 1 error: trailing whitespace in example/codex_run_example_stdout.txt line 17.
+
+## Results
+
+- Fixed trailing whitespace in example/codex_run_example_stdout.txt (line 17)
+- scripts/ci-editorconfig.sh now passes locally
+- Pre-push full test run passed (prior to fix); change is docs-only
+
+## Next
+
+- Await CI on PR to confirm green Quick Checks
