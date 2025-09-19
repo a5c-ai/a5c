@@ -97,3 +97,7 @@ This is entirely optional; without OTEL, the above imports won’t be used and y
 - CLI context generation: docs/cli/reference.md#events-generate-context
 - Observability: docs/observability.md
 - NE schema overview: docs/cli/ne-schema.md
+
+## Error handling note (programmatic normalize)
+
+When calling the programmatic normalize API (`handleNormalize`/`runNormalize`), on error it returns an object with `code !== 0` and an `errorMessage`, and does not include an `output`. On success it returns `{ code: 0, output }` where `output` conforms to `docs/specs/ne.schema.json`.
