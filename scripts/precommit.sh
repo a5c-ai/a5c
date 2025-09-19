@@ -83,6 +83,16 @@ if ! git diff --cached --check; then
   exit 1
 fi
 
+# Guard against focused/skipped tests in staged changes (best-effort)
+if [ -x scripts/lint-tests-focused.sh ] || [ -f scripts/lint-tests-focused.sh ]; then
+  echo "[precommit] Guarding against focused/skipped tests"
+  # Pass only staged files to the script; it will self-filter to tests/
+  # shellcheck disable=SC2086
+  bash scripts/lint-tests-focused.sh $STAGED
+else
+  echo "[precommit] lint-tests-focused.sh not present; skipping focused/skipped test guard"
+fi
+
 if command -v npx >/dev/null 2>&1 && [[ -f package.json ]]; then
   echo "[precommit] Running lint-staged on staged files"
   if ! npx --yes lint-staged; then
