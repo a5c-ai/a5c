@@ -56,37 +56,47 @@ export class CodexStdoutParser {
   parseLine(line: string): CodexEvent[] {
     const events: CodexEvent[] = [];
 
-    // New timestamp header starts a new event chunk
+    // New timestamp header may appear with inline content, e.g.:
+    // "[2025-09-19T11:58:08] User instructions:" or "[ts] thinking"
+    // We should flush previous event, set timestamp, and continue parsing the
+    // remainder of the line (after the "] ") in the same call.
+    let currentLine = line;
     const tsMatch = this.tsRe.exec(line);
     if (tsMatch) {
-      this.flushIfAny(events);
-      this.currentTimestamp = tsMatch[1];
-      // After timestamp, the next non-empty line defines the subtype
-      this.currentType = null;
-      this.bufferLines = [];
-      // Process remainder of the line after the timestamp if present
       const rest = line.slice(tsMatch[0].length).trimStart();
-      if (rest.length > 0) {
-        this.processWithinTimestamp(rest, events);
+      if (this.currentType === "exec") {
+        // Special-case: exec header is followed by a timestamped result line.
+        // Do not flush "exec" yet; continue parsing the rest as part of exec.
+        this.currentTimestamp = tsMatch[1];
+        // keep currentType = "exec" and existing buffer
+        if (rest.length === 0) return events;
+        currentLine = rest;
+      } else {
+        this.flushIfAny(events);
+        this.currentTimestamp = tsMatch[1];
+        // After timestamp, the next non-empty line defines the subtype
+        this.currentType = null;
+        this.bufferLines = [];
+        if (rest.length === 0) return events;
+        currentLine = rest;
       }
-      return events;
     }
 
     // If we don't have a timestamp yet, ignore preamble
     if (!this.currentTimestamp) return events;
 
-    this.processWithinTimestamp(line, events);
+    this.processWithinTimestamp(currentLine, events);
     return events;
   }
 
-  private processWithinTimestamp(line: string, events: CodexEvent[]): void {
+  private processWithinTimestamp(currentLine: string, events: CodexEvent[]): void {
     // Determine subtype if not set
     if (!this.currentType) {
       // Exec result header can appear as its own timestamped line
-      const succ = this.successLine.exec(line);
+      const succ = this.successLine.exec(currentLine);
       if (succ) {
         this.currentType = "exec_result";
-        this.bufferLines = [line];
+        this.bufferLines = [currentLine];
         this.currentExecMeta = {
           ...(this.currentExecMeta || {}),
           command: succ[1],
@@ -95,10 +105,10 @@ export class CodexStdoutParser {
         };
         return;
       }
-      const ex = this.exitLine.exec(line);
+      const ex = this.exitLine.exec(currentLine);
       if (ex) {
         this.currentType = "exec_result";
-        this.bufferLines = [line];
+        this.bufferLines = [currentLine];
         const seconds = Number(ex[3]);
         const durationMs = Number.isFinite(seconds)
           ? Math.round(seconds * 1000)
@@ -113,51 +123,51 @@ export class CodexStdoutParser {
         return;
       }
       // Tokens used is a single-line event with value
-      const tokenM = this.headerTokensUsed.exec(line);
+      const tokenM = this.headerTokensUsed.exec(currentLine);
       if (tokenM) {
         events.push({
           type: "tokens_used",
-          timestamp: this.currentTimestamp || "",
-          raw: line,
+          timestamp: this.currentTimestamp,
+          raw: currentLine,
           fields: { tokens: Number(tokenM[1]) },
         });
         return;
       }
-      if (this.headerUserInstructions.test(line)) {
+      if (this.headerUserInstructions.test(currentLine)) {
         this.currentType = "user_instructions_event";
-        this.bufferLines = [line];
+        this.bufferLines = [currentLine];
         return;
       }
-      if (this.headerThinking.test(line)) {
+      if (this.headerThinking.test(currentLine)) {
         this.currentType = "thinking";
-        this.bufferLines = [line];
+        this.bufferLines = [currentLine];
         return;
       }
-      if (this.headerCodex.test(line)) {
+      if (this.headerCodex.test(currentLine)) {
         this.currentType = "codex";
-        this.bufferLines = [line];
+        this.bufferLines = [currentLine];
         return;
       }
       // exec header
-      const execM = this.headerExec.exec(line);
+      const execM = this.headerExec.exec(currentLine);
       if (execM) {
         this.currentType = "exec";
-        this.bufferLines = [line];
+        this.bufferLines = [currentLine];
         this.currentExecMeta = { command: execM[1], cwd: execM[2] };
         // Emit exec header immediately with parsed command and path
         events.push({
           type: "exec",
-          timestamp: this.currentTimestamp || "",
-          raw: line,
+          timestamp: this.currentTimestamp,
+          raw: currentLine,
           fields: { command: execM[1], cwd: execM[2] },
         });
         return;
       }
       // Banner start: first line with version
-      const bannerM = this.bannerFirst.exec(line);
+      const bannerM = this.bannerFirst.exec(currentLine);
       if (bannerM) {
         this.currentType = "banner";
-        this.bufferLines = [line];
+        this.bufferLines = [currentLine];
         return;
       }
       // Anything else: treat as body of previous header; but without type, we ignore
@@ -165,7 +175,7 @@ export class CodexStdoutParser {
     }
 
     // We have an active type; accumulate until we detect the next timestamp in caller
-    this.bufferLines.push(line);
+    this.bufferLines.push(currentLine);
 
     // Special handling for exec result: it has a structured closing line
     if (this.currentType === "exec_result") {
@@ -175,11 +185,11 @@ export class CodexStdoutParser {
 
     if (this.currentType === "exec") {
       // After an exec header, we expect an outcome line like: "<cmd> succeeded in Nms:" then body lines
-      const m = this.successLine.exec(line);
+      const m = this.successLine.exec(currentLine);
       if (m) {
         // Switch to exec_result and store metadata; include this line in buffer
         this.currentType = "exec_result";
-        this.bufferLines = [line];
+        this.bufferLines = [currentLine];
         this.currentExecMeta = {
           ...(this.currentExecMeta || {}),
           command: this.currentExecMeta?.command || m[1],
@@ -188,12 +198,14 @@ export class CodexStdoutParser {
         };
         return;
       }
-      const e = this.exitLine.exec(line);
+      const e = this.exitLine.exec(currentLine);
       if (e) {
         this.currentType = "exec_result";
-        this.bufferLines = [line];
+        this.bufferLines = [currentLine];
         const seconds = Number(e[3]);
-        const durationMs = Number.isFinite(seconds) ? Math.round(seconds * 1000) : undefined;
+        const durationMs = Number.isFinite(seconds)
+          ? Math.round(seconds * 1000)
+          : undefined;
         this.currentExecMeta = {
           ...(this.currentExecMeta || {}),
           command: this.currentExecMeta?.command || e[1],
@@ -209,7 +221,7 @@ export class CodexStdoutParser {
     if (this.currentType === "banner") {
       // Banner ends on a line with only dashes after we've seen at least one section of keys and a closing dashes
       // We parse banner once we see the trailing dashed rule (second dashed line)
-      if (this.bannerRule.test(line)) {
+      if (this.bannerRule.test(currentLine)) {
         // When we got here, bufferLines includes the first line (version) and possibly a dashed line
         // If we now have two dashed separators, we can emit
         const dashedIdxs = this.bufferLines
@@ -225,7 +237,12 @@ export class CodexStdoutParser {
             if (kv) fields[kv[1].trim()] = kv[2].trim();
           }
           const versionMatch = this.bannerFirst.exec(this.bufferLines[0]);
-          if (versionMatch) fields["version"] = versionMatch[1].trim();
+          if (versionMatch) {
+            // Preserve leading 'v' and any suffix in the captured version string
+            fields["version"] = this.bufferLines[0]
+              .replace(/^OpenAI Codex\s+/, "")
+              .trim();
+          }
           const raw = this.bufferLines.join("\n");
           events.push({
             type: "banner",
@@ -279,7 +296,10 @@ export async function handleParse(
   opts: ParseOptions,
 ): Promise<{ code: number; errorMessage?: string }> {
   if ((opts.type || "").toLowerCase() !== "codex") {
-    return { code: 2, errorMessage: "parse: unsupported --type (expected 'codex')" };
+    return {
+      code: 2,
+      errorMessage: "parse: unsupported --type (expected 'codex')",
+    };
   }
 
   const parser = new CodexStdoutParser();
