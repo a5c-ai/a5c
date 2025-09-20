@@ -20,3 +20,9 @@ Add a concise Logging section (cover `--log-level`, `--log-format`) and a Troubl
 
 - Keep language concise; avoid duplicating full reference content.
 - Ensure `A5C_AGENT_GITHUB_TOKEN` precedence over `GITHUB_TOKEN` is stated consistently with reference.
+
+## Results
+
+- Added/kept concise **Logging** section with `--log-level` and `--log-format`, cross-linking to `docs/cli/reference.md#global-flags`.
+- Consolidated **Troubleshooting** into a single section; merged token precedence, exit codes, CI convenience, and rate-limit notes; removed duplication.
+- Ensured wording matches CLI reference (defaults, exit codes, token precedence).
