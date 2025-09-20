@@ -1,0 +1,17 @@
+{
+  "schema_version": "0.1.0",
+  "repo": "a5c-ai/events",
+  "workflow": "PR Quick Tests",
+  "job": "test:ci",
+  "run": {
+    "id": 17880604514,
+    "attempt": 1,
+    "sha": "af504873683acdc814f97f27efd38b126cf6f004",
+    "ref": "refs/heads/main",
+    "actor": "a5c-ai[bot]",
+    "event_name": "issues",
+    "started_at": "2025-09-20T13:41:56Z",
+    "completed_at": "2025-09-20T13:42:20Z",
+    "duration_ms": 24000
+  }
+}
