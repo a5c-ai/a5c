@@ -3,7 +3,7 @@ name: PR Size Labels
 on:
   pull_request:
     branches: [a5c/main, main]
-    types: [opened, reopened, synchronize]
+    types: [opened, reopened, synchronize, ready_for_review]
 
 permissions:
   contents: read

@@ -243,4 +243,4 @@ Pull requests are automatically labeled by size based on total changed lines (ad
 - `size:L` — < 500
 - `size:XL` — ≥ 500
 
-Labels update automatically when a PR changes (opened, reopened, synchronize). This is a fast check (~1–5s) and helps reviewers scope effort and identify risky diffs early.
+Labels update automatically when a PR changes (opened, reopened, synchronize, ready_for_review). This is a fast check (~1–5s) and helps reviewers scope effort and identify risky diffs early.
