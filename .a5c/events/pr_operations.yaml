@@ -5,19 +5,16 @@ metadata:
 on:
   issues:
     filters:
-      # issue is opened, reopened
-      - expression: ${{ (event.type == 'opened' || event.type == 'reopened')}}
       # label create_pr was added
       - expression: ${{ event.type == 'labeled' && event.label.name == 'create_pr' }}
       # triage enabled in this repo on the a5c/main branch (can be current or event.repository.default_branch) - reads from github content for the current branch (read_github_content fallback to empty string)
-      - expression: ${{ read_github_content(event.repository.html_url, "a5c/main", '.a5c/create_pr.yaml') | load_yaml | select('create_pr.enabled') }}
     skip:
       # is a issue or already closed
       - expression: ${{ event.issue.closed == true }}
-      # doesn't have the 'create_pr' label
-      - expression: ${{ (event.type != 'labeled' && event.labels | contains('create_pr') == false) || (event.type == 'labeled' && event.label.name != 'create_pr') }}
       # if triage in progress or already requested
       - expression: ${{ event.labels | contains('create_pr_in_progress') || event.labels | contains('create_pr_requested') }}
+      # create_pr enabled in this repo on the a5c/main / .a5c/config.yml
+      - expression: ${{ read_github_content(event.repository.html_url, "a5c/main", '.a5c/config.yml') | load_yaml | select('triggers.create_pr.enabled') != 'true' }}
 emit:
   create_pr_from_issue:
     type: issue_ready_for_triage
@@ -59,7 +56,7 @@ env:
     value: ${{ event.issue.body }}
   - name: INITIAL_COMMIT_FILE_NAME
     value: docs/issues/issue-${{ event.issue.number }}.md
-script_template_uri: github://a5c-ai/events/branch/a5c%2Fmain/.a5c/create-pr.sh #optional - falls back to ${{ env.A5C_AGENT_SCRIPT_URI || vars.A5C_AGENT_SCRIPT_URI || 'github://a5c-ai/events/branch/a5c%2Fmain/.a5c/agent.sh' }}
+script_template_uri: github://a5c-ai/events/branch/a5c%2Fmain/.a5c/scripts/create-pr.sh #optional - falls back to ${{ env.A5C_AGENT_SCRIPT_URI || vars.A5C_AGENT_SCRIPT_URI || 'github://a5c-ai/events/branch/a5c%2Fmain/.a5c/scripts/agent.sh' }}
 set_labels:
   - entity: ${{ event.issue.html_url }}
     add_labels: [created_pr]
@@ -83,7 +80,7 @@ env:
     value: "release"
   - name: PR_DRAFT
     value: true
-script_template_uri: github://a5c-ai/events/branch/a5c%2Fmain/.a5c/create-pr.sh
+script_template_uri: github://a5c-ai/events/branch/a5c%2Fmain/.a5c/scripts/create-pr.sh
 ---
 name: Rebase - merge main to a5c/main
 metadata:
@@ -103,4 +100,4 @@ env:
     value: "rebase"
   - name: PR_DRAFT
     value: true
-script_template_uri: github://a5c-ai/events/branch/a5c%2Fmain/.a5c/create-pr.sh
+script_template_uri: github://a5c-ai/events/branch/a5c%2Fmain/.a5c/scripts/create-pr.sh

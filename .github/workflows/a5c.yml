@@ -78,11 +78,11 @@ on:
     types: [created]
 
   # Scheduled Events
-  schedule:
-    # Every 30 minutes
-    - cron: "*/30 * * * *"
-    # twice a day at 9
-    - cron: "0 9,21 * * *"
+  # schedule:
+  #   # Every 30 minutes
+  #   - cron: "*/30 * * * *"
+  #   # twice a day at 9
+  #   - cron: "0 9,21 * * *"
   workflow_run:
     types: [completed]
     workflows:
@@ -93,14 +93,18 @@ on:
         Lint,
         Tests,
         PR Quick Tests,
+        PR Size Labels,
         Quick Checks,
+        Semantic Release Dry Run,
         Smoke,
+        Docs Spellcheck,
         Gitleaks,
         Typecheck,
         Commit Hygiene,
         Commitlint,
         Docs Lint,
         Docs Links,
+        OSV Scan,
         Release,
         Auto Merge,
         CodeQL,

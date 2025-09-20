@@ -325,7 +325,7 @@ program
   )
   .option(
     "--file <path>",
-    "reactor rules file path (yaml), default .a5c/events/reactor.yaml",
+    "reactor rules path (file or directory), default .a5c/events/",
   )
   .option(
     "--branch <name>",
@@ -461,8 +461,14 @@ program
   .command("parse")
   .description("Parse streamed stdout logs into JSON events (stdin->stdout)")
   .option("--type <name>", "parser type (codex)")
+  .option("--out <file>", "output JSONL file (streamed)")
+  .option("--pretty", "pretty-print events to stdout (file stays JSONL)")
   .action(async (cmdOpts: any) => {
-    const { code, errorMessage } = await handleParse({ type: cmdOpts.type });
+    const { code, errorMessage } = await handleParse({
+      type: cmdOpts.type,
+      out: cmdOpts.out,
+      pretty: !!cmdOpts.pretty,
+    });
     if (code !== 0 && errorMessage) process.stderr.write(errorMessage + "\n");
     process.exit(code);
   });

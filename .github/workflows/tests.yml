@@ -9,6 +9,15 @@ jobs:
     env:
       # Optional Codecov token; when empty, upload step is skipped
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN || vars.CODECOV_TOKEN || '' }}
+      # Optional Healthchecks heartbeat for Tests job
+      HEALTHCHECKS_TESTS_PING_URL: ${{ secrets.HEALTHCHECKS_TESTS_PING_URL || vars.HEALTHCHECKS_TESTS_PING_URL || '' }}
+      # Optional Slack/Discord notification configuration
+      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN || '' }}
+      SLACK_APP_TOKEN: ${{ secrets.SLACK_APP_TOKEN || '' }}
+      SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID || vars.SLACK_CHANNEL_ID || '' }}
+      DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN || '' }}
+      DISCORD_GUILD_ID: ${{ vars.DISCORD_GUILD_ID || '' }}
+      DISCORD_CHANNEL_ID: ${{ secrets.DISCORD_CHANNEL_ID || vars.DISCORD_CHANNEL_ID || '' }}
     permissions:
       contents: read
       actions: read
@@ -17,6 +26,14 @@ jobs:
     name: Unit Tests
     runs-on: ubuntu-latest
     steps:
+      - name: Heartbeat Start (Tests)
+        if: env.HEALTHCHECKS_TESTS_PING_URL != ''
+        env:
+          PING: ${{ env.HEALTHCHECKS_TESTS_PING_URL }}
+        run: |
+          set -euxo pipefail
+          # Send start ping; tolerate transient failures without failing the job
+          curl -fsS -m 10 --retry 3 --retry-connrefused "$PING/start" || true
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v4
         id: setup-node
@@ -77,6 +94,8 @@ jobs:
           END=$(date +%s%3N)
           DUR=$((END-START))
           echo "{\"name\":\"CLI smoke\",\"duration_ms\":$DUR}" >> hotspots.jsonl
+      - name: Packaging smoke (npm pack tarball)
+        run: bash scripts/pack-smoke.sh
       - name: Upload coverage artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -160,6 +179,34 @@ jobs:
           END=$(date +%s%3N)
           DUR=$((END-START))
           echo "{\"name\":\"Coverage summary\",\"duration_ms\":$DUR}" >> hotspots.jsonl
+      - name: Notify (Slack) on failure
+        if: failure() && env.SLACK_BOT_TOKEN != '' && env.SLACK_CHANNEL_ID != ''
+        env:
+          SLACK_BOT_TOKEN: ${{ env.SLACK_BOT_TOKEN }}
+          SLACK_CHANNEL_ID: ${{ env.SLACK_CHANNEL_ID }}
+        run: |
+          set -euo pipefail
+          RUN_URL="https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          MSG="❌ Tests failed in ${GITHUB_REPOSITORY} · ${GITHUB_REF} · ${GITHUB_SHA::7} — ${RUN_URL}"
+          curl -fsS -X POST \
+            -H "Authorization: Bearer ${SLACK_BOT_TOKEN}" \
+            -H "Content-type: application/json; charset=utf-8" \
+            --data "$(jq -n --arg c "$SLACK_CHANNEL_ID" --arg t "$MSG" '{channel:$c,text:$t}')" \
+            https://slack.com/api/chat.postMessage || true
+      - name: Notify (Discord) on failure
+        if: failure() && env.DISCORD_TOKEN != '' && env.DISCORD_CHANNEL_ID != ''
+        env:
+          DISCORD_TOKEN: ${{ env.DISCORD_TOKEN }}
+          DISCORD_CHANNEL_ID: ${{ env.DISCORD_CHANNEL_ID }}
+        run: |
+          set -euo pipefail
+          RUN_URL="https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          MSG="❌ Tests failed in ${GITHUB_REPOSITORY} · ${GITHUB_REF} · ${GITHUB_SHA::7} — ${RUN_URL}"
+          curl -fsS -X POST \
+            -H "Authorization: Bot ${DISCORD_TOKEN}" \
+            -H "Content-Type: application/json" \
+            --data "$(jq -n --arg t "$MSG" '{content:$t}')" \
+            "https://discord.com/api/v10/channels/${DISCORD_CHANNEL_ID}/messages" || true
       - name: Enforce coverage thresholds (optional hard gate)
         if: ${{ github.event_name == 'pull_request' && vars.REQUIRE_COVERAGE == 'true' }}
         shell: bash
@@ -329,6 +376,22 @@ jobs:
           p95_warn_ms: 420000
           p95_error_ms: 1200000
           top_n: 10
+      - name: Heartbeat Complete (Tests)
+        if: always() && env.HEALTHCHECKS_TESTS_PING_URL != ''
+        env:
+          PING: ${{ env.HEALTHCHECKS_TESTS_PING_URL }}
+          OUTCOME: ${{ job.status }}
+        run: |
+          set -euxo pipefail
+          case "$OUTCOME" in
+            success)
+              curl -fsS -m 10 --retry 3 --retry-connrefused "$PING" || true
+              ;;
+            *)
+              # Treat non-success (including cancelled) as failure ping
+              curl -fsS -m 10 --retry 3 --retry-connrefused "$PING/fail" || true
+              ;;
+          esac
 
   aggregate:
     name: Aggregate Observability

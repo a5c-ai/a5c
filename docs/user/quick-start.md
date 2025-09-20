@@ -1,31 +1,33 @@
 ---
 title: Quick Start
-description: Run the Events SDK/CLI locally and in CI to extract mentions, normalize and enrich GitHub events.
+description: Install and run the Events SDK/CLI to extract mentions, normalize events, and enrich with metadata — locally and in CI.
 ---
 
 # Quick Start
 
-Use the Events SDK/CLI to extract mentions from text, turn raw GitHub payloads into a Normalized Event (NE), and add useful enrichment for downstream automations.
+Use the Events SDK/CLI to extract mentions from text, turn raw provider payloads (e.g., GitHub) into a Normalized Event (NE), and add useful enrichment for downstream automations.
 
 ## Prerequisites
 
 - Node.js 20+ and npm
-- GitHub token (for enrichment that queries repo metadata): set `GITHUB_TOKEN`
-- Repo cloned with this project or install the package once published
+- Optional for GitHub lookups: set `A5C_AGENT_GITHUB_TOKEN` (preferred) or `GITHUB_TOKEN`
+- Repo cloned for local dev, or install the package when published
 
-## Install (local dev)
+## Install
+
+```bash
+npm install -g @a5c-ai/events
+# or use npx without global install
+npx @a5c-ai/events --help
+```
+
+### Local development
 
 ```bash
 # from repo root (local development)
 npm install || true
 # when build scripts exist, you can run:
 # npm run build
-```
-
-When published as a package:
-
-```bash
-npm install -g @a5c-ai/events
 ```
 
 ## Extract mentions from text
@@ -59,12 +61,17 @@ Expected output (example):
 ## Enrich a pull request payload
 
 ```bash
-export GITHUB_TOKEN=ghp_xxx # or use Actions token in CI
+export A5C_AGENT_GITHUB_TOKEN=ghs_xxx   # preferred over GITHUB_TOKEN; or use Actions token in CI
 
 # No network by default; add --use-github to opt in to API lookups
 events enrich --in samples/pull_request.synchronize.json --out out.json --use-github --flag include_patch=false
 
 jq '.enriched.github.pr.has_conflicts, .enriched.github.pr.mergeable_state' out.json
+
+Flags:
+
+- `--flag include_patch=false` (default) omits diffs to keep outputs small and safer.
+- `--flag commit_limit=50` and `--flag file_limit=200` bound API pagination.
 ```
 
 ## Use in GitHub Actions
@@ -84,6 +91,12 @@ jobs:
         run: |
           events normalize --source actions > event.json
           jq '.type, .repo.full_name, .provenance.workflow?.name' event.json
+```
+
+## Validate against schema
+
+```bash
+events validate --in enriched.json --schema docs/specs/ne.schema.json --quiet
 ```
 
 ## Emit results

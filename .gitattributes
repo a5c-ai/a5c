@@ -1,0 +1,29 @@
+# Global normalization: keep LF in repo and working tree
+* text=auto eol=lf
+
+# Lockfiles should always be LF
+package-lock.json text eol=lf
+pnpm-lock.yaml   text eol=lf
+yarn.lock        text eol=lf
+
+# Shell scripts
+*.sh text eol=lf
+
+# Common binary formats (no diff/merge heuristics)
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.webp binary
+*.ico  binary
+*.pdf  binary
+*.zip  binary
+*.gz   binary
+*.ttf  binary
+*.otf  binary
+*.woff binary
+*.woff2 binary
+
+# Generated artifacts (for GitHub linguist and stats)
+dist/**      linguist-generated
+coverage/**  linguist-generated

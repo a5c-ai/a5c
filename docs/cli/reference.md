@@ -18,6 +18,52 @@ Defaults: `info` level and `pretty` format. In CI, prefer `--log-format=json` fo
 
 ## Commands
 
+### `events parse`
+
+Parse streamed stdout logs into JSON events (stdin→stdout). Each input line is processed incrementally; the command writes one compact JSON object per parsed event line and flushes any buffered event at EOF.
+
+Status: experimental; subject to change as parsers evolve.
+
+Usage:
+
+```bash
+events parse --type <name>
+```
+
+Flags:
+
+- `--type <name>`: parser type. Supported: `codex`.
+
+Behavior (codex):
+
+- Expects timestamped sections like `[YYYY-MM-DDTHH:MM:SS] thinking`, `exec <cmd> in <cwd>`, and result lines (e.g., `cmd succeeded in 123ms:`).
+- Emits objects with shape: `{ type, timestamp, raw, fields? }` (fields vary by subtype, e.g., `tokens_used`, `exec`, `exec_result`, `thinking`, `codex`, `banner`).
+- Streams: writes one JSON object per event line to stdout; trailing buffered content is flushed on EOF.
+
+Examples:
+
+```bash
+# Pipe provider logs into the parser and pretty-print
+my-codex-cli 2>&1 \
+  | events parse --type codex \
+  | jq '.type, .timestamp, .fields // {}'
+
+# From a saved log file
+cat /tmp/codex-session.log \
+  | events parse --type codex \
+  | jq -c . > /tmp/codex.events.jsonl
+```
+
+Exit codes:
+
+- `0`: success
+- `2`: unsupported `--type` or input/validation error specific to this command
+- `1`: unexpected failure
+
+Notes:
+
+- The `codex` parser is designed for human-oriented stdout from Codex-like CLIs. It is not a generic JSON log parser.
+
 ### `events version`
 
 Print the CLI/package version. Same value as `--version`.
@@ -97,7 +143,7 @@ Notes:
 
 - `--select` and `--filter` are implemented and applied after normalization.
 
-Supported provider → NE types (GitHub): `workflow_run`, `pull_request`, `push`, `issue`, `issue_comment`, `check_run`, plus `release`, `deployment` (from `deployment`/`deployment_status`), `job` (from `workflow_job`), `step` (when granular step context exists), and `alert` (e.g., code/secret scanning alerts).
+Supported provider → NE types (GitHub): `workflow_run`, `pull_request`, `push`, `issue`, `issue_comment`, `check_run`, plus `release`, `deployment` (from `deployment`/`deployment_status`), `job` (from `workflow_job`), `step` (when granular step context exists), and `alert` (e.g., code/secret scanning alerts). GitHub `repository_dispatch` is normalized as `type: custom` with `payload.action` and `payload.client_payload` preserved.
 
 ### `events generate-context`
 
@@ -486,7 +532,7 @@ events reactor [--in FILE] [--out FILE] [--file PATH]
 
 - `--in FILE`: input JSON file path (default: stdin)
 - `--out FILE`: output JSON file path (default: stdout)
-- `--file PATH`: reactor rules file path (YAML). Default: `.a5c/events/reactor.yaml`
+- `--file PATH`: reactor rules path. Accepts a directory or a single YAML file. Default: `.a5c/events/` (loads all `*.yaml|*.yml` recursively).
 
 Rules structure (YAML):
 
@@ -546,10 +592,10 @@ Exit codes:
 Examples:
 
 ```bash
-# Defaults: stdin -> stdout, rules at .a5c/events/reactor.yaml
+# Defaults: stdin -> stdout, rules from the .a5c/events/ directory (recursive)
 cat samples/pull_request.synchronize.json | events reactor
 
-# Explicit files
+# Explicit file
 events reactor --in samples/pull_request.synchronize.json \
   --file samples/reactor/sample.yaml \
   --out out.events.json
@@ -576,93 +622,218 @@ events reactor --in samples/pull_request.synchronize.json | jq '.events | length
 Notes:
 
 - Reactor parses multiple YAML docs via `yaml.parseAllDocuments` and accumulates emitted events from all matching documents.
-- Default rules path is `.a5c/events/reactor.yaml` when `--file` is omitted.
+- Default rules path is the directory `.a5c/events/`; when a directory is provided (or omitted), all `*.yaml|*.yml` files under it are loaded recursively. You may also pass a single file path via `--file`.
 - Custom event names in `on:` match against the input action or `client_payload.event_type`.
 
 ### `events emit`
 
-Emit a JSON event to a sink (`stdout`, `file`, or `github`). The payload is redacted before being written or dispatched.
+Emit an event or `{ events: [...] }` collection to a sink. Before emitting, `events emit` can optionally perform side-effects (labels, status checks, scripts). Output is redacted.
 
 Usage:
 
 ```bash
-events emit [--in FILE] [--sink <stdout|file|github>] [--out FILE]
+events emit [--in FILE|-] [--out FILE] [--sink <stdout|file|github>]
 ```
 
-- `--in FILE`: input JSON file (reads from stdin if omitted)
-- `--sink <name>`: sink name; `stdout` (default), `file`, or `github`
-- `--out FILE`: output file path (required when `--sink file`)
+- `--in FILE` (or `-`): read input from file or stdin (default when omitted)
+- `--out FILE`: write to file when `--sink file` (or when `--out` is provided without `--sink`)
+- `--sink`: one of:
+  - `stdout` (default): pretty-print redacted JSON
+  - `file`: write to `--out`
+  - `github`: dispatch as `repository_dispatch` via GitHub API
 
-Behavior:
+GitHub sink behavior (only when selected):
 
-- Redaction: payload is masked using the same rules as other commands (see `src/utils/redact.ts`). Sensitive keys and common secret patterns are redacted before emission.
-- Defaults: when `--sink` is omitted, `stdout` is used. When `--sink file` is set, `--out` is required; otherwise the command exits with code `1` and writes an error to stderr.
-- Auto-sink: if `--out` is provided without `--sink`, the sink is treated as `file`.
-- Safety by default: no GitHub API calls are performed unless you explicitly pass `--sink github`.
+- Auth: `A5C_AGENT_GITHUB_TOKEN` preferred, or `GITHUB_TOKEN`.
+- Repo resolution (inferred from payload):
+  - `client_payload.repository.full_name` or `repo_full_name`
+  - common `html_url` fields (PR/Issue/Repo) via URL parsing
+  - nested `original_event.repository.full_name` or related `html_url`
+    If no owner/repo can be resolved, the event is skipped with a stderr note.
+- Event fields mapping:
+  - `event_type`: `event.event_type || event.type || "custom"`
+  - `client_payload`: `event.client_payload || event.payload || event`
+- Collections: if the input is `{ events: [...] }`, each is dispatched.
 
-GitHub sink
+Side-effects (executed before emitting):
 
-Dispatches a `repository_dispatch` event to the repository in `GITHUB_REPOSITORY`.
+- `pre_set_labels`: add/remove labels before scripts
+- `status_checks`: create commit status checks (Queued → Success/Failure)
+- `script`: run shell commands with `A5C_EVENT_PATH` pointing to a temp JSON file of the current event; inherits env and `A5C_PKG_SPEC`
+- `set_labels`: add/remove labels after scripts
 
-- Required env:
-  - `GITHUB_TOKEN` (or `A5C_AGENT_GITHUB_TOKEN`) — token with `repo` scope that can call the Repository Dispatch API.
-  - `GITHUB_REPOSITORY` — target repository in `owner/repo` form.
-- Event mapping (per `src/emit.ts`):
-  - `event_type` is taken from `event.event_type || event.type || "custom"`.
-  - `client_payload` is taken from `event.client_payload || event.payload || event`.
-  - If the input is `{ events: [...] }`, each item is dispatched; otherwise, the single input object is dispatched once.
-- Redaction applies before dispatch. Ensure secrets aren't included; redaction masks common keys but cannot guarantee all sensitive data is removed.
-- Rate limits and permissions apply. The token must have permission on the target repo. Dispatches are best-effort; failures exit with code `1` and print an error.
+Notes:
+
+- Redaction masks common secrets (see `src/utils/redact.ts`).
+- Supplying `--out` without `--sink` implies `--sink file`.
+
+Side-effects
+
+`events emit` can perform side-effects before writing to the sink. Side-effects run in this order: `pre_set_labels` → `script` → `set_labels`. If any step fails, the command exits with code `1`.
+
+- Enable by including fields under the top-level object or under each item of `events[]` (the code treats both a single object or `{ events: [...] }`). Side-effects use `client_payload || payload || <event>` as their working context.
+- Use `event_type: "command_only"` to run side-effects without dispatching anything when `--sink github` is used (the GitHub sink skips dispatch for this event type).
+
+Supported side-effects (per `src/emit.ts`):
+
+- `pre_set_labels[]`: add/remove labels before `script` runs.
+  - Shape: `{ entity: <issue/pr URL>, add_labels?: string|string[], remove_labels?: string|string[] }`
+  - `entity` can be any supported Issue/PR URL, e.g.: `https://github.com/owner/repo/issues/123` or `https://github.com/owner/repo/pull/456`.
+  - If labels do not exist, they are auto-created with a deterministic color.
+  - Requires `GITHUB_TOKEN` (or `A5C_AGENT_GITHUB_TOKEN`).
+
+- `script[]`: array of shell commands executed with `sh -c`, inheriting env (see below). Template expressions in commands are supported:
+  - `${{ <js expression> }}` and `{{ <js expression> }}` are evaluated with arguments `(event, env, event_path)`, where `event` is the working client payload, `env` is the merged environment, and `event_path` is a temp JSON file path containing the current event.
+  - Example: `echo "Hello ${{ event.actor?.login || 'unknown' }}"`.
+  - Fail-fast: a non-zero exit from any command fails the step; commit status checks (when configured) are marked `failure`.
+
+- `set_labels[]`: add/remove labels after `script` completes.
+  - Same shape and requirements as `pre_set_labels`.
+
+- `status_checks[]`: optional GitHub commit status checks created before `script` and completed after it finishes.
+  - Shape: `{ name: string, description?: string }`
+  - Resolution: determines the target repo via `resolveOwnerRepo` (from fields like `repository.full_name`, nested payload URLs, or label target URLs). Determines the commit SHA via `pull_request.head.sha`, `sha`, or the default branch head when not present.
+  - Behavior: creates each status with `state=queued` before `script`, and updates to `success` or `failure` based on `script` result.
+  - Requires `GITHUB_TOKEN` (or `A5C_AGENT_GITHUB_TOKEN`).
+
+Script environment (available to `script[]` commands):
+
+- `EVENT_PATH` / `A5C_EVENT_PATH`: path to a temp JSON file of the current event (first tries `/tmp/a5c-event.json`, then `$RUNNER_TEMP/$TEMP`, then CWD).
+- `A5C_TEMPLATE_URI`: propagated from payload env (`client_payload.env.A5C_TEMPLATE_URI`) or process env; empty when unset.
+- `A5C_PKG_SPEC`: package spec to re-enter the CLI if needed (defaults to `@a5c-ai/events` when not set).
+- `A5C_STATUS_CHECKS`: when status checks are configured and a token is available, a comma-separated list of `sha-context` pairs for all checks created.
+
+Examples (side-effects):
+
+Offline, `script` only (safe locally):
+
+```bash
+events emit --in docs/examples/emit.side-effects.offline.json
+```
+
+With labels and status checks (requires token, repository context in payload):
+
+```bash
+export GITHUB_TOKEN=ghp_...
+events emit --in docs/examples/emit.side-effects.github.json
+```
 
 Examples:
 
 ```bash
-# From file to stdout (default)
-events emit --in samples/push.json
+# Default sink: stdout
+events emit --in out.reactor.json
 
-# From stdin to stdout
-cat samples/push.json | events emit
+# File sink
+events emit --in out.reactor.json --sink file --out /tmp/out.json
 
-# Pipe from normalize
-events normalize --in samples/push.json | events emit
-
-# To a file sink (explicit)
-events emit --in samples/push.json --sink file --out out.json
-
-# To a file sink (implicit via --out)
-events emit --in samples/push.json --out out.json
-
-# Enrich then emit to artifact file
-events enrich --in samples/pr.json --out enriched.json \
-  && events emit --in enriched.json --sink file --out artifact.json
-
-# Dispatch to GitHub (repository_dispatch)
-export GITHUB_TOKEN=ghp_...                 # or A5C_AGENT_GITHUB_TOKEN
-export GITHUB_REPOSITORY=a5c-ai/events      # owner/repo
-
-# Minimal event (type inferred → "custom")
-events emit --in samples/push.json --sink github
-
-# Explicit event_type and client_payload
-cat > /tmp/dispatch.json << 'JSON'
-{ "event_type": "ci:notify", "client_payload": { "status": "ok", "run_id": 123 } }
-JSON
-events emit --in /tmp/dispatch.json --sink github
-
-# Batch dispatch (array under `events[]`)
-cat > /tmp/batch.json << 'JSON'
-{ "events": [
-  { "type": "ci:notify", "payload": { "status": "ok" } },
-  { "type": "ci:notify", "payload": { "status": "failed", "reason": "lint" } }
-]}
-JSON
-events emit --in /tmp/batch.json --sink github
+# GitHub sink
+export GITHUB_TOKEN=...
+events emit --in out.reactor.json --sink github
 ```
+
+GitHub sink — same-repo vs cross-repo
+
+When using `--sink github`, the command calls `repos.createDispatchEvent` (repository_dispatch). Auth and repository resolution determine whether dispatch succeeds.
+
+- Tokens
+  - Same-repo: use `GITHUB_TOKEN` (default) or `A5C_AGENT_GITHUB_TOKEN`. The default permissions in Actions are sufficient for dispatch; `permissions: contents: read` is enough for this command’s call path.
+  - Cross-repo: use a Personal Access Token (classic) with `repo` scope, stored as a secret. Prefer exposing it to the job as `A5C_AGENT_GITHUB_TOKEN` to avoid clobbering the runner `GITHUB_TOKEN`.
+
+- Repository resolution (how the target owner/repo is chosen)
+  - Preferred: `client_payload.repository.full_name: "owner/repo"` or `client_payload.repo_full_name`.
+  - Also accepted: any of these URLs anywhere in the payload (direct or under `payload`/`original_event`): `repository.html_url`, `pull_request.html_url`, `issue.html_url`.
+  - Label side-effects can also hint the repo via `set_labels[].entity` like `https://github.com/owner/repo/issues/123`.
+  - If no owner/repo can be resolved, the event is skipped with a stderr note and the command proceeds with the next event.
+
+- Environment
+  - `A5C_AGENT_GITHUB_TOKEN` (preferred) or `GITHUB_TOKEN` must be present in the environment to dispatch or to apply label/status side-effects.
+  - In GitHub Actions, `GITHUB_REPOSITORY` reflects the current repository ("owner/repo"). While `events emit` does not read `GITHUB_REPOSITORY` directly, most same-repo flows include URLs/fields in the input payload that point back to the current repo, which `resolveOwnerRepo` extracts.
+
+- Common errors and messages
+  - Missing token: `[emit] error: github sink requires GITHUB_TOKEN` → exit code 1.
+  - Unresolvable repo: `github sink: unable to resolve owner/repo ...; skipping dispatch` → event skipped; command continues.
+  - Permission/auth failures (401/403), or network errors: surfaced as `[emit] error: ...` → exit code 1.
+
+Examples (GitHub Actions)
+
+Same-repo dispatch using the default token:
+
+```yaml
+jobs:
+  emit:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: npm ci
+      - name: Dispatch events to this repo
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          events emit --in out.reactor.json --sink github || echo "no events to dispatch"
+```
+
+Cross-repo dispatch using a PAT with `repo` scope:
+
+```yaml
+jobs:
+  emit-cross-repo:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: npm ci
+      - name: Dispatch events to another repo
+        env:
+          # PAT (classic) with `repo` scope, stored as a secret
+          A5C_AGENT_GITHUB_TOKEN: ${{ secrets.CROSS_REPO_PAT }}
+        run: |
+          # Ensure each event includes a resolvable target repo, e.g.:
+          # { "event_type": "my_event", "client_payload": { "repository": { "full_name": "owner/target-repo" }, ... } }
+          events emit --in out.reactor.json --sink github
+```
+
+Notes:
+
+- Include `client_payload.repository.full_name` (or `repo_full_name`) for cross-repo dispatch to unambiguously target the desired repository.
+- The command dispatches each item in `{ events: [...] }` collections independently; one failing dispatch will cause exit code 1.
 
 Exit codes:
 
 - `0`: success
-- `1`: error (I/O, JSON parse, missing `--out` for file sink, or GitHub dispatch failure/missing env)
+- `1`: error (I/O, JSON parse, missing `--out` for file sink, or GitHub dispatch failure)
+
+### `events parse`
+
+Parse streamed logs into structured events. Currently supports Codex-style streaming output.
+
+Usage:
+
+```bash
+events parse --type codex < session.log > events.json
+```
+
+Emitted event types:
+
+- `user_instructions_event`, `tokens_used`, `thinking`, `codex`, `exec`, `exec_result`, `banner`.
+
+Fields:
+
+- All events include `timestamp`, `type`, `raw`. When applicable, `fields` carries parsed metadata (e.g., `exec` → `{ command, cwd }`; `exec_result` → `{ command, status, durationMs, exitCode? }`; `banner` → key-value pairs and `version`).
+
+Example:
+
+```bash
+codex run ... | tee session.log
+cat session.log | events parse --type codex | jq 'map(.type) | group_by(.) | map({type: .[0], count: length})'
+```
 
 ### `events validate`
 

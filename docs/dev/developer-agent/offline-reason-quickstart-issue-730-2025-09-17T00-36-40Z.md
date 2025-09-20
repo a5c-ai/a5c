@@ -7,7 +7,7 @@
 
 ## Plan
 
-1. Update docs/user/quickstart.md snippet to `reason: "flag:not_set"`.
+1. Update docs/user/quick-start.md snippet to `reason: "flag:not_set"`.
 2. Add concise note about canonical/stable string.
 3. Sweep user docs for `github_enrich_disabled` and confirm none remain.
 

@@ -1,0 +1,100 @@
+name: PR Size Labels
+
+on:
+  pull_request:
+    branches: [a5c/main, main]
+    types: [opened, reopened, synchronize, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  label:
+    name: Label PR by size
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Upsert size labels
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const labels = [
+              { name: 'size:XS', color: 'ededed', description: 'Very small change (< 10 lines)' },
+              { name: 'size:S',  color: 'c5def5', description: 'Small change (< 50 lines)' },
+              { name: 'size:M',  color: 'fbca04', description: 'Medium change (< 200 lines)' },
+              { name: 'size:L',  color: 'f9d0c4', description: 'Large change (< 500 lines)' },
+              { name: 'size:XL', color: 'd93f0b', description: 'Huge change (≥ 500 lines)' },
+            ];
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            for (const l of labels) {
+              try {
+                await github.rest.issues.getLabel({ owner, repo, name: l.name });
+                await github.rest.issues.updateLabel({ owner, repo, name: l.name, new_name: l.name, color: l.color, description: l.description });
+              } catch (e) {
+                if (e.status === 404) {
+                  await github.rest.issues.createLabel({ owner, repo, name: l.name, color: l.color, description: l.description });
+                } else {
+                  throw e;
+                }
+              }
+            }
+
+      - name: Apply size label (paginated)
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const pr = context.payload.pull_request;
+            if (!pr) {
+              core.setFailed('No pull_request payload in context');
+              return;
+            }
+
+            // Fetch all files with pagination
+            const files = await github.paginate(
+              github.rest.pulls.listFiles,
+              { owner, repo, pull_number: pr.number, per_page: 100 }
+            );
+
+            // Sum additions + deletions across all files
+            let total = 0;
+            for (const f of files) {
+              total += (f.additions || 0) + (f.deletions || 0);
+            }
+
+            // Determine size label
+            let label = 'size:XL';
+            if (total < 10) label = 'size:XS';
+            else if (total < 50) label = 'size:S';
+            else if (total < 200) label = 'size:M';
+            else if (total < 500) label = 'size:L';
+
+            // Ensure only one size:* label is present
+            const { data: current } = await github.rest.issues.listLabelsOnIssue({ owner, repo, issue_number: pr.number });
+            const toRemove = current
+              .map(l => l.name)
+              .filter(n => n.startsWith('size:') && n !== label);
+
+            for (const n of toRemove) {
+              try {
+                await github.rest.issues.removeLabel({ owner, repo, issue_number: pr.number, name: n });
+              } catch (e) {
+                if (e.status !== 404) throw e;
+              }
+            }
+
+            // Add the desired label if missing
+            const hasLabel = current.some(l => l.name === label);
+            if (!hasLabel) {
+              await github.rest.issues.addLabels({ owner, repo, issue_number: pr.number, labels: [label] });
+            }
+
+            core.info(`Total changes: ${total}. Applied label: ${label}`);

@@ -1,3 +1,11 @@
+triggers:
+  validation:
+    enabled: true
+  triage:
+    enabled: true
+  create_pr:
+    enabled: true
+
 remote_agents:
   enabled: true
   cache_timeout: 120
