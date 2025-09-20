@@ -25,3 +25,12 @@ Add a scheduled OSV-Scanner job to detect vulnerable dependencies. Provide weekl
 
 - Branch created: `ci/osv-scanner-weekly`
 - Dependencies installed to enable hooks
+
+## Results
+
+- Added `.github/workflows/osv-scan.yml` with weekly + manual triggers
+- Scans workspace and `package-lock.json`, outputs JSON+SARIF, uploads artifacts and SARIF
+- Summarizes findings in `$GITHUB_STEP_SUMMARY`
+- Optional failure gate via `vars.OSV_FAIL_ON` (high/critical)
+- Updated `.github/workflows/a5c.yml` to include "OSV Scanner" in `workflow_run.workflows`
+- PR: https://github.com/a5c-ai/events/pull/1065
