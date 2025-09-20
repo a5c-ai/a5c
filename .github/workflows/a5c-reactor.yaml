@@ -1,5 +1,85 @@
 name: a5c-reactor
+on:
+  # push:
+  pull_request:
+    types:
+      - labeled
+    #  - opened
+    #  - reopened
+    #  - ready_for_review
+    #  - synchronize
+    #  - assigned
+    #  - unassigned
+    #  - unlabeled
+    #  - locked
+    #  - unlocked
+    #  - closed
+    #  - edited
+    #  - converted_to_draft
+    #  - auto_merge_enabled
+    #  - auto_merge_disabled
+    #  - auto_merge_enabled
+    #  - review_requested
+    #  - review_request_removed
+    #  - milestoned
+    #  - demilestoned
+    #  - enqueued
+    #  - dequeued
+  # issue_comment:
+  #   types:
+  #     - created
+  #     - edited
+  #     - deleted
+  issues:
+    types:
+      - labeled
+    #  - closed
+    #  - opened
+    #  - milestoned
+    #  - demilestoned
+    #  - reopened
+    #  - locked
+    #  - unlocked
+    #  - transferred
+    #  - assigned
+    #  - edited
+    #  - pinned
+    #  - unpinned
+    #  - unlabeled
+  # workflow_run:
+  #   types: [completed]
+  #   workflows:
+  #   - abc
+  #   branches: [a5c/main,main]
+  # workflow_dispatch:
+  schedule:
+    # weekly, Mondays at 09:00 UTC
+    - cron: "0 9 * * 1"
+    # daily, at 09:00 UTC
+    - cron: "0 9 * * *"
+    # twice a day at 09:00 and 21:00 UTC
+    - cron: "0 9,21 * * *"
+    # 4 times a day at 09:00, 13:00, 17:00, and 21:00 UTC
+    - cron: "0 9,13,17,21 * * *"
+    # every 2 hours
+    - cron: "0 */2 * * *"
+    # every 4 hours
+    - cron: "0 */4 * * *"
+    # every 6 hours
+    - cron: "0 */6 * * *"
+    # every 8 hours
+    - cron: "0 */8 * * *"
+    # every 12 hours
+    - cron: "0 */12 * * *"
+    # hourly, at 09:00 UTC
+    - cron: "0 9 * * *"
+    # every 30 minutes
+    - cron: "*/30 * * * *"
+  repository_dispatch:
+  # check_run:
+  # check_suite:
 env:
+  RUNNER_NAME: reactor
   ENABLE_A5C_TOKEN: ${{ vars.ENABLE_A5C_TOKEN }}
   A5C_LOG_LEVEL: ${{ github.event.inputs.debug || 'false' && 'debug' || 'info' }}
   DISABLE_AUTOUPDATER: 1
@@ -58,46 +138,6 @@ env:
   HEROKU_APP_ID: ${{ vars.HEROKU_APP_ID || '' }}
   HEROKU_APP_URL: ${{ vars.HEROKU_APP_URL || '' }}
 
-on:
-  # push:
-  pull_request:
-    types: [opened, reopened, ready_for_review, labeled, synchronize]
-  # issue_comment:
-  #   types: [created,edited]
-  issues:
-    types: [opened, labeled]
-  # workflow_run:
-  #   types: [completed]
-  #   workflows: [abc]
-  #   branches: [a5c/main,main]
-  # workflow_dispatch:
-  # workflow_run:
-  schedule:
-    # weekly, Mondays at 09:00 UTC
-    - cron: "0 9 * * 1"
-    # daily, at 09:00 UTC
-    - cron: "0 9 * * *"
-    # twice a day at 09:00 and 21:00 UTC
-    - cron: "0 9,21 * * *"
-    # 4 times a day at 09:00, 13:00, 17:00, and 21:00 UTC
-    - cron: "0 9,13,17,21 * * *"
-    # every 2 hours
-    - cron: "0 */2 * * *"
-    # every 4 hours
-    - cron: "0 */4 * * *"
-    # every 6 hours
-    - cron: "0 */6 * * *"
-    # every 8 hours
-    - cron: "0 */8 * * *"
-    # every 12 hours
-    - cron: "0 */12 * * *"
-    # hourly, at 09:00 UTC
-    - cron: "0 9 * * *"
-    # every 30 minutes
-    - cron: "*/30 * * * *"
-  repository_dispatch:
-  # check_run:
-  # check_suite:
 permissions:
   contents: write
   packages: read
@@ -129,7 +169,7 @@ jobs:
         if: steps.filter-successful-workflow-run.outputs.skip != 'true'
         with:
           github_token: ${{ steps.a5c-token.outputs.a5c_token || secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
-          runner-name: reactor
+          runner-name: ${{ env.RUNNER_NAME }}
           events: .a5c/events/
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
