@@ -146,19 +146,13 @@ Full command/flag reference: `docs/cli/reference.md`.
 - In CI, prefer `--log-format=json` for structured logs.
 - See global flags in `docs/cli/reference.md#global-flags` and additional notes in `docs/observability.md`.
 
-## Tokens, Networking, Exit Codes
-
-- Offline by default: enrichment makes no network calls unless `--use-github` is provided.
-- Tokens: `A5C_AGENT_GITHUB_TOKEN` or `GITHUB_TOKEN` (the former takes precedence). Some commands like `generate_context` may use tokens to fetch `github://` templates.
-- Exit codes: `0` success; `1` generic error; `2` input/validation error (missing `--in`, invalid JSON, filter mismatch); `3` provider/network error (e.g., `--use-github` without a token).
-- CI convenience: set `A5C_EVENTS_AUTO_USE_GITHUB=true` to auto‑enable `--use-github` when a token exists (default remains offline). See `docs/cli/reference.md#events-enrich`.
-
 ## Troubleshooting
 
 - Offline vs online: enrichment is offline by default. Pass `--use-github` to enable API calls. Without a token, the CLI exits with code `3` and prints an error; no JSON is emitted by the CLI path. Details: `docs/cli/reference.md#events-enrich`.
-- Exit code 2: input/validation problems (e.g., missing `--in` when not running in GitHub Actions; invalid JSON; filter mismatch). Fix inputs or run in Actions where `GITHUB_EVENT_PATH` is available by default.
-- Exit code 3: provider/network problems (e.g., `--use-github` with missing/insufficient token; network failures). Provide `A5C_AGENT_GITHUB_TOKEN` or `GITHUB_TOKEN`.
-- Rate limits: for `github://` templates and online enrichment, prefer `A5C_AGENT_GITHUB_TOKEN` and run with `--log-format=json` to surface errors clearly in CI. Retries/backoff are limited; reduce calls or cache inputs when possible.
+- Tokens and precedence: set `A5C_AGENT_GITHUB_TOKEN` or `GITHUB_TOKEN` (the former takes precedence). Some commands like `generate_context` also use tokens for `github://` templates.
+- Exit codes: `0` success; `1` generic error; `2` input/validation error (missing `--in`, invalid JSON, filter mismatch); `3` provider/network error (e.g., `--use-github` without a token).
+- CI convenience: export `A5C_EVENTS_AUTO_USE_GITHUB=true` to auto‑enable `--use-github` when a token exists (default remains offline). See `docs/cli/reference.md#events-enrich`.
+- Rate limits: for `github://` templates and online enrichment, prefer `A5C_AGENT_GITHUB_TOKEN` and use `--log-format=json` to surface errors clearly in CI. Retries/backoff are limited; reduce calls or cache inputs when possible.
 
 ## NE Schema
 
@@ -188,7 +182,7 @@ Environment variables:
 
 CLI defaults favor reproducibility in CI: explicit `--in`, write artifacts with `--out`.
 
-## Troubleshooting
+## Troubleshooting Tips
 
 - `enrich --use-github` exits 3 with "token required": set `A5C_AGENT_GITHUB_TOKEN` or `GITHUB_TOKEN`.
 - `normalize --source actions` fails with missing `GITHUB_EVENT_PATH`: pass `--in FILE` or run inside GitHub Actions.
