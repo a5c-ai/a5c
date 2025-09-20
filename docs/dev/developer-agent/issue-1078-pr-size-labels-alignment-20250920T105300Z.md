@@ -18,3 +18,10 @@ Refs: .github/workflows/pr-size-labels.yml, scripts/pr-size-labels.sh, .github/w
 
 - Keeping GitHub Script avoids gh/jq dependencies and runs faster
 - Canonical thresholds per CONTRIBUTING: XS<10, S<50, M<200, L<500, XL≥500
+
+## Results
+
+- pr-size-labels.yml: added ready_for_review and branches [a5c/main, main]
+- Removed scripts/pr-size-labels.sh to deduplicate
+- CONTRIBUTING updated to mention ready_for_review
+- a5c.yml router: only a single entry for "PR Size Labels" existed; no change needed
