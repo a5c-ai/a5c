@@ -41,6 +41,7 @@ describe("CodexStdoutParser (unit)", () => {
     expect(execResult?.fields?.status).toBe("succeeded");
     expect(String(execResult?.raw || "")).toContain("total 6156");
     expect(typeof execResult?.fields?.durationMs).toBe("number");
+    expect(String(execResult?.fields?.result || "")).toContain("total 6156");
   });
 
   it("parses exec_result for failure with exit code and stderr text", () => {
@@ -52,6 +53,7 @@ describe("CodexStdoutParser (unit)", () => {
     expect(failed?.fields?.status).toBe("exited");
     expect(failed?.fields?.exitCode).toBe(2);
     expect(String(failed?.raw || "")).toContain("error TS2688");
+    expect(String(failed?.fields?.result || "")).toContain("error TS2688");
   });
 
   it("adds thought/explanation fields for thinking/codex", () => {

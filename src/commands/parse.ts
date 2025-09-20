@@ -278,7 +278,9 @@ export class CodexStdoutParser {
       const raw = this.bufferLines.join("\n");
       let fields: Record<string, unknown> | undefined = undefined;
       if (this.currentType === "exec_result") {
-        fields = { ...(this.currentExecMeta || {}) };
+        const lines = raw.split(/\r?\n/);
+        const result = lines.length > 1 ? lines.slice(1).join("\n") : "";
+        fields = { ...(this.currentExecMeta || {}), result };
       } else if (this.currentType === "thinking") {
         const thought = this.stripHeaderAndTrim(raw, "thinking");
         fields = { thought };
