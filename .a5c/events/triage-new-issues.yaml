@@ -42,10 +42,6 @@ agent_run:
     # added to the env vars section
     - name: SOME_ENV
       value: some_value
-  template: github://a5c-ai/events/branch/a5c%2Fmain/.a5c/main.md
-  mcps: "~/.cursor/mcps.json"
-  profile: azure_codex_gpt5
-  script_template_uri: github://a5c-ai/events/branch/a5c%2Fmain/.a5c/scripts/agent.sh
 set_labels:
   - entity: ${{ event.issue.html_url }}
     add_labels: [triaged]
