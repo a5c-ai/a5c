@@ -1136,19 +1136,13 @@ function computeRemotePaths(localPath: string): string[] {
   const rel = normalizeRepoPathStr(relRaw);
   const candidates: string[] = [];
   if (!rel || rel === "/") {
-    candidates.push(".a5c/events/reactor.yaml");
     return candidates;
   }
   if (isDir) {
     // If a directory path is provided, try directory itself (recursive) and '<dir>/reactor.yaml'
     candidates.push(rel);
-    candidates.push(`${rel}/reactor.yaml`);
   } else {
     candidates.push(rel);
-  }
-  // Special-case common root path
-  if (rel === ".a5c/events") {
-    candidates.push(`.a5c/events/reactor.yaml`);
   }
   return Array.from(new Set(candidates));
 }

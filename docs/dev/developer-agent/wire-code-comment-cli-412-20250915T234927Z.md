@@ -1,1 +1,0 @@
-# Work log for #412\n\nStarted: 20250915T234927Z UTC\n\nPlan:\n- Switch CLI enrich to handleEnrich\n- Standardize location object in code-comment paths\n- Update tests (mentions-code-comments, CLI enrich smoke)\n- Validate flags (include_patch=false default, mentions.\*)\n

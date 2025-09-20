@@ -57,7 +57,7 @@ fi
 # agent pre-run hook (./a5c/hooks/pre-agent-run.sh)
 if [ -f ".a5c/hooks/pre-agent-run.sh" ]; then
   echo "Running agent pre-run hook..."
-  .a5c/hooks/pre-agent-run.sh
+  . .a5c/hooks/pre-agent-run.sh
   echo "Agent pre-run hook completed"
 else
   echo "Agent pre-run hook disabled"
@@ -140,7 +140,7 @@ npx -y "$A5C_PKG_SPEC" run \
 # agent post-run hook (./a5c/hooks/post-agent-run.sh)
 if [ -f ".a5c/hooks/post-agent-run.sh" ]; then
   echo "Running agent post-run hook..."
-  .a5c/hooks/post-agent-run.sh
+  . .a5c/hooks/post-agent-run.sh
   echo "Agent post-run hook completed"
 else
   echo "Agent post-run hook disabled"
