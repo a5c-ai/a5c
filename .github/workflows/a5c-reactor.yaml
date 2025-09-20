@@ -101,8 +101,8 @@ jobs:
         if: steps.filter-successful-workflow-run.outputs.skip != 'true' && env.ENABLE_A5C_TOKEN != 'false'
         uses: a5c-ai/generate-token-action@main
       - name: Run Events Reactor
+        uses: a5c-ai/events@main
         id: events-reactor
-        uses: /action.yml
         if: steps.filter-successful-workflow-run.outputs.skip != 'true'
         with:
           github_token: ${{ steps.a5c-token.outputs.a5c_token || secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
