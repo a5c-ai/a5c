@@ -94,6 +94,7 @@ on:
         Tests,
         PR Quick Tests,
         Quick Checks,
+        Semantic Release Dry Run,
         Smoke,
         Gitleaks,
         Typecheck,
