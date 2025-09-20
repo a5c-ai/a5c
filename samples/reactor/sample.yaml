@@ -1,6 +1,5 @@
 ---
 # Sample reactor rules file
-# Save as: samples/reactor/sample.yaml (or copy to .a5c/events/reactor.yaml)
 
 # React on pull_request and emit a reviewer ping event for documentation-labelled PRs
 on: pull_request
