@@ -232,3 +232,15 @@ git reset --hard
 ```
 
 Do not commit generated artifacts under `coverage/**` or `dist/**`.
+
+## PR Size Labels
+
+Pull requests are automatically labeled by size based on total changed lines (additions + deletions):
+
+- `size:XS` — < 10
+- `size:S` — < 50
+- `size:M` — < 200
+- `size:L` — < 500
+- `size:XL` — ≥ 500
+
+Labels update automatically when a PR changes (opened, reopened, synchronize). This is a fast check (~1–5s) and helps reviewers scope effort and identify risky diffs early.
