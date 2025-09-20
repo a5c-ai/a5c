@@ -1,0 +1,23 @@
+{
+  "id": "stub-offline-001",
+  "provider": "github",
+  "type": "workflow_run",
+  "occurred_at": "2025-09-20T00:00:00Z",
+  "repo": {
+    "id": 1055826069,
+    "name": "events",
+    "full_name": "a5c-ai/events",
+    "private": true,
+    "visibility": "private"
+  },
+  "actor": {
+    "id": 221166651,
+    "login": "a5c-ai[bot]",
+    "type": "Bot"
+  },
+  "payload": {},
+  "provenance": {
+    "source": "cli",
+    "workflow": { "name": "Quick Checks", "run_id": "local-stub" }
+  }
+}
