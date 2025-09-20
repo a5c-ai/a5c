@@ -3,7 +3,22 @@
 // - On main, include git plugin to update CHANGELOG.md and package.json
 
 const commonPlugins = [
-  ["@semantic-release/commit-analyzer", { preset: "conventionalcommits" }],
+  ["@semantic-release/commit-analyzer", {
+    preset: "conventionalcommits",
+    releaseRules: [
+      { type: "chore", release: "patch" },
+      { type: "fix", release: "patch" },
+      { type: "feat", release: "minor" },
+      { type: "refactor", release: "patch" },
+      { type: "perf", release: "patch" },
+      { type: "revert", release: "patch" },
+      { type: "style", release: "patch" },
+      { type: "test", release: "patch" },
+      { type: "docs", release: "patch" },
+      { type: "ci", release: "patch" },
+      { type: "build", release: "patch" },
+    ],
+  }],
   [
     "@semantic-release/release-notes-generator",
     { preset: "conventionalcommits" },
