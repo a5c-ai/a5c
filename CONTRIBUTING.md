@@ -143,16 +143,17 @@ Example snippet:
 
 ## Coverage Gate Policy
 
-This repository supports an optional coverage hard gate for pull requests.
+This repository enforces a coverage hard gate on pull requests into `a5c/main`.
 
-- When it applies: PRs targeting `a5c/main`.
-- How it’s enabled: Maintainers toggle the repository variable `REQUIRE_COVERAGE` to `true`.
-  - Workflows check `vars.REQUIRE_COVERAGE == 'true'` and fail the PR if coverage is below thresholds.
-  - See: `.github/workflows/tests.yml`, `.github/workflows/pr-tests.yml`, `.github/workflows/quick-checks.yml`.
+- When it applies: PRs with base branch `a5c/main` (default ON).
+- How it’s controlled:
+  - Default: CI auto-enables `REQUIRE_COVERAGE` for `a5c/main` PRs and fails when below thresholds.
+  - Maintainer override: set repository variable `REQUIRE_COVERAGE` to `false` to temporarily disable the gate (for exceptional cases). For non-`a5c/main` PRs, you can opt-in by setting `REQUIRE_COVERAGE` to `true`.
+  - See: `.github/workflows/pr-tests.yml`, `.github/workflows/quick-checks.yml` (the gate step runs when `env.REQUIRE_COVERAGE == 'true'`).
 - Thresholds source of truth: `scripts/coverage-thresholds.json`.
-  - Current values in this repo: `lines: 55`, `branches: 55`, `functions: 60`, `statements: 55`.
+  - Current values: `lines: 60`, `branches: 55`, `functions: 60`, `statements: 60`.
   - If the file is missing, Vitest falls back to `lines: 60`, `branches: 55`, `functions: 60`, `statements: 60` (see `vitest.config.ts`).
-- Temporary override (exceptional cases): A maintainer can temporarily set `REQUIRE_COVERAGE` to `false` to allow merging while documenting the rationale in the PR.
+  - Vitest also honors `REQUIRE_COVERAGE=true` to apply thresholds within the test run.
 
 ### Adjusting Thresholds
 
@@ -168,7 +169,7 @@ This repository supports an optional coverage hard gate for pull requests.
    ```
 
 2. Include a short rationale in the PR description (e.g., significant new surface added, temporary dip, or sustained improvements justifying a raise).
-3. When `REQUIRE_COVERAGE` is `true`, CI will enforce these thresholds on PRs into `a5c/main`.
+3. When `REQUIRE_COVERAGE` is `true`, CI will enforce these thresholds (always for `a5c/main` PRs unless overridden as above).
 
 ### Local Coverage
 
