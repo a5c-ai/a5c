@@ -1,0 +1,35 @@
+name: Docs Spellcheck
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - "docs/**"
+      - "README.md"
+      - ".github/workflows/docs-spellcheck.yml"
+      - "scripts/docs-spellcheck.sh"
+      - "typos.toml"
+  push:
+    branches: [a5c/main]
+    paths:
+      - "docs/**"
+      - "README.md"
+      - ".github/workflows/docs-spellcheck.yml"
+      - "scripts/docs-spellcheck.sh"
+      - "typos.toml"
+
+permissions:
+  contents: read
+
+jobs:
+  spellcheck:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Run typos
+        run: |
+          chmod +x scripts/docs-spellcheck.sh
+          ./scripts/docs-spellcheck.sh

@@ -10,7 +10,7 @@ Validator flagged mismatch: docs showed `reason: 'flag:not_set'` for offline mod
 
 - Update `docs/cli/reference.md` to use `github_enrich_disabled` for offline examples and prose.
 - Update `README.md` to reflect the same.
-- Update `docs/user/quickstart.md` snippet.
+- Update `docs/user/quick-start.md` snippet.
 - Verify user-facing docs contain no `flag:not_set`.
 
 ## Notes

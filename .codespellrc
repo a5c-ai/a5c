@@ -1,0 +1,9 @@
+[codespell]
+# Keep output concise in CI
+quiet-level = 3
+
+# Skip generated/vendor/cache content
+skip = dist, coverage, node_modules, .git, .husky, CHANGELOG.md, package-lock.json, pnpm-lock.yaml, yarn.lock, **/*.min.* , **/*.svg, **/*.snap, docs/validation, docs/dev
+
+# Known project words and proper nouns to ignore
+ignore-words-list = crate, aks, te, a5c

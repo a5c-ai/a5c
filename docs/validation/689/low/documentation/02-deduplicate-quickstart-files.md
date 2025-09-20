@@ -6,7 +6,7 @@ Scope: PR #689 — Quick start documentation
 
 Context:
 
-- Repository contains both `docs/user/quickstart.md` and `docs/user/quick-start.md` with overlapping
+- Repository previously contained both `docs/user/quickstart.md` and `docs/user/quick-start.md` with overlapping
   content and slightly different guidance/examples.
 
 Recommendation:

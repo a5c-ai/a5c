@@ -1,0 +1,63 @@
+name: PR Size Labels
+
+on:
+  pull_request:
+    branches: [a5c/main, main]
+    types: [opened, reopened, synchronize, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  label:
+    name: Label PR by size
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Upsert size labels
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const labels = [
+              { name: 'size:XS', color: 'ededed', description: 'Very small change (< 10 lines)' },
+              { name: 'size:S',  color: 'c5def5', description: 'Small change (< 50 lines)' },
+              { name: 'size:M',  color: 'fbca04', description: 'Medium change (< 200 lines)' },
+              { name: 'size:L',  color: 'f9d0c4', description: 'Large change (< 500 lines)' },
+              { name: 'size:XL', color: 'd93f0b', description: 'Huge change (≥ 500 lines)' },
+            ];
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            for (const l of labels) {
+              try {
+                await github.rest.issues.getLabel({ owner, repo, name: l.name });
+                await github.rest.issues.updateLabel({ owner, repo, name: l.name, new_name: l.name, color: l.color, description: l.description });
+              } catch (e) {
+                if (e.status === 404) {
+                  await github.rest.issues.createLabel({ owner, repo, name: l.name, color: l.color, description: l.description });
+                } else {
+                  throw e;
+                }
+              }
+            }
+
+      - name: Apply size label
+        uses: codelytv/pr-size-labeler@v1
+        with:
+          xs_label: "size:XS"
+          xs_max_size: "10"
+          s_label: "size:S"
+          s_max_size: "50"
+          m_label: "size:M"
+          m_max_size: "200"
+          l_label: "size:L"
+          l_max_size: "500"
+          xl_label: "size:XL"
+          fail_if_xl: "false"
+          message_if_xl: >
+            This PR exceeds the recommended size of 500 lines (adds+deletes).
+            Consider splitting changes to keep reviews fast and focused.

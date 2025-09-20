@@ -1,0 +1,160 @@
+name: OSV Scan
+
+on:
+  schedule:
+    # Weekly on Mondays at 09:00 UTC
+    - cron: "0 9 * * 1"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  security-events: write
+
+env:
+  # Optional: set in repo/org variables to enforce failure on high/critical
+  # Accepted values: "high", "critical" (case-insensitive). Any other value disables failing.
+  OSV_FAIL_ON: "${{ vars.OSV_FAIL_ON || '' }}"
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.22.x"
+
+      - name: Install OSV-Scanner
+        run: |
+          set -euxo pipefail
+          go install github.com/google/osv-scanner/cmd/osv-scanner@latest
+          echo "${HOME}/go/bin" >> "$GITHUB_PATH"
+          osv-scanner --version
+
+      - name: Run OSV scan (workspace)
+        id: scan-workspace
+        continue-on-error: true
+        run: |
+          set -euxo pipefail
+          mkdir -p reports
+          # Scan recursively; skip git-ignored to speed up
+          osv-scanner -r . --skip-git -o reports/osv-workspace.json --format json || true
+          # Also emit SARIF for code scanning upload
+          osv-scanner -r . --skip-git -o reports/osv-workspace.sarif --format sarif || true
+
+      - name: Run OSV scan (lockfile)
+        id: scan-lockfile
+        if: hashFiles('package-lock.json') != ''
+        continue-on-error: true
+        run: |
+          set -euxo pipefail
+          osv-scanner --lockfile=package-lock.json -o reports/osv-lockfile.json --format json || true
+          osv-scanner --lockfile=package-lock.json -o reports/osv-lockfile.sarif --format sarif || true
+
+      - name: Summarize findings
+        id: summarize
+        shell: bash
+        run: |
+          set -euo pipefail
+          WS_JSON="reports/osv-workspace.json"
+          LF_JSON="reports/osv-lockfile.json"
+
+          # jq program to count severities from an OSV JSON file
+          JQ_PROG_FILE=$(mktemp)
+          printf '%s\n' \
+            'def num: try (tonumber) catch empty;' \
+            'def base_score: ( [ .severity[]? .score | num ] | max? // 0 );' \
+            'def label($s): if $s>=9 then "critical" elif $s>=7 then "high" elif $s>=4 then "medium" elif $s>0 then "low" else "unknown" end;' \
+            'def counts:' \
+            '  reduce ( .results[]? | .packages[]? | .results[]? | .vulnerabilities[]? ) as $v' \
+            '    ({critical:0, high:0, medium:0, low:0, unknown:0, total:0};' \
+            '     $s := ($v | base_score);' \
+            '     $lab := label($s);' \
+            '     .[$lab] += 1 | .total += 1);' \
+            'counts' > "$JQ_PROG_FILE"
+
+          jq_file_counts() { local f="$1"; if [[ -s "$f" ]]; then jq -rf "$JQ_PROG_FILE" "$f"; else echo '{"critical":0,"high":0,"medium":0,"low":0,"unknown":0,"total":0}'; fi; }
+
+          ws_counts=$(jq_file_counts "$WS_JSON")
+          lf_counts=$(jq_file_counts "$LF_JSON")
+
+          # Sum the two JSON objects field-wise
+          total_counts=$(jq -s 'reduce .[] as $o ({critical:0,high:0,medium:0,low:0,unknown:0,total:0}; .critical += ($o.critical // 0) | .high += ($o.high // 0) | .medium += ($o.medium // 0) | .low += ($o.low // 0) | .unknown += ($o.unknown // 0) | .total += ($o.total // 0))' <(echo "$ws_counts") <(echo "$lf_counts"))
+
+          critical=$(jq -r '.critical' <<<"$total_counts")
+          high=$(jq -r '.high' <<<"$total_counts")
+          medium=$(jq -r '.medium' <<<"$total_counts")
+          low=$(jq -r '.low' <<<"$total_counts")
+          unknown=$(jq -r '.unknown' <<<"$total_counts")
+          total=$(jq -r '.total' <<<"$total_counts")
+
+          {
+            echo "## OSV-Scanner Summary"
+            echo
+            echo "- Total: $total"
+            echo "- Critical: $critical"
+            echo "- High: $high"
+            echo "- Medium: $medium"
+            echo "- Low: $low"
+            echo "- Unknown: $unknown"
+            echo
+            echo "Artifacts:"
+            echo "- JSON: reports/osv-workspace.json, reports/osv-lockfile.json (when present)"
+            echo "- SARIF: reports/osv-workspace.sarif, reports/osv-lockfile.sarif (when present)"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          # Determine failure based on OSV_FAIL_ON
+          fail_on="${OSV_FAIL_ON,,}"
+          should_fail=0
+          case "$fail_on" in
+            critical)
+              (( critical > 0 )) && should_fail=1 ;;
+            high)
+              (( (critical + high) > 0 )) && should_fail=1 ;;
+            *)
+              should_fail=0 ;;
+          esac
+
+          echo "fail_on=$fail_on" >> "$GITHUB_OUTPUT"
+          echo "should_fail=$should_fail" >> "$GITHUB_OUTPUT"
+          if [[ "$fail_on" == "high" || "$fail_on" == "critical" ]]; then
+            {
+              echo
+              echo "Fail policy: \`OSV_FAIL_ON=$fail_on\` — $( [[ $should_fail -eq 1 ]] && echo 'will fail' || echo 'passing' )"
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          exit 0
+
+      - name: Upload SARIF (workspace)
+        if: always() && hashFiles('reports/osv-workspace.sarif') != ''
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: reports/osv-workspace.sarif
+
+      - name: Upload SARIF (lockfile)
+        if: always() && hashFiles('reports/osv-lockfile.sarif') != ''
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: reports/osv-lockfile.sarif
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: osv-scanner-reports
+          path: |
+            reports/osv-*.json
+            reports/osv-*.sarif
+
+      - name: Enforce fail policy (optional)
+        if: steps.summarize.outputs.should_fail == '1'
+        run: |
+          echo "Failing due to OSV_FAIL_ON=${OSV_FAIL_ON} policy" >&2
+          exit 1
+

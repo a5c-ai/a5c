@@ -325,7 +325,7 @@ program
   )
   .option(
     "--file <path>",
-    "reactor rules file path (yaml), default .a5c/events/reactor.yaml",
+    "reactor rules path (file or directory), default .a5c/events/",
   )
   .option(
     "--branch <name>",

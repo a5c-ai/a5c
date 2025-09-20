@@ -90,7 +90,7 @@ Canonical flags and defaults live in `docs/cli/reference.md#events-enrich` and `
 
 ### Reactor Quick Start
 
-Run the reactor locally against a bundled sample PR event using the default rules path `.a5c/events/reactor.yaml`:
+Run the reactor locally against a bundled sample PR event using the default rules path `.a5c/events/` (loads all `*.yaml|*.yml` recursively). A single-file rules path like `.a5c/events/reactor.yaml` is also supported via `--file`:
 
 ```bash
 npm run reactor:sample | jq '.events | length'
@@ -100,7 +100,7 @@ npm run reactor:sample | jq '.events | length'
 npm run reactor:sample | jq
 ```
 
-- Rules live at `.a5c/events/reactor.yaml` by default.
+- Default rules path is the directory `.a5c/events/` (recursive YAML load). You can also point to a single file such as `.a5c/events/reactor.yaml` using `--file`.
 - Full CLI reference: `docs/cli/reference.md#events-reactor`.
 
 ## Quick Start (SDK)
