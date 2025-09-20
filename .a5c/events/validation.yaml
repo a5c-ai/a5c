@@ -24,9 +24,6 @@ set_labels:
   - entity: ${{ event.pull_request.html_url }}
     add_labels: [validation_requested]
     remove_labels: [validated]
-script:
-  - |
-    echo "Validation request for PR ${{ event.pull_request.html_url }} added label validation"
 ---
 name: Validation Agent Run
 metadata:

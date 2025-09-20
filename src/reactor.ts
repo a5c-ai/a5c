@@ -1309,29 +1309,28 @@ async function materializeAgentRun(
     // Compute defaults
     const vars = (neCtx as any)?.enriched?.derived?.vars || {};
     const envProc = process.env;
-    const owner = (neCtx as any)?.payload?.repository?.owner;
-    const repo = (neCtx as any)?.payload?.repository?.name;
+    const full_repo = (neCtx as any)?.payload?.repository?.full_name;
     const template =
       baseEnv.A5C_TEMPLATE_URI ||
-      process.env.A5C_TEMPLATE_URI ||
+      envProc.A5C_TEMPLATE_URI ||
       vars.A5C_TEMPLATE_URI ||
       eventArg?.client_payload?.template ||
-      `github://${owner}/${repo}/branch/a5c%2Fmain/.a5c/main.md`;
+      `github://${full_repo}/branch/a5c%2Fmain/.a5c/main.md`;
     const mcps =
       baseEnv.A5C_MCPS_PATH ||
       vars.A5C_MCPS_PATH ||
-      process.env.A5C_MCPS_PATH ||
+      envProc.A5C_MCPS_PATH ||
       ".a5c/mcps.json";
     const profile =
       baseEnv.A5C_CLI_PROFILE || vars.A5C_CLI_PROFILE || "openai_codex_gpt5";
     const scriptTpl =
       (spec as any).script_template_uri ||
       baseEnv.A5C_AGENT_SCRIPT_URI ||
-      process.env.A5C_AGENT_SCRIPT_URI ||
+      envProc.A5C_AGENT_SCRIPT_URI ||
       vars.A5C_AGENT_SCRIPT_URI ||
       "github://a5c-ai/events/branch/a5c%2Fmain/.a5c/scripts/agent.sh";
     const envOut = {
-      ...process.env,
+      ...envProc,
       ...baseEnv,
       A5C_TEMPLATE_URI: String(template),
       A5C_MCPS_PATH: String(mcps),
@@ -1346,7 +1345,8 @@ async function materializeAgentRun(
       if (rendered) script = rendered;
     }
     return { env: envOut, script };
-  } catch {
+  } catch (error) {
+    logger.error("Error materializing agent run", { error: error });
     return null;
   }
 }

@@ -13,8 +13,6 @@ on:
       - expression: ${{ event.issue.closed == true }}
       # if triage in progress or already requested
       - expression: ${{ event.labels | contains('create_pr_in_progress') || event.labels | contains('create_pr_requested') }}
-      # create_pr enabled in this repo on the a5c/main / .a5c/config.yml
-      - expression: ${{ read_github_content(event.repository.html_url, "a5c/main", '.a5c/config.yml') | load_yaml | select('triggers.create_pr.enabled') != 'true' }}
 emit:
   create_pr_from_issue:
     type: issue_ready_for_triage
@@ -24,9 +22,6 @@ emit:
 set_labels:
   - entity: ${{ event.issue.html_url }}
     add_labels: [create_pr_requested]
-script:
-  - |
-    echo "Create PR request for issue ${{ event.issue.html_url }} added label create_pr"
 ---
 name: Create PR Run
 metadata:
