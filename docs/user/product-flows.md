@@ -110,6 +110,66 @@ events validate --in out.ne.only.json --schema docs/specs/ne.schema.json
 - Use `--flag mentions.scan.changed_files=false` to disable code-comment scanning.
 - Language mapping includes `tsx/jsx` → `ts/js` automatically.
 
+## Success Metrics
+
+Use these quick checks to confirm the core flows are healthy on a fresh clone. Copy/paste the commands and verify the noted outputs/exit codes.
+
+### 1) Smoke — normalize → enrich → validate
+
+```bash
+# Run end-to-end smoke (quiet validation)
+npm run -s smoke
+
+# Expected:
+# - Exit code: 0
+# - Files exist:
+ls -1 out.ne.json out.enriched.json
+
+# - Validate enriched output (exit 0)
+events validate --in out.enriched.json --schema docs/specs/ne.schema.json --quiet
+```
+
+### 2) Reactor — sample rule produces one event
+
+```bash
+npm run -s reactor:sample | jq '.events | length'
+# Expected: 1
+```
+
+### 3) Mentions — code comments detected during enrich
+
+Requires a token for file-fetch scanning. Either `GITHUB_TOKEN` or `A5C_AGENT_GITHUB_TOKEN` works for this repository.
+
+```bash
+export GITHUB_TOKEN=${GITHUB_TOKEN:-"<your-token>"}
+
+events enrich \
+  --in samples/pull_request.synchronize.json \
+  --use-github \
+  --flag include_patch=false \
+  --flag "mentions.scan.changed_files=true" \
+  --flag "mentions.languages=ts,js" \
+  --out /tmp/m.enriched.json
+
+# Count code-comment mentions
+jq '[.enriched.mentions[]? | select(.source=="code_comment")] | length' /tmp/m.enriched.json
+# Expected: >= 1
+```
+
+If you prefer patch-based scanning without network access, ensure your input carries diffs (set `--flag include_patch=true` and provide an event payload with patches). See `docs/cli/code-comment-mentions.md`.
+
+### 4) Emit (dry) — stdout sink
+
+```bash
+events emit --in out.enriched.json --sink stdout >/dev/null
+# Expected: exit code 0
+```
+
+### Observability
+
+- For JSON logs and step summaries in CI, see `docs/observability.md`.
+- CLI flags and environment toggles for structured logs are documented there.
+
 ## References
 
 - Specs: `docs/specs/README.md`
