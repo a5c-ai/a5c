@@ -1,8 +1,12 @@
 import readline from "node:readline";
 import { stdin as input, stdout as output } from "node:process";
+import fs from "node:fs";
+import path from "node:path";
 
 export interface ParseOptions {
   type?: string;
+  out?: string;
+  pretty?: boolean;
 }
 
 export type CodexEvent = {
@@ -323,16 +327,37 @@ export async function handleParse(
   }
 
   const parser = new CodexStdoutParser();
+  // Optional file writer for JSONL streaming
+  let fileStream: fs.WriteStream | null = null;
+  if (opts.out) {
+    const outPath = path.resolve(String(opts.out));
+    fs.mkdirSync(path.dirname(outPath), { recursive: true });
+    fileStream = fs.createWriteStream(outPath, {
+      flags: "w",
+      encoding: "utf8",
+    });
+  }
   const rl = readline.createInterface({ input, crlfDelay: Infinity });
   rl.on("line", (line) => {
     const events = parser.parseLine(line);
-    for (const evt of events) output.write(JSON.stringify(evt) + "\n");
+    for (const evt of events) {
+      const rawLine = JSON.stringify(evt);
+      if (fileStream) fileStream.write(rawLine + "\n");
+      if (opts.pretty) output.write(JSON.stringify(evt, null, 2) + "\n");
+      else output.write(rawLine + "\n");
+    }
   });
   return await new Promise((resolve) => {
     rl.on("close", () => {
       const tail: CodexEvent[] = [];
       parser.flushIfAny(tail);
-      for (const evt of tail) output.write(JSON.stringify(evt) + "\n");
+      for (const evt of tail) {
+        const rawLine = JSON.stringify(evt);
+        if (fileStream) fileStream.write(rawLine + "\n");
+        if (opts.pretty) output.write(JSON.stringify(evt, null, 2) + "\n");
+        else output.write(rawLine + "\n");
+      }
+      if (fileStream) fileStream.end();
       resolve({ code: 0 });
     });
   });
