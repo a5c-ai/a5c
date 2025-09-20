@@ -1,42 +1,13 @@
 ---
-name: Validation Request
-metadata:
-  runner-name: reactor
-on:
-  any:
-    filters:
-      - expression: ${{ env.A5C_GLOBAL_HANDLER == 'true' }}
-    skip:
-      - expression: ${{ event.labels | contains('a5c') == false }}
-script:
-  - |
-    echo "Global handler for 'any' for events containing 'a5c' label"
----
-name: Validation Request In Progress Warning
-metadata:
-  runner-name: reactor
-on:
-  any:
-    filters:
-      - expression: ${{ env.VALIDATION_REQUEST_IN_PROGRESS_WARNING == 'true' && event.type == 'synchronize' && event.labels | contains('validation') }}
-
-script:
-  - |
-    echo "PR branch changed while validation is in progress - ${{ event.pull_request.html_url }}"
----
 name: Validate PRs by validation label
 metadata:
   runner-name: reactor
 on:
   pull_request:
     filters:
-      # PR is ready for review, opened, reopened
-      - expression: ${{ (event.type == 'opened' || event.type == 'reopened' || event.type == 'ready_for_review') && event.pull_request.labels | map(attribute='name') | contains('validation') == false }}
       # validation label was added
       - expression: ${{ event.type == 'labeled' && event.label.name == 'validation' }}
     skip:
-      # validation enabled in this repo on the a5c/main / .a5c/config.yml
-      - expression: ${{ read_github_content(event.repository.html_url, "a5c/main", '.a5c/config.yml') | load_yaml | select('triggers.validation.enabled') != 'true' }}
       # is a draft PR or already merged
       - expression: ${{ event.pull_request.draft == true || event.pull_request.merged == true }}
       # if validation in progress or already requested

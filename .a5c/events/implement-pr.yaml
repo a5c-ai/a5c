@@ -8,8 +8,6 @@ on:
       # implement_pr label was added
       - expression: ${{ event.type == 'labeled' && event.label.name == 'implement_pr' }}
     skip:
-      # validation enabled in this repo on the a5c/main / .a5c/config.yml
-      - expression: ${{ read_github_content(event.repository.html_url, "a5c/main", '.a5c/config.yml') | load_yaml | select('triggers.implement_pr.enabled') != 'true' }}
       # is a draft PR or already merged
       - expression: ${{ event.pull_request.draft == true || event.pull_request.merged == true }}
       # if implement_pr in progress or already requested
