@@ -532,7 +532,7 @@ events reactor [--in FILE] [--out FILE] [--file PATH]
 
 - `--in FILE`: input JSON file path (default: stdin)
 - `--out FILE`: output JSON file path (default: stdout)
-- `--file PATH`: reactor rules file path (YAML). Default: `.a5c/events/reactor.yaml`
+- `--file PATH`: reactor rules path. Accepts a directory or a single YAML file. Default: `.a5c/events/` (loads all `*.yaml|*.yml` recursively).
 
 Rules structure (YAML):
 
@@ -592,10 +592,10 @@ Exit codes:
 Examples:
 
 ```bash
-# Defaults: stdin -> stdout, rules at .a5c/events/reactor.yaml
+# Defaults: stdin -> stdout, rules from the .a5c/events/ directory (recursive)
 cat samples/pull_request.synchronize.json | events reactor
 
-# Explicit files
+# Explicit file
 events reactor --in samples/pull_request.synchronize.json \
   --file samples/reactor/sample.yaml \
   --out out.events.json
@@ -622,7 +622,7 @@ events reactor --in samples/pull_request.synchronize.json | jq '.events | length
 Notes:
 
 - Reactor parses multiple YAML docs via `yaml.parseAllDocuments` and accumulates emitted events from all matching documents.
-- Default rules path is `.a5c/events/reactor.yaml` when `--file` is omitted.
+- Default rules path is the directory `.a5c/events/`; when a directory is provided (or omitted), all `*.yaml|*.yml` files under it are loaded recursively. You may also pass a single file path via `--file`.
 - Custom event names in `on:` match against the input action or `client_payload.event_type`.
 
 ### `events emit`
