@@ -180,3 +180,128 @@ export function withCorr(logger: LoggerLike, corr: string): LoggerLike {
 - For matrices, aggregate per-job artifacts into `observability.aggregate.json` for charting (p95 durations, cache hit ratios).
 
 > Note: The canonical schema path is \`docs/specs/observability.schema.json\`.
+
+## CI Heartbeats (Tests)
+
+You can add an optional heartbeat around the `Tests` workflow using Healthchecks. This makes it easy to detect stalls, cron gaps, or persistent failures.
+
+Prerequisites:
+
+- Healthchecks ping URL for the job you want to monitor
+- Repository secret: `HEALTHCHECKS_TESTS_PING_URL` (string)
+
+Semantics:
+
+- On job start: `GET <PING>/start`
+- On job success: `GET <PING>`
+- On job failure/cancel: `GET <PING>/fail`
+
+How to get a ping URL:
+
+1. Create a check in Healthchecks (name it e.g., "Tests")
+2. Copy its ping URL (looks like `https://hc-ping.com/<uuid>`)
+3. Add it as a repository secret named `HEALTHCHECKS_TESTS_PING_URL`
+
+Reference example (already in repo): `.github/workflows/a5c.yml` uses the same pattern for the scheduled `a5c` workflow via `HEALTHCHECKS_A5C_SCHEDULE_PING_URL`. See also `docs/ci/alerts.md` for scheduled heartbeat setup and notes.
+
+Example wiring for `Tests` steps (illustrative):
+
+```yaml
+env:
+  HEALTHCHECKS_TESTS_PING_URL: ${{ secrets.HEALTHCHECKS_TESTS_PING_URL || '' }}
+
+jobs:
+  unit:
+    steps:
+      - name: Heartbeat Start (Tests)
+        if: env.HEALTHCHECKS_TESTS_PING_URL != ''
+        env:
+          PING: ${{ env.HEALTHCHECKS_TESTS_PING_URL }}
+        run: |
+          set -euxo pipefail
+          curl -fsS -m 10 --retry 3 --retry-connrefused "$PING/start" || true
+
+      # ... your existing steps (install, build, test) ...
+
+      - name: Heartbeat Complete (Tests)
+        if: always() && env.HEALTHCHECKS_TESTS_PING_URL != ''
+        env:
+          PING: ${{ env.HEALTHCHECKS_TESTS_PING_URL }}
+          OUTCOME: ${{ job.status }}
+        run: |
+          set -euxo pipefail
+          case "$OUTCOME" in
+            success)
+              curl -fsS -m 10 --retry 3 --retry-connrefused "$PING" || true
+              ;;
+            *)
+              curl -fsS -m 10 --retry 3 --retry-connrefused "$PING/fail" || true
+              ;;
+          esac
+```
+
+Notes:
+
+- The `|| ''` guard keeps the workflow noise-free when the secret is not set.
+- Use `always()` for the final step to emit success/fail pings regardless of intermediate step outcomes.
+
+## Failure Alerts (Slack/Discord)
+
+Optionally post a short failure summary to Slack or Discord when the `Tests` job fails. Keep these opt-in via existing secrets/vars:
+
+- Slack: `SLACK_BOT_TOKEN` (required), `SLACK_APP_TOKEN` (if using Socket Mode)
+- Discord: `DISCORD_TOKEN` (required), `DISCORD_GUILD_ID` (var)
+
+Recommended message fields:
+
+- Repository, workflow/job names
+- Branch/commit (short SHA)
+- Run URL
+- Conclusion (failure)
+
+Illustrative step (Slack via simple curl webhook pattern; replace with your notifier of choice):
+
+```yaml
+- name: Notify (Slack) on failure
+  if: failure() && env.SLACK_BOT_TOKEN != ''
+  env:
+    SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN || '' }}
+  run: |
+    set -euo pipefail
+    RUN_URL="https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+    MSG="❌ Tests failed in ${GITHUB_REPOSITORY} · ${GITHUB_REF} · ${GITHUB_SHA::7} — ${RUN_URL}"
+    # Example using Slack chat.postMessage (requires channel id in a secret/var)
+    [ -z "${SLACK_CHANNEL_ID:-}" ] && echo "SLACK_CHANNEL_ID not set; skipping" && exit 0
+    curl -fsS -X POST \
+      -H "Authorization: Bearer ${SLACK_BOT_TOKEN}" \
+      -H "Content-type: application/json; charset=utf-8" \
+      --data "$(jq -n --arg c "$SLACK_CHANNEL_ID" --arg t "$MSG" '{channel:$c,text:$t}')" \
+      https://slack.com/api/chat.postMessage || true
+```
+
+Illustrative step (Discord as a minimal bot send; replace with your notifier of choice):
+
+```yaml
+- name: Notify (Discord) on failure
+  if: failure() && env.DISCORD_TOKEN != '' && env.DISCORD_GUILD_ID != ''
+  env:
+    DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN || '' }}
+    DISCORD_GUILD_ID: ${{ vars.DISCORD_GUILD_ID || '' }}
+  run: |
+    set -euo pipefail
+    RUN_URL="https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+    MSG="❌ Tests failed in ${GITHUB_REPOSITORY} · ${GITHUB_REF} · ${GITHUB_SHA::7} — ${RUN_URL}"
+    # Example: send to a known channel id (supply via secret/var DISCORD_CHANNEL_ID)
+    [ -z "${DISCORD_CHANNEL_ID:-}" ] && echo "DISCORD_CHANNEL_ID not set; skipping" && exit 0
+    curl -fsS -X POST \
+      -H "Authorization: Bot ${DISCORD_TOKEN}" \
+      -H "Content-Type: application/json" \
+      --data "$(jq -n --arg t "$MSG" '{content:$t}')" \
+      "https://discord.com/api/v10/channels/${DISCORD_CHANNEL_ID}/messages" || true
+```
+
+Notes:
+
+- These examples are intentionally minimal. You may already have a central notifier action; if so, call it here with `if: failure()` and the same guards.
+- Keep alerts opt-in to avoid noise in forks and local runs.
+- Reuse existing repo/org secrets to avoid duplicating credentials across workflows.
