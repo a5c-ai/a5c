@@ -16,3 +16,14 @@
 
 - Use `samples/pull_request.synchronize.json` for `enrich` example; stay offline (`--use-github` omitted). Add `--flag include_patch=true` to allow patch-based scan when patches are present.
 - `events mentions` examples will use explicit stdin/--file to avoid blocking on empty stdin.
+
+## Results
+
+- Updated `docs/user/product-flows.md` Mentions section to use `events enrich` for code-comment scanning and `events mentions` for plain text.
+- Added cross-links and a “When to use which” note.
+- Opened PR: https://github.com/a5c-ai/events/pull/1067
+
+## Validation
+
+- Built CLI via `npm ci`.
+- Ran updated examples locally; all exit without errors using repo samples.
