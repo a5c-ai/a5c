@@ -21,6 +21,6 @@ Add a concise “Success Metrics” section so users can confirm core flows quic
 
 ## Results (to be updated after implementation)
 
-- [ ] Section added
-- [ ] Commands verified locally
-- [ ] Cross-links validated with `lychee` in CI
+- [x] Section added
+- [x] Commands verified locally
+- [x] Cross-links validated with `lychee` in CI
