@@ -182,3 +182,5 @@ jobs:
             /tmp/full_output.txt
             /tmp/agent-output.md
             /tmp/agent-output-*/**
+            /tmp/out.reactor.json
+            /tmp/out.enrich.json
