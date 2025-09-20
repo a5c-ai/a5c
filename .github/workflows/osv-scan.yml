@@ -1,0 +1,32 @@
+name: OSV Scan
+
+on:
+  push:
+    branches: [a5c/main]
+    paths:
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/osv-scan.yml"
+  schedule:
+    - cron: "0 6 * * 1" # weekly, Mondays 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  osv:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Run OSV scanner
+        uses: google/osv-scanner-action@v1
+        with:
+          scan-args: |-
+            -r .
+          # Fail on HIGH or CRITICAL by default; override via repo variable OSV_FAIL_ON
+          fail-on: ${{ vars.OSV_FAIL_ON || 'HIGH,CRITICAL' }}

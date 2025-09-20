@@ -232,3 +232,69 @@ jobs:
         run: node dist/cli.js --help
       - name: CLI normalize --help
         run: node dist/cli.js normalize --help
+
+  release-dry-run:
+    name: Semantic Release (dry-run)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Install (no hooks)
+        env:
+          HUSKY: 0
+        run: |
+          if [ -f package-lock.json ]; then npm ci; else npm install; fi
+      - name: Dry-run semantic-release
+        id: semrel
+        env:
+          GITHUB_TOKEN: ${{ secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+          HUSKY: 0
+        run: |
+          set -euo pipefail
+          # Perform dry-run and capture summary
+          npx semantic-release --dry-run --no-ci 2>&1 | tee /tmp/semrel.log || true
+          # Extract next release info if available
+          NEXT_VERSION=$(grep -Eo 'The next release version is [0-9]+\.[0-9]+\.[0-9]+' /tmp/semrel.log | awk '{print $6}' | tail -n1 || true)
+          NEXT_TYPE=$(grep -Eo 'The next release type is (major|minor|patch)' /tmp/semrel.log | awk '{print $6}' | tail -n1 || true)
+          echo "next_version=${NEXT_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "next_type=${NEXT_TYPE}" >> "$GITHUB_OUTPUT"
+      - name: Comment on PR with prediction
+        if: ${{ github.event_name == 'pull_request' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR_NUMBER=${{ github.event.pull_request.number }}
+          REPO_FULL=${GITHUB_REPOSITORY}
+          {
+            echo "<!-- a5c:semrel-dry-run -->"
+            echo "## 📦 Release Preview (dry-run)"
+            if [ -n "${{ steps.semrel.outputs.next_version }}" ]; then
+              echo "Next version: <code>${{ steps.semrel.outputs.next_version }}</code> (${{ steps.semrel.outputs.next_type }})"
+            else
+              echo "No release predicted (no release-worthy commits)."
+            fi
+            echo
+            echo "_This is a non-blocking dry-run of semantic-release._"
+          } > /tmp/semrel-comment.md
+          # Upsert comment with stable marker
+          existing_id=$(gh api \
+            repos/${REPO_FULL}/issues/${PR_NUMBER}/comments \
+            --jq '.[] | select(.body | contains("a5c:semrel-dry-run")) | .id' || true)
+          if [ -n "$existing_id" ]; then
+            gh api -X PATCH -H "Accept: application/vnd.github+json" \
+              repos/${REPO_FULL}/issues/comments/${existing_id} \
+              -F body=@/tmp/semrel-comment.md >/dev/null
+          else
+            gh pr comment "$PR_NUMBER" --repo "$REPO_FULL" -F /tmp/semrel-comment.md >/dev/null
+          fi
