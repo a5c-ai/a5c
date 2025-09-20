@@ -2,8 +2,7 @@ name: PR Size Labels
 
 on:
   pull_request:
-    branches: [a5c/main, main]
-    types: [opened, synchronize, reopened, ready_for_review]
+    types: [opened, reopened, synchronize]
 
 permissions:
   contents: read
@@ -15,11 +14,46 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
-      - uses: actions/checkout@v5
-      - name: Label by size
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          chmod +x scripts/pr-size-labels.sh
-          PR_NUMBER=${{ github.event.pull_request.number }}
-          scripts/pr-size-labels.sh "$PR_NUMBER"
+      - name: Ensure size labels exist
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const labels = [
+              { name: 'size:XS', color: 'ededed', description: 'PR < 10 lines changed' },
+              { name: 'size:S',  color: 'a2eeef', description: 'PR < 50 lines changed' },
+              { name: 'size:M',  color: 'fbca04', description: 'PR < 200 lines changed' },
+              { name: 'size:L',  color: 'b60205', description: 'PR < 500 lines changed' },
+              { name: 'size:XL', color: '5319e7', description: 'PR ≥ 500 lines changed' },
+            ];
+            for (const l of labels) {
+              try {
+                await github.rest.issues.getLabel({ owner: context.repo.owner, repo: context.repo.repo, name: l.name });
+              } catch {
+                await github.rest.issues.createLabel({ owner: context.repo.owner, repo: context.repo.repo, name: l.name, color: l.color, description: l.description });
+              }
+            }
+      - name: Apply size label
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const { data: files } = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pr.number,
+              per_page: 100,
+            });
+            let total = 0;
+            for (const f of files) total += (f.additions || 0) + (f.deletions || 0);
+            const pick = (n) => n < 10 ? 'size:XS' : n < 50 ? 'size:S' : n < 200 ? 'size:M' : n < 500 ? 'size:L' : 'size:XL';
+            const wanted = pick(total);
+            const sizeLabels = new Set(['size:XS','size:S','size:M','size:L','size:XL']);
+            const existing = (pr.labels || []).map(l => l.name).filter(n => sizeLabels.has(n));
+            // remove other size labels
+            for (const n of existing) {
+              if (n !== wanted) await github.rest.issues.removeLabel({ owner: context.repo.owner, repo: context.repo.repo, issue_number: pr.number, name: n }).catch(() => {});
+            }
+            // add wanted
+            if (!existing.includes(wanted)) {
+              await github.rest.issues.addLabels({ owner: context.repo.owner, repo: context.repo.repo, issue_number: pr.number, labels: [wanted] });
+            }
