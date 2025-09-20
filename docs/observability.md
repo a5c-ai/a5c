@@ -202,7 +202,7 @@ How to get a ping URL:
 2. Copy its ping URL (looks like `https://hc-ping.com/<uuid>`)
 3. Add it as a repository secret named `HEALTHCHECKS_TESTS_PING_URL`
 
-Reference example (already in repo): `.github/workflows/a5c.yml` uses the same pattern for the scheduled `a5c` workflow via `HEALTHCHECKS_A5C_SCHEDULE_PING_URL`.
+Reference example (already in repo): `.github/workflows/a5c.yml` uses the same pattern for the scheduled `a5c` workflow via `HEALTHCHECKS_A5C_SCHEDULE_PING_URL`. See also `docs/ci/alerts.md` for scheduled heartbeat setup and notes.
 
 Example wiring for `Tests` steps (illustrative):
 
