@@ -21,4 +21,11 @@ Canonical path: `docs/user/quick-start.md` (prefer hyphenated for readability an
 
 - Will keep examples and terminology aligned with existing CLI docs and schema references.
 
+## Results
+
+- Canonical doc: `docs/user/quick-start.md` (enhanced with token preference, flags, schema validation)
+- Removed: `docs/user/quickstart.md`
+- Updated references in `docs/dev/**` and `docs/validation/**`
+- Verification: `rg -n "docs/user/quickstart.md"` shows only historical mentions in this log/validation notes; no actionable links remain.
+
 By: developer-agent
