@@ -1,8 +1,12 @@
 name: a5c-agents
-# concurrency:
-#   group: a5c-reactor-${{github.event_name}}-${{ github.ref }}-${{ github.event_name == 'workflow_run' && github.event.workflow_run.name || '' }}-${{ github.event_name == 'issue_comment' && github.event.issue.number || '' }}-${{ github.event_name == 'issues' && github.event.issue.number || '' }}-${{ github.event_name == 'pull_request' && github.head_ref || '' }}
-
+on:
+  repository_dispatch:
+    types:
+      - triage_new_issue
+      - validation_request
+      - agent_generic_run
 env:
+  RUNNER_NAME: agents
   ENABLE_A5C_TOKEN: ${{ vars.ENABLE_A5C_TOKEN }}
   A5C_LOG_LEVEL: ${{ github.event.inputs.debug || 'false' && 'debug' || 'info' }}
   DISABLE_AUTOUPDATER: 1
@@ -60,10 +64,6 @@ env:
   HEROKU_APP_NAME: ${{ vars.HEROKU_APP_NAME || '' }}
   HEROKU_APP_ID: ${{ vars.HEROKU_APP_ID || '' }}
   HEROKU_APP_URL: ${{ vars.HEROKU_APP_URL || '' }}
-# Universal event triggers - the events reactor will handle filtering
-on:
-  repository_dispatch:
-    types: [triage_new_issue, validation_request]
 
 jobs:
   # Single job that handles all events reactor and execution
@@ -103,7 +103,7 @@ jobs:
         if: steps.filter-successful-workflow-run.outputs.skip != 'true'
         with:
           github_token: ${{ steps.a5c-token.outputs.a5c_token || secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
-          runner-name: agents
+          runner-name: ${{ env.RUNNER_NAME }}
           events: .a5c/events/
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
