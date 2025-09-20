@@ -53,6 +53,12 @@ export default defineConfig({
       // which is not instrumented against the TS source and skews coverage.
       exclude: [
         "src/cli.ts",
+        // Exclude long-running CLI runner wrapper that is exercised via CLI smoke
+        // tests rather than unit tests, to avoid skewing unit-test coverage.
+        "src/commands/run.ts",
+        // Exclude pure type definition barrels and provider types.
+        "src/types.ts",
+        "src/providers/types.ts",
         "**/*.d.ts",
         "dist/**",
         "node_modules/**",
