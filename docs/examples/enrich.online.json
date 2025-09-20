@@ -1,8 +1,8 @@
 {
-  "id": "sample-online-1",
+  "id": "remote-123",
   "provider": "github",
-  "type": "pull_request",
-  "occurred_at": "2025-09-20T12:05:00Z",
+  "type": "workflow_run",
+  "occurred_at": "2025-09-20T13:42:10Z",
   "repo": {
     "id": 1055826069,
     "name": "events",
@@ -10,14 +10,17 @@
     "private": true,
     "visibility": "private"
   },
-  "actor": { "id": 221166651, "login": "a5c-ai[bot]", "type": "Bot" },
-  "payload": { "pull_request": { "number": 43 } },
-  "enriched": {
-    "github": {
-      "provider": "github",
-      "partial": false,
-      "pr": { "number": 43 }
-    }
+  "actor": {
+    "id": 221166651,
+    "login": "a5c-ai[bot]",
+    "type": "Bot"
   },
-  "provenance": { "source": "cli" }
+  "payload": { "note": "sample" },
+  "provenance": {
+    "source": "cli",
+    "workflow": { "name": "PR Quick Tests", "run_id": "17880604514" }
+  },
+  "enriched": {
+    "github": { "provider": "github" }
+  }
 }

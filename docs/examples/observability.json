@@ -1,45 +1,17 @@
 {
-  "schema_version": "0.1",
+  "schema_version": "0.1.0",
   "repo": "a5c-ai/events",
-  "workflow": "Quick Checks",
-  "job": "Unit tests (vitest)",
+  "workflow": "PR Quick Tests",
+  "job": "test:ci",
   "run": {
-    "id": "1234567890",
+    "id": 17880604514,
     "attempt": 1,
-    "sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-    "ref": "refs/heads/a5c/main",
+    "sha": "af504873683acdc814f97f27efd38b126cf6f004",
+    "ref": "refs/heads/main",
     "actor": "a5c-ai[bot]",
-    "event_name": "push",
-    "conclusion": "success",
-    "started_at": "2025-09-20T12:00:00Z",
-    "completed_at": "2025-09-20T12:05:00Z",
-    "duration_ms": 300000
-  },
-  "metrics": {
-    "coverage": {
-      "total": {
-        "lines": { "pct": 85.2, "covered": 852, "total": 1000 },
-        "functions": { "pct": 83.5, "covered": 167, "total": 200 },
-        "branches": { "pct": 74.1, "covered": 148, "total": 200 },
-        "statements": { "pct": 84.0, "covered": 840, "total": 1000 }
-      }
-    },
-    "cache": {
-      "entries": [
-        { "kind": "npm", "hit": true, "bytes": 123456, "key": "npm-cache" }
-      ],
-      "summary": {
-        "hits": 1,
-        "misses": 0,
-        "total": 1,
-        "hit_ratio": 1,
-        "bytes_restored_total": 123456
-      }
-    }
-  },
-  "tests": {
-    "totals": { "total": 120, "flaky": 0, "slow_count": 0 },
-    "slowest": [],
-    "flaky": []
+    "event_name": "issues",
+    "started_at": "2025-09-20T13:41:56Z",
+    "completed_at": "2025-09-20T13:42:20Z",
+    "duration_ms": 24000
   }
 }
