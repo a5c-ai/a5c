@@ -46,26 +46,39 @@ events validate \
 
 Extract `@mentions` from issues, PRs, commit messages, and code comments.
 
-Patch-based scanning (no network):
+Code comments in changed files (via enrich, offline-safe):
 
 ```bash
-events mentions \
-  --source code_comment \
-  --flag mentions.scan.changed_files=true \
-  --flag mentions.languages=ts,js \
-  --flag mentions.max_file_bytes=102400 \
-  | jq '.[] | select(.source=="code_comment")'
+# Scan changed files for @mentions in code comments using enrich
+events enrich \
+  --in samples/pull_request.synchronize.json \
+  --flag include_patch=true \
+  --flag "mentions.scan.changed_files=true" \
+  --flag "mentions.languages=ts,js" \
+  --out /dev/stdout \
+  | jq '.enriched.mentions // [] | map(select(.source=="code_comment"))'
 ```
 
-Issue/PR text scanning:
+Plain text extraction (stdin or file):
 
 ```bash
-events mentions --source issue_comment \
+# From stdin
+echo "Please review @developer-agent" \
+  | events mentions --source issue_comment \
+  | jq -r '.[].normalized_target'
+
+# From a file
+events mentions --file README.md --source pr_body \
   | jq -r '.[].normalized_target'
 ```
 
+When to use which:
+
+- Use `events enrich` for scanning code comments and other repo-derived sources (controls under `--flag mentions.*`).
+- Use `events mentions` for plain text you pass via stdin or `--file` (no `mentions.*` flags here).
+
 - Specs: `docs/specs/README.md` (§4.2 Mentions Schema)
-- Reference: `docs/cli/reference.md` (Mentions scanning and flags)
+- Reference: `docs/cli/reference.md#events-enrich` (Mentions scanning flags)
 - Deep dive: `docs/cli/code-comment-mentions.md`
 
 ## Rules and Reactor
@@ -107,7 +120,7 @@ events validate --in out.ne.only.json --schema docs/specs/ne.schema.json
 ## Tips
 
 - When no rules match, `.composed` may be absent; use `(.composed // [])` in `jq`.
-- Use `--flag mentions.scan.changed_files=false` to disable code-comment scanning.
+- In enrich, use `--flag mentions.scan.changed_files=false` to disable code-comment scanning.
 - Language mapping includes `tsx/jsx` → `ts/js` automatically.
 
 ## References
