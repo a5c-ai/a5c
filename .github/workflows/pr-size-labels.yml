@@ -45,19 +45,56 @@ jobs:
               }
             }
 
-      - name: Apply size label
-        uses: codelytv/pr-size-labeler@v1
+      - name: Apply size label (paginated)
+        uses: actions/github-script@v7
         with:
-          xs_label: "size:XS"
-          xs_max_size: "10"
-          s_label: "size:S"
-          s_max_size: "50"
-          m_label: "size:M"
-          m_max_size: "200"
-          l_label: "size:L"
-          l_max_size: "500"
-          xl_label: "size:XL"
-          fail_if_xl: "false"
-          message_if_xl: >
-            This PR exceeds the recommended size of 500 lines (adds+deletes).
-            Consider splitting changes to keep reviews fast and focused.
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const pr = context.payload.pull_request;
+            if (!pr) {
+              core.setFailed('No pull_request payload in context');
+              return;
+            }
+
+            // Fetch all files with pagination
+            const files = await github.paginate(
+              github.rest.pulls.listFiles,
+              { owner, repo, pull_number: pr.number, per_page: 100 }
+            );
+
+            // Sum additions + deletions across all files
+            let total = 0;
+            for (const f of files) {
+              total += (f.additions || 0) + (f.deletions || 0);
+            }
+
+            // Determine size label
+            let label = 'size:XL';
+            if (total < 10) label = 'size:XS';
+            else if (total < 50) label = 'size:S';
+            else if (total < 200) label = 'size:M';
+            else if (total < 500) label = 'size:L';
+
+            // Ensure only one size:* label is present
+            const { data: current } = await github.rest.issues.listLabelsOnIssue({ owner, repo, issue_number: pr.number });
+            const toRemove = current
+              .map(l => l.name)
+              .filter(n => n.startsWith('size:') && n !== label);
+
+            for (const n of toRemove) {
+              try {
+                await github.rest.issues.removeLabel({ owner, repo, issue_number: pr.number, name: n });
+              } catch (e) {
+                if (e.status !== 404) throw e;
+              }
+            }
+
+            // Add the desired label if missing
+            const hasLabel = current.some(l => l.name === label);
+            if (!hasLabel) {
+              await github.rest.issues.addLabels({ owner, repo, issue_number: pr.number, labels: [label] });
+            }
+
+            core.info(`Total changes: ${total}. Applied label: ${label}`);
