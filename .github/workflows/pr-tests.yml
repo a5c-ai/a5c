@@ -4,6 +4,9 @@ on:
   pull_request:
     branches: [a5c/main, main]
     types: [opened, synchronize, reopened, ready_for_review]
+    paths-ignore:
+      - "docs/**"
+      - ".github/**"
 
 concurrency:
   group: pr-tests-${{ github.ref }}
