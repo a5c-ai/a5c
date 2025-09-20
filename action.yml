@@ -54,7 +54,7 @@ runs:
         INPUT_EVENTS=${{ inputs.events }}
         # construct the full github uri:
         ENCODED_BRANCH=$(echo ${{ github.ref }} | sed 's/\//%2F/g')
-        REPOSITORY_PATH=${{ github.event.repository.owner }}/${{ github.event.repository.name }}
+        REPOSITORY_PATH=${{ github.event.repository.owner.name }}/${{ github.event.repository.name }}
         INPUT_EVENTS_GITHUB_URI="github://$REPOSITORY_PATH/branch/$ENCODED_BRANCH/$INPUT_EVENTS"
         $A5C_CMD reactor \
           --in /tmp/out.enrich.json \
