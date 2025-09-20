@@ -25,7 +25,7 @@ jobs:
         with:
           node-version: 20
       - name: Install CLI
-        run: npm -g i @a5c-ai/events || true  # or use npx in each step
+        run: npm -g i @a5c-ai/events || true # or use npx in each step
 
       - name: Normalize
         run: |
@@ -49,10 +49,12 @@ jobs:
 
       - name: Reactor (optional)
         run: |
+          # Default loads all YAML rules from the .a5c/events/ directory (recursive)
           events reactor \
             --in ne.enriched.json \
-            --file .a5c/events/reactor.yaml \
             --out events.json
+          # Alternatively, point to a single rules file explicitly
+          # events reactor --in ne.enriched.json --file .a5c/events/reactor.yaml --out events.json
 
       - name: Emit to GitHub (repository_dispatch)
         env:
@@ -67,7 +69,7 @@ Notes:
 - Install vs npx: you can swap the install step for `npx -y @a5c-ai/events <cmd>` in each step if preferred.
 - Token precedence: runtime prefers `A5C_AGENT_GITHUB_TOKEN` over `GITHUB_TOKEN` when both are available.
 - Auto‑enrichment: `A5C_EVENTS_AUTO_USE_GITHUB=true` enables `--use-github` implicitly when a token is present. Without it (and without `--use-github`), enrichment runs offline and includes a stub at `enriched.github`.
-- Default reactor path: `.a5c/events/reactor.yaml`. Use `--file` to point elsewhere. For remote YAML, see `--branch` and `--metadata-match` flags in the CLI reference.
+- Default reactor path: the directory `.a5c/events/` (all `*.yaml|*.yml` loaded recursively). Use `--file` to point to a single file (e.g., `.a5c/events/reactor.yaml`). For remote YAML, see `--branch` and `--metadata-match` flags in the CLI reference.
 
 ## Exit codes and gating
 
