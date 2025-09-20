@@ -3,7 +3,7 @@ name: Create PRs from Issues
 metadata:
   runner-name: reactor
 on:
-  issues:
+  issue:
     filters:
       # label create_pr was added
       - expression: ${{ event.type == 'labeled' && event.label.name == 'create_pr' }}
