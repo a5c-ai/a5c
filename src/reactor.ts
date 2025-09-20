@@ -1313,12 +1313,12 @@ async function materializeAgentRun(
     const template =
       baseEnv.A5C_TEMPLATE_URI ||
       envProc.A5C_TEMPLATE_URI ||
-      vars.A5C_TEMPLATE_URI ||
+      // vars.A5C_TEMPLATE_URI ||
       eventArg?.client_payload?.template ||
       `github://${full_repo}/branch/a5c%2Fmain/.a5c/main.md`;
     const mcps =
       baseEnv.A5C_MCPS_PATH ||
-      vars.A5C_MCPS_PATH ||
+      // vars.A5C_MCPS_PATH ||
       envProc.A5C_MCPS_PATH ||
       ".a5c/mcps.json";
     const profile =
@@ -1327,7 +1327,7 @@ async function materializeAgentRun(
       (spec as any).script_template_uri ||
       baseEnv.A5C_AGENT_SCRIPT_URI ||
       envProc.A5C_AGENT_SCRIPT_URI ||
-      vars.A5C_AGENT_SCRIPT_URI ||
+      // vars.A5C_AGENT_SCRIPT_URI ||
       "github://a5c-ai/events/branch/a5c%2Fmain/.a5c/scripts/agent.sh";
     const envOut = {
       ...envProc,
@@ -1346,7 +1346,7 @@ async function materializeAgentRun(
     }
     return { env: envOut, script };
   } catch (error) {
-    logger.error("Error materializing agent run", { error: error });
+    logWarn("Error materializing agent run", { error: error });
     return null;
   }
 }
