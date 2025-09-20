@@ -16,3 +16,11 @@ Implementation defaults to directory `.a5c/events/` (recursive YAML load) while 
 ## Notes
 
 Behavior remains unchanged; only descriptions align with `resolveRulesPath()` and loader.
+
+## Results
+
+- Updated src/cli.ts help string for reactor --file.
+- Updated README.md Reactor Quick Start to default to directory .a5c/events/ and mention single-file support.
+- Updated docs/ci/actions-e2e-example.md to reflect default dir and optional --file example.
+- Updated docs/cli/reference.md#events-reactor to document directory default and recursive YAML loading.
+- Built and ran tests: all passing.
