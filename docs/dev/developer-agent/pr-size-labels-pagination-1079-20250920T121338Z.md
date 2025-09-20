@@ -25,3 +25,13 @@ Large PRs (>100 files) undercount changes because `pulls.listFiles` was not pagi
 - M: < 200
 - L: < 500
 - XL: ≥ 500
+
+## Changes Implemented
+
+- Replaced `codelytv/pr-size-labeler@v1` with custom `actions/github-script` step that paginates `pulls.listFiles` using `github.paginate`.
+- Sums additions+deletions across all PR files and applies a single `size:*` label after removing any existing size labels.
+
+## Notes
+
+- `actionlint` reports unrelated issues in other workflows; no changes made outside the scope of this task.
+- Local tests and build hooks passed.
