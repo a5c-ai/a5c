@@ -12,8 +12,6 @@ on:
       - expression: ${{ event.issue.closed == true }}
       # if triage in progress or already requested
       - expression: ${{ event.labels | contains('triage_in_progress') || event.labels | contains('triage_requested') }}
-      # triage enabled in this repo on the a5c/main / .a5c/config.yml
-      - expression: ${{ read_github_content(event.repository.html_url, "a5c/main", '.a5c/config.yml') | load_yaml | select('triggers.triage.enabled') != 'true' }}
 emit:
   triage_new_issue:
     type: issue_ready_for_triage

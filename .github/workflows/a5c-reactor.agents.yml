@@ -95,7 +95,7 @@ jobs:
       - name: a5c token
         id: a5c-token
         continue-on-error: true
-        if: steps.filter-successful-workflow-run.outputs.skip != 'true' && env.ENABLE_A5C_TOKEN != 'false'
+        if: steps.filter-successful-workflow-run.outputs.skip != 'true' && env.ENABLE_A5C_TOKEN == 'true'
         uses: a5c-ai/generate-token-action@main
       - name: Run Events Reactor
         id: events-reactor
