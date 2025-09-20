@@ -1,0 +1,16 @@
+---
+name: CI Fail Response
+metadata:
+  runner-name: reactor
+on:
+  workflow_run:
+    filters:
+      # weekly schedule
+      - expression: ${{ event.type == 'workflow_run' && event.workflow_run.conclusion == 'failure' }}
+emit:
+  ci_fail_response:
+    type: workflow_run_failure
+    payload:
+      original_event: ${{ event }}
+---
+
