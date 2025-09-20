@@ -94,6 +94,8 @@ jobs:
           END=$(date +%s%3N)
           DUR=$((END-START))
           echo "{\"name\":\"CLI smoke\",\"duration_ms\":$DUR}" >> hotspots.jsonl
+      - name: Packaging smoke (npm pack tarball)
+        run: bash scripts/pack-smoke.sh
       - name: Upload coverage artifacts
         if: always()
         uses: actions/upload-artifact@v4
