@@ -31,3 +31,9 @@ Tests reference example JSON artifacts under docs/examples, but the files were a
 - [ ] Run tests
 - [ ] Open PR
 - [ ] Link failing run in PR description
+
+## Results
+
+- Added: docs/examples/enrich.offline.json, enrich.online.json, observability.json
+- Local verification: npm test — all tests passing
+- PR opened: #1094
