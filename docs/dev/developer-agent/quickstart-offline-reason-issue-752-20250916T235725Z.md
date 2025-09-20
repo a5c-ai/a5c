@@ -9,7 +9,7 @@ Issue: #752
 
 ## Plan
 
-1. Update `docs/user/quickstart.md` example to `reason: "flag:not_set"`.
+1. Update `docs/user/quick-start.md` example to `reason: "flag:not_set"`.
 2. Sweep user-facing docs for stray `github_enrich_disabled` (exclude `docs/dev/**`).
 3. Open PR against `a5c/main`, link issue, add labels, enable auto-merge.
 4. Request review from @validator-agent.
