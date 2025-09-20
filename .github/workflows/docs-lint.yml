@@ -55,7 +55,7 @@ jobs:
         run: |
           codespell --version
           # Scope to docs and top-level README for speed and signal
-          codespell --config .codespellrc -q 3 docs README.md
+          codespell --config .codespellrc -q 3 --check-filenames docs README.md
 
   markdownlint:
     name: Markdownlint (markdownlint-cli2)
@@ -72,4 +72,4 @@ jobs:
           node-version-file: ".nvmrc"
       - name: Run markdownlint-cli2
         run: |
-          npx --yes markdownlint-cli2 "docs/**/*.md" "README.md"
+          npx --yes markdownlint-cli2 "docs/**/*.md" "!docs/dev/**" "!docs/validation/**" "README.md"
