@@ -30,3 +30,39 @@ jobs:
           if [ -f package-lock.json ]; then npm ci; else npm install; fi
       - name: Smoke
         run: npm run -s smoke
+
+  pack-smoke:
+    name: Package smoke (npm pack + install)
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Install
+        env:
+          HUSKY: 0
+        run: |
+          if [ -f package-lock.json ]; then npm ci; else npm install; fi
+      - name: Build
+        run: npm run -s build
+      - name: Create tarball (npm pack)
+        run: |
+          npm pack --silent
+          ls -la *.tgz | tee /tmp/packed.txt
+      - name: Install tarball and run CLI --help
+        run: |
+          set -euo pipefail
+          TARBALL=$(ls -1 *.tgz | head -n1)
+          mkdir -p /tmp/pkg-test
+          cd /tmp/pkg-test
+          npm init -y >/dev/null 2>&1
+          npm install "${GITHUB_WORKSPACE}/${TARBALL}" --silent
+          npx events --help >/dev/null
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Package Smoke" >> "$GITHUB_STEP_SUMMARY"
+          echo "Successfully packed, installed and executed CLI --help" >> "$GITHUB_STEP_SUMMARY"

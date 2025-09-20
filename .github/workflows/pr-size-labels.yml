@@ -1,0 +1,25 @@
+name: PR Size Labels
+
+on:
+  pull_request:
+    branches: [a5c/main, main]
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v5
+      - name: Label by size
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          chmod +x scripts/pr-size-labels.sh
+          PR_NUMBER=${{ github.event.pull_request.number }}
+          scripts/pr-size-labels.sh "$PR_NUMBER"
