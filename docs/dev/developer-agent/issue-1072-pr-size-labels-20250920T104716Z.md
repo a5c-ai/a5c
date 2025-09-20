@@ -16,3 +16,11 @@
 
 - Keep workflow name exactly: `PR Size Labels`.
 - Keep permissions minimal: contents: read, pull-requests: write, issues: write.
+
+## Results
+
+- Implemented `.github/workflows/pr-size-labels.yml` using `actions/github-script@v7`
+- Ensures labels exist and applies correct size label based on total changes
+- Triggered on `pull_request` events: opened, reopened, synchronize
+- No checkout; fast runtime target <5s
+- PR opened and linked to issue #1072
