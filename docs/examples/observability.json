@@ -1,0 +1,44 @@
+{
+  "schema_version": "0.1",
+  "repo": "a5c-ai/events",
+  "workflow": "Tests",
+  "job": "Unit Tests",
+  "run": {
+    "id": 0,
+    "attempt": 1,
+    "sha": "0000000",
+    "ref": "refs/heads/a5c/main",
+    "actor": "example",
+    "event_name": "push",
+    "started_at": "2025-01-01T00:00:00Z",
+    "completed_at": "2025-01-01T00:10:00Z",
+    "duration_ms": 600000
+  },
+  "metrics": {
+    "coverage": {
+      "total": {
+        "lines": { "pct": 80, "covered": 800, "total": 1000 },
+        "functions": { "pct": 78, "covered": 78, "total": 100 },
+        "branches": { "pct": 72, "covered": 72, "total": 100 },
+        "statements": { "pct": 79, "covered": 790, "total": 1000 }
+      }
+    },
+    "cache": {
+      "entries": [
+        { "kind": "node_modules", "hit": true, "bytes": 0, "key": "example" }
+      ],
+      "summary": {
+        "hits": 1,
+        "misses": 0,
+        "total": 1,
+        "hit_ratio": 1,
+        "bytes_restored_total": 0
+      }
+    }
+  },
+  "tests": {
+    "totals": { "total": 0, "flaky": 0, "slow_count": 0 },
+    "slowest": [],
+    "flaky": []
+  }
+}

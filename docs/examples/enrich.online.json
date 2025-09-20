@@ -1,0 +1,28 @@
+{
+  "id": "online-sample-1",
+  "provider": "github",
+  "type": "pull_request",
+  "occurred_at": "2025-01-01T00:00:00Z",
+  "repo": {
+    "id": 1055826069,
+    "name": "events",
+    "full_name": "a5c-ai/events",
+    "private": true,
+    "visibility": "private"
+  },
+  "actor": { "id": 2, "login": "example-bot", "type": "Bot" },
+  "ref": { "type": "branch", "base": "main", "head": "feature/example" },
+  "payload": {
+    "pull_request": { "number": 1, "state": "open", "title": "Example" }
+  },
+  "provenance": {
+    "source": "action",
+    "workflow": { "name": "Tests", "run_id": 1 }
+  },
+  "enriched": {
+    "github": {
+      "provider": "github",
+      "partial": false
+    }
+  }
+}
