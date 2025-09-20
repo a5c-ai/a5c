@@ -143,13 +143,13 @@ Example snippet:
 
 ## Coverage Gate Policy
 
-This repository enforces a coverage hard gate on pull requests into `a5c/main`.
+This repository provides a coverage hard gate that is opt-in for pull requests.
 
-- When it applies: PRs with base branch `a5c/main` (default ON).
+- When it applies: only when the repository variable `REQUIRE_COVERAGE` is set to `true` (opt-in). By default, PR Quick Tests do not hard‑fail on coverage to keep checks fast and developer-friendly. Coverage feedback (comment + labels) still appears on PRs.
 - How it’s controlled:
-  - Default: CI auto-enables `REQUIRE_COVERAGE` for `a5c/main` PRs and fails when below thresholds.
-  - Maintainer override: set repository variable `REQUIRE_COVERAGE` to `false` to temporarily disable the gate (for exceptional cases). For non-`a5c/main` PRs, you can opt-in by setting `REQUIRE_COVERAGE` to `true`.
-  - See: `.github/workflows/pr-tests.yml`, `.github/workflows/quick-checks.yml` (the gate step runs when `env.REQUIRE_COVERAGE == 'true'`).
+  - Maintainer opt-in: set repository variable `REQUIRE_COVERAGE` to `true` to enforce thresholds on PRs.
+  - To temporarily relax, unset or set `REQUIRE_COVERAGE` to anything other than `true`.
+  - See: `.github/workflows/pr-tests.yml` (the gate step runs when `env.REQUIRE_COVERAGE == 'true'`).
 - Thresholds source of truth: `scripts/coverage-thresholds.json`.
   - Current values: `lines: 60`, `branches: 55`, `functions: 60`, `statements: 60`.
   - If the file is missing, Vitest falls back to `lines: 60`, `branches: 55`, `functions: 60`, `statements: 60` (see `vitest.config.ts`).
@@ -169,7 +169,7 @@ This repository enforces a coverage hard gate on pull requests into `a5c/main`.
    ```
 
 2. Include a short rationale in the PR description (e.g., significant new surface added, temporary dip, or sustained improvements justifying a raise).
-3. When `REQUIRE_COVERAGE` is `true`, CI will enforce these thresholds (always for `a5c/main` PRs unless overridden as above).
+3. When `REQUIRE_COVERAGE` is `true`, CI will enforce these thresholds on PRs.
 
 ### Local Coverage
 
