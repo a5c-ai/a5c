@@ -249,8 +249,8 @@ Notes:
 
 Optionally post a short failure summary to Slack or Discord when the `Tests` job fails. Keep these opt-in via existing secrets/vars:
 
-- Slack: `SLACK_BOT_TOKEN` (required), `SLACK_APP_TOKEN` (if using Socket Mode)
-- Discord: `DISCORD_TOKEN` (required), `DISCORD_GUILD_ID` (var)
+- Slack: `SLACK_BOT_TOKEN` (required), `SLACK_APP_TOKEN` (if using Socket Mode), `SLACK_CHANNEL_ID` (secret or var)
+- Discord: `DISCORD_TOKEN` (required), `DISCORD_GUILD_ID` (var), `DISCORD_CHANNEL_ID` (secret or var)
 
 Recommended message fields:
 
