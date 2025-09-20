@@ -379,7 +379,7 @@ async function runScripts(lines: string[], ctx?: any): Promise<void> {
         env: finalEnv,
       });
       child.on("close", (code: any) => resolve(code ?? 0));
-      child.on("error", () => reject(new Error("Failed to spawn process")));      
+      child.on("error", () => reject(new Error("Failed to spawn process")));
     });
   }
 }

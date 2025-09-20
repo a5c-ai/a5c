@@ -61,6 +61,7 @@ export const NormalizedEventSchema = z
       "deployment",
       "check_run",
       "alert",
+      "custom",
     ]),
     occurred_at: z.string().datetime(),
     repo: RepoSchema,

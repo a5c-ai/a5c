@@ -38,7 +38,8 @@
         "release",
         "deployment",
         "check_run",
-        "alert"
+        "alert",
+        "custom"
       ],
       "description": "Core normalized type"
     },

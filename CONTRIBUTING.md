@@ -141,6 +141,43 @@ Example snippet:
 
 `typecheck` uses `tsconfig.typecheck.json` and checks `src/**`. Tests are type-checked within the Vitest run. A separate `Typecheck` workflow runs on Node 20 and 22 for compatibility.
 
+## Coverage Gate Policy
+
+This repository enforces a coverage hard gate on pull requests into `a5c/main`.
+
+- When it applies: PRs with base branch `a5c/main` (default ON).
+- How it’s controlled:
+  - Default: CI auto-enables `REQUIRE_COVERAGE` for `a5c/main` PRs and fails when below thresholds.
+  - Maintainer override: set repository variable `REQUIRE_COVERAGE` to `false` to temporarily disable the gate (for exceptional cases). For non-`a5c/main` PRs, you can opt-in by setting `REQUIRE_COVERAGE` to `true`.
+  - See: `.github/workflows/pr-tests.yml`, `.github/workflows/quick-checks.yml` (the gate step runs when `env.REQUIRE_COVERAGE == 'true'`).
+- Thresholds source of truth: `scripts/coverage-thresholds.json`.
+  - Current values: `lines: 60`, `branches: 55`, `functions: 60`, `statements: 60`.
+  - If the file is missing, Vitest falls back to `lines: 60`, `branches: 55`, `functions: 60`, `statements: 60` (see `vitest.config.ts`).
+  - Vitest also honors `REQUIRE_COVERAGE=true` to apply thresholds within the test run.
+
+### Adjusting Thresholds
+
+1. Edit `scripts/coverage-thresholds.json` in a PR (example):
+
+   ```json
+   {
+     "lines": 60,
+     "branches": 55,
+     "functions": 60,
+     "statements": 60
+   }
+   ```
+
+2. Include a short rationale in the PR description (e.g., significant new surface added, temporary dip, or sustained improvements justifying a raise).
+3. When `REQUIRE_COVERAGE` is `true`, CI will enforce these thresholds (always for `a5c/main` PRs unless overridden as above).
+
+### Local Coverage
+
+- Run tests with coverage locally: `npm test` (Vitest produces `coverage/` and a `coverage-summary.json`).
+- CI publishes a coverage summary and, when gated, fails if below thresholds. For details, check the coverage gate steps in the workflows above.
+
+References: `vitest.config.ts`, `scripts/coverage-thresholds.json`.
+
 ## Getting Started
 
 1. Node: `nvm use` (repo includes `.nvmrc` → Node 20.x LTS)
@@ -157,3 +194,41 @@ We target Node 20.x LTS across CI and local development.
 - The repository includes an `.nvmrc` pinning Node `20` for local parity.
 - If you use `nvm`, run `nvm use` in the project root to select the correct version.
 - `package.json` declares `"engines": { "node": ">=20" }`; while Node 22 may work, CI validates and ships with Node 20.
+
+## Line Endings and .gitattributes
+
+This repository enforces LF (Unix-style) line endings via a root `.gitattributes`:
+
+- All text files normalize to LF: `* text=auto eol=lf`
+- Lockfiles (`package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`) are explicitly LF
+- Shell scripts (`*.sh`) are LF
+- Common binary formats (e.g., PNG/JPG/WEBP) are marked `binary`
+
+Why: consistent line endings prevent noisy diffs and merge conflicts across macOS, Linux, and Windows.
+
+### Windows guidance
+
+- Git will respect `.gitattributes` and keep LF endings in your working tree.
+- Recommended Git config for Windows contributors:
+
+```
+# Keep LF in the working tree and repository
+git config --global core.autocrlf false
+# Optional: make LF explicit
+git config --global core.eol lf
+```
+
+Most editors (VS Code, JetBrains, Notepad++, etc.) handle LF on Windows.
+
+- VS Code: set `"files.eol": "\n"` and ensure the status bar shows `LF`.
+
+If you ever need to re-normalize line endings locally after changing Git settings:
+
+```
+git rm --cached -r .
+git reset --hard
+# or, minimally normalize staged files
+# git add --renormalize .
+```
+
+Do not commit generated artifacts under `coverage/**` or `dist/**`.

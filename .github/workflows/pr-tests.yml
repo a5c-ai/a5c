@@ -26,6 +26,11 @@ jobs:
     env:
       # Optional: enable Codecov uploads when token is set (secret or variable)
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN || vars.CODECOV_TOKEN || '' }}
+      # Enable hard coverage gate by default for PRs targeting a5c/main,
+      # while allowing maintainers to temporarily disable via repo variable
+      # by setting REQUIRE_COVERAGE to 'false'. For other PRs, respect the
+      # repo variable as-is (opt-in).
+      REQUIRE_COVERAGE: ${{ (github.event_name == 'pull_request' && github.base_ref == 'a5c/main' && vars.REQUIRE_COVERAGE != 'false') && 'true' || (vars.REQUIRE_COVERAGE || '') }}
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -143,7 +148,7 @@ jobs:
             gh pr comment "$PR_NUMBER" --repo "$REPO_FULL" -F /tmp/pr-comment.md >/dev/null
           fi
       - name: "Coverage gate (optional, REQUIRE_COVERAGE)"
-        if: ${{ vars.REQUIRE_COVERAGE == 'true' }}
+        if: ${{ env.REQUIRE_COVERAGE == 'true' }}
         shell: bash
         run: |
           set -euo pipefail

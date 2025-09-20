@@ -83,6 +83,16 @@ if ! git diff --cached --check; then
   exit 1
 fi
 
+# Guard against focused/skipped tests in staged changes (best-effort)
+if [ -x scripts/lint-tests-focused.sh ] || [ -f scripts/lint-tests-focused.sh ]; then
+  echo "[precommit] Guarding against focused/skipped tests"
+  # Pass only staged files to the script; it will self-filter to tests/
+  # shellcheck disable=SC2086
+  bash scripts/lint-tests-focused.sh $STAGED
+else
+  echo "[precommit] lint-tests-focused.sh not present; skipping focused/skipped test guard"
+fi
+
 if command -v npx >/dev/null 2>&1 && [[ -f package.json ]]; then
   echo "[precommit] Running lint-staged on staged files"
   if ! npx --yes lint-staged; then
@@ -92,6 +102,24 @@ if command -v npx >/dev/null 2>&1 && [[ -f package.json ]]; then
   fi
 else
   echo "[precommit] npx or package.json not found; skipping lint-staged"
+fi
+
+# Optional local secret scan with Gitleaks (opt-in)
+# Enable by setting A5C_PRECOMMIT_GITLEAKS=1 or PRECOMMIT_GITLEAKS=1
+if [[ "${A5C_PRECOMMIT_GITLEAKS:-0}" == "1" || "${PRECOMMIT_GITLEAKS:-0}" == "1" ]]; then
+  if command -v gitleaks >/dev/null 2>&1; then
+    echo "[precommit] Running Gitleaks on staged changes (opt-in)"
+    # Use verbose output; rely on default repo config if present
+    if ! gitleaks protect --staged -v; then
+      echo -e "\n\033[31m[precommit] Gitleaks detected potential secrets in staged changes.\033[0m"
+      echo "Review the findings and commit again."
+      echo "- To bypass temporarily: unset A5C_PRECOMMIT_GITLEAKS/PRECOMMIT_GITLEAKS or commit with A5C_SKIP_PRECOMMIT=1"
+      echo "- For allowlisting guidance, see docs/dev/precommit-hooks.md"
+      exit 1
+    fi
+  else
+    echo "[precommit] Gitleaks enabled but 'gitleaks' binary not found; skipping (install to enable)."
+  fi
 fi
 
 echo "[precommit] All checks passed"

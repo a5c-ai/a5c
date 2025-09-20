@@ -26,6 +26,10 @@ jobs:
       # Pin editorconfig-checker with override via repo Variable
       # Default 5.1.9 (supports -format github-actions); script detects support dynamically
       EDITORCONFIG_CHECKER_VERSION: ${{ vars.EDITORCONFIG_CHECKER_VERSION || '5.1.9' }}
+      # Enable hard coverage gate by default for PRs targeting a5c/main,
+      # with maintainer override via repo variable (set REQUIRE_COVERAGE='false').
+      # For other PRs, respect repo variable as-is (opt-in).
+      REQUIRE_COVERAGE: ${{ (github.event_name == 'pull_request' && github.base_ref == 'a5c/main' && vars.REQUIRE_COVERAGE != 'false') && 'true' || (vars.REQUIRE_COVERAGE || '') }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v4
@@ -51,6 +55,8 @@ jobs:
         run: bash scripts/lint-obs-paths.sh
       - name: Typecheck (tsc --noEmit)
         run: npm run -s typecheck
+      - name: Guard focused/skipped tests (.only/.skip)
+        run: bash scripts/lint-tests-focused.sh
       - name: Unit tests (vitest)
         run: npm run -s test:ci
       - name: Validate offline stub example (NE schema)
@@ -137,7 +143,7 @@ jobs:
           fail_ci_if_error: false
           verbose: true
       - name: "Coverage gate (optional, REQUIRE_COVERAGE)"
-        if: ${{ vars.REQUIRE_COVERAGE == 'true' }}
+        if: ${{ env.REQUIRE_COVERAGE == 'true' }}
         shell: bash
         run: |
           set -euo pipefail
