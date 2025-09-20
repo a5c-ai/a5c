@@ -1,0 +1,18 @@
+{
+  "schema_version": "0.1",
+  "repo": "a5c-ai/events",
+  "workflow": "Tests",
+  "job": "Unit Tests",
+  "run": {
+    "id": 17880547343,
+    "attempt": 1,
+    "sha": "f19a0b86be7ffef8e39130a9ce4f7f500fe59ccd",
+    "ref": "refs/heads/a5c/main",
+    "actor": "tmuskal",
+    "event_name": "push",
+    "started_at": "2025-09-20T13:36:05Z",
+    "completed_at": "2025-09-20T13:38:19Z",
+    "duration_ms": 134000,
+    "conclusion": "failure"
+  }
+}

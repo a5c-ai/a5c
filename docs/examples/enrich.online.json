@@ -1,0 +1,34 @@
+{
+  "id": "sample-online-1",
+  "provider": "github",
+  "type": "workflow_run",
+  "occurred_at": "2025-01-01T00:00:00Z",
+  "repo": {
+    "id": 1055826069,
+    "name": "events",
+    "full_name": "a5c-ai/events",
+    "private": true,
+    "visibility": "private"
+  },
+  "actor": {
+    "id": 1934369,
+    "login": "tmuskal",
+    "type": "User"
+  },
+  "payload": {
+    "note": "online enrichment example payload"
+  },
+  "provenance": {
+    "source": "action",
+    "workflow": { "name": "Tests", "run_id": 17880547343 }
+  },
+  "enriched": {
+    "github": {
+      "provider": "github",
+      "pull_request": {
+        "number": 123,
+        "title": "Sample PR"
+      }
+    }
+  }
+}
