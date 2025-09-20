@@ -104,6 +104,7 @@ on:
         Release,
         Auto Merge,
         CodeQL,
+        PR Size Labels,
       ]
 
   # Manual Triggers
