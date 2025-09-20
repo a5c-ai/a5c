@@ -1,16 +1,23 @@
-name: Reactor
+name: a5c-reactor
 env:
   A5C_LOG_LEVEL: ${{ github.event.inputs.debug || 'false' && 'debug' || 'info' }}
 on:
-  push:
+  # push:
   pull_request:
-    types: [opened, reopened, ready_for_review]
-  issue_comment:
+    types: [opened, reopened, ready_for_review, labeled, synchronize]
+  # issue_comment:
+  #   types: [created,edited]
   issues:
-  workflow_dispatch:
+    types: [opened, labeled]
+  # workflow_run:
+  #   types: [completed]
+  #   workflows: [abc]
+  #   branches: [a5c/main,main]
+  # workflow_dispatch:
+  # workflow_run:
   repository_dispatch:
-  check_run:
-  check_suite:
+  # check_run:
+  # check_suite:
 permissions:
   contents: write
   packages: read

@@ -1333,7 +1333,7 @@ async function materializeAgentRun(
       baseEnv.A5C_AGENT_SCRIPT_URI ||
       process.env.A5C_AGENT_SCRIPT_URI ||
       vars.A5C_AGENT_SCRIPT_URI ||
-      "github://a5c-ai/events/branch/a5c%2Fmain/.a5c/agent.sh";
+      "github://a5c-ai/events/branch/a5c%2Fmain/.a5c/scripts/agent.sh";
     const envOut = {
       ...process.env,
       ...baseEnv,

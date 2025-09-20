@@ -35,10 +35,10 @@ on:
       # validation label was added
       - expression: ${{ event.type == 'labeled' && event.label.name == 'validation' }}
     skip:
+      # validation enabled in this repo on the a5c/main / .a5c/config.yml
+      - expression: ${{ read_github_content(event.repository.html_url, "a5c/main", '.a5c/config.yml') | load_yaml | select('triggers.validation.enabled') != 'true' }}
       # is a draft PR or already merged
       - expression: ${{ event.pull_request.draft == true || event.pull_request.merged == true }}
-      # doesn't have the 'validation' label
-      - expression: ${{ (event.type != 'labeled' && event.pull_request.labels | map(attribute='name') | contains('validation') == false) || (event.type == 'labeled' && event.label.name != 'validation') }}
       # if validation in progress or already requested
       - expression: ${{ event.pull_request.labels | map(attribute='name') | contains('validation_in_progress') || event.pull_request.labels | map(attribute='name') | contains('validation_requested') }}
 emit:

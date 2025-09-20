@@ -1,0 +1,72 @@
+name: "a5c Runner"
+description: "Run AI agents using gitops principles"
+author: "a5c.ai"
+branding:
+  icon: "cpu"
+  color: "blue"
+
+inputs:
+  # GitHub Authentication
+  github_token:
+    description: "GitHub token for API operations"
+    required: false
+    default: "${{ github.token }}"
+  runner-name:
+    description: "Runner name"
+    required: true
+  events:
+    description: "Events path"
+    required: false
+    default: ".a5c/events/"
+
+outputs:
+  # Execution Results
+  success:
+    description: "Whether all agent executions were successful"
+    value: ${{ steps.a5c-agent.outputs.success }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: "20"
+    # - name: Authenticate with gh cli
+    #   run: echo ${{ inputs.github_token }} | GH_TOKEN= GITHUB_TOKEN= gh auth login --with-token
+    #   shell: bash
+    #   working-directory: ${{ github.action_path }}
+    - name: Install events
+      run: npm install -g @a5c-ai/events
+      shell: bash
+    - name: a5c events reactor
+      id: a5c-events-reactor
+      run: |
+        set -euo pipefail
+        A5C_PKG_SPEC="@a5c-ai/events"
+        A5C_CMD="events"
+        echo "A5C_PKG_SPEC=$A5C_PKG_SPEC" >> "$GITHUB_ENV"
+        echo "A5C_CMD=$A5C_CMD" >> "$GITHUB_ENV"
+        $A5C_CMD enrich \
+          --in "$GITHUB_EVENT_PATH" \
+          --out /tmp/out.enrich.json \
+          --use-github
+        INPUT_EVENTS=${{ inputs.events }}
+        # construct the full github uri:
+        ENCODED_BRANCH=$(echo ${{ github.ref }} | sed 's/\//%2F/g')
+        REPOSITORY_PATH=${{ github.repository.owner }}/${{ github.repository.name }}
+        INPUT_EVENTS_GITHUB_URI="github://$REPOSITORY_PATH/branch/$ENCODED_BRANCH/$INPUT_EVENTS"
+        $A5C_CMD reactor \
+          --in /tmp/out.enrich.json \
+          --file $INPUT_EVENTS_GITHUB_URI \
+          --out /tmp/out.reactor.json \
+          --metadata-match runner-name=${{ inputs.runner-name }}
+        # emit/run the events using the CLI
+        $A5C_CMD emit \
+          --in /tmp/out.reactor.json \
+          --sink github
+      shell: bash
+      # working-directory: ${{ github.action_path }}
+      env:
+        DISABLE_AUTOUPDATER: 1
+        CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: 1
