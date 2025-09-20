@@ -72,6 +72,29 @@ on:
   #   branches: [a5c/main,main]
   # workflow_dispatch:
   # workflow_run:
+  schedule:
+    # weekly, Mondays at 09:00 UTC
+    - cron: "0 9 * * 1"
+    # daily, at 09:00 UTC
+    - cron: "0 9 * * *"
+    # twice a day at 09:00 and 21:00 UTC
+    - cron: "0 9,21 * * *"
+    # 4 times a day at 09:00, 13:00, 17:00, and 21:00 UTC
+    - cron: "0 9,13,17,21 * * *"
+    # every 2 hours
+    - cron: "0 */2 * * *"
+    # every 4 hours
+    - cron: "0 */4 * * *"
+    # every 6 hours
+    - cron: "0 */6 * * *"
+    # every 8 hours
+    - cron: "0 */8 * * *"
+    # every 12 hours
+    - cron: "0 */12 * * *"
+    # hourly, at 09:00 UTC
+    - cron: "0 9 * * *"
+    # every 30 minutes
+    - cron: "*/30 * * * *"
   repository_dispatch:
   # check_run:
   # check_suite:
