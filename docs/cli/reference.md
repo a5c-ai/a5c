@@ -732,6 +732,79 @@ export GITHUB_TOKEN=...
 events emit --in out.reactor.json --sink github
 ```
 
+GitHub sink — same-repo vs cross-repo
+
+When using `--sink github`, the command calls `repos.createDispatchEvent` (repository_dispatch). Auth and repository resolution determine whether dispatch succeeds.
+
+- Tokens
+  - Same-repo: use `GITHUB_TOKEN` (default) or `A5C_AGENT_GITHUB_TOKEN`. The default permissions in Actions are sufficient for dispatch; `permissions: contents: read` is enough for this command’s call path.
+  - Cross-repo: use a Personal Access Token (classic) with `repo` scope, stored as a secret. Prefer exposing it to the job as `A5C_AGENT_GITHUB_TOKEN` to avoid clobbering the runner `GITHUB_TOKEN`.
+
+- Repository resolution (how the target owner/repo is chosen)
+  - Preferred: `client_payload.repository.full_name: "owner/repo"` or `client_payload.repo_full_name`.
+  - Also accepted: any of these URLs anywhere in the payload (direct or under `payload`/`original_event`): `repository.html_url`, `pull_request.html_url`, `issue.html_url`.
+  - Label side-effects can also hint the repo via `set_labels[].entity` like `https://github.com/owner/repo/issues/123`.
+  - If no owner/repo can be resolved, the event is skipped with a stderr note and the command proceeds with the next event.
+
+- Environment
+  - `A5C_AGENT_GITHUB_TOKEN` (preferred) or `GITHUB_TOKEN` must be present in the environment to dispatch or to apply label/status side-effects.
+  - In GitHub Actions, `GITHUB_REPOSITORY` reflects the current repository ("owner/repo"). While `events emit` does not read `GITHUB_REPOSITORY` directly, most same-repo flows include URLs/fields in the input payload that point back to the current repo, which `resolveOwnerRepo` extracts.
+
+- Common errors and messages
+  - Missing token: `[emit] error: github sink requires GITHUB_TOKEN` → exit code 1.
+  - Unresolvable repo: `github sink: unable to resolve owner/repo ...; skipping dispatch` → event skipped; command continues.
+  - Permission/auth failures (401/403), or network errors: surfaced as `[emit] error: ...` → exit code 1.
+
+Examples (GitHub Actions)
+
+Same-repo dispatch using the default token:
+
+```yaml
+jobs:
+  emit:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: npm ci
+      - name: Dispatch events to this repo
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          events emit --in out.reactor.json --sink github || echo "no events to dispatch"
+```
+
+Cross-repo dispatch using a PAT with `repo` scope:
+
+```yaml
+jobs:
+  emit-cross-repo:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: npm ci
+      - name: Dispatch events to another repo
+        env:
+          # PAT (classic) with `repo` scope, stored as a secret
+          A5C_AGENT_GITHUB_TOKEN: ${{ secrets.CROSS_REPO_PAT }}
+        run: |
+          # Ensure each event includes a resolvable target repo, e.g.:
+          # { "event_type": "my_event", "client_payload": { "repository": { "full_name": "owner/target-repo" }, ... } }
+          events emit --in out.reactor.json --sink github
+```
+
+Notes:
+
+- Include `client_payload.repository.full_name` (or `repo_full_name`) for cross-repo dispatch to unambiguously target the desired repository.
+- The command dispatches each item in `{ events: [...] }` collections independently; one failing dispatch will cause exit code 1.
+
 Exit codes:
 
 - `0`: success
