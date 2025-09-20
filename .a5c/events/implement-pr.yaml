@@ -24,9 +24,6 @@ set_labels:
   - entity: ${{ event.pull_request.html_url }}
     add_labels: [implement_pr_requested]
     remove_labels: [implemented]
-script:
-  - |
-    echo "Implement PR request for PR ${{ event.pull_request.html_url }} added label implement_pr"
 ---
 name: Implement PR Agent Run
 metadata:

@@ -22,9 +22,6 @@ set_labels:
   - entity: ${{ event.issue.html_url }}
     add_labels: [triage_requested]
     remove_labels: [triaged]
-script:
-  - |
-    echo "Triage request for issue ${{ event.issue.html_url }} added label triage"
 ---
 name: Triage Agent Run
 metadata:

@@ -371,7 +371,6 @@ async function runScripts(lines: string[], ctx?: any): Promise<void> {
       cmd = expandInlineTemplates(cmd, fullCtx);
     } catch {}
     const finalEnv = { ...process.env, ...((ctx as any)?.env || {}) };
-    // debug log
     await new Promise<void>((resolve, reject) => {
       const child = spawn(cmd, {
         shell: true,
