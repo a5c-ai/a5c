@@ -33,3 +33,43 @@ jobs:
         run: chmod +x scripts/docs-lint.sh
       - name: Run docs lint
         run: ./scripts/docs-lint.sh
+
+  codespell:
+    name: Docs Spellcheck (codespell)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Install codespell
+        run: |
+          python -m pip install --upgrade pip
+          pip install --disable-pip-version-check --no-color --no-python-version-warning codespell
+      - name: Run codespell
+        run: |
+          codespell --version
+          # Scope to docs and top-level README for speed and signal
+          codespell --config .codespellrc -q 3 --check-filenames docs README.md
+
+  markdownlint:
+    name: Markdownlint (markdownlint-cli2)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+      - name: Run markdownlint-cli2
+        run: |
+          npx --yes markdownlint-cli2 "docs/**/*.md" "!docs/dev/**" "!docs/validation/**" "README.md"
