@@ -28,14 +28,12 @@ XS_MAX=${XS_MAX:-9}
 S_MAX=${S_MAX:-49}
 M_MAX=${M_MAX:-199}
 L_MAX=${L_MAX:-499}
-XL_MAX=${XL_MAX:-999}
 
-label="size:XXL"
+label="size:XL" # default to XL for >= 500
 if (( changed <= XS_MAX )); then label="size:XS";
 elif (( changed <= S_MAX )); then label="size:S";
 elif (( changed <= M_MAX )); then label="size:M";
 elif (( changed <= L_MAX )); then label="size:L";
-elif (( changed <= XL_MAX )); then label="size:XL";
 fi
 
 # Ensure labels exist (idempotent)
@@ -45,7 +43,6 @@ declare -A COLORS=(
   ["size:M"]="fbca04"
   ["size:L"]="f66a0a"
   ["size:XL"]="e11d21"
-  ["size:XXL"]="b60205"
 )
 
 for L in "${!COLORS[@]}"; do
