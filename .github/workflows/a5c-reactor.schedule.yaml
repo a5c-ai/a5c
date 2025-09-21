@@ -1,0 +1,45 @@
+name: a5c-reactor
+on:
+  schedule:
+    # weekly, Mondays at 09:00 UTC
+    - cron: "0 9 * * 1"
+    # daily, at 09:00 UTC
+    - cron: "0 9 * * *"
+    # twice a day at 09:00 and 21:00 UTC
+    - cron: "0 9,21 * * *"
+    # 4 times a day at 09:00, 13:00, 17:00, and 21:00 UTC
+    - cron: "0 9,13,17,21 * * *"
+    # every 2 hours
+    - cron: "0 */2 * * *"
+    # every 4 hours
+    - cron: "0 */4 * * *"
+    # every 6 hours
+    - cron: "0 */6 * * *"
+    # every 8 hours
+    - cron: "0 */8 * * *"
+    # every 12 hours
+    - cron: "0 */12 * * *"
+    # hourly, at 09:00 UTC
+    - cron: "0 9 * * *"
+    # every 30 minutes
+    - cron: "*/30 * * * *"
+env:
+  RUNNER_NAME: reactor
+
+permissions:
+  contents: write
+  packages: read
+  id-token: write
+  actions: write
+  statuses: write
+  checks: write
+  repository-projects: write
+  pull-requests: write
+jobs:
+  reactor:
+    uses: ./.github/workflows/a5c-base.yml
+    secrets: inherit
+    with:
+      runner_name: reactor
+      runs_on: ubuntu-latest
+      events_path: .a5c/events/
