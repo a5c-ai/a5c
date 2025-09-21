@@ -49,9 +49,6 @@ if [ "$GIT_SETUP" = "true" ]; then
   fi
   git config user.name "$GITHUB_USERNAME"
   git config user.email "$GITHUB_EMAIL"
-  echo "Git setup completed"
-else
-  echo "Git setup disabled"
 fi
 # agent pre-run hook (./a5c/hooks/pre-agent-run.sh)
 if [ -f ".a5c/hooks/pre-agent-run.sh" ]; then
@@ -73,8 +70,6 @@ if [ "$CLOUD_SETUP" = "true" ]; then
       --password "$AZURE_APPLICATION_CLIENT_SECRET" \
       --tenant "$AZURE_TENANT_ID"
     echo "Azure CLI authentication successful"
-  else
-    echo "Azure credentials not found (AZURE_APPLICATION_CLIENT_ID, AZURE_APPLICATION_CLIENT_SECRET, AZURE_TENANT_ID)"
   fi
   # Check for AWS credentials
   if [[ -n "$AWS_ACCESS_KEY_ID" && -n "$AWS_SECRET_ACCESS_KEY" ]]; then
@@ -95,8 +90,6 @@ if [ "$CLOUD_SETUP" = "true" ]; then
     echo "Testing AWS CLI authentication..."
     aws sts get-caller-identity
     echo "AWS CLI authentication successful"
-  else
-    echo "AWS credentials not found (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)"
   fi
   # Check for Google Cloud credentials
   if [[ -n "$GOOGLE_APPLICATION_CREDENTIALS" || -n "$GCP_SA_KEY" ]]; then
@@ -119,13 +112,8 @@ if [ "$CLOUD_SETUP" = "true" ]; then
     echo "Testing Google Cloud CLI authentication..."
     gcloud auth list
     echo "Google Cloud CLI authentication successful"
-  else
-    echo "Google Cloud credentials not found (GOOGLE_APPLICATION_CREDENTIALS or GCP_SA_KEY)"
   fi
 
-  echo "Cloud CLI setup completed"
-else
-  echo "Cloud CLI setup disabled"
 fi
 npx -y "$A5C_PKG_SPEC" generate_context \
     --in "$A5C_EVENT_PATH" \
@@ -141,6 +129,4 @@ if [ -f ".a5c/hooks/post-agent-run.sh" ]; then
   echo "Running agent post-run hook..."
   . .a5c/hooks/post-agent-run.sh
   echo "Agent post-run hook completed"
-else
-  echo "Agent post-run hook disabled"
 fi
