@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { minimatch } from "minimatch";
 import { readJSONFile } from "./config.js";
+import { stringify as yamlStringify } from "yaml";
 
 export interface GenerateContextOptions {
   in?: string;
@@ -133,6 +134,48 @@ async function renderString(
     },
   );
 
+  // Printers: single-tag {{#printYAML expr}} and {{#printJSON expr}}
+  const printYamlRe = /\{\{#printYAML\s+([^}]+)\}\}/g;
+  out = await replaceAsync(out, printYamlRe, async (_m, expr: string) => {
+    try {
+      const val = evalExpr(expr, ctx, currentUri);
+      const resolved = isThenable(val) ? await val : val;
+      return printYAML(resolved);
+    } catch {
+      return "";
+    }
+  });
+  const printJsonRe = /\{\{#printJSON\s+([^}]+)\}\}/g;
+  out = await replaceAsync(out, printJsonRe, async (_m, expr: string) => {
+    try {
+      const val = evalExpr(expr, ctx, currentUri);
+      const resolved = isThenable(val) ? await val : val;
+      return printJSON(resolved);
+    } catch {
+      return "";
+    }
+  });
+  const printXmlRe = /\{\{#printXML\s+([^}]+)\}\}/g;
+  out = await replaceAsync(out, printXmlRe, async (_m, expr: string) => {
+    try {
+      const val = evalExpr(expr, ctx, currentUri);
+      const resolved = isThenable(val) ? await val : val;
+      return printXML(resolved);
+    } catch {
+      return "";
+    }
+  });
+  const printRe = /\{\{#print\s+([^}]+)\}\}/g;
+  out = await replaceAsync(out, printRe, async (_m, expr: string) => {
+    try {
+      const val = evalExpr(expr, ctx, currentUri);
+      const resolved = isThenable(val) ? await val : val;
+      return resolved == null ? "" : String(resolved);
+    } catch {
+      return "";
+    }
+  });
+
   // Sections: {{#if expr}}...{{/if}}
   out = await replaceSections(
     out,
@@ -159,9 +202,14 @@ async function renderString(
 
   // Variables: {{ expr }}
   const varRe = /\{\{\s*([^}]+)\s*\}\}/g;
-  out = out.replace(varRe, (_m, expr: string) => {
-    const val = evalExpr(expr, ctx, currentUri);
-    return val == null ? "" : String(val);
+  out = await replaceAsync(out, varRe, async (_m, expr: string) => {
+    try {
+      const val = evalExpr(expr, ctx, currentUri);
+      const resolved = isThenable(val) ? await val : val;
+      return resolved == null ? "" : String(resolved);
+    } catch {
+      return "";
+    }
   });
   return out;
 }
@@ -577,6 +625,13 @@ function evalExpr(expr: string, ctx: Context, currentUri: string): any {
     "env",
     "vars",
     "include",
+    "printJSON",
+    "printYAML",
+    "printXML",
+    "toJSON",
+    "toYAML",
+    "toXML",
+    "select",
     "thisArg",
     // Evaluate inside a function so `this` can point to current item
     "return (function(){ 'use strict'; return (" +
@@ -588,14 +643,30 @@ function evalExpr(expr: string, ctx: Context, currentUri: string): any {
     ctx.vars && Object.prototype.hasOwnProperty.call(ctx.vars, "this")
       ? ctx.vars.this
       : undefined;
-  return fn(ctx.event, ctx.event, ctx.env, ctx.vars, include, thisArg);
+  return fn(
+    ctx.event,
+    ctx.event,
+    ctx.env,
+    ctx.vars,
+    include,
+    printJSON,
+    printYAML,
+    printXML,
+    toJSON,
+    toYAML,
+    toXML,
+    select,
+    thisArg,
+  );
 }
 
 function preprocess(expr: string): string {
+  // Support pipeline syntax: a | fn(b, c) | g() => g(fn((a), b, c))
+  const piped = transformPipes(expr);
   // Map leading `this` to explicit `thisArg` to avoid relying on JS `this` binding.
   // Handles: `this`, `this.something`, `this["key"]` with possible leading spaces.
   // Intentionally minimal to cover template use-cases; avoids altering strings.
-  const replaced = expr.replace(/^\s*this(?=(?:\s*$|[\.\[]))/, (m) =>
+  const replaced = piped.replace(/^\s*this(?=(?:\s*$|[\.\[]))/, (m) =>
     m.replace(/this$/, "thisArg"),
   );
   return replaced;
@@ -631,4 +702,164 @@ function expandCurlyExpressionsForUri(
   } catch {
     return String(uriTpl);
   }
+}
+
+// Helpers
+function isThenable(v: any): v is Promise<any> {
+  return !!v && typeof v === "object" && typeof (v as any).then === "function";
+}
+
+function printJSON(value: any): string {
+  try {
+    return JSON.stringify(value, null, 2);
+  } catch {
+    return "";
+  }
+}
+
+function printYAML(value: any): string {
+  try {
+    return yamlStringify(value);
+  } catch {
+    return "";
+  }
+}
+
+function toJSON(value: any, indent?: number): string {
+  try {
+    return JSON.stringify(value, null, typeof indent === "number" ? indent : 2);
+  } catch {
+    return "";
+  }
+}
+
+function toYAML(value: any): string {
+  try {
+    return yamlStringify(value);
+  } catch {
+    return "";
+  }
+}
+
+function xmlEscape(s: string): string {
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+}
+
+function valueToXML(key: string, value: any): string {
+  const tag = key || "item";
+  if (value == null) return `<${tag}/>\n`;
+  if (Array.isArray(value)) {
+    return value.map((v) => valueToXML(tag, v)).join("");
+  }
+  if (typeof value === "object") {
+    const inner = Object.entries(value)
+      .map(([k, v]) => valueToXML(k, v))
+      .join("");
+    return `<${tag}>\n${inner}</${tag}>\n`;
+  }
+  return `<${tag}>${xmlEscape(String(value))}</${tag}>\n`;
+}
+
+function toXML(value: any, rootName?: string): string {
+  const root = rootName || "root";
+  return valueToXML(root, value);
+}
+
+function printXML(value: any): string {
+  try {
+    return toXML(value);
+  } catch {
+    return "";
+  }
+}
+
+function select<T, R = any>(value: T, selector?: any): R {
+  try {
+    if (typeof selector === "function") return selector(value);
+    if (typeof selector === "string") {
+      return getByPath(value as any, selector);
+    }
+    return value as unknown as R;
+  } catch {
+    return undefined as unknown as R;
+  }
+}
+
+function getByPath(obj: any, pathStr: string): any {
+  const parts = String(pathStr)
+    .replace(/\[(\d+)\]/g, ".$1")
+    .split(".")
+    .filter(Boolean);
+  let cur = obj;
+  for (const p of parts) {
+    if (cur == null) return undefined;
+    cur = cur[p];
+  }
+  return cur;
+}
+
+function transformPipes(expr: string): string {
+  // Split by '|' that are not inside strings/parens and not part of '||' or '|='
+  const tokens: string[] = [];
+  let buf = "";
+  let depth = 0;
+  let quote: string | null = null;
+  for (let i = 0; i < expr.length; i++) {
+    const ch = expr[i];
+    const prev = i > 0 ? expr[i - 1] : "";
+    const next = i + 1 < expr.length ? expr[i + 1] : "";
+    if (quote) {
+      buf += ch;
+      if (ch === quote && prev !== "\\") quote = null;
+      continue;
+    }
+    if (ch === '"' || ch === "'" || ch === "`") {
+      quote = ch;
+      buf += ch;
+      continue;
+    }
+    if (ch === "(") {
+      depth++;
+      buf += ch;
+      continue;
+    }
+    if (ch === ")") {
+      depth = Math.max(0, depth - 1);
+      buf += ch;
+      continue;
+    }
+    if (
+      ch === "|" &&
+      depth === 0 &&
+      prev !== "|" &&
+      next !== "|" &&
+      next !== "="
+    ) {
+      tokens.push(buf.trim());
+      buf = "";
+      continue;
+    }
+    buf += ch;
+  }
+  if (buf.trim()) tokens.push(buf.trim());
+  if (tokens.length <= 1) return expr;
+  let acc = `(${tokens[0]})`;
+  for (let i = 1; i < tokens.length; i++) {
+    const seg = tokens[i];
+    const m = /^([a-zA-Z_$][\w$]*)\s*(?:\((.*)\))?$/.exec(seg);
+    if (m) {
+      const name = m[1];
+      const args = (m[2] || "").trim();
+      acc = args ? `${name}(${acc}, ${args})` : `${name}(${acc})`;
+    } else {
+      // If not a simple identifier or call, leave as-is by concatenation
+      acc = `${seg}(${acc})`;
+    }
+  }
+  return acc;
 }
