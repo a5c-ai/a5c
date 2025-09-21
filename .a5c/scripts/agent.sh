@@ -122,7 +122,7 @@ npx -y "$A5C_PKG_SPEC" run \
     --in /tmp/prompt.md \
     --out /tmp/last_message.txt \
     --profile "$A5C_CLI_PROFILE" \
-    --mcps "$A5C_MCPS_PATH" | npx -y "$A5C_PKG_SPEC" parse \
+    --mcps "$A5C_MCPS_PATH" | tee /tmp/full_output.txt | npx -y "$A5C_PKG_SPEC" parse \
     --type codex --out /tmp/parsed-codex.jsonl --pretty
 # agent post-run hook (./a5c/hooks/post-agent-run.sh)
 if [ -f ".a5c/hooks/post-agent-run.sh" ]; then
