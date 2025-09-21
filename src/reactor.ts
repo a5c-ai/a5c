@@ -718,9 +718,18 @@ const KNOWN_GH_EVENTS = new Set([
   "push",
   "pull_request",
   "issues",
+  "issue",
   "issue_comment",
   "workflow_run",
   "repository_dispatch",
+  "schedule",
+  "workflow_dispatch",
+  "check_run",
+  "check_suite",
+  "deployment",
+  "deployment_status",
+  "fork",
+  "gollum",
 ]);
 
 function buildClientPayload(
