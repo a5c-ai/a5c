@@ -372,7 +372,7 @@ async function runScripts(lines: string[], ctx?: any): Promise<void> {
     const finalEnv = { ...process.env, ...((ctx as any)?.env || {}) };
     await new Promise<void>((resolve, reject) => {
       const child = spawn(cmd, {
-        shell: true,
+        shell: "/bin/bash",
         stdio: "inherit",
         env: finalEnv,
       });
