@@ -1,9 +1,8 @@
-#!/bin/sh
-set -eu
+set -e
 GITHUB_REF=${GITHUB_REF:-main}
 GITHUB_USERNAME=${GITHUB_USERNAME:-github-actions[bot]}
 GITHUB_EMAIL=${GITHUB_EMAIL:-github-actions[bot]@users.noreply.github.com}
-CLOUD_SETUP=${CLOUD_SETUP:-true}
+CLOUD_SETUP=${A5C_CLOUD_SETUP:-false}
 GIT_SETUP=${GIT_SETUP:-true}
 if [ "$GIT_SETUP" = "true" ]; then
   if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
