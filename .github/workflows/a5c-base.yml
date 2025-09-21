@@ -21,6 +21,7 @@ jobs:
   run-reactor:
     runs-on: ${{ inputs.runs_on }}
     env:
+      A5C_CLI_PROFILE: ${{ vars.A5C_CLI_PROFILE || 'azure_codex_gpt5' }}
       RUNNER_NAME: ${{ inputs.runner_name }}
       ENABLE_A5C_TOKEN: ${{ vars.ENABLE_A5C_TOKEN }}
       A5C_CLOUD_SETUP: ${{ vars.A5C_CLOUD_SETUP }}
