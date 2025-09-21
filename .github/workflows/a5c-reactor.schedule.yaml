@@ -1,4 +1,4 @@
-name: a5c-reactor
+name: a5c-reactor-schedule
 on:
   schedule:
     # weekly, Mondays at 09:00 UTC
