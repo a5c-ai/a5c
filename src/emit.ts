@@ -296,7 +296,7 @@ async function finishStatusChecks(
     }>;
   },
   success: boolean,
-  cp: any,
+  _cp: any,
 ): Promise<void> {
   const token = process.env.A5C_AGENT_GITHUB_TOKEN || process.env.GITHUB_TOKEN;
   if (!token) return;
@@ -360,7 +360,6 @@ export const parseGithubEntity = parseGithubEntityUtil;
 
 async function runScripts(lines: string[], ctx?: any): Promise<void> {
   // Execute each line via sh -c in a minimal environment
-  const { exec } = await import("node:child_process");
   for (const line of lines) {
     let cmd = String(line || "").trim();
     if (!cmd) continue;
@@ -377,8 +376,19 @@ async function runScripts(lines: string[], ctx?: any): Promise<void> {
         stdio: "inherit",
         env: finalEnv,
       });
-      child.on("close", (code: any) => resolve(code ?? 0));
-      child.on("error", () => reject(new Error("Failed to spawn process")));
+      child.on("close", (code: any, signal: any) => {
+        if (code === 0) return resolve();
+        const reason =
+          code != null
+            ? `exit code ${code}`
+            : signal
+              ? `signal ${signal}`
+              : "unknown failure";
+        reject(new Error(`script failed (${reason}): ${cmd}`));
+      });
+      child.on("error", (err: any) =>
+        reject(err instanceof Error ? err : new Error(String(err))),
+      );
     });
   }
 }
