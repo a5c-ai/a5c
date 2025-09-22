@@ -10,27 +10,30 @@ Ref: {{ env.GITHUB_REF_NAME || 'a5c/main' }}
 full_event:
 {{#printXML event }}
 
-Labels: {{#each (event.payload.client_payload.pull_request && event.payload.client_payload.pull_request.labels || [])}}{{ this.name }} {{/each}}
 {{#include ./part.md }}
 
 ## Instructions
 
-{{#include ./instructions/core/*.md }}
+{{#include ./instructions/core/\*.md }}
 
 ## Provider
 
-{{#include ./instructions/{{event.payload.original_event.provider}}/*.md }}
+{{#include ./instructions/{{event.provider}}/\*.md }}
 
-## Context
+## Labels Context
 
-{{#each event.payload.client_payload.labels}}
+Labels: {{#each (event.payload.client_payload.pull_request && event.payload.client_payload.pull_request.labels || event.payload.client_payload.issue && event.payload.client_payload.issue.labels || event.payload.client_payload.labels || [])}}
+
 {{#printXML this}}
-{{#include ./label-context/${{this.name}}/* }}
+
+{{#include ./label-context/${{this.name}}/\*.md }}
+
 {{/each}}
+
 
 ## Event Type and Command
 
-Command Type: {{event.payload.original_event.type}}
-Command: {{event.payload.original_event.action}}
+Command Type: {{event.payload.type}}
+Command: {{event.payload.action}}
 
-{{#include ./commands/${{event.payload.original_event.action}}/*.md }}
+{{#include ./commands/${{event.payload.action}}/\*.md }}
