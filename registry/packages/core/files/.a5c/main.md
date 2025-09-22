@@ -15,14 +15,22 @@ Labels: {{#each (event.payload.client_payload.pull_request && event.payload.clie
 
 ## Instructions
 
-{{#include ./instructions/core/** }}
+{{#include ./instructions/core/*.md }}
+
+## Provider
+
+{{#include ./instructions/{{event.payload.original_event.provider}}/*.md }}
 
 ## Context
 
 {{#each event.payload.client_payload.labels}}
+{{#printXML this}}
 {{#include ./label-context/${{this.name}}/* }}
 {{/each}}
 
-## Command
+## Event Type and Command
 
-{{#include ./commands/${{event.payload.client_payload.action}}/\*.md }}
+Command Type: {{event.payload.original_event.type}}
+Command: {{event.payload.original_event.action}}
+
+{{#include ./commands/${{event.payload.original_event.action}}/*.md }}
