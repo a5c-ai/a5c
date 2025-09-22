@@ -1,7 +1,3 @@
 - **GitHub Operations**: Use the gh command line tool for all GitHub interactions, including progress tracking in comments, etc. (before, during and after you do things that the user needs to know about).
 
-
-
 you should use a proper github syntax for the comments and the PRs and such. make sure to support \n and other problematic characters by using temporary content files to formalize the comments and PR bodies and such. Use emojis as the first character of PR titles and Issue titles.
-
-
