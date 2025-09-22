@@ -92,7 +92,7 @@ async function renderString(
   // Includes: legacy {{> uri }} or {{> uri key=value }}
   // Support quoted URIs and inline expressions inside the URI (both ${{ }} and {{ }})
   let out = tpl;
-  const includeRe = /\{\{>\s*(?:"([^"]+)"|'([^']+)'|([^\s}]+))(\s*.*?)?\}\}/g;
+  const includeRe = /\{\{>\s*(?:"([^"]+)"|'([^']+)'|((?:[^}]|\}(?!\}))+?))(\s+[^}]*)?\}\}/g;
   out = await replaceAsync(
     out,
     includeRe,
@@ -129,7 +129,7 @@ async function renderString(
 
   // Includes: new {{#include uri [key=value] }} with quoted URIs and inline expressions
   const includeHashRe =
-    /\{\{#include\s*(?:"([^"]+)"|'([^']+)'|([^\s}]+))(\s*.*?)?\}\}/g;
+    /\{\{#include\s*(?:"([^"]+)"|'([^']+)'|((?:[^}]|\}(?!\}))+?))(\s+[^}]*)?\}\}/g;
   out = await replaceAsync(
     out,
     includeHashRe,
