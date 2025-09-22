@@ -313,7 +313,7 @@ async function fetchResource(
       const filePath = path.posix.normalize(path.posix.join(dir, p));
       if (hasGlob(filePath)) {
         const files = await listGithubFiles(owner, repo, ref, dir);
-        const matches = files.filter((f) => minimatch(f, filePath));
+        const matches = files.filter((f) => minimatch(f, filePath, { dot: true }));
         const parts: string[] = [];
         for (const m of matches) {
           try {
@@ -342,7 +342,7 @@ async function fetchResource(
         const files = await listGithubFiles(owner, repo, refGuess, listDir);
         const matches = files
           .map((f) => `${refGuess}/${f}`)
-          .filter((f) => minimatch(f, combined));
+          .filter((f) => minimatch(f, combined, { dot: true }));
         const parts: string[] = [];
         for (const m of matches) {
           const segs = m.split("/");
@@ -428,7 +428,7 @@ async function fetchResource(
       if (hasGlob(filePath)) {
         const baseDir = findGlobBaseDir(filePath);
         const files = await listGithubFiles(owner, repo, ref, baseDir);
-        const matches = files.filter((f) => minimatch(f, filePath));
+        const matches = files.filter((f) => minimatch(f, filePath, { dot: true }));
         const parts: string[] = [];
         for (const m of matches) {
           try {
