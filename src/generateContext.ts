@@ -312,8 +312,10 @@ async function fetchResource(
       const dir = path.posix.dirname(basePath);
       const filePath = path.posix.normalize(path.posix.join(dir, p));
       if (hasGlob(filePath)) {
-        const files = await listGithubFiles(owner, repo, ref, dir);
-        const matches = files.filter((f) => minimatch(f, filePath, { dot: true }));
+        const files = await listGithubFiles(owner, repo, ref, dir, ctx.token);
+        const matches = files.filter((f) =>
+          matchGithubGlobAbsoluteOrRelative(f, filePath, dir),
+        );
         const parts: string[] = [];
         for (const m of matches) {
           try {
@@ -339,10 +341,17 @@ async function fetchResource(
         const remaining = restDecoded.slice(firstSeg.length + 1);
         const refGuess = firstSeg;
         const listDir = remaining ? path.posix.dirname(remaining) : "";
-        const files = await listGithubFiles(owner, repo, refGuess, listDir);
+        const files = await listGithubFiles(owner, repo, refGuess, listDir, ctx.token);
         const matches = files
           .map((f) => `${refGuess}/${f}`)
-          .filter((f) => minimatch(f, combined, { dot: true }));
+          .filter((f) =>
+            matchGithubGlobAbsoluteOrRelativeWithRef(
+              f,
+              combined,
+              refGuess,
+              baseDirFull,
+            ),
+          );
         const parts: string[] = [];
         for (const m of matches) {
           const segs = m.split("/");
@@ -427,8 +436,10 @@ async function fetchResource(
       const filePath = decodeURIComponent(filePathRaw);
       if (hasGlob(filePath)) {
         const baseDir = findGlobBaseDir(filePath);
-        const files = await listGithubFiles(owner, repo, ref, baseDir);
-        const matches = files.filter((f) => minimatch(f, filePath, { dot: true }));
+        const files = await listGithubFiles(owner, repo, ref, baseDir, ctx.token);
+        const matches = files.filter((f) =>
+          matchGithubGlobAbsoluteOrRelative(f, filePath, baseDir),
+        );
         const parts: string[] = [];
         for (const m of matches) {
           try {
@@ -593,15 +604,53 @@ function unescapeGlobMeta(p: string): string {
   }
 }
 
+// Match files returned from GitHub API against a glob pattern that may be relative
+// to a base directory. We normalize both sides and enable dot-file matching.
+function matchGithubGlobAbsoluteOrRelative(
+  filePath: string,
+  pattern: string,
+  baseDir: string,
+): boolean {
+  const normalizedFile = path.posix.normalize(filePath);
+  const normalizedBase = path.posix.normalize(baseDir || "");
+  const normalizedPattern = path.posix.normalize(pattern);
+  // Try as-is
+  if (minimatch(normalizedFile, normalizedPattern, { dot: true })) return true;
+  // Try relative to baseDir
+  const relPattern = path.posix.normalize(
+    path.posix.join(normalizedBase, normalizedPattern),
+  );
+  if (minimatch(normalizedFile, relPattern, { dot: true })) return true;
+  return false;
+}
+
+function matchGithubGlobAbsoluteOrRelativeWithRef(
+  filePathWithRef: string,
+  combinedPattern: string,
+  refGuess: string,
+  baseDirFull: string,
+): boolean {
+  const normalizedFile = path.posix.normalize(filePathWithRef);
+  const normalizedPattern = path.posix.normalize(combinedPattern);
+  if (minimatch(normalizedFile, normalizedPattern, { dot: true })) return true;
+  // Build a variant where pattern is joined to refGuess/baseDirFull
+  const relPattern = path.posix.normalize(
+    path.posix.join(refGuess, baseDirFull, normalizedPattern),
+  );
+  if (minimatch(normalizedFile, relPattern, { dot: true })) return true;
+  return false;
+}
+
 async function listGithubFiles(
   owner: string,
   repo: string,
   ref: string | undefined,
   dir: string,
+  tokenFromCtx?: string,
 ): Promise<string[]> {
   try {
     const token =
-      process.env.A5C_AGENT_GITHUB_TOKEN || process.env.GITHUB_TOKEN;
+      tokenFromCtx || process.env.A5C_AGENT_GITHUB_TOKEN || process.env.GITHUB_TOKEN;
     const { Octokit } = await import("@octokit/rest");
     const octokit = new Octokit({ auth: token });
     const results: string[] = [];
