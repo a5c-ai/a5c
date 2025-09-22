@@ -4,6 +4,7 @@ import { minimatch } from "minimatch";
 import { readJSONFile } from "./config.js";
 import { stringify as yamlStringify } from "yaml";
 import { redactObject, DEFAULT_MASK } from "./utils/redact.js";
+import { createLogger } from "./log.js";
 
 export interface GenerateContextOptions {
   in?: string;
@@ -30,6 +31,11 @@ export async function handleGenerateContext(
     const originalEvent = input.original_event || {};
     const new_input = { ...input, ...originalEvent };
     const eventForTpl = sanitizeEventForTemplate(new_input);
+    dbg("generate:begin", {
+      in: opts.in || "stdin",
+      template: rootUri,
+      token_present: !!token,
+    });
     const rendered = await renderTemplate(
       expandDollarExpressions(rootUri, {
         event: eventForTpl,
@@ -44,6 +50,7 @@ export async function handleGenerateContext(
         token,
       },
     );
+    dbg("generate:done", { bytes: rendered?.length || 0 });
     return { code: 0, output: rendered };
   } catch (e: any) {
     return { code: 1, errorMessage: String(e?.message || e) };
@@ -63,11 +70,16 @@ type Context = {
   token?: string;
 };
 
+const logger = createLogger({ scope: "generateContext" });
+const dbg = (msg: string, ctx?: Record<string, unknown>) =>
+  logger.debug(msg, ctx);
+
 async function renderTemplate(
   uri: string,
   ctx: Context,
   base?: string,
 ): Promise<string> {
+  dbg("renderTemplate", { uri, base });
   const content = await fetchResource(uri, ctx, base);
   return await renderString(content, ctx, uri);
 }
@@ -98,6 +110,13 @@ async function renderString(
         currentUri,
       );
       const finalUri = unescapeGlobMeta(dynUri);
+      dbg("include:legacy", {
+        raw: rawUri,
+        afterDollar,
+        dynUri,
+        finalUri,
+        base: currentUri,
+      });
       try {
         const included = await renderTemplate(finalUri, merged, currentUri);
         return included;
@@ -128,6 +147,13 @@ async function renderString(
         currentUri,
       );
       const finalUri = unescapeGlobMeta(dynUri);
+      dbg("include:hash", {
+        raw: rawUri,
+        afterDollar,
+        dynUri,
+        finalUri,
+        base: currentUri,
+      });
       try {
         const included = await renderTemplate(finalUri, merged, currentUri);
         return included;
@@ -297,6 +323,7 @@ async function fetchResource(
   // Expand ${{ ... }} inside URI before resolution
   const expanded = expandDollarExpressions(rawUri, ctx);
   const { scheme, path: p } = resolveUri(expanded, base);
+  dbg("fetchResource", { rawUri, expanded, base, scheme, p });
   // If relative include and base is a GitHub URI, resolve against the GitHub file's directory
   if (scheme === "file" && base && /^github:\/\//i.test(base)) {
     // Try typed base first: github://owner/repo/(branch|ref|version)/<ref-raw>/<path>
@@ -313,19 +340,31 @@ async function fetchResource(
       // Resolve relative segments against GitHub base directory
       const joined = path.posix.normalize(path.posix.join(dir, p));
       const filePath = joined.startsWith("./") ? joined.slice(2) : joined;
+      dbg("github:typed:resolve", { owner, repo, ref, dir, filePath });
       if (hasGlob(filePath)) {
         const files = await listGithubFiles(owner, repo, ref, dir, ctx.token);
+        dbg("github:typed:list", {
+          owner,
+          repo,
+          ref,
+          dir,
+          listed: files.length,
+          pattern: filePath,
+        });
         const matches = files.filter((f) =>
           matchGithubGlobAbsoluteOrRelative(f, filePath, dir),
         );
+        dbg("github:typed:matches", { count: matches.length });
         const parts: string[] = [];
         for (const m of matches) {
           try {
+            dbg("github:typed:fetch", { path: m });
             parts.push(await fetchGithubFile(owner, repo, ref, m, ctx.token));
           } catch {}
         }
         return parts.join("");
       }
+      dbg("github:typed:fetch", { path: filePath });
       return await fetchGithubFile(owner, repo, ref, filePath, ctx.token);
     }
     // Fallback: generic github://owner/repo/<ref+path>
@@ -338,6 +377,13 @@ async function fetchResource(
       const baseDirFull = path.posix.dirname(restDecoded);
       const joined = path.posix.normalize(path.posix.join(baseDirFull, p));
       const combined = joined.startsWith("./") ? joined.slice(2) : joined;
+      dbg("github:generic:resolve", {
+        owner,
+        repo,
+        restDecoded,
+        baseDirFull,
+        combined,
+      });
       if (hasGlob(combined)) {
         // Best-effort: list from baseDirFull and filter
         const firstSeg = restDecoded.split("/")[0] || "";
@@ -345,6 +391,14 @@ async function fetchResource(
         const refGuess = firstSeg;
         const listDir = remaining ? path.posix.dirname(remaining) : "";
         const files = await listGithubFiles(owner, repo, refGuess, listDir, ctx.token);
+        dbg("github:generic:list", {
+          owner,
+          repo,
+          ref: refGuess,
+          dir: listDir,
+          listed: files.length,
+          pattern: combined,
+        });
         const matches = files
           .map((f) => `${refGuess}/${f}`)
           .filter((f) =>
@@ -355,12 +409,14 @@ async function fetchResource(
               baseDirFull,
             ),
           );
+        dbg("github:generic:matches", { count: matches.length });
         const parts: string[] = [];
         for (const m of matches) {
           const segs = m.split("/");
           const refCand = segs[0];
           const fileCand = segs.slice(1).join("/");
           try {
+            dbg("github:generic:fetch", { path: fileCand, ref: refCand });
             parts.push(
               await fetchGithubFile(owner, repo, refCand, fileCand, ctx.token),
             );
@@ -381,6 +437,10 @@ async function fetchResource(
           ctx.token,
         );
         try {
+          dbg("github:generic:fetchTry", {
+            ref: refCandidate,
+            path: filePathCandidate,
+          });
           const content = await fetchGithubFile(
             owner,
             repo,
@@ -401,6 +461,7 @@ async function fetchResource(
       base && base.startsWith("file://")
         ? path.resolve(path.dirname(new URL(base).pathname), p)
         : path.resolve(p);
+    dbg("file:resolve", { p, resolved });
     if (hasGlob(resolved)) {
       const dir =
         fs.existsSync(resolved) && fs.statSync(resolved).isDirectory()
@@ -408,6 +469,7 @@ async function fetchResource(
           : path.dirname(resolved);
       const all = listLocalFilesRecursive(dir);
       const matches = all.filter((f) => minimatch(f, resolved, { dot: true }));
+      dbg("file:glob", { dir, listed: all.length, pattern: resolved, matches: matches.length });
       const parts: string[] = [];
       for (const m of matches) {
         try {
@@ -437,20 +499,25 @@ async function fetchResource(
         ctx.token,
       );
       const filePath = decodeURIComponent(filePathRaw);
+      dbg("github:direct:typed", { owner, repo, ref, filePath });
       if (hasGlob(filePath)) {
         const baseDir = findGlobBaseDir(filePath);
         const files = await listGithubFiles(owner, repo, ref, baseDir, ctx.token);
+        dbg("github:direct:list", { owner, repo, ref, dir: baseDir, listed: files.length, pattern: filePath });
         const matches = files.filter((f) =>
           matchGithubGlobAbsoluteOrRelative(f, filePath, baseDir),
         );
+        dbg("github:direct:matches", { count: matches.length });
         const parts: string[] = [];
         for (const m of matches) {
           try {
+            dbg("github:direct:fetch", { path: m });
             parts.push(await fetchGithubFile(owner, repo, ref, m, ctx.token));
           } catch {}
         }
         return parts.join("");
       }
+      dbg("github:direct:fetch", { path: filePath });
       return await fetchGithubFile(owner, repo, ref, filePath, ctx.token);
     }
 
@@ -475,6 +542,7 @@ async function fetchResource(
         ctx.token,
       );
       try {
+        dbg("github:direct:fetchTry", { ref: refCandidate, path: decodedFilePathCandidate });
         const content = await fetchGithubFile(
           owner,
           repo,
@@ -499,6 +567,7 @@ async function fetchResource(
         : path.dirname(absolute);
     const all = listLocalFilesRecursive(dir);
     const matches = all.filter((f) => minimatch(f, absolute, { dot: true }));
+    dbg("file:glob:absolute", { dir, listed: all.length, pattern: absolute, matches: matches.length });
     const parts: string[] = [];
     for (const m of matches) {
       try {
