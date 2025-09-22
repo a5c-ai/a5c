@@ -116,6 +116,7 @@ if [ "$CLOUD_SETUP" = "true" ]; then
   fi
 
 fi
+echo $GITHUB_TOKEN | GH_TOKEN= GITHUB_TOKEN= gh auth login --with-token
 npx -y "$A5C_PKG_SPEC" generate_context \
     --in "$A5C_EVENT_PATH" \
     --template "$A5C_TEMPLATE_URI" --out /tmp/prompt.md

@@ -14,6 +14,7 @@ export type CodexEvent = {
     | "user_instructions_event"
     | "tokens_used"
     | "thinking"
+    | "turn_diff"
     | "codex"
     | "exec"
     | "exec_result"
@@ -30,6 +31,7 @@ export class CodexStdoutParser {
   private currentType:
     | "user_instructions_event"
     | "thinking"
+    | "turn_diff"
     | "codex"
     | "exec"
     | "exec_result"
@@ -48,6 +50,7 @@ export class CodexStdoutParser {
   private readonly tsRe = /^\[(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})\]/;
   private readonly headerUserInstructions = /^User instructions:\s*$/;
   private readonly headerThinking = /^thinking\s*$/;
+  private readonly headerTurnDiff = /^turn diff:\s*$/i;
   private readonly headerCodex = /^codex\s*$/;
   private readonly headerExec = /^exec\s+(.+?)\s+in\s+(.+)\s*$/;
   private readonly headerTokensUsed = /^tokens used:\s*(\d+)\s*$/i;
@@ -147,6 +150,11 @@ export class CodexStdoutParser {
       }
       if (this.headerThinking.test(currentLine)) {
         this.currentType = "thinking";
+        this.bufferLines = [currentLine];
+        return;
+      }
+      if (this.headerTurnDiff.test(currentLine)) {
+        this.currentType = "turn_diff";
         this.bufferLines = [currentLine];
         return;
       }
@@ -288,6 +296,9 @@ export class CodexStdoutParser {
       } else if (this.currentType === "thinking") {
         const thought = this.stripHeaderAndTrim(raw, "thinking");
         fields = { thought };
+      } else if (this.currentType === "turn_diff") {
+        const diff = this.stripHeaderAndTrim(raw, "turn diff:");
+        fields = { diff };
       } else if (this.currentType === "codex") {
         const explanation = this.stripHeaderAndTrim(raw, "codex");
         fields = { explanation };
@@ -310,7 +321,7 @@ export class CodexStdoutParser {
     const lines = raw.split(/\r?\n/);
     if (lines.length === 0) return "";
     const first = lines[0];
-    const headerRe = new RegExp(`^${header}\\s*$`, "i");
+    const headerRe = new RegExp(`^${header.replace(/[.*+?^${}()|[\\]\\]/g, "\\$&")}\\s*$`, "i");
     const rest = headerRe.test(first) ? lines.slice(1) : lines;
     return rest.join("\n").trim();
   }
