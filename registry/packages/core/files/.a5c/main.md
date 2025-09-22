@@ -14,7 +14,7 @@ full_event:
 
 ## Instructions
 
-{{#include ./instructions/core/\*.md }}
+{{#include ./instructions/core/.md }}
 
 ## Provider
 
