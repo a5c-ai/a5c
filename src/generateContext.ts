@@ -92,7 +92,11 @@ async function renderString(
   // Includes: legacy {{> uri }} or {{> uri key=value }}
   // Support quoted URIs and inline expressions inside the URI (both ${{ }} and {{ }})
   let out = tpl;
-  const includeRe = /\{\{>\s*(?:"([^"]+)"|'([^']+)'|((?:[^}]|\}(?!\}))+?))(\s+[^}]*)?\}\}/g;
+  // Expand all ${{ }} first to avoid tokenizer conflicts inside include URIs
+  try {
+    out = expandDollarExpressions(out, ctx);
+  } catch {}
+  const includeRe = /\{\{>\s*(?:"([^"]+)"|'([^']+)'|([^}]+?))(\s+[^}]*)?\}\}/g;
   out = await replaceAsync(
     out,
     includeRe,
@@ -104,16 +108,16 @@ async function renderString(
         vars: { ...ctx.vars, ...argVars },
       };
       const afterDollar = expandDollarExpressions(rawUri, merged);
-      const dynUri = expandCurlyExpressionsForUri(
+      const afterCurly = expandCurlyExpressionsForUri(
         afterDollar,
         merged,
         currentUri,
       );
-      const finalUri = unescapeGlobMeta(dynUri);
+      const finalUri = unescapeGlobMeta(afterCurly);
       dbg("include:legacy", {
         raw: rawUri,
         afterDollar,
-        dynUri,
+        dynUri: afterCurly,
         finalUri,
         base: currentUri,
       });
@@ -129,7 +133,7 @@ async function renderString(
 
   // Includes: new {{#include uri [key=value] }} with quoted URIs and inline expressions
   const includeHashRe =
-    /\{\{#include\s*(?:"([^"]+)"|'([^']+)'|((?:[^}]|\}(?!\}))+?))(\s+[^}]*)?\}\}/g;
+    /\{\{#include\s*(?:"([^"]+)"|'([^']+)'|([^}]+?))(\s+[^}]*)?\}\}/g;
   out = await replaceAsync(
     out,
     includeHashRe,
@@ -141,16 +145,16 @@ async function renderString(
         vars: { ...ctx.vars, ...argVars },
       };
       const afterDollar = expandDollarExpressions(rawUri, merged);
-      const dynUri = expandCurlyExpressionsForUri(
+      const afterCurly = expandCurlyExpressionsForUri(
         afterDollar,
         merged,
         currentUri,
       );
-      const finalUri = unescapeGlobMeta(dynUri);
+      const finalUri = unescapeGlobMeta(afterCurly);
       dbg("include:hash", {
         raw: rawUri,
         afterDollar,
-        dynUri,
+        dynUri: afterCurly,
         finalUri,
         base: currentUri,
       });
