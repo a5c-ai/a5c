@@ -300,17 +300,19 @@ async function fetchResource(
   // If relative include and base is a GitHub URI, resolve against the GitHub file's directory
   if (scheme === "file" && base && /^github:\/\//i.test(base)) {
     // Try typed base first: github://owner/repo/(branch|ref|version)/<ref-raw>/<path>
-    const typedBase =
-      /^github:\/\/([^/]+)\/([^/]+)\/(?:branch|ref|version)\/([^/]+)\/(.+)$/i.exec(
-        base,
-      );
+      const typedBase =
+        /^github:\/\/([^/]+)\/([^/]+)\/(?:branch|ref|version)\/([^/]+)\/(.+)$/i.exec(
+          base,
+        );
     if (typedBase) {
       const owner = typedBase[1];
       const repo = typedBase[2];
       const ref = decodeURIComponent(typedBase[3]);
       const basePath = decodeURIComponent(typedBase[4]);
       const dir = path.posix.dirname(basePath);
-      const filePath = path.posix.normalize(path.posix.join(dir, p));
+      // Resolve relative segments against GitHub base directory
+      const joined = path.posix.normalize(path.posix.join(dir, p));
+      const filePath = joined.startsWith("./") ? joined.slice(2) : joined;
       if (hasGlob(filePath)) {
         const files = await listGithubFiles(owner, repo, ref, dir, ctx.token);
         const matches = files.filter((f) =>
@@ -334,7 +336,8 @@ async function fetchResource(
       const restRaw = genericBase[3];
       const restDecoded = decodeURIComponent(restRaw);
       const baseDirFull = path.posix.dirname(restDecoded);
-      const combined = path.posix.normalize(path.posix.join(baseDirFull, p));
+      const joined = path.posix.normalize(path.posix.join(baseDirFull, p));
+      const combined = joined.startsWith("./") ? joined.slice(2) : joined;
       if (hasGlob(combined)) {
         // Best-effort: list from baseDirFull and filter
         const firstSeg = restDecoded.split("/")[0] || "";
@@ -628,16 +631,17 @@ function matchGithubGlobAbsoluteOrRelativeWithRef(
   filePathWithRef: string,
   combinedPattern: string,
   refGuess: string,
-  baseDirFull: string,
+  _baseDirFull: string,
 ): boolean {
   const normalizedFile = path.posix.normalize(filePathWithRef);
   const normalizedPattern = path.posix.normalize(combinedPattern);
+  // Direct match (pattern already includes ref segment)
   if (minimatch(normalizedFile, normalizedPattern, { dot: true })) return true;
-  // Build a variant where pattern is joined to refGuess/baseDirFull
-  const relPattern = path.posix.normalize(
-    path.posix.join(refGuess, baseDirFull, normalizedPattern),
-  );
-  if (minimatch(normalizedFile, relPattern, { dot: true })) return true;
+  // Try comparing without ref prefix (pattern might not include ref)
+  const withoutRef = normalizedFile.startsWith(refGuess + "/")
+    ? normalizedFile.slice(refGuess.length + 1)
+    : normalizedFile;
+  if (minimatch(withoutRef, normalizedPattern, { dot: true })) return true;
   return false;
 }
 
