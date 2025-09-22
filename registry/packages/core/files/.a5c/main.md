@@ -36,4 +36,4 @@ Labels: {{#each (event.payload.client_payload.pull_request && event.payload.clie
 Command Type: {{event.payload.type}}
 Command: {{event.payload.action}}
 
-{{#include ./commands/${{event.payload.action}}/\*.md }}
+{{#include ./commands/${{event.payload.type}}/\*.md }}

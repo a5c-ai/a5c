@@ -97,8 +97,9 @@ async function renderString(
         merged,
         currentUri,
       );
+      const finalUri = unescapeGlobMeta(dynUri);
       try {
-        const included = await renderTemplate(dynUri, merged, currentUri);
+        const included = await renderTemplate(finalUri, merged, currentUri);
         return included;
       } catch {
         // Graceful on missing file(s)
@@ -126,8 +127,9 @@ async function renderString(
         merged,
         currentUri,
       );
+      const finalUri = unescapeGlobMeta(dynUri);
       try {
-        const included = await renderTemplate(dynUri, merged, currentUri);
+        const included = await renderTemplate(finalUri, merged, currentUri);
         return included;
       } catch {
         // Graceful on missing file(s)
@@ -574,6 +576,21 @@ function findGlobBaseDir(p: string): string {
     out.push(s);
   }
   return out.join("/");
+}
+
+function unescapeGlobMeta(p: string): string {
+  // Allow Markdown-escaped glob metacharacters like \* to act as * in paths/URIs
+  try {
+    return String(p)
+      .replace(/\\\*/g, "*")
+      .replace(/\\\?/g, "?")
+      .replace(/\\\[/g, "[")
+      .replace(/\\\]/g, "]")
+      .replace(/\\\{/g, "{")
+      .replace(/\\\}/g, "}");
+  } catch {
+    return String(p);
+  }
 }
 
 async function listGithubFiles(
