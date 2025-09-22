@@ -1,6 +1,6 @@
 {
   "name": "@a5c-ai/events",
-  "version": "1.21.6",
+  "version": "1.21.7",
   "description": "Events SDK and CLI for normalizing and enriching repo/CI events for agentic workflows",
   "type": "module",
   "private": false,
