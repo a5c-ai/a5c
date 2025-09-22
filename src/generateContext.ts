@@ -29,15 +29,16 @@ export async function handleGenerateContext(
     const rootUri = opts.template || "./README.md";
     const originalEvent = input.original_event || {};
     const new_input = { ...input, ...originalEvent };
+    const eventForTpl = sanitizeEventForTemplate(new_input);
     const rendered = await renderTemplate(
       expandDollarExpressions(rootUri, {
-        event: new_input,
+        event: eventForTpl,
         env: process.env,
         vars: opts.vars || {},
         token,
       }),
       {
-        event: new_input,
+        event: eventForTpl,
         env: process.env,
         vars: opts.vars || {},
         token,
@@ -893,4 +894,18 @@ function redactEnvFields(value: any, mask: string): any {
     return out;
   }
   return value;
+}
+
+function sanitizeEventForTemplate(ev: any): any {
+  try {
+    if (!ev || typeof ev !== "object") return ev;
+    const out: Record<string, any> = { ...ev };
+    delete out.script;
+    delete out.event_type;
+    delete out.original_event;
+    delete out.client_payload;
+    return out;
+  } catch {
+    return ev;
+  }
 }
