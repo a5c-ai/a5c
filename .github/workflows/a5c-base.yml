@@ -103,5 +103,4 @@ jobs:
           name: events-reactor-output
           path: |
             /tmp/parsed-codex.jsonl
-            /tmp/prompt.md
             /tmp/full_output.txt
