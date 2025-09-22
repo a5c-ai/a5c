@@ -41,12 +41,13 @@ runs:
       shell: bash
     - name: a5c events reactor
       id: a5c-events-reactor
+      env:
+        GH_TOKEN: ${{ inputs.github_token }}
+        GITHUB_TOKEN: ${{ inputs.github_token }}
       run: |
         set -euo pipefail
         A5C_PKG_SPEC="@a5c-ai/events"
         A5C_CMD="events"
-        GH_TOKEN=${{ inputs.github_token }}
-        GITHUB_TOKEN=${{ inputs.github_token }}
         echo "A5C_PKG_SPEC=$A5C_PKG_SPEC" >> "$GITHUB_ENV"
         echo "A5C_CMD=$A5C_CMD" >> "$GITHUB_ENV"
         $A5C_CMD enrich \
