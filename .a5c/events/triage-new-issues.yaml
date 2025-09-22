@@ -18,6 +18,23 @@ emit:
     payload:
       original_event: ${{ event }}
       issue: ${{ event.issue }}
+      among: 
+        - 'bug'
+        - 'feature'
+        - 'documentation'
+        - 'question'
+        - 'enhancement'
+        - 'devops'
+        - 'security'
+        - 'performance'
+        - 'ux'
+        - 'backend'
+        - 'frontend'
+        - 'database'
+        - 'api'
+        - 'infrastructure'
+        - 'support'
+        - 'feature_request'
 set_labels:
   - entity: ${{ event.issue.html_url }}
     add_labels: [triage_requested]
