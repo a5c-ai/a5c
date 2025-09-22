@@ -113,7 +113,7 @@ async function renderString(
         merged,
         currentUri,
       );
-      const finalUri = unescapeGlobMeta(afterCurly);
+      const finalUri = unescapeGlobMeta(afterCurly).trim();
       dbg("include:legacy", {
         raw: rawUri,
         afterDollar,
@@ -150,7 +150,7 @@ async function renderString(
         merged,
         currentUri,
       );
-      const finalUri = unescapeGlobMeta(afterCurly);
+      const finalUri = unescapeGlobMeta(afterCurly).trim();
       dbg("include:hash", {
         raw: rawUri,
         afterDollar,
@@ -340,9 +340,11 @@ async function fetchResource(
       const repo = typedBase[2];
       const ref = decodeURIComponent(typedBase[3]);
       const basePath = decodeURIComponent(typedBase[4]);
-      const dir = path.posix.dirname(basePath);
+      const dir = basePath.endsWith("/")
+        ? basePath.replace(/\/+$/, "")
+        : path.posix.dirname(basePath);
       // Resolve relative segments against GitHub base directory
-      const joined = path.posix.normalize(path.posix.join(dir, p));
+      const joined = path.posix.normalize(path.posix.join(dir, p || ""));
       const filePath = joined.startsWith("./") ? joined.slice(2) : joined;
       dbg("github:typed:resolve", { owner, repo, ref, dir, filePath });
       if (hasGlob(filePath)) {
@@ -362,8 +364,11 @@ async function fetchResource(
         const parts: string[] = [];
         for (const m of matches) {
           try {
-            dbg("github:typed:fetch", { path: m });
-            parts.push(await fetchGithubFile(owner, repo, ref, m, ctx.token));
+            const fileUri = `github://${owner}/${repo}/branch/${encodeURIComponent(
+              ref,
+            )}/${m}`;
+            dbg("github:typed:renderEach", { fileUri });
+            parts.push(await renderTemplate(fileUri, ctx, fileUri));
           } catch {}
         }
         return parts.join("");
@@ -378,8 +383,10 @@ async function fetchResource(
       const repo = genericBase[2];
       const restRaw = genericBase[3];
       const restDecoded = decodeURIComponent(restRaw);
-      const baseDirFull = path.posix.dirname(restDecoded);
-      const joined = path.posix.normalize(path.posix.join(baseDirFull, p));
+      const baseDirFull = restDecoded.endsWith("/")
+        ? restDecoded.replace(/\/+$/, "")
+        : path.posix.dirname(restDecoded);
+      const joined = path.posix.normalize(path.posix.join(baseDirFull, p || ""));
       const combined = joined.startsWith("./") ? joined.slice(2) : joined;
       dbg("github:generic:resolve", {
         owner,
@@ -410,7 +417,7 @@ async function fetchResource(
               f,
               combined,
               refGuess,
-              baseDirFull,
+              listDir,
             ),
           );
         dbg("github:generic:matches", { count: matches.length });
@@ -420,10 +427,11 @@ async function fetchResource(
           const refCand = segs[0];
           const fileCand = segs.slice(1).join("/");
           try {
-            dbg("github:generic:fetch", { path: fileCand, ref: refCand });
-            parts.push(
-              await fetchGithubFile(owner, repo, refCand, fileCand, ctx.token),
-            );
+            const fileUri = `github://${owner}/${repo}/branch/${encodeURIComponent(
+              refCand,
+            )}/${fileCand}`;
+            dbg("github:generic:renderEach", { fileUri });
+            parts.push(await renderTemplate(fileUri, ctx, fileUri));
           } catch {}
         }
         return parts.join("");
@@ -515,8 +523,11 @@ async function fetchResource(
         const parts: string[] = [];
         for (const m of matches) {
           try {
-            dbg("github:direct:fetch", { path: m });
-            parts.push(await fetchGithubFile(owner, repo, ref, m, ctx.token));
+            const fileUri = `github://${owner}/${repo}/branch/${encodeURIComponent(
+              ref,
+            )}/${m}`;
+            dbg("github:direct:renderEach", { fileUri });
+            parts.push(await renderTemplate(fileUri, ctx, fileUri));
           } catch {}
         }
         return parts.join("");
