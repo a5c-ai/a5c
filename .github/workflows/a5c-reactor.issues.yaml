@@ -1,30 +1,5 @@
-name: a5c-reactor
+name: a5c-reactor-issues
 on:
-  # push:
-  pull_request:
-    types:
-      - labeled
-    #  - opened
-    #  - reopened
-    #  - ready_for_review
-    #  - synchronize
-    #  - assigned
-    #  - unassigned
-    #  - unlabeled
-    #  - locked
-    #  - unlocked
-    #  - closed
-    #  - edited
-    #  - converted_to_draft
-    #  - auto_merge_enabled
-    #  - auto_merge_disabled
-    #  - auto_merge_enabled
-    #  - review_requested
-    #  - review_request_removed
-    #  - milestoned
-    #  - demilestoned
-    #  - enqueued
-    #  - dequeued
   # issue_comment:
   #   types:
   #     - created
@@ -46,15 +21,6 @@ on:
     #  - pinned
     #  - unpinned
     #  - unlabeled
-  # workflow_run:
-  #   types: [completed]
-  #   workflows:
-  #   - abc
-  #   branches: [a5c/main,main]
-  # workflow_dispatch:
-  repository_dispatch:
-  # check_run:
-  # check_suite:
 env:
   RUNNER_NAME: reactor
 

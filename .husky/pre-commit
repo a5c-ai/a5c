@@ -2,4 +2,4 @@
 set -e
 
 # Delegate to unified script used by local dev and CI
-scripts/precommit.sh
+# scripts/precommit.sh

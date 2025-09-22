@@ -1,0 +1,43 @@
+---
+name: Triage New Issues
+metadata:
+  runner-name: reactor
+on:
+  issue:
+    filters:
+      # label triage was added
+      - expression: ${{ event.type == 'labeled' && event.label.name == 'triage' }}
+    skip:
+      # is a issue or already closed
+      - expression: ${{ event.issue.closed == true }}
+      # if triage in progress or already requested
+      - expression: ${{ event.labels | contains('triage_in_progress') || event.labels | contains('triage_requested') }}
+emit:
+  triage_new_issue:
+    type: issue_ready_for_triage
+    payload:
+      original_event: ${{ event }}
+      issue: ${{ event.issue }}
+set_labels:
+  - entity: ${{ event.issue.html_url }}
+    add_labels: [triage_requested]
+    remove_labels: [triaged]
+---
+name: Triage Agent Run
+metadata:
+  runner-name: agents
+on:
+  triage_new_issue:
+pre_set_labels:
+  - entity: ${{ event.issue.html_url }}
+    add_labels: [triage_in_progress]
+    remove_labels: [triage_requested]
+agent_run:
+  envs:
+    # added to the env vars section
+    - name: SOME_ENV
+      value: some_value
+set_labels:
+  - entity: ${{ event.issue.html_url }}
+    add_labels: [triaged]
+    remove_labels: [triage_in_progress]
