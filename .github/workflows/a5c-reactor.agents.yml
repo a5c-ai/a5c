@@ -1,10 +1,10 @@
 name: a5c-agents
 on:
   repository_dispatch:
-    types:
-      - triage_new_issue
-      - validation_request
-      - agent_generic_run
+    # types:
+    #   - triage_new_issue
+    #   - validation_request
+    #   - agent_generic_run
 env:
   RUNNER_NAME: agents
 

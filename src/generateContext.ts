@@ -3,6 +3,7 @@ import path from "node:path";
 import { minimatch } from "minimatch";
 import { readJSONFile } from "./config.js";
 import { stringify as yamlStringify } from "yaml";
+import { redactObject, DEFAULT_MASK } from "./utils/redact.js";
 
 export interface GenerateContextOptions {
   in?: string;
@@ -711,7 +712,8 @@ function isThenable(v: any): v is Promise<any> {
 
 function printJSON(value: any): string {
   try {
-    return JSON.stringify(value, null, 2);
+    const safe = sanitizeForPrint(value);
+    return JSON.stringify(safe, null, 2);
   } catch {
     return "";
   }
@@ -719,7 +721,8 @@ function printJSON(value: any): string {
 
 function printYAML(value: any): string {
   try {
-    return yamlStringify(value);
+    const safe = sanitizeForPrint(value);
+    return yamlStringify(safe);
   } catch {
     return "";
   }
@@ -727,7 +730,12 @@ function printYAML(value: any): string {
 
 function toJSON(value: any, indent?: number): string {
   try {
-    return JSON.stringify(value, null, typeof indent === "number" ? indent : 2);
+    const safe = sanitizeForPrint(value);
+    return JSON.stringify(
+      safe,
+      null,
+      typeof indent === "number" ? indent : 2,
+    );
   } catch {
     return "";
   }
@@ -735,7 +743,8 @@ function toJSON(value: any, indent?: number): string {
 
 function toYAML(value: any): string {
   try {
-    return yamlStringify(value);
+    const safe = sanitizeForPrint(value);
+    return yamlStringify(safe);
   } catch {
     return "";
   }
@@ -767,7 +776,8 @@ function valueToXML(key: string, value: any): string {
 
 function toXML(value: any, rootName?: string): string {
   const root = rootName || "root";
-  return valueToXML(root, value);
+  const safe = sanitizeForPrint(value);
+  return valueToXML(root, safe);
 }
 
 function printXML(value: any): string {
@@ -862,4 +872,25 @@ function transformPipes(expr: string): string {
     }
   }
   return acc;
+}
+
+function sanitizeForPrint<T = any>(value: T): T {
+  const masked = redactEnvFields(value, DEFAULT_MASK);
+  return redactObject(masked) as T;
+}
+
+function redactEnvFields(value: any, mask: string): any {
+  if (Array.isArray(value)) return value.map((v) => redactEnvFields(v, mask));
+  if (value && typeof value === "object") {
+    const out: Record<string, any> = Array.isArray(value) ? [] : {};
+    for (const [k, v] of Object.entries(value)) {
+      if (k.toLowerCase() === "env") {
+        out[k] = mask;
+      } else {
+        out[k] = redactEnvFields(v, mask);
+      }
+    }
+    return out;
+  }
+  return value;
 }

@@ -1,0 +1,13 @@
+---
+name: Periodic - Weekly - Monday Morning
+metadata:
+  runner-name: reactor
+on:
+  periodic_weekly_monday_morning:
+emit:
+  security_scan:
+    type: periodic
+  e2e_tests_on_production:
+    type: periodic
+---
+

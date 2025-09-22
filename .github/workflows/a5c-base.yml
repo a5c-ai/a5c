@@ -104,9 +104,4 @@ jobs:
           path: |
             /tmp/parsed-codex.jsonl
             /tmp/prompt.md
-            /tmp/last_message.txt
             /tmp/full_output.txt
-            /tmp/agent-output.md
-            /tmp/agent-output-*/**
-            /tmp/out.reactor.json
-            /tmp/out.enrich.json
