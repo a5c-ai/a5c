@@ -14,11 +14,11 @@ full_event:
 
 ## Instructions
 
-{{#include ./instructions/core/\*.md }}
+{{#include ./instructions/core/.md }}
 
 ## Provider
 
-{{#include ./instructions/{{event.provider}}/\*.md }}
+{{#include ./instructions/${{event.provider}}/\*.md }}
 
 ## Labels Context
 
@@ -33,7 +33,6 @@ Labels: {{#each (event.payload.client_payload.pull_request && event.payload.clie
 
 ## Event Type and Command
 
-Command Type: {{event.payload.type}}
 Command: {{event.payload.action}}
 
-{{#include ./commands/${{event.payload.type}}/\*.md }}
+{{#include ./commands/${{event.payload.action}}/\*.md }}
