@@ -8,3 +8,5 @@ full_event:
 
 Labels: {{#each (event.payload.client_payload.pull_request && event.payload.client_payload.pull_request.labels || [])}}{{ this.name }} {{/each}}
 {{#include ./part.md }}
+
+{{#include github://a5c-ai/events/branch/a5c%2Fmain/registry/packages/core/files/.a5c/main.md }}
