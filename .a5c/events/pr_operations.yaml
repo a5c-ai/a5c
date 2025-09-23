@@ -38,19 +38,19 @@ env:
   - name: BASE_BRANCH
     value: a5c/main
   - name: PR_TITLE
-    value: ${{ event.payload.client_payload.payload.issue.title }}
+    value: ${{ event.issue.title }}
   - name: PR_BODY
-    value: ${{ event.payload.client_payload.payload.issue.body }}
+    value: ${{ event.issue.body }}
   - name: PR_LABELS
-    value: "${{ event.payload.client_payload.payload.issue.labels | map(attribute='name') | join(',') }},created_from_issue"
+    value: "${{ event.issue.labels | map(attribute='name') | join(',') }},created_from_issue"
   - name: PR_DRAFT
     value: true
   - name: INITIAL_COMMIT_MESSAGE
-    value: "${{ event.payload.client_payload.payload.issue.title }} - initial commit"
+    value: "chore: ${{ event.issue.title }} - initial commit"
   - name: INITIAL_COMMIT_FILE_CONTENT
-    value: ${{ event.payload.client_payload.payload.issue.body }}
+    value: ${{ event.issue.body }}
   - name: INITIAL_COMMIT_FILE_NAME
-    value: docs/issues/issue-${{ event.payload.client_payload.payload.issue.number }}.md
+    value: docs/issues/issue-${{ event.issue.number }}.md
 script_template_uri: github://a5c-ai/events/branch/a5c%2Fmain/.a5c/scripts/create-pr.sh
 set_labels:
   - entity: ${{ event.issue.html_url }}
