@@ -1,0 +1,18 @@
+{
+    "scripts": {
+    "build": "echo 'No build configured'",
+    "lint": "echo 'No linting configured'",
+    "format": "echo 'No formatting configured'",
+    "typecheck": "echo 'No typechecking configured'",
+    "test": "echo 'No testing configured'",
+    "dev": "echo 'No development configured'",
+    "release": "echo 'No release configured'",
+    "commit:prepare": "echo 'No commit prepare configured'",
+    "smoke": "echo 'No smoke configured'"
+  },
+  "devDependencies": {
+    "husky": "^9.1.6"
+  },
+  "dependencies": {
+  }
+}

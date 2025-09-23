@@ -11,6 +11,8 @@ import { handleGenerateContext } from "./generateContext.js";
 import { handleEmit } from "./emit.js";
 import { handleRun } from "./commands/run.js";
 import { handleParse } from "./commands/parse.js";
+import { handleInit, handleInstall, handleUpgrade } from "./commands/install.js";
+import { handleSimulate } from "./commands/simulate.js";
 import { redactObject } from "./utils/redact.js";
 import path from "node:path";
 // Avoid loading heavy JSON Schema validator unless needed
@@ -471,6 +473,85 @@ program
     });
     if (code !== 0 && errorMessage) process.stderr.write(errorMessage + "\n");
     process.exit(code);
+  });
+
+program
+  .command("install")
+  .description(
+    "Install an a5c seed package from a GitHub URI (with dependencies)",
+  )
+  .argument("uri", "github://owner/repo/ref/path to package or its package.a5c.yaml")
+  .action(async (uri: string) => {
+    const { code, errorMessage } = await handleInstall({ uri });
+    if (code !== 0 && errorMessage) process.stderr.write(errorMessage + "\n");
+    process.exit(code);
+  });
+
+program
+  .command("init")
+  .description("Initialize .a5c config and install a default package")
+  .option(
+    "--package <github-uri>",
+    "github:// URI to initial package (default: github://a5c-ai/events/branch/main/registry/packages/github)",
+  )
+  .action(async (cmdOpts: any) => {
+    const { code, errorMessage } = await handleInit({ pkg: cmdOpts.package });
+    if (code !== 0 && errorMessage) process.stderr.write(errorMessage + "\n");
+    process.exit(code);
+  });
+
+program
+  .command("upgrade")
+  .description(
+    "Upgrade an installed a5c package from a GitHub URI (overwrites files)",
+  )
+  .argument("uri", "github://owner/repo/ref/path to package or its package.a5c.yaml")
+  .action(async (uri: string) => {
+    const { code, errorMessage } = await handleUpgrade({ uri });
+    if (code !== 0 && errorMessage) process.stderr.write(errorMessage + "\n");
+    process.exit(code);
+  });
+
+const simulate = program
+  .command("simulate")
+  .description("Generate sample GitHub event payloads for testing");
+
+simulate
+  .command("issue_comment")
+  .description("Simulate issue_comment (created)")
+  .option("--out <file>", "write JSON to file")
+  .action(async (cmdOpts: any) => {
+    const { code, errorMessage } = await handleSimulate({
+      kind: "issue_comment",
+      event: "created",
+      out: cmdOpts.out,
+    });
+    if (code !== 0 && errorMessage) process.stderr.write(errorMessage + "\n");
+    process.exit(code);
+  });
+
+simulate
+  .command("pull_request")
+  .description("Simulate pull_request (opened|labeled)")
+  .option("--event <name>", "opened|labeled", "opened")
+  .option("--out <file>", "write JSON to file")
+  .action(async (cmdOpts: any) => {
+    const { code, errorMessage } = await handleSimulate({
+      kind: "pull_request",
+      event: cmdOpts.event,
+      out: cmdOpts.out,
+    });
+    if (code !== 0 && errorMessage) process.stderr.write(errorMessage + "\n");
+    process.exit(code);
+  });
+
+// Backwards-compatible alias with the typo mentioned: simluate
+program
+  .command("simluate")
+  .description("Alias of 'simulate'")
+  .allowUnknownOption()
+  .action(() => {
+    program.parseAsync([process.argv[0], process.argv[1], "simulate", "--help"]);
   });
 
 program.parseAsync(process.argv);
