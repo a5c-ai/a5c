@@ -1,4 +1,23 @@
 ---
+name: Auto Triage New Issues
+metadata:
+  runner-name: reactor
+on:
+  issue:
+    filters:
+      - expression: ${{ event.type == 'opened' }}
+    skip:
+      - expression: ${{ env.A5C_EVENTS_AUTO_TRIAGE_NEW_ISSUES == 'false' }}
+actions:
+  - type: label_issue
+    params:
+      issue: ${{ event.issue.html_url }}
+      add_labels: [triage]
+  - type: add_comment
+    params:
+      issue: ${{ event.issue.html_url }}
+      comment: "Triage requested for issue #${{ event.issue.number }}"
+---
 name: Triage New Issues
 metadata:
   runner-name: reactor
@@ -35,26 +54,31 @@ emit:
         - 'infrastructure'
         - 'support'
         - 'feature_request'
-set_labels:
-  - entity: ${{ event.issue.html_url }}
-    add_labels: [triage_requested]
-    remove_labels: [triaged]
+actions:
+  - type: label_issue
+    params:
+      issue: ${{ event.issue.html_url }}
+      add_labels: [triage_requested]
+      remove_labels: [triaged]
 ---
 name: Triage Agent Run
 metadata:
   runner-name: agents
 on:
   triage_new_issue:
-pre_set_labels:
-  - entity: ${{ event.issue.html_url }}
-    add_labels: [triage_in_progress]
-    remove_labels: [triage_requested]
-agent_run:
-  envs:
-    # added to the env vars section
-    - name: SOME_ENV
-      value: some_value
-set_labels:
-  - entity: ${{ event.issue.html_url }}
-    add_labels: [triaged]
-    remove_labels: [triage_in_progress]
+actions:
+  - type: label_issue
+    params:
+      issue: ${{ event.issue.html_url }}
+      add_labels: [triage_in_progress]
+      remove_labels: [triage_requested]
+  - type: agent_run
+    env:
+      - name: SOME_ENV
+        value: some_value
+    params: {}
+  - type: label_issue
+    params:
+      issue: ${{ event.issue.html_url }}
+      add_labels: [triaged]
+      remove_labels: [triage_in_progress]

@@ -15,7 +15,7 @@ on:
       - expression: ${{ event.labels | contains('create_pr_in_progress') || event.labels | contains('create_pr_requested') }}
 emit:
   create_pr_from_issue:
-    type: issue_ready_for_triage
+    type: from_issue
     payload:
       original_event: ${{ event }}
       issue: ${{ event.issue }}
@@ -46,7 +46,7 @@ env:
   - name: PR_DRAFT
     value: true
   - name: INITIAL_COMMIT_MESSAGE
-    value: "${{ event.issue.title }} - initial commit"
+    value: "chore: ${{ event.issue.title }} - initial commit"
   - name: INITIAL_COMMIT_FILE_CONTENT
     value: ${{ event.issue.body }}
   - name: INITIAL_COMMIT_FILE_NAME
@@ -68,9 +68,9 @@ env:
   - name: BASE_BRANCH
     value: main
   - name: PR_TITLE
-    value: "Merge a5c"
+    value: "Merge a5c/main into main"
   - name: PR_BODY
-    value: "Merge a5c"
+    value: "Merge a5c/main into main"
   - name: PR_LABELS
     value: "release"
   - name: PR_DRAFT
@@ -88,9 +88,9 @@ env:
   - name: BASE_BRANCH
     value: a5c/main
   - name: PR_TITLE
-    value: "Rebase a5c"
+    value: "Rebase main into a5c/main"
   - name: PR_BODY
-    value: "Rebase a5c"
+    value: "Rebase main into a5c/main"
   - name: PR_LABELS
     value: "rebase"
   - name: PR_DRAFT

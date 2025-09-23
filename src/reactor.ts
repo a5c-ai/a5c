@@ -3,10 +3,7 @@ import path from "node:path";
 import YAML from "yaml";
 import { execFileSync } from "node:child_process";
 import { readJSONFile } from "./config.js";
-import {
-  parseGithubEntity,
-  parseGithubOwnerRepo,
-} from "./utils/githubEntity.js";
+import { parseGithubOwnerRepo } from "./utils/githubEntity.js";
 import { createLogger } from "./log.js";
 
 export interface ReactorOptions {
@@ -38,7 +35,8 @@ function isReactorDoc(obj: any): boolean {
   const hasEmit = keys.has("emit");
   const hasCommands =
     keys.has("set_labels") || keys.has("pre_set_labels") || keys.has("script");
-  return hasOn || hasEmit || hasCommands;
+  const hasActions = keys.has("actions");
+  return hasOn || hasEmit || hasCommands || hasActions;
 }
 
 export async function handleReactor(opts: ReactorOptions): Promise<{
@@ -78,6 +76,9 @@ export async function handleReactor(opts: ReactorOptions): Promise<{
       }
       const onSpec: any = (doc as any).on;
       const emitSpec: any = (doc as any).emit;
+      const actionsSpec: any[] = Array.isArray((doc as any).actions)
+        ? (doc as any).actions
+        : [];
       const docEnvSpec: any[] = Array.isArray((doc as any).env)
         ? (doc as any).env
         : [];
@@ -96,7 +97,7 @@ export async function handleReactor(opts: ReactorOptions): Promise<{
           (doc as any).script.length > 0) ||
         (Array.isArray((doc as any).set_labels) &&
           (doc as any).set_labels.length > 0);
-      if (!onSpec && !emitSpec && !hasCommands) {
+      if (!onSpec && !emitSpec && !hasCommands && !actionsSpec.length) {
         logDebug(`handler#${idx} filtered: missing on/emit/commands`);
         continue;
       }
@@ -126,9 +127,12 @@ export async function handleReactor(opts: ReactorOptions): Promise<{
             original_event: ne,
           });
         }
-      } else if (!emitSpec && hasCommands) {
+      } else if (!emitSpec && (hasCommands || actionsSpec.length)) {
         const payload = {};
         const merged = await attachDocCommands(payload, doc, neWithEnv);
+        if (actionsSpec.length) {
+          merged.actions = await materializeActions(actionsSpec, neWithEnv);
+        }
         const eventType = "command_only";
         logDebug(
           `handler#${idx} produced command-only event (event_type=${eventType})`,
@@ -637,23 +641,24 @@ function normalizeNE(input: any): {
   };
 }
 
-function matchesAnyTrigger(
-  onSpec: any,
-  ne: ReturnType<typeof normalizeNE>,
-): boolean {
-  // onSpec can be a map of eventName -> filters; or a single eventName
-  if (typeof onSpec === "string") return matchesTrigger(onSpec, undefined, ne);
-  if (Array.isArray(onSpec)) {
-    return onSpec.some((name) => matchesTrigger(String(name), undefined, ne));
-  }
-  if (onSpec && typeof onSpec === "object") {
-    for (const [name, spec] of Object.entries(onSpec)) {
-      if (matchesTrigger(String(name), spec, ne)) return true;
-    }
-  }
-  return false;
-}
+// matchesAnyTrigger is unused; kept for reference but commented out to avoid linter noise
+// function matchesAnyTrigger(
+//   onSpec: any,
+//   ne: ReturnType<typeof normalizeNE>,
+// ): boolean {
+//   if (typeof onSpec === "string") return matchesTrigger(onSpec, undefined, ne);
+//   if (Array.isArray(onSpec)) {
+//     return onSpec.some((name) => matchesTrigger(String(name), undefined, ne));
+//   }
+//   if (onSpec && typeof onSpec === "object") {
+//     for (const [name, spec] of Object.entries(onSpec)) {
+//       if (matchesTrigger(String(name), spec, ne)) return true;
+//     }
+//   }
+//   return false;
+// }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function matchesTrigger(
   name: string,
   spec: any,
@@ -819,11 +824,57 @@ async function attachDocCommands(
   if (agentMat?.env && typeof agentMat.env === "object") {
     out.env = { ...(agentMat.env || {}), ...(out.env || {}) };
   }
+  // Attach rendered actions if doc provided them
+  if (Array.isArray((doc as any).actions) && (doc as any).actions.length) {
+    out.actions = await materializeActions((doc as any).actions, neCtx);
+  }
   // provide helpful context for downstream emit inference when needed
   if (!out.pull_request && exprEvent?.pull_request)
     out.pull_request = exprEvent.pull_request;
   if (!out.issue && exprEvent?.issue) out.issue = exprEvent.issue;
   return out;
+}
+
+async function materializeActions(
+  actions: any[],
+  neCtx: ReturnType<typeof normalizeNE>,
+): Promise<any[]> {
+  const out: any[] = [];
+  for (const a of actions || []) {
+    if (!a || typeof a !== "object") continue;
+    const type = String(a.type || "").trim();
+    if (!type) continue;
+    const params = resolveTemplates(a.params || {}, neCtx);
+    const envArr = Array.isArray(a.env) ? a.env : [];
+    const envObj: Record<string, string> = {};
+    for (const item of envArr) {
+      const name = String(item?.name || "").trim();
+      if (!name) continue;
+      envObj[name] = String(resolveTemplates(item?.value ?? "", neCtx) ?? "");
+    }
+    const action: any = { type, params, ...(Object.keys(envObj).length ? { env: envObj } : {}) };
+    // Map action type to script uri if applicable
+    const scriptUri = inferActionScriptUri(type, neCtx);
+    if (scriptUri) action.script_uri = scriptUri;
+    out.push(action);
+  }
+  return out;
+}
+
+function inferActionScriptUri(
+  type: string,
+  neCtx: ReturnType<typeof normalizeNE>,
+): string | null {
+  try {
+    // Convention: .a5c/scripts/actions/<type>.sh in the same repo by default
+    const repo = (neCtx as any)?.payload?.repository?.full_name;
+    if (!repo) return null;
+    const ref = inferRefFromNE(neCtx) || "a5c/main";
+    const path = `.a5c/scripts/actions/${type}.sh`;
+    return `github://${repo}/branch/${encodeURIComponent(ref)}/${path}`;
+  } catch {
+    return null;
+  }
 }
 
 function resolveTemplates(node: any, ctx: ReturnType<typeof normalizeNE>): any {
