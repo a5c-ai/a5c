@@ -2,10 +2,11 @@ import fs from "node:fs";
 import { writeJSONFile, readJSONFile } from "./config.js";
 import os from "node:os";
 import path from "node:path";
-import { parseGithubEntity as parseGithubEntityUtil } from "./utils/githubEntity.js";
 import { redactObject } from "./utils/redact.js";
 import { createLogger } from "./log.js";
 import { spawn } from "node:child_process";
+// parseGithubEntityUtil is re-exported below as parseGithubEntity for public API
+import { parseGithubEntity as parseGithubEntityUtil } from "./utils/githubEntity.js";
 
 export interface EmitOptions {
   in?: string;
@@ -162,6 +163,13 @@ async function executeSideEffects(obj: any): Promise<void> {
         throw e;
       }
     }
+    // Execute new actions format
+    if (cp && Array.isArray(cp.actions) && cp.actions.length) {
+      dbg(`execute actions count=${cp.actions.length}`);
+      for (const action of cp.actions) {
+        await executeOneAction(action, cp, scriptEnv, tmpEventPath);
+      }
+    }
     if (cp && Array.isArray(cp.set_labels) && cp.set_labels.length) {
       const filled = cp.set_labels.map((e: any) => ({
         ...e,
@@ -171,6 +179,270 @@ async function executeSideEffects(obj: any): Promise<void> {
       await applyLabels(filled);
     }
   }
+}
+
+async function executeOneAction(
+  action: any,
+  cp: any,
+  baseEnv: Record<string, string>,
+  _tmpEventPath: string,
+): Promise<void> {
+  const type = String(action?.type || "").trim();
+  if (!type) return;
+  // Built-in fast path for labeling
+  if (type === "label_issue" || type === "label_pr") {
+    const issueUrl = action?.params?.issue || action?.params?.entity;
+    const add = Array.isArray(action?.params?.add_labels)
+      ? action.params.add_labels
+      : [];
+    const remove = Array.isArray(action?.params?.remove_labels)
+      ? action.params.remove_labels
+      : [];
+    if (issueUrl) {
+      await applyLabels([
+        { entity: String(issueUrl), add_labels: add, remove_labels: remove },
+      ]);
+    }
+    return;
+  }
+  // emit_event is script-backed; no built-in to enforce uniformity
+  if (type === "status_checks") {
+    await actionStatusChecks(action, cp);
+    return;
+  }
+  if (type === "add_comment") {
+    await actionAddComment(action, cp);
+    return;
+  }
+  if (type === "edit_comment") {
+    await actionEditComment(action, cp);
+    return;
+  }
+  if (type === "delete_comment") {
+    await actionDeleteComment(action, cp);
+    return;
+  }
+  if (type === "close_issue") {
+    await actionCloseIssue(action, cp);
+    return;
+  }
+  if (type === "close_pr") {
+    await actionClosePr(action, cp);
+    return;
+  }
+  if (type === "merge_pr") {
+    await actionMergePr(action, cp);
+    return;
+  }
+  // Script-backed action
+  const scriptUri = String(action?.script_uri || "").trim();
+  if (!scriptUri) {
+    dbg(`skip action '${type}': missing script_uri`);
+    return;
+  }
+  const scriptText = await fetchScriptText(scriptUri);
+  if (!scriptText) {
+    dbg(`skip action '${type}': script not found at ${scriptUri}`);
+    return;
+  }
+  const scriptPath = writeTempScript(scriptText);
+  const mergedEnv: Record<string, string> = {
+    ...baseEnv,
+    ...(normalizeActionEnv(action?.env) || {}),
+    A5C_ACTION_TYPE: type,
+    ACTION_TYPE: type,
+    A5C_ACTION_PARAMS: JSON.stringify(action?.params || {}),
+    ACTION_PARAMS_JSON: JSON.stringify(action?.params || {}),
+    A5C_ACTION_SCRIPT_URI: scriptUri,
+  };
+  await new Promise<void>((resolve, reject) => {
+    const child = spawn(scriptPath, {
+      shell: "/bin/bash",
+      stdio: "inherit",
+      env: mergedEnv,
+    });
+    child.on("close", (code: any, signal: any) => {
+      if (code === 0) return resolve();
+      const reason =
+        code != null ? `exit code ${code}` : signal ? `signal ${signal}` : "";
+      reject(new Error(`action failed (${reason})`));
+    });
+    child.on("error", (err: any) => reject(err instanceof Error ? err : new Error(String(err))));
+  });
+}
+
+function normalizeActionEnv(arr: any): Record<string, string> | undefined {
+  if (!Array.isArray(arr)) return undefined;
+  const out: Record<string, string> = {};
+  for (const it of arr) {
+    const name = String(it?.name || "").trim();
+    if (!name) continue;
+    out[name] = String(it?.value ?? "");
+  }
+  return Object.keys(out).length ? out : undefined;
+}
+
+function writeTempScript(content: string): string {
+  try {
+    const preferred = "/tmp/a5c-action.sh";
+    fs.writeFileSync(preferred, content, { encoding: "utf8", mode: 0o755 });
+    return preferred;
+  } catch {}
+  const dir = process.env.RUNNER_TEMP || process.env.TEMP || process.cwd();
+  const p = path.join(dir, `a5c-action-${Date.now()}.sh`);
+  try {
+    fs.writeFileSync(p, content, { encoding: "utf8" });
+    return p;
+  } catch {
+    return "bash"; // fallback to shell
+  }
+}
+
+async function fetchScriptText(uri: string): Promise<string> {
+  try {
+    if (/^github:\/\//i.test(uri)) {
+      const m = /^github:\/\/([^/]+)\/([^/]+)\/(?:branch|ref|version)\/([^/]+)\/(.+)$/i.exec(
+        uri,
+      );
+      if (!m) return "";
+      const owner = m[1];
+      const repo = m[2];
+      const ref = decodeURIComponent(m[3]);
+      const filePath = decodeURIComponent(m[4]);
+      const { Octokit } = await import("@octokit/rest");
+      const token = process.env.A5C_AGENT_GITHUB_TOKEN || process.env.GITHUB_TOKEN;
+      const octokit = new Octokit({ auth: token });
+      const { data } = await octokit.repos.getContent({ owner, repo, path: filePath, ref });
+      if (Array.isArray(data)) return "";
+      const encoding = (data as any).encoding || "base64";
+      return Buffer.from((data as any).content || "", encoding).toString("utf8");
+    }
+    if (/^file:\/\//i.test(uri)) {
+      const p = new URL(uri).pathname;
+      return fs.readFileSync(p, "utf8");
+    }
+    if (fs.existsSync(uri)) return fs.readFileSync(uri, "utf8");
+    return "";
+  } catch {
+    return "";
+  }
+}
+
+async function getOctokit(): Promise<any> {
+  const token = process.env.A5C_AGENT_GITHUB_TOKEN || process.env.GITHUB_TOKEN;
+  if (!token) throw new Error("GITHUB_TOKEN required for action");
+  const { Octokit } = await import("@octokit/rest");
+  return new Octokit({ auth: token });
+}
+
+async function actionAddComment(action: any, cp: any): Promise<void> {
+  const body = String(action?.params?.comment || action?.params?.body || "");
+  const issueUrl = action?.params?.issue || cp?.issue?.html_url || cp?.pull_request?.html_url;
+  if (!issueUrl || !body) return;
+  const parsed = parseGithubEntityUtil(String(issueUrl));
+  if (!parsed || !parsed.owner || !parsed.repo || !parsed.number) return;
+  const octokit = await getOctokit();
+  await octokit.issues.createComment({
+    owner: parsed.owner,
+    repo: parsed.repo,
+    issue_number: parsed.number,
+    body,
+  } as any);
+}
+
+async function actionEditComment(action: any, _cp: any): Promise<void> {
+  const body = String(action?.params?.comment || action?.params?.body || "");
+  const commentId = Number(action?.params?.comment_id || action?.params?.id);
+  if (!commentId || !body) return;
+  const octokit = await getOctokit();
+  await octokit.issues.updateComment({
+    comment_id: commentId,
+    owner: String(action?.params?.owner || ""),
+    repo: String(action?.params?.repo || ""),
+    body,
+  } as any);
+}
+
+async function actionDeleteComment(action: any, _cp: any): Promise<void> {
+  const commentId = Number(action?.params?.comment_id || action?.params?.id);
+  if (!commentId) return;
+  const octokit = await getOctokit();
+  await octokit.issues.deleteComment({
+    comment_id: commentId,
+    owner: String(action?.params?.owner || ""),
+    repo: String(action?.params?.repo || ""),
+  } as any);
+}
+
+async function actionCloseIssue(action: any, cp: any): Promise<void> {
+  const issueUrl = action?.params?.issue || cp?.issue?.html_url;
+  if (!issueUrl) return;
+  const parsed = parseGithubEntityUtil(String(issueUrl));
+  if (!parsed || !parsed.owner || !parsed.repo || !parsed.number) return;
+  const octokit = await getOctokit();
+  await octokit.issues.update({
+    owner: parsed.owner,
+    repo: parsed.repo,
+    issue_number: parsed.number,
+    state: "closed",
+  } as any);
+}
+
+async function actionClosePr(action: any, cp: any): Promise<void> {
+  const prUrl = action?.params?.pull_request || action?.params?.pr || cp?.pull_request?.html_url;
+  if (!prUrl) return;
+  const parsed = parseGithubEntityUtil(String(prUrl));
+  if (!parsed || !parsed.owner || !parsed.repo || !parsed.number) return;
+  const octokit = await getOctokit();
+  await octokit.pulls.update({
+    owner: parsed.owner,
+    repo: parsed.repo,
+    pull_number: parsed.number,
+    state: "closed",
+  } as any);
+}
+
+async function actionMergePr(action: any, cp: any): Promise<void> {
+  const prUrl = action?.params?.pull_request || action?.params?.pr || cp?.pull_request?.html_url;
+  if (!prUrl) return;
+  const parsed = parseGithubEntityUtil(String(prUrl));
+  if (!parsed || !parsed.owner || !parsed.repo || !parsed.number) return;
+  const octokit = await getOctokit();
+  await octokit.pulls.merge({
+    owner: parsed.owner,
+    repo: parsed.repo,
+    pull_number: parsed.number,
+    merge_method: String(action?.params?.method || "merge"),
+  } as any);
+}
+
+async function actionStatusChecks(action: any, cp: any): Promise<void> {
+  const name = String(action?.params?.name || action?.params?.context || "").trim();
+  if (!name) return;
+  const description = String(action?.params?.description || "");
+  const statusParam = String(action?.params?.status || "queued").toLowerCase();
+  const prUrl = action?.params?.pull_request_url || cp?.pull_request?.html_url;
+  const parsed = prUrl ? parseGithubEntityUtil(String(prUrl)) : null;
+  const octokit = await getOctokit();
+  let owner = parsed?.owner;
+  let repo = parsed?.repo;
+  let sha = cp?.pull_request?.head?.sha || cp?.sha || cp?.after;
+  if ((!owner || !repo) && cp?.repository?.full_name) {
+    const parts = String(cp.repository.full_name).split("/");
+    owner = parts[0];
+    repo = parts[1];
+  }
+  if (!sha && cp?.head_commit?.id) sha = cp.head_commit.id;
+  if (!owner || !repo || !sha) return;
+  const state = statusParam === "success" || statusParam === "failure" || statusParam === "error" ? statusParam : (statusParam === "running" ? "pending" : "queued");
+  await octokit.repos.createCommitStatus({
+    owner,
+    repo,
+    sha,
+    state: state === "queued" ? "pending" : (state as any),
+    context: name,
+    description,
+  } as any);
 }
 
 async function applyLabels(entries: any[]): Promise<void> {

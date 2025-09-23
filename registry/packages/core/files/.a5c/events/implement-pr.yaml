@@ -8,10 +8,10 @@ on:
       # implement_pr label was added
       - expression: ${{ event.type == 'labeled' && event.label.name == 'implement_pr' }}
     skip:
-      # is a draft PR or already merged
-      - expression: ${{ event.pull_request.draft == true || event.pull_request.merged == true }}
+      # is already merged
+      - expression: ${{ event.pull_request.merged == true }}
       # if implement_pr in progress or already requested
-      - expression: ${{ event.pull_request.labels | map(attribute='name') | contains('implement_pr_in_progress') || event.pull_request.labels | map(attribute='name') | contains('implement_pr_requested') }}
+      - expression: ${{ event.payload.client_payload.payload.pull_request.labels | map(attribute='name') | contains('implement_pr_in_progress') || event.payload.client_payload.payload.pull_request.labels | map(attribute='name') | contains('implement_pr_requested') }}
 emit:
   implement_pr_request:
     type: pr_implement

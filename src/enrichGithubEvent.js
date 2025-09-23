@@ -114,6 +114,73 @@ export async function enrichGithubEvent(event, opts) {
     },
   };
 
+  async function fetchIssueComments(issueNumber, { until } = {}) {
+    try {
+      const comments = await withRetry(() =>
+        octokit.paginate(octokit.issues.listComments, {
+          owner,
+          repo,
+          issue_number: issueNumber,
+          per_page: 100,
+        }),
+      );
+      if (until) {
+        const ts = new Date(until).getTime();
+        return comments.filter((c) => new Date(c.created_at).getTime() < ts);
+      }
+      return comments;
+    } catch (e) {
+      enriched._enrichment.errors.push({ scope: "issue_comments", status: e.status || 0 });
+      enriched._enrichment.partial = true;
+      return [];
+    }
+  }
+
+  async function fetchReviewComments(prNumber, { until } = {}) {
+    try {
+      const comments = await withRetry(() =>
+        octokit.paginate(octokit.pulls.listReviewComments, {
+          owner,
+          repo,
+          pull_number: prNumber,
+          per_page: 100,
+        }),
+      );
+      if (until) {
+        const ts = new Date(until).getTime();
+        return comments.filter((c) => new Date(c.created_at).getTime() < ts);
+      }
+      return comments;
+    } catch (e) {
+      enriched._enrichment.errors.push({ scope: "review_comments", status: e.status || 0 });
+      enriched._enrichment.partial = true;
+      return [];
+    }
+  }
+
+  async function fetchCommitChecks(sha) {
+    const out = {};
+    try {
+      const combined = await withRetry(() =>
+        octokit.repos.getCombinedStatusForRef({ owner, repo, ref: sha }),
+      );
+      out.combined_status = combined?.data || combined;
+    } catch (e) {
+      enriched._enrichment.errors.push({ scope: "combined_status", status: e.status || 0 });
+      enriched._enrichment.partial = true;
+    }
+    try {
+      const runs = await withRetry(() =>
+        octokit.checks.listForRef({ owner, repo, ref: sha, per_page: 100 }),
+      );
+      out.check_runs = runs?.data || runs;
+    } catch (e) {
+      enriched._enrichment.errors.push({ scope: "check_runs", status: e.status || 0 });
+      enriched._enrichment.partial = true;
+    }
+    return out;
+  }
+
   if (event.pull_request) {
     const pr = event.pull_request;
     const number = pr.number || event.number;
@@ -187,6 +254,7 @@ export async function enrichGithubEvent(event, opts) {
       has_conflicts: hasConflicts,
       draft: prData.draft,
       head: prData.head?.ref,
+      head_sha: prData.head?.sha,
       base: prData.base?.ref,
       changed_files: prData.changed_files,
       additions: prData.additions,
@@ -201,6 +269,22 @@ export async function enrichGithubEvent(event, opts) {
         ? { owners_union: ownersUnion }
         : { owners_union: [] }),
     };
+
+    // PR comments (issue discussion) and review comments
+    try {
+      const issueComments = await fetchIssueComments(number);
+      const reviewComments = await fetchReviewComments(number);
+      enriched._enrichment.pr.comments = issueComments;
+      enriched._enrichment.pr.review_comments = reviewComments;
+    } catch {}
+
+    // Status checks for head commit
+    if (prData.head?.sha) {
+      try {
+        const checks = await fetchCommitChecks(prData.head.sha);
+        enriched._enrichment.pr.checks = checks;
+      } catch {}
+    }
 
     // Branch protection
     try {
@@ -292,6 +376,13 @@ export async function enrichGithubEvent(event, opts) {
           commits,
           owners: ownersMap,
         };
+
+        // Status checks for the pushed head commit (after)
+        if (after) {
+          try {
+            enriched._enrichment.push.checks = await fetchCommitChecks(after);
+          } catch {}
+        }
       } catch (e) {
         enriched._enrichment.partial = true;
         enriched._enrichment.errors.push({
@@ -300,6 +391,56 @@ export async function enrichGithubEvent(event, opts) {
         });
       }
     }
+  }
+
+  // Issue events: enrich with issue comments
+  if (event.issue && !event.pull_request) {
+    try {
+      const number = event.issue.number || event.number;
+      const comments = await fetchIssueComments(number);
+      enriched._enrichment.issue = {
+        ...(enriched._enrichment.issue || {}),
+        number,
+        comments,
+      };
+    } catch {}
+  }
+
+  // Issue comment event: fetch original issue and previous comments only
+  if (event.comment && event.issue && !event.pull_request) {
+    try {
+      const number = event.issue.number || event.number;
+      const until = event.comment?.created_at;
+      const commentsBefore = await fetchIssueComments(number, { until });
+      enriched._enrichment.issue_comment_context = {
+        issue: event.issue,
+        comments_before: commentsBefore,
+      };
+    } catch {}
+  }
+
+  // PR review comment event: fetch PR issue comments, review comments before this
+  if (event.comment && (event.pull_request || event.issue?.pull_request)) {
+    try {
+      const prNumber = event.pull_request?.number || event.issue?.number;
+      const until = event.comment?.created_at;
+      const issueCommentsBefore = await fetchIssueComments(prNumber, { until });
+      const reviewCommentsBefore = await fetchReviewComments(prNumber, {
+        until,
+      });
+      enriched._enrichment.pr_comment_context = {
+        pull_request: event.pull_request || { number: prNumber },
+        comments_before: issueCommentsBefore,
+        review_comments_before: reviewCommentsBefore,
+      };
+      // Also include status checks for current head sha if available
+      const headSha = event.pull_request?.head?.sha;
+      if (headSha) {
+        enriched._enrichment.pr_comment_context.checks = await fetchCommitChecks(
+          headSha,
+        );
+      }
+    } catch {}
   }
 
   return enriched;

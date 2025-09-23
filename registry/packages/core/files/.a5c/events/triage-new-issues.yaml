@@ -1,4 +1,22 @@
 ---
+name: Auto Triage New Issues
+metadata:
+  runner-name: reactor
+on:
+  issue:
+    filters:
+      # label triage was added
+      - expression: ${{ event.type == 'opened' }}
+    skip:
+      # is a issue or already closed
+      - expression: ${{ env.A5C_EVENTS_AUTO_TRIAGE_NEW_ISSUES == 'true' }}
+set_labels:
+  - entity: ${{ event.issue.html_url }}
+    add_labels: [triage]
+    remove_labels: []
+script:
+  - echo "Triage requested for issue ${{ event.issue.html_url }}"
+---
 name: Triage New Issues
 metadata:
   runner-name: reactor
@@ -18,6 +36,23 @@ emit:
     payload:
       original_event: ${{ event }}
       issue: ${{ event.issue }}
+      among: 
+        - 'bug'
+        - 'feature'
+        - 'documentation'
+        - 'question'
+        - 'enhancement'
+        - 'devops'
+        - 'security'
+        - 'performance'
+        - 'ux'
+        - 'backend'
+        - 'frontend'
+        - 'database'
+        - 'api'
+        - 'infrastructure'
+        - 'support'
+        - 'feature_request'
 set_labels:
   - entity: ${{ event.issue.html_url }}
     add_labels: [triage_requested]

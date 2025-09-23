@@ -1,3 +1,20 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Map ACTION_PARAMS_JSON to environment variables expected by the PR creator
+if [[ -n "${ACTION_PARAMS_JSON:-}" ]]; then
+  export HEAD_BRANCH="$(node -e "const p=JSON.parse(process.env.ACTION_PARAMS_JSON||'{}');console.log(p.HEAD_BRANCH||p.head_branch||'')")"
+  export BASE_BRANCH="$(node -e "const p=JSON.parse(process.env.ACTION_PARAMS_JSON||'{}');console.log(p.BASE_BRANCH||p.base_branch||'')")"
+  export PR_TITLE="$(node -e "const p=JSON.parse(process.env.ACTION_PARAMS_JSON||'{}');console.log(p.PR_TITLE||p.title||'')")"
+  export PR_BODY="$(node -e "const p=JSON.parse(process.env.ACTION_PARAMS_JSON||'{}');console.log(p.PR_BODY||p.body||'')")"
+  export PR_LABELS="$(node -e "const p=JSON.parse(process.env.ACTION_PARAMS_JSON||'{}');console.log(Array.isArray(p.PR_LABELS)?p.PR_LABELS.join(','):(p.labels||''))")"
+  export PR_DRAFT="$(node -e "const p=JSON.parse(process.env.ACTION_PARAMS_JSON||'{}');const v=(p.PR_DRAFT??p.draft);console.log(v===false?'false':'true')")"
+  export INITIAL_COMMIT_MESSAGE="$(node -e "const p=JSON.parse(process.env.ACTION_PARAMS_JSON||'{}');console.log(p.INITIAL_COMMIT_MESSAGE||p.initial_commit_message||'')")"
+  export INITIAL_COMMIT_FILE_CONTENT="$(node -e "const p=JSON.parse(process.env.ACTION_PARAMS_JSON||'{}');console.log(p.INITIAL_COMMIT_FILE_CONTENT||p.initial_commit_file_content||'')")"
+  export INITIAL_COMMIT_FILE_NAME="$(node -e "const p=JSON.parse(process.env.ACTION_PARAMS_JSON||'{}');console.log(p.INITIAL_COMMIT_FILE_NAME||p.initial_commit_file_name||'')")"
+fi
+
+# Inline implementation adapted from .a5c/scripts/create-pr.sh
 #!/bin/sh
 
 set -eu
@@ -163,3 +180,5 @@ else
   echo "gh CLI not installed; skipping PR creation."
   exit 0
 fi
+
+

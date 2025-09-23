@@ -20,30 +20,36 @@ emit:
       pr_ref: ${{ event.pull_request.head.ref }}
       base_ref: ${{ event.pull_request.base.ref }}
       pull_request: ${{ event.pull_request }}
-set_labels:
-  - entity: ${{ event.pull_request.html_url }}
-    add_labels: [validation_requested]
-    remove_labels: [validated]
+actions:
+  - type: label_issue
+    params:
+      issue: ${{ event.pull_request.html_url }}
+      add_labels: [validation_requested]
+      remove_labels: [validated]
 ---
 name: Validation Agent Run
 metadata:
   runner-name: agents
 on:
   validation_request:
-pre_set_labels:
-  - entity: ${{ event.pull_request.html_url }}
-    add_labels: [validation_in_progress]
-    remove_labels: [validation_requested]
-status-checks:
-  - name: Validation/{{ event.type }}
-    # sets state in queued / running before running script, and state: success/failure after (depending on the script shell return value)
-    description: Validation of PR ({{ event.pull_request.title }})
-    pull_request_url: ${{ event.pull_request.html_url }}
-agent_run:
-  envs:
-    - name: SOME_ENV
-      value: some_value
-set_labels:
-  - entity: ${{ event.pull_request.html_url }}
-    add_labels: [validated]
-    remove_labels: [validation_in_progress]
+actions:
+  - type: label_issue
+    params:
+      issue: ${{ event.pull_request.html_url }}
+      add_labels: [validation_in_progress]
+      remove_labels: [validation_requested]
+  - type: status_checks
+    params:
+      name: "Validation/${{ event.type }}"
+      description: "Validation of PR ({{ event.pull_request.title })"
+      pull_request_url: ${{ event.pull_request.html_url }}
+  - type: agent_run
+    params: {}
+    env:
+      - name: SOME_ENV
+        value: some_value
+  - type: label_issue
+    params:
+      issue: ${{ event.pull_request.html_url }}
+      add_labels: [validated]
+      remove_labels: [validation_in_progress]

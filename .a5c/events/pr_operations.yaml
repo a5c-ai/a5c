@@ -19,80 +19,66 @@ emit:
     payload:
       original_event: ${{ event }}
       issue: ${{ event.issue }}
-set_labels:
-  - entity: ${{ event.issue.html_url }}
-    add_labels: [create_pr_requested]
+actions:
+  - type: label_issue
+    params:
+      issue: ${{ event.issue.html_url }}
+      add_labels: [create_pr_requested]
 ---
 name: Create PR Run
 metadata:
   runner-name: reactor
 on:
   create_pr_from_issue:
-pre_set_labels:
-  - entity: ${{ event.issue.html_url }}
-    add_labels: [create_pr_in_progress]
-    remove_labels: [create_pr_requested]
-env:
-  - name: HEAD_BRANCH
-    value: issue/a5c/${{ event.issue.number }}
-  - name: BASE_BRANCH
-    value: a5c/main
-  - name: PR_TITLE
-    value: ${{ event.payload.client_payload.payload.issue.title }}
-  - name: PR_BODY
-    value: ${{ event.payload.client_payload.payload.issue.body }}
-  - name: PR_LABELS
-    value: "${{ event.payload.client_payload.payload.issue.labels | map(attribute='name') | join(',') }},created_from_issue"
-  - name: PR_DRAFT
-    value: true
-  - name: INITIAL_COMMIT_MESSAGE
-    value: "${{ event.payload.client_payload.payload.issue.title }} - initial commit"
-  - name: INITIAL_COMMIT_FILE_CONTENT
-    value: ${{ event.payload.client_payload.payload.issue.body }}
-  - name: INITIAL_COMMIT_FILE_NAME
-    value: docs/issues/issue-${{ event.payload.client_payload.payload.issue.number }}.md
-script_template_uri: github://a5c-ai/events/branch/a5c%2Fmain/.a5c/scripts/create-pr.sh
-set_labels:
-  - entity: ${{ event.issue.html_url }}
-    add_labels: [created_pr]
-    remove_labels: [create_pr_in_progress]
+actions:
+  - type: label_issue
+    params:
+      issue: ${{ event.issue.html_url }}
+      add_labels: [create_pr_in_progress]
+      remove_labels: [create_pr_requested]
+  - type: create_pr
+    params:
+      head_branch: issue/a5c/${{ event.issue.number }}
+      base_branch: a5c/main
+      title: ${{ event.issue.title }}
+      body: ${{ event.issue.body }}
+      labels: "${{ event.issue.labels | map(attribute='name') | join(',') }},created_from_issue"
+      draft: true
+      initial_commit_message: "chore: ${{ event.issue.title }} - initial commit"
+      initial_commit_file_content: ${{ event.issue.body }}
+      initial_commit_file_name: docs/issues/issue-${{ event.issue.number }}.md
+  - type: label_issue
+    params:
+      issue: ${{ event.issue.html_url }}
+      add_labels: [created_pr]
+      remove_labels: [create_pr_in_progress]
 ---
 name: Release - merge a5c/main to main
 metadata:
   runner-name: reactor
 on:
   merge_a5c_main_to_main:
-env:
-  - name: HEAD_BRANCH
-    value: a5c/main
-  - name: BASE_BRANCH
-    value: main
-  - name: PR_TITLE
-    value: "Merge a5c/main into main"
-  - name: PR_BODY
-    value: "Merge a5c/main into main"
-  - name: PR_LABELS
-    value: "release"
-  - name: PR_DRAFT
-    value: true
-script_template_uri: github://a5c-ai/events/branch/a5c%2Fmain/.a5c/scripts/create-pr.sh
+actions:
+  - type: create_pr
+    params:
+      head_branch: a5c/main
+      base_branch: main
+      title: "Merge a5c/main into main"
+      body: "Merge a5c/main into main"
+      labels: "release"
+      draft: true
 ---
 name: Rebase - merge main to a5c/main
 metadata:
   runner-name: reactor
 on:
   rebase_main_to_a5c_main:
-env:
-  - name: HEAD_BRANCH
-    value: main
-  - name: BASE_BRANCH
-    value: a5c/main
-  - name: PR_TITLE
-    value: "Rebase main into a5c/main"
-  - name: PR_BODY
-    value: "Rebase main into a5c/main"
-  - name: PR_LABELS
-    value: "rebase"
-  - name: PR_DRAFT
-    value: true
-script_template_uri: github://a5c-ai/events/branch/a5c%2Fmain/.a5c/scripts/create-pr.sh
+actions:
+  - type: create_pr
+    params:
+      head_branch: main
+      base_branch: a5c/main
+      title: "Rebase main into a5c/main"
+      body: "Rebase main into a5c/main"
+      labels: "rebase"
+      draft: true

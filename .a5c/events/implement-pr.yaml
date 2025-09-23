@@ -20,32 +20,43 @@ emit:
       pr_ref: ${{ event.pull_request.head.ref }}
       base_ref: ${{ event.pull_request.base.ref }}
       pull_request: ${{ event.pull_request }}
-set_labels:
-  - entity: ${{ event.pull_request.html_url }}
-    add_labels: [implement_pr_requested]
-    remove_labels: [implemented]
+actions:
+  - type: label_issue
+    params:
+      issue: ${{ event.pull_request.html_url }}
+      add_labels: [implement_pr_requested]
+      remove_labels: [implemented]
 ---
 name: Implement PR Agent Run
 metadata:
   runner-name: agents
 on:
   implement_pr_request:
-pre_set_labels:
-  - entity: ${{ event.pull_request.html_url }}
-    add_labels: [implement_pr_in_progress]
-    remove_labels: [implement_pr_requested]
-status-checks:
-  - name: Implement PR/{{ event.type }}
-    # sets state in queued / running before running script, and state: success/failure after (depending on the script shell return value)
-    description: Implement PR ({{ event.pull_request.title }})
-    pull_request_url: ${{ event.pull_request.html_url }}
-agent_run:
-  envs:
-    - name: SOME_ENV
-      value: some_value
-set_labels:
-  - entity: ${{ event.pull_request.html_url }}
-    add_labels:
-      - implemented
-      # - validate
-    remove_labels: [implement_pr_in_progress]
+actions:
+  - type: label_issue
+    params:
+      issue: ${{ event.pull_request.html_url }}
+      add_labels: [implement_pr_in_progress]
+      remove_labels: [implement_pr_requested]
+  - type: status_checks
+    params:
+      name: "Implement PR/${{ event.type }}"
+      description: "Implement PR ({{ event.pull_request.title })"
+      pull_request_url: ${{ event.pull_request.html_url }}
+      status: queued
+  - type: agent_run
+    params: {}
+    env:
+      - name: SOME_ENV
+        value: some_value
+  - type: status_checks
+    params:
+      name: "Implement PR/${{ event.type }}"
+      description: "Implement PR ({{ event.pull_request.title })"
+      pull_request_url: ${{ event.pull_request.html_url }}
+      status: success
+  - type: label_issue
+    params:
+      issue: ${{ event.pull_request.html_url }}
+      add_labels: [implemented]
+      remove_labels: [implement_pr_in_progress]
