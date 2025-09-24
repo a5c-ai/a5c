@@ -420,15 +420,31 @@ function parseGithubUri(
   uri: string,
 ): { owner: string; repo: string; ref: string; path: string } | null {
   try {
-    const m =
-      /^github:\/\/([^/]+)\/([^/]+)\/(?:branch|ref|version)\/([^/]+)\/(.+)$/i.exec(
-        uri,
-      );
-    if (!m) return null;
-    const [, owner, repo, refRaw, pRaw] = m;
-    const ref = decodeURIComponent(refRaw);
-    const p = decodeURIComponent(pRaw);
-    return { owner, repo, ref, path: p };
+    if (!/^github:\/\//i.test(uri)) return null;
+    const [, rest] = /^(github):\/\/(.+)$/i.exec(uri) || [];
+    if (!rest) return null;
+    const parts = rest.split("/");
+    const owner = parts.shift();
+    const repo = parts.shift();
+    if (!owner || !repo || parts.length === 0) return null;
+
+    const mode = (parts[0] || "").toLowerCase();
+    if (mode === "branch" || mode === "ref" || mode === "version") {
+      if (parts.length < 2) return null;
+      const ref = decodeURIComponent(parts[1] || "");
+      const pathSegments = parts.slice(2).map((seg) => decodeURIComponent(seg || ""));
+      return { owner, repo, ref, path: pathSegments.join("/") };
+    }
+
+    for (let i = parts.length - 1; i >= 1; i--) {
+      const refSegments = parts.slice(0, i).map((seg) => decodeURIComponent(seg || ""));
+      const pathSegments = parts.slice(i).map((seg) => decodeURIComponent(seg || ""));
+      const ref = refSegments.join("/");
+      const path = pathSegments.join("/");
+      if (ref && path) return { owner, repo, ref, path };
+    }
+
+    return null;
   } catch (e: any) {
     logWarn(`parseGithubUri failed: ${e?.message || e}`);
     return null;
