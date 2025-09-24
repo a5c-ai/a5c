@@ -492,7 +492,7 @@ program
   .description("Initialize .a5c config and install a default package")
   .option(
     "--package <github-uri>",
-    "github:// URI to initial package (default: github://a5c-ai/a5c/branch/main/registry/packages/github)",
+    "github:// URI to initial package (default: github://a5c-ai/a5c/branch/main/registry/packages/github-starter)",
   )
   .action(async (cmdOpts: any) => {
     const { code, errorMessage } = await handleInit({ pkg: cmdOpts.package });
