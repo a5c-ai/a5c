@@ -177,7 +177,12 @@ export async function handleInstall(
 
     // Print INSTALL.md for each package (dependencies first)
     for (const pkg of plan.packages) {
-      await printDocIfExists(pkg.parts, "INSTALL.md", "Installation instructions:", ctx);
+      await printDocIfExists(
+        pkg.parts,
+        "INSTALL.md",
+        `Installation instructions (${pkg.spec.name || pkg.uri}):`,
+        ctx,
+      );
     }
 
     progress.finish();
@@ -229,7 +234,7 @@ async function buildInstallPlan(
   ctx: InstallContext,
 ): Promise<InstallPlan> {
   const visited = new Set<string>();
-  const packages: { uri: string; parts: GithubParts; spec: PackageSpec }[] = [];
+  const packages: InstallPackage[] = [];
   const files: PlannedFile[] = [];
 
   async function visit(uri: string): Promise<void> {
@@ -243,7 +248,7 @@ async function buildInstallPlan(
     for (const dep of deps) {
       await visit(String(dep));
     }
-    packages.push({ uri: normalized, parts, spec });
+    packages.push({ uri: normalized, parts, spec, packageRootPath });
 
     // Stage files/ from this package
     const entries = await listGithubDirectory(parts, path.posix.join(packageRootPath, "files"));
@@ -461,26 +466,45 @@ export async function handleUpgrade(
     if (!opts.uri || typeof opts.uri !== "string") {
       return { code: 2, errorMessage: "upgrade: missing required <github-uri>" };
     }
-    const plan = await buildInstallPlan(opts.uri);
+    const progress = new InstallProgress(opts.showProgress === true);
+    const ctx: InstallContext = { progress, docsPrinted: new Set() };
+    const plan = await buildInstallPlan(opts.uri, ctx);
 
     // Apply files, overwriting existing content
+    const fileStage = progress.startStage(
+      "Applying files",
+      plan.files.length > 0 ? plan.files.length : undefined,
+    );
     for (const pf of plan.files) {
       fs.mkdirSync(path.dirname(pf.targetPath), { recursive: true });
       fs.writeFileSync(pf.targetPath, pf.content);
+      fileStage.advance(pf.relPath);
     }
+    progress.finishStage();
 
     // Run install scripts package-by-package (dependencies first)
+    const scriptStage = progress.startStage("Running install scripts", plan.packages.length);
     for (const p of plan.packages) {
+      scriptStage.setInfo(p.spec.name || p.uri);
       await runInstallScriptIfExists(p.parts);
+      scriptStage.advance();
     }
+    progress.finishStage();
 
     // Update .a5c/packages.yaml (mark upgradedAt)
     await updatePackagesYamlUpgrade(plan);
 
     // Print MIGRATIONS.md for the root package if available
     const root = plan.packages[plan.packages.length - 1];
-    if (root) await printDocIfExists(root.parts, "MIGRATIONS.md", "Migrations:");
+    if (root)
+      await printDocIfExists(
+        root.parts,
+        "MIGRATIONS.md",
+        `Migrations (${root.spec.name || root.uri}):`,
+        ctx,
+      );
 
+    progress.finish();
     return { code: 0 };
   } catch (e: any) {
     return { code: 1, errorMessage: String(e?.message || e) };
@@ -524,11 +548,16 @@ async function printDocIfExists(
   parts: GithubParts,
   fileName: string,
   header: string,
+  ctx?: InstallContext,
 ): Promise<void> {
   const maybe = await fetchGithubMaybe(parts, path.posix.join(parts.basePath, fileName));
-  if (maybe && maybe.trim().length > 0) {
+  const trimmed = maybe?.trim();
+  if (trimmed && trimmed.length > 0) {
+    const key = `${parts.owner}/${parts.repo}/${parts.ref}/${parts.basePath}/${fileName}`;
+    if (ctx?.docsPrinted.has(key)) return;
+    ctx?.docsPrinted.add(key);
     process.stdout.write(header + "\n");
-    process.stdout.write(maybe.trim() + "\n");
+    process.stdout.write(trimmed + "\n");
   }
 }
 
