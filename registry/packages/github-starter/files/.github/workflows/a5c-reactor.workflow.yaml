@@ -1,0 +1,27 @@
+name: a5c-reactor-workflows
+on:
+  workflow_run:
+    types: [completed]
+    workflows:
+    - abc
+    branches: [a5c/main,main]
+  # workflow_dispatch:
+env:
+  RUNNER_NAME: reactor
+
+permissions:
+  contents: write
+  packages: read
+  id-token: write
+  actions: write
+  statuses: write
+  checks: write
+  repository-projects: write
+  pull-requests: write
+jobs:
+  reactor:
+    uses: ./.github/workflows/a5c-base.yml
+    secrets: inherit
+    with:
+      runner_name: reactor
+      runs_on: ubuntu-latest
