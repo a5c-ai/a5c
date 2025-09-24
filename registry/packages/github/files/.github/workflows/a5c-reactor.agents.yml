@@ -31,4 +31,3 @@ jobs:
     with:
       runner_name: agents
       runs_on: ubuntu-latest-m
-      events_path: .a5c/events/

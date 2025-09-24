@@ -851,5 +851,5 @@ function resolvePkgSpec(cp: any): string {
     // (cp.env && (cp.env as any).A5C_PKG_SPEC) ||
   } catch {}
   // Fallback to published tag
-  return "@a5c-ai/events";
+  return "@a5c-ai/a5c";
 }

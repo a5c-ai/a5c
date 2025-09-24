@@ -42,4 +42,3 @@ jobs:
     with:
       runner_name: reactor
       runs_on: ubuntu-latest
-      events_path: .a5c/events/

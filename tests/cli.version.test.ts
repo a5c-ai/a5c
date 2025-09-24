@@ -20,7 +20,7 @@ function runCli(args: string[]) {
 }
 
 describe("CLI version", () => {
-  it("`events version` matches package.json version", () => {
+  it("`a5c version` matches package.json version", () => {
     const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
     const out = runCli(["version"]);
     expect(out).toBe(pkg.version);

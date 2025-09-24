@@ -3,8 +3,8 @@ import { mapToNE } from "../src/providers/github/map.js";
 
 const baseRepo = {
   id: 1,
-  name: "events",
-  full_name: "a5c-ai/events",
+  name: "a5c",
+  full_name: "a5c-ai/a5c",
 };
 
 describe("providers/github/map", () => {
@@ -22,7 +22,7 @@ describe("providers/github/map", () => {
     };
     const ne = mapToNE(payload, { source: "test" });
     expect(ne.type).toBe("workflow_run");
-    expect(ne.repo?.full_name).toBe("a5c-ai/events");
+    expect(ne.repo?.full_name).toBe("a5c-ai/a5c");
     expect(ne.ref?.name).toBe("a5c/main");
     expect(ne.ref?.type).toBe("branch");
     expect(ne.ref && "sha" in ne.ref).toBe(true);

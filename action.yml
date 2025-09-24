@@ -36,8 +36,8 @@ runs:
     #   run: echo ${{ inputs.github_token }} | GH_TOKEN= GITHUB_TOKEN= gh auth login --with-token
     #   shell: bash
     #   working-directory: ${{ github.action_path }}
-    - name: Install events
-      run: npm install -g @a5c-ai/events
+    - name: Install a5c
+      run: npm install -g @a5c-ai/a5c
       shell: bash
     - name: a5c events reactor
       id: a5c-events-reactor
@@ -48,8 +48,8 @@ runs:
         CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: 1
       run: |
         set -euo pipefail
-        A5C_PKG_SPEC="@a5c-ai/events"
-        A5C_CMD="events"
+        A5C_PKG_SPEC="@a5c-ai/a5c"
+        A5C_CMD="a5c"
         echo "A5C_PKG_SPEC=$A5C_PKG_SPEC" >> "$GITHUB_ENV"
         echo "A5C_CMD=$A5C_CMD" >> "$GITHUB_ENV"
         $A5C_CMD enrich \

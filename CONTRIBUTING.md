@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for contributing to @a5c-ai/events! This project follows Conventional Commits for clear history and automated releases.
+Thanks for contributing to @a5c-ai/a5c! This project follows Conventional Commits for clear history and automated releases.
 
 ## Conventional Commits
 

@@ -56,9 +56,9 @@ profiles:
     install: "npm install -g mycli"
     model: "vllm-gpt-oss"
 # run command:
-# npx -y @a5c-ai/events run --in file://./prompt_file.md --out out.json --model gpt-4
+# npx -y @a5c-ai/a5c run --in file://./prompt_file.md --out out.json --model gpt-4
 # will run the install command for codex: npm install -g @openai/codex and then run the cli_command: codex exec --dangerously-bypass-approvals-and-sandbox -c model=gpt-4 --output-last-message /tmp/agent-output.md --mcps=.a5c/mcps.json
-# npx -y @a5c-ai/events run --config=.other/config.yml --in github://a5c-ai/events/branch/a5c%2Fmain/prompts/dev-prompt.md --mcps=.a5c/mcps.json --out out.json --profile custom_example1 --model vllm-gpt-oss2
+# npx -y @a5c-ai/a5c run --config=.other/config.yml --in github://a5c-ai/a5c/branch/a5c%2Fmain/prompts/dev-prompt.md --mcps=.a5c/mcps.json --out out.json --profile custom_example1 --model vllm-gpt-oss2
 # --mcps=.a5c/mcps.json is optional - without it, the default mcps will be .a5c/mcps.json -- should also support the uri formats (github, file, etc.)
 # --config=.other/config.yml is optional - without it, the default config path will be .a5c/config.yml -- should also support the uri formats
 # --profile custom_example1 is optional - without it, the default profile will be used from the config
@@ -66,4 +66,4 @@ profiles:
 # --in should support the uri formats (github, file, etc.) and should also support stdin (- for stdin , stdin should be the default)
 # --out should be optional and should be by default /tmp/agent-output.md
 # config.yaml only overrides the sections of predefined.yaml file (this file) - which should be bundled with the package
-# uri format and resolution is already implemented in the events cli - so resuse the implementation
+# uri format and resolution is already implemented in the a5c cli - so resuse the implementation

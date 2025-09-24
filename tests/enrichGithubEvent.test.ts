@@ -92,7 +92,7 @@ describe("enrichGithubEvent (GitHub provider)", () => {
     });
 
     const event = {
-      repository: { full_name: "a5c-ai/events" },
+      repository: { full_name: "a5c-ai/a5c" },
       pull_request: { number: 1 },
     };
     const out: any = await enrichGithubEvent(event, {
@@ -125,7 +125,7 @@ describe("enrichGithubEvent (GitHub provider)", () => {
     };
     const mock = makeMockOctokit({ compare, codeowners: "src/** @team-a" });
     const event = {
-      repository: { full_name: "a5c-ai/events" },
+      repository: { full_name: "a5c-ai/a5c" },
       before: "111",
       after: "222",
       ref: "refs/heads/main",

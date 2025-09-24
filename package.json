@@ -1,11 +1,11 @@
 {
-  "name": "@a5c-ai/events",
+  "name": "@a5c-ai/a5c",
   "version": "1.22.1",
-  "description": "Events SDK and CLI for normalizing and enriching repo/CI events for agentic workflows",
+  "description": "a5c SDK and CLI for normalizing and enriching repo/CI events for agentic workflows",
   "type": "module",
   "private": false,
   "bin": {
-    "events": "dist/cli.js"
+    "a5c": "dist/cli.js"
   },
   "exports": {
     ".": {
@@ -53,14 +53,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/a5c-ai/events.git"
+    "url": "https://github.com/a5c-ai/a5c.git"
   },
-  "homepage": "https://github.com/a5c-ai/events",
+  "homepage": "https://github.com/a5c-ai/a5c",
   "bugs": {
-    "url": "https://github.com/a5c-ai/events/issues"
+    "url": "https://github.com/a5c-ai/a5c/issues"
   },
   "keywords": [
-    "events",
+    "a5c",
     "cli",
     "sdk",
     "github",

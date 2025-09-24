@@ -21,7 +21,7 @@ describe("GitHub normalization", () => {
     const ev = res.output;
     expect(ev.type).toBe("workflow_run");
     expect(ev.provider).toBe("github");
-    expect(ev.repo?.full_name).toBe("a5c-ai/events");
+    expect(ev.repo?.full_name).toBe("a5c-ai/a5c");
     expect(ev.ref?.name).toBe("a5c/main");
     expect(ev.provenance?.workflow?.name).toBe("Build");
   });
@@ -39,7 +39,7 @@ describe("GitHub normalization", () => {
       labels: [],
     });
     expect(ev.type).toBe("pull_request");
-    expect(ev.repo?.full_name).toBe("a5c-ai/events");
+    expect(ev.repo?.full_name).toBe("a5c-ai/a5c");
     // For PR events, ref.type should align to branch semantics
     expect(ev.ref?.type).toBe("branch");
     expect(ev.ref?.head).toBe("feat/samples-fixtures-issue48");
@@ -62,7 +62,7 @@ describe("GitHub normalization", () => {
     expect(ev.type).toBe("push");
     expect(ev.ref?.name).toBe("a5c/main");
     expect(ev.ref?.sha).toBe(input.after);
-    expect(ev.repo?.full_name).toBe("a5c-ai/events");
+    expect(ev.repo?.full_name).toBe("a5c-ai/a5c");
   });
 
   it("issue_comment -> NE fields", async () => {
@@ -77,7 +77,7 @@ describe("GitHub normalization", () => {
       source: "webhook",
     });
     expect(ev.type).toBe("issue_comment");
-    expect(ev.repo?.full_name).toBe("a5c-ai/events");
+    expect(ev.repo?.full_name).toBe("a5c-ai/a5c");
     expect(ev.actor?.login).toBe("tmuskal");
     expect(typeof ev.id).toBe("string");
   });
@@ -94,7 +94,7 @@ describe("GitHub normalization", () => {
       source: "webhook",
     });
     expect(ev.type).toBe("issue");
-    expect(ev.repo?.full_name).toBe("a5c-ai/events");
+    expect(ev.repo?.full_name).toBe("a5c-ai/a5c");
     expect(typeof ev.id).toBe("string");
   });
 });

@@ -90,9 +90,9 @@ jobs:
         if: steps.filter-successful-workflow-run.outputs.skip != 'true' && env.ENABLE_A5C_TOKEN == 'true'
         uses: a5c-ai/generate-token-action@main
       - name: Run Events Reactor
-        id: events-reactor
+        id: a5c-reactor
         if: steps.filter-successful-workflow-run.outputs.skip != 'true'
-        uses: a5c-ai/events@a5c/main
+        uses: a5c-ai/a5c@a5c/main
         with:
           github_token: ${{ steps.a5c-token.outputs.a5c_token || secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
           runner-name: ${{ env.RUNNER_NAME }}
@@ -100,7 +100,7 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: events-reactor-output
+          name: a5c-reactor-output
           path: |
             /tmp/parsed-codex.jsonl
             /tmp/full_output.txt

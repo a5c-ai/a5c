@@ -27,7 +27,7 @@ describe("runNormalize (programmatic) error contract", () => {
       file,
       JSON.stringify({
         workflow_run: { id: 1, updated_at: "2024-06-01T00:00:00Z" },
-        repository: { id: 1, name: "events", full_name: "a5c-ai/events" },
+        repository: { id: 1, name: "a5c", full_name: "a5c-ai/a5c" },
       }),
     );
     const res = await runNormalize({ in: file, source: "cli" });

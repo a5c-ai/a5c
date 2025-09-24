@@ -91,7 +91,7 @@ export async function handleInit(opts: {
 
     const defaultPkg =
       opts.pkg ||
-      "github://a5c-ai/events/branch/main/registry/packages/github";
+      "github://a5c-ai/a5c/branch/main/registry/packages/github";
 
     const { code, errorMessage } = await handleInstall({ uri: defaultPkg });
     if (code !== 0) return { code, errorMessage };

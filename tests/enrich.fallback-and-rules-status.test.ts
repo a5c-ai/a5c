@@ -13,7 +13,7 @@ import fs from "node:fs";
 describe("enrich fallbacks and rules status metadata", () => {
   it("fallbacks PR fields (number,draft,mergeable_state) when enrichment is partial", async () => {
     const payload: any = {
-      repository: { full_name: "a5c-ai/events" },
+      repository: { full_name: "a5c-ai/a5c" },
       pull_request: {
         id: 123456,
         number: 42,

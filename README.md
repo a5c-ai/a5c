@@ -1,10 +1,10 @@
-[![99% built by agents](https://img.shields.io/badge/99%25-built%20by%20agents-blue.svg)](https://a5c.ai) [![codecov](https://codecov.io/gh/a5c-ai/events/branch/a5c/main/graph/badge.svg)](https://app.codecov.io/gh/a5c-ai/events/tree/a5c/main)
+[![99% built by agents](https://img.shields.io/badge/99%25-built%20by%20agents-blue.svg)](https://a5c.ai) [![codecov](https://codecov.io/gh/a5c-ai/a5c/branch/a5c/main/graph/badge.svg)](https://app.codecov.io/gh/a5c-ai/a5c/tree/a5c/main)
 
-# @a5c-ai/events — Events SDK & CLI
+# @a5c-ai/a5c — a5c SDK & CLI
 
 Turn raw GitHub Actions/webhook payloads into a consistent Normalized Event (NE) that agents and automations can trust. Enrich with repo context, extract @mentions, generate prompt context, apply rules, and emit composed events. Use it as a CLI in CI or as a programmatic SDK.
 
-- Commands: `events normalize`, `events enrich`, `events mentions`, `events generate_context`, `events reactor`, `events emit`, `events validate`, `events run` (see docs for full flags)
+- Commands: `a5c normalize`, `a5c enrich`, `a5c mentions`, `a5c generate_context`, `a5c reactor`, `a5c emit`, `a5c validate`, `a5c run` (see docs for full flags)
 - Output: JSON to stdout or file
 - Provider: GitHub first; adapter surface enables more providers
 - Safe by default: offline enrichment unless explicitly enabled
@@ -35,16 +35,16 @@ Branch model: `a5c/main` is development/staging; `main` is production.
 Prerequisites: Node.js 20.x (see `.nvmrc`).
 
 ```bash
-npm install @a5c-ai/events
+npm install @a5c-ai/a5c
 # CLI-only
-npm install -g @a5c-ai/events
+npm install -g @a5c-ai/a5c
 ```
 
 ## Quick Start (CLI)
 
 ```bash
 # Normalize a payload file
-npx @a5c-ai/events normalize \
+npx @a5c-ai/a5c normalize \
   --in samples/workflow_run.completed.json \
   --out out.json
 
@@ -52,7 +52,7 @@ npx @a5c-ai/events normalize \
 jq '.type, .repo.full_name, .provenance.workflow?.name' out.json
 
 # Validate against the NE schema (quiet on success)
-events validate --in out.json --schema docs/specs/ne.schema.json --quiet
+a5c validate --in out.json --schema docs/specs/ne.schema.json --quiet
 ```
 
 ### Smoke Test
@@ -69,21 +69,21 @@ Enrich offline vs online:
 
 ```bash
 # Offline (default; no network calls)
-events enrich --in samples/pull_request.synchronize.json --out enriched.offline.json
+a5c enrich --in samples/pull_request.synchronize.json --out enriched.offline.json
 
 # Online (requires token)
 export GITHUB_TOKEN=ghp_xxx
-events enrich --in samples/pull_request.synchronize.json --use-github --out enriched.online.json
+a5c enrich --in samples/pull_request.synchronize.json --use-github --out enriched.online.json
 ```
 
 Mentions scanning (examples):
 
 ```bash
 # Disable code-comment scanning over changed files
-events enrich --in ... --flag 'mentions.scan.changed_files=false'
+a5c enrich --in ... --flag 'mentions.scan.changed_files=false'
 
 # Restrict languages
-events enrich --in ... --flag 'mentions.languages=ts,js'
+a5c enrich --in ... --flag 'mentions.languages=ts,js'
 ```
 
 Canonical flags and defaults live in `docs/cli/reference.md#events-enrich` and `#mentions-scanning`.
@@ -114,27 +114,27 @@ End‑to‑end recipe (normalize → enrich → reactor → emit): `docs/ci/acti
 ```yaml
 - name: Normalize current run
   run: |
-    npx @a5c-ai/events normalize \
+    npx @a5c-ai/a5c normalize \
       --source actions \
       --in "$GITHUB_EVENT_PATH" \
       --out event.json
 
 - name: Enrich (offline by default)
   run: |
-    events enrich --in event.json --out event.enriched.json
+    a5c enrich --in event.json --out event.enriched.json
 ```
 
 ## CLI Overview
 
-- `events normalize` — Map provider payload to NE. Filters/selectors available.
-- `events enrich` — Add metadata, mentions, ownership, correlations; optional `--use-github`.
-- `events mentions` — Extract `@mentions` from files/stdin.
-- `events generate_context` — Render templates from file/github URIs with the event as data.
-- `events reactor` — Apply rules to NE and emit composed events.
-- `events emit` — Emit composed events to sinks (stdout by default) and optionally run side-effects (labels, scripts, status checks). See `docs/cli/reference.md#events-emit`.
-- `events validate` — Validate NE (and enriched documents) against JSON Schema.
-- `events run` — Profile-based AI provider runner (experimental). See reference: `docs/cli/reference.md#events-run`.
-- `events parse` — Parse streaming provider logs to JSON events (experimental). See reference: `docs/cli/reference.md#events-parse`.
+- `a5c normalize` — Map provider payload to NE. Filters/selectors available.
+- `a5c enrich` — Add metadata, mentions, ownership, correlations; optional `--use-github`.
+- `a5c mentions` — Extract `@mentions` from files/stdin.
+- `a5c generate_context` — Render templates from file/github URIs with the event as data.
+- `a5c reactor` — Apply rules to NE and emit composed events.
+- `a5c emit` — Emit composed events to sinks (stdout by default) and optionally run side-effects (labels, scripts, status checks). See `docs/cli/reference.md#events-emit`.
+- `a5c validate` — Validate NE (and enriched documents) against JSON Schema.
+- `a5c run` — Profile-based AI provider runner (experimental). See reference: `docs/cli/reference.md#events-run`.
+- `a5c parse` — Parse streaming provider logs to JSON events (experimental). See reference: `docs/cli/reference.md#events-parse`.
 
 Full command/flag reference: `docs/cli/reference.md`.
 
@@ -148,10 +148,10 @@ Full command/flag reference: `docs/cli/reference.md`.
 
 ## Troubleshooting
 
-- Offline vs online: enrichment is offline by default. Pass `--use-github` to enable API calls. Without a token, the CLI exits with code `3` and prints an error; no JSON is emitted by the CLI path. Details: `docs/cli/reference.md#events-enrich`.
+- Offline vs online: enrichment is offline by default. Pass `--use-github` to enable API calls. Without a token, the CLI exits with code `3` and prints an error; no JSON is emitted by the CLI path. Details: `docs/cli/reference.md#a5c-enrich`.
 - Tokens and precedence: set `A5C_AGENT_GITHUB_TOKEN` or `GITHUB_TOKEN` (the former takes precedence). Some commands like `generate_context` also use tokens for `github://` templates.
 - Exit codes: `0` success; `1` generic error; `2` input/validation error (missing `--in`, invalid JSON, filter mismatch); `3` provider/network error (e.g., `--use-github` without a token).
-- CI convenience: export `A5C_EVENTS_AUTO_USE_GITHUB=true` to auto‑enable `--use-github` when a token exists (default remains offline). See `docs/cli/reference.md#events-enrich`.
+- CI convenience: export `A5C_EVENTS_AUTO_USE_GITHUB=true` to auto‑enable `--use-github` when a token exists (default remains offline). See `docs/cli/reference.md#a5c-enrich`.
 - Rate limits: for `github://` templates and online enrichment, prefer `A5C_AGENT_GITHUB_TOKEN` and use `--log-format=json` to surface errors clearly in CI. Retries/backoff are limited; reduce calls or cache inputs when possible.
 
 ## NE Schema

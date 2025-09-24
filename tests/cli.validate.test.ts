@@ -19,7 +19,7 @@ function run(
   }
 }
 
-describe("events validate (CLI)", () => {
+describe("a5c validate (CLI)", () => {
   it("validates a normalized sample and returns valid: true", () => {
     // Ensure sample is normalized first: use normalize handler output shape via script entry
     const normalized = JSON.parse(

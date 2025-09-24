@@ -20,8 +20,8 @@ import path from "node:path";
 
 const program = new Command();
 program
-  .name("events")
-  .description("Events CLI - mentions, normalize and enrich")
+  .name("a5c")
+  .description("a5c CLI")
   .version(readVersion());
 
 // Global logging flags (mapped to env for downstream code)
@@ -492,7 +492,7 @@ program
   .description("Initialize .a5c config and install a default package")
   .option(
     "--package <github-uri>",
-    "github:// URI to initial package (default: github://a5c-ai/events/branch/main/registry/packages/github)",
+    "github:// URI to initial package (default: github://a5c-ai/a5c/branch/main/registry/packages/github)",
   )
   .action(async (cmdOpts: any) => {
     const { code, errorMessage } = await handleInit({ pkg: cmdOpts.package });

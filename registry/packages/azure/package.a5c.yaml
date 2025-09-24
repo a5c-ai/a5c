@@ -3,7 +3,7 @@ name: versioning
 icon: url://https://a5c.ai/assets/a5c-logo.png
 description: Versioning package
 dependencies:
-  - github://a5c-ai/events/branch/main/registry/packages/versioning/
+  - github://a5c-ai/a5c/branch/main/registry/packages/versioning/
 homepage: https://a5c.ai
 categories:
   - name: Versioning

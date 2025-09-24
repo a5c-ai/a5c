@@ -3,7 +3,7 @@ import { execFileSync } from "node:child_process";
 import path from "node:path";
 import fs from "node:fs";
 
-describe("events parse --type codex (integration)", () => {
+describe("a5c parse --type codex (integration)", () => {
   const cli = path.resolve("dist/cli.js");
   const sample = path.resolve("example/codex_run_example_stdout.txt");
 

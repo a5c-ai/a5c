@@ -48,7 +48,7 @@ function makeMockOctokit({
 
 function basePREvent() {
   return {
-    repository: { full_name: "a5c-ai/events" },
+    repository: { full_name: "a5c-ai/a5c" },
     pull_request: { number: 1 },
   };
 }

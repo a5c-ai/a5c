@@ -1,5 +1,5 @@
 {
-  "repository": { "id": 1, "name": "events", "full_name": "a5c-ai/events" },
+  "repository": { "id": 1, "name": "a5c", "full_name": "a5c-ai/a5c" },
   "deployment": {
     "id": 777,
     "ref": "a5c/main",

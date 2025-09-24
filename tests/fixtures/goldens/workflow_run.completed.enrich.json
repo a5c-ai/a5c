@@ -18,19 +18,19 @@
       "pull_requests": [],
       "created_at": "<iso-8601>",
       "updated_at": "<iso-8601>",
-      "html_url": "https://github.com/a5c-ai/events/actions/runs/1234567890",
-      "url": "https://api.github.com/repos/a5c-ai/events/actions/runs/1234567890",
+      "html_url": "https://github.com/a5c-ai/a5c/actions/runs/1234567890",
+      "url": "https://api.github.com/repos/a5c-ai/a5c/actions/runs/1234567890",
       "repository": {
         "id": 1055826069,
-        "name": "events",
-        "full_name": "a5c-ai/events",
+        "name": "a5c",
+        "full_name": "a5c-ai/a5c",
         "private": true
       }
     },
     "repository": {
       "id": 1055826069,
-      "name": "events",
-      "full_name": "a5c-ai/events",
+      "name": "a5c",
+      "full_name": "a5c-ai/a5c",
       "private": true,
       "default_branch": "a5c/main"
     },

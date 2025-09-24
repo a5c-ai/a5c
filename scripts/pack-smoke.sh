@@ -26,10 +26,10 @@ fi
 echo "[pack-smoke] Tarball: $PKG"
 
 echo "[pack-smoke] Verify CLI runs from tarball (--version)"
-npx -y -p "file:./$PKG" events --version
+npx -y -p "file:./$PKG" a5c --version
 
 echo "[pack-smoke] Normalize sample and validate via CLI from tarball"
-npx -y -p "file:./$PKG" events normalize \
+npx -y -p "file:./$PKG" a5c normalize \
   --in samples/workflow_run.completed.json \
   --out /tmp/out.ne.json
 # Validate output using ajv-cli (independent of package contents)

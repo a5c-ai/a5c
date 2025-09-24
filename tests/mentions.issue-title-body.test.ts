@@ -11,8 +11,8 @@ const issuePayload = {
   },
   repository: {
     id: 1055826069,
-    name: "events",
-    full_name: "a5c-ai/events",
+    name: "a5c",
+    full_name: "a5c-ai/a5c",
     private: true,
   },
   sender: { id: 221166651, login: "a5c-ai[bot]", type: "Bot" },

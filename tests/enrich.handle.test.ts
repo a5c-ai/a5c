@@ -6,7 +6,7 @@ describe("handleEnrich integrates enrichGithubEvent", () => {
     const prev = process.env.A5C_AGENT_GITHUB_TOKEN;
     process.env.A5C_AGENT_GITHUB_TOKEN = "test-token";
     const baseEvent = {
-      repository: { full_name: "a5c-ai/events" },
+      repository: { full_name: "a5c-ai/a5c" },
       pull_request: { number: 1 },
     };
     // mock octokit path via opts.octokit by passing through to enrichGithubEvent
