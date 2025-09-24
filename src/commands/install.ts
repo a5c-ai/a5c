@@ -4,8 +4,103 @@ import path from "node:path";
 import { spawn } from "node:child_process";
 import YAML from "yaml";
 
+class InstallProgress {
+  private currentStage?: ProgressStage;
+
+  constructor(private readonly enabled: boolean) {}
+
+  startStage(label: string, total?: number): ProgressStage {
+    this.finishStage();
+    this.currentStage = new ProgressStage(this.enabled, label, total);
+    return this.currentStage;
+  }
+
+  finishStage(finalInfo?: string): void {
+    if (this.currentStage) {
+      this.currentStage.finish(finalInfo);
+      this.currentStage = undefined;
+    }
+  }
+
+  finish(): void {
+    this.finishStage();
+  }
+
+  isEnabled(): boolean {
+    return this.enabled;
+  }
+}
+
+class ProgressStage {
+  private total: number;
+  private current = 0;
+  private info = "";
+  private lastRendered = "";
+  private finished = false;
+  private readonly width = 24;
+
+  constructor(private readonly enabled: boolean, private readonly label: string, total?: number) {
+    this.total = typeof total === "number" && total > 0 ? total : 0;
+    if (this.enabled) this.render();
+  }
+
+  setTotal(total: number): void {
+    if (!this.enabled || this.finished) return;
+    this.total = total > 0 ? total : 0;
+    this.render();
+  }
+
+  advance(info?: string): void {
+    if (!this.enabled || this.finished) return;
+    this.current += 1;
+    if (info !== undefined) this.info = info;
+    this.render();
+  }
+
+  update(current: number, info?: string): void {
+    if (!this.enabled || this.finished) return;
+    this.current = Math.max(0, current);
+    if (info !== undefined) this.info = info;
+    this.render();
+  }
+
+  setInfo(info: string): void {
+    if (!this.enabled || this.finished) return;
+    this.info = info;
+    this.render();
+  }
+
+  finish(finalInfo?: string): void {
+    if (!this.enabled || this.finished) return;
+    if (finalInfo !== undefined) this.info = finalInfo;
+    this.render(true);
+    this.finished = true;
+  }
+
+  private render(final = false): void {
+    if (!this.enabled) return;
+    const total = this.total;
+    const current = total > 0 ? Math.min(this.current, total) : this.current;
+    const ratio = total > 0 ? Math.max(0, Math.min(1, current / total)) : 0;
+    const filled = total > 0 ? Math.round(ratio * this.width) : 0;
+    const empty = this.width - filled;
+    const bar = total > 0 ? `[${"#".repeat(filled)}${"-".repeat(empty)}] ${(ratio * 100).toFixed(0).padStart(3, " ")} %` : "";
+    const counts = total > 0 ? `${current}/${total}` : `${current}`;
+    const infoPart = this.info ? ` ${this.info}` : "";
+    const line = `${this.label}${bar ? ` ${bar}` : ""} ${counts}${infoPart}`.trimEnd();
+    if (line === this.lastRendered && !final) return;
+    process.stdout.write(`\r${line}`);
+    this.lastRendered = line;
+    if (final) {
+      process.stdout.write("\n");
+      this.lastRendered = "";
+    }
+  }
+}
+
 export interface InstallOptions {
   uri: string;
+  showProgress?: boolean;
 }
 
 type GithubParts = {
@@ -28,9 +123,21 @@ type PlannedFile = {
   sourceUri: string; // originating package URI
 };
 
+type InstallPackage = {
+  uri: string;
+  parts: GithubParts;
+  spec: PackageSpec;
+  packageRootPath: string;
+};
+
 type InstallPlan = {
-  packages: { uri: string; parts: GithubParts; spec: PackageSpec }[]; // dependency-first order
+  packages: InstallPackage[]; // dependency-first order
   files: PlannedFile[];
+};
+
+type InstallContext = {
+  progress: InstallProgress;
+  docsPrinted: Set<string>;
 };
 
 export async function handleInstall(
@@ -40,7 +147,9 @@ export async function handleInstall(
     if (!opts.uri || typeof opts.uri !== "string") {
       return { code: 2, errorMessage: "install: missing required <github-uri>" };
     }
-    const plan = await buildInstallPlan(opts.uri);
+    const progress = new InstallProgress(opts.showProgress === true);
+    const ctx: InstallContext = { progress, docsPrinted: new Set() };
+    const plan = await buildInstallPlan(opts.uri, ctx);
 
     const conflictReport = detectConflicts(plan);
     if (conflictReport.conflicts.length > 0) {
@@ -55,17 +164,23 @@ export async function handleInstall(
     }
 
     // Run install scripts package-by-package (dependencies first)
+    const scriptStage = progress.startStage("Running install scripts", plan.packages.length);
     for (const p of plan.packages) {
+      scriptStage.setInfo(p.spec.name || p.uri);
       await runInstallScriptIfExists(p.parts);
+      scriptStage.advance();
     }
+    progress.finishStage();
 
     // Update .a5c/packages.yaml
     await updatePackagesYaml(plan);
 
-    // Print INSTALL.md for the root package if available
-    const root = plan.packages[plan.packages.length - 1];
-    if (root) await printDocIfExists(root.parts, "INSTALL.md", "Installation instructions:");
+    // Print INSTALL.md for each package (dependencies first)
+    for (const pkg of plan.packages) {
+      await printDocIfExists(pkg.parts, "INSTALL.md", "Installation instructions:", ctx);
+    }
 
+    progress.finish();
     return { code: 0 };
   } catch (e: any) {
     return { code: 1, errorMessage: String(e?.message || e) };
@@ -74,16 +189,21 @@ export async function handleInstall(
 
 export async function handleInit(opts: {
   pkg?: string;
+  showProgress?: boolean;
 }): Promise<{ code: number; errorMessage?: string }> {
   try {
     const a5cDir = path.resolve(".a5c");
     fs.mkdirSync(a5cDir, { recursive: true });
 
     const packagesYaml = path.join(a5cDir, "packages.yaml");
-    if (!fs.existsSync(packagesYaml)) {
-      const initDoc = { packages: [] as any[] };
-      fs.writeFileSync(packagesYaml, YAML.stringify(initDoc), "utf8");
+    if (fs.existsSync(packagesYaml)) {
+      return {
+        code: 4,
+        errorMessage: "init: .a5c/packages.yaml already exists; refusing to overwrite",
+      };
     }
+    const initDoc = { packages: [] as any[] };
+    fs.writeFileSync(packagesYaml, YAML.stringify(initDoc), "utf8");
     const configYaml = path.join(a5cDir, "config.yaml");
     if (!fs.existsSync(configYaml)) {
       fs.writeFileSync(configYaml, "", "utf8");
@@ -93,7 +213,10 @@ export async function handleInit(opts: {
       opts.pkg ||
       "github://a5c-ai/a5c/branch/main/registry/packages/github-starter";
 
-    const { code, errorMessage } = await handleInstall({ uri: defaultPkg });
+    const { code, errorMessage } = await handleInstall({
+      uri: defaultPkg,
+      showProgress: opts.showProgress === true,
+    });
     if (code !== 0) return { code, errorMessage };
     return { code: 0 };
   } catch (e: any) {
@@ -101,7 +224,10 @@ export async function handleInit(opts: {
   }
 }
 
-async function buildInstallPlan(rootUri: string): Promise<InstallPlan> {
+async function buildInstallPlan(
+  rootUri: string,
+  ctx: InstallContext,
+): Promise<InstallPlan> {
   const visited = new Set<string>();
   const packages: { uri: string; parts: GithubParts; spec: PackageSpec }[] = [];
   const files: PlannedFile[] = [];

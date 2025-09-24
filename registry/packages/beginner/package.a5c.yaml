@@ -1,0 +1,7 @@
+kind: a5c.ai/package
+name: beginner
+icon: url://https://a5c.ai/assets/a5c-logo.png
+description: Beginner package
+homepage: https://a5c.ai
+categories:
+  - name: Beginner
