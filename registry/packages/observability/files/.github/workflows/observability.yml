@@ -1,0 +1,89 @@
+name: Tests
+
+on:
+  push:
+    branches: [a5c/main, main]
+
+jobs:
+  unit:
+    env:
+      # Optional Codecov token; when empty, upload step is skipped
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN || vars.CODECOV_TOKEN || '' }}
+      # Optional Healthchecks heartbeat for Tests job
+      HEALTHCHECKS_TESTS_PING_URL: ${{ secrets.HEALTHCHECKS_TESTS_PING_URL || vars.HEALTHCHECKS_TESTS_PING_URL || '' }}
+      # Optional Slack/Discord notification configuration
+      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN || '' }}
+      SLACK_APP_TOKEN: ${{ secrets.SLACK_APP_TOKEN || '' }}
+      SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID || vars.SLACK_CHANNEL_ID || '' }}
+      DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN || '' }}
+      DISCORD_GUILD_ID: ${{ vars.DISCORD_GUILD_ID || '' }}
+      DISCORD_CHANNEL_ID: ${{ secrets.DISCORD_CHANNEL_ID || vars.DISCORD_CHANNEL_ID || '' }}
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: write
+      issues: write
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Observability summary
+        if: always()
+        uses: ./.github/actions/obs-summary
+        env:
+          OBS_FILE: observability.json
+          # Pin schema version in produced artifact
+          SCHEMA_VERSION: 0.1
+          # Pass cache hit from setup-node to the action as CACHE_NODE_HIT
+          CACHE_NODE_HIT: ${{ steps.setup-node.outputs.cache-hit }}
+          # Include conclusion and run start time for duration
+          CONCLUSION: ${{ job.status }}
+          RUN_STARTED_AT: ${{ github.run_started_at }}
+      - name: Step hotspots summary and annotations
+        if: always()
+        uses: ./.github/actions/step-hotspots
+        with:
+          top_n: "5"
+          warn_ms: "60000"
+          error_ms: "180000"
+          upload_artifact: "false"
+          summary_title: "CI Step Hotspots"
+      - name: Step hotspots summary
+        if: always()
+        uses: ./.github/actions/step-hotspots
+        with:
+          warn_ms: 300000
+          error_ms: 900000
+          p95_warn_ms: 420000
+          p95_error_ms: 1200000
+          top_n: 10
+      - name: Heartbeat Complete (Tests)
+        if: always() && env.HEALTHCHECKS_TESTS_PING_URL != ''
+        env:
+          PING: ${{ env.HEALTHCHECKS_TESTS_PING_URL }}
+          OUTCOME: ${{ job.status }}
+        run: |
+          set -euxo pipefail
+          case "$OUTCOME" in
+            success)
+              curl -fsS -m 10 --retry 3 --retry-connrefused "$PING" || true
+              ;;
+            *)
+              # Treat non-success (including cancelled) as failure ping
+              curl -fsS -m 10 --retry 3 --retry-connrefused "$PING/fail" || true
+              ;;
+          esac
+
+  aggregate:
+    name: Aggregate Observability
+    needs: [unit]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+      - name: Download & aggregate
+        uses: ./.github/actions/obs-aggregate
+      - name: Show aggregate
+        run: |
+          echo "## Aggregate observability" >> "$GITHUB_STEP_SUMMARY"
+          jq '.metrics.cache' observability.aggregate.json | tee -a "$GITHUB_STEP_SUMMARY"

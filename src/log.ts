@@ -51,7 +51,7 @@ export function createLogger(opts: LoggerOptions = {}): LoggerLike {
   const envFormat = resolveLogFormat();
   const level: LogLevel = opts.level || envLevel;
   const format: LogFormat = opts.format || envFormat;
-  const scope = opts.scope || "events";
+  const scope = opts.scope || "a5c";
   const write = opts.write || ((s: string) => process.stderr.write(s));
 
   const min = levelToNum(level);

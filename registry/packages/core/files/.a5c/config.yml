@@ -1,0 +1,7 @@
+triggers:
+  validation:
+    enabled: true
+  triage:
+    enabled: true
+  create_pr:
+    enabled: true

@@ -1,0 +1,52 @@
+name: Typecheck
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches: [a5c/main, main]
+
+jobs:
+  typecheck:
+    name: TypeScript Typecheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [20, 22]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node ${{ matrix.node }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck
+        id: tsc
+        run: |
+          set -euo pipefail
+          START=$(date +%s%3N)
+          if npm run -s typecheck; then
+            echo "result=success" >> "$GITHUB_OUTPUT"
+            RC=0
+          else
+            echo "result=failure" >> "$GITHUB_OUTPUT"
+            RC=1
+          fi
+          END=$(date +%s%3N)
+          DUR=$((END-START))
+          printf '{"name":"Typecheck (Node %s)","duration_ms":%s}\n' "${{ matrix.node }}" "$DUR" >> hotspots.jsonl
+          exit $RC
+
+      - name: Step summary
+        if: always()
+        run: |
+          echo "## Typecheck on Node ${{ matrix.node }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "Result: ${{ steps.tsc.outputs.result || 'unknown' }}" >> "$GITHUB_STEP_SUMMARY"
+

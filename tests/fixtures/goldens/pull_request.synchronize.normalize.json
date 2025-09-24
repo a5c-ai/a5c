@@ -35,12 +35,12 @@
         "login": "developer-agent",
         "type": "Bot"
       },
-      "html_url": "https://github.com/a5c-ai/events/pull/62"
+      "html_url": "https://github.com/a5c-ai/a5c/pull/62"
     },
     "repository": {
       "id": 1055826069,
-      "name": "events",
-      "full_name": "a5c-ai/events",
+      "name": "a5c",
+      "full_name": "a5c-ai/a5c",
       "private": true
     },
     "sender": {
@@ -55,8 +55,8 @@
   },
   "repo": {
     "id": 1055826069,
-    "name": "events",
-    "full_name": "a5c-ai/events",
+    "name": "a5c",
+    "full_name": "a5c-ai/a5c",
     "private": true
   },
   "ref": {

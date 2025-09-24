@@ -1,0 +1,7 @@
+kind: a5c.ai/package
+name: github
+icon: url://https://a5c.ai/assets/a5c-logo.png
+description: Versioning package
+homepage: https://a5c.ai
+categories:
+  - name: Versioning

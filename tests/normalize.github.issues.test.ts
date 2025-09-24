@@ -50,7 +50,7 @@ describe("GitHub issues normalization", () => {
     });
     expect(ev.type).toBe("issue");
     expect(ev.provider).toBe("github");
-    expect(ev.repo?.full_name).toBe("a5c-ai/events");
+    expect(ev.repo?.full_name).toBe("a5c-ai/a5c");
     expect(typeof ev.id).toBe("string");
 
     // Validate against NE schema

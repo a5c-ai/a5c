@@ -17,8 +17,8 @@
   },
   "repository": {
     "id": 1055826069,
-    "name": "events",
-    "full_name": "a5c-ai/events",
+    "name": "a5c",
+    "full_name": "a5c-ai/a5c",
     "private": true
   },
   "sender": { "login": "tmuskal", "type": "User", "id": 1934369 }

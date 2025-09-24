@@ -19,7 +19,7 @@ describe("commands unit", () => {
       file,
       JSON.stringify({
         workflow_run: { id: 1, updated_at: "2024-06-01T00:00:00Z" },
-        repository: { id: 1, name: "events", full_name: "a5c-ai/events" },
+        repository: { id: 1, name: "a5c", full_name: "a5c-ai/a5c" },
       }),
     );
     const { code, output } = (await cmdNormalize({
@@ -34,7 +34,7 @@ describe("commands unit", () => {
   });
 
   it("cmdEnrich returns an output shell when provider is skipped", async () => {
-    const tmpdir = fs.mkdtempSync(path.join(os.tmpdir(), "events-test-"));
+    const tmpdir = fs.mkdtempSync(path.join(os.tmpdir(), "a5c-test-"));
     const file = path.join(tmpdir, "input.json");
     const payload = {
       pull_request: {
@@ -43,7 +43,7 @@ describe("commands unit", () => {
         base: { ref: "a5c/main" },
         head: { ref: "feat/x" },
       },
-      repository: { id: 1, name: "events", full_name: "a5c-ai/events" },
+      repository: { id: 1, name: "a5c", full_name: "a5c-ai/a5c" },
     };
     fs.writeFileSync(file, JSON.stringify(payload));
     const { code, output } = (await cmdEnrich({
@@ -58,13 +58,13 @@ describe("commands unit", () => {
   });
 
   it("cmdNormalize maps source alias 'actions' -> persisted 'action'", async () => {
-    const tmpdir = fs.mkdtempSync(path.join(os.tmpdir(), "events-test-"));
+    const tmpdir = fs.mkdtempSync(path.join(os.tmpdir(), "a5c-test-"));
     const file = path.join(tmpdir, "input.json");
     fs.writeFileSync(
       file,
       JSON.stringify({
         workflow_run: { id: 3, updated_at: "2024-06-01T00:00:00Z" },
-        repository: { id: 1, name: "events", full_name: "a5c-ai/events" },
+        repository: { id: 1, name: "a5c", full_name: "a5c-ai/a5c" },
       }),
     );
     const { code, output } = (await cmdNormalize({

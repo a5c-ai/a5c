@@ -7,7 +7,7 @@ import { handleEnrich } from "../src/enrich.js";
 // Build a minimal PR-shaped event to trigger PR enrichment code path in enrichGithubEvent
 function makePREvent() {
   return {
-    repository: { full_name: "a5c-ai/events" },
+    repository: { full_name: "a5c-ai/a5c" },
     pull_request: { number: 1, base: { ref: "main" }, head: { ref: "feat" } },
   };
 }
