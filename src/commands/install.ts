@@ -410,18 +410,39 @@ function parseGithubUri(raw: string): GithubParts {
   const m = /^(github):\/\/(.+)$/.exec(raw.trim());
   if (!m) throw new Error(`Invalid github URI: '${raw}'`);
   const rest = m[2];
-  const [owner, repo, ...restParts] = rest.split("/");
-  if (!owner || !repo || restParts.length === 0) {
+  const parts = rest.split("/");
+  const owner = parts.shift();
+  const repo = parts.shift();
+  if (!owner || !repo || parts.length === 0) {
     throw new Error(
-      `Invalid github URI: expected github://owner/repo/ref/path, got '${raw}'`,
+      `Invalid github URI: expected github://owner/repo/(branch|ref|version)/ref/path, got '${raw}'`,
     );
   }
-  // Longest-first split ref/path
-  for (let i = restParts.length - 1; i >= 1; i--) {
-    const ref = restParts.slice(0, i).join("/");
-    const basePath = restParts.slice(i).join("/");
+
+  const decodeSegments = (segments: string[]): string =>
+    segments.map((seg) => decodeURIComponent(seg || "")).join("/");
+  const normalizePath = (segments: string[]): string => {
+    const joined = decodeSegments(segments);
+    return joined.replace(/^\/+/, "").replace(/\/+$/, "");
+  };
+
+  const mode = (parts[0] || "").toLowerCase();
+  if (mode === "branch" || mode === "ref" || mode === "version") {
+    if (parts.length < 2) {
+      throw new Error(`Invalid github URI: missing ref in '${raw}'`);
+    }
+    const ref = decodeURIComponent(parts[1] || "");
+    const basePath = normalizePath(parts.slice(2));
+    return { owner, repo, ref, basePath };
+  }
+
+  // Back-compat: github://owner/repo/ref/path (without explicit mode)
+  for (let i = parts.length - 1; i >= 1; i--) {
+    const ref = decodeSegments(parts.slice(0, i));
+    const basePath = normalizePath(parts.slice(i));
     if (ref && basePath) return { owner, repo, ref, basePath };
   }
+
   throw new Error(`Invalid github URI: missing ref/path in '${raw}'`);
 }
 
