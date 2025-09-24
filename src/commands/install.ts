@@ -448,7 +448,9 @@ function parseGithubUri(raw: string): GithubParts {
 
 async function fetchGithubMaybe(parts: GithubParts, filePath: string): Promise<string | null> {
   try {
-    const buf = await fetchGithubFileBuffer(parts, filePath);
+    const buf = await fetchGithubFileBuffer(parts, filePath, {
+      suppressRequestLogging: true,
+    });
     return buf.toString("utf8");
   } catch (e: any) {
     return null;
@@ -457,17 +459,21 @@ async function fetchGithubMaybe(parts: GithubParts, filePath: string): Promise<s
 
 async function fetchGithubMaybeBuffer(parts: GithubParts, filePath: string): Promise<Buffer | null> {
   try {
-    const buf = await fetchGithubFileBuffer(parts, filePath);
+    const buf = await fetchGithubFileBuffer(parts, filePath, {
+      suppressRequestLogging: true,
+    });
     return buf;
   } catch {
     return null;
   }
 }
 
-async function fetchGithubFileBuffer(parts: GithubParts, filePath: string): Promise<Buffer> {
-  const { Octokit } = await import("@octokit/rest");
-  const token = process.env.A5C_AGENT_GITHUB_TOKEN || process.env.GITHUB_TOKEN;
-  const octokit = new Octokit({ auth: token });
+async function fetchGithubFileBuffer(
+  parts: GithubParts,
+  filePath: string,
+  opts: { suppressRequestLogging?: boolean } = {},
+): Promise<Buffer> {
+  const octokit = await getOctokitClient({ suppressLogging: opts.suppressRequestLogging === true });
   const { data } = await octokit.repos.getContent({
     owner: parts.owner,
     repo: parts.repo,
@@ -483,9 +489,7 @@ async function fetchGithubFileBuffer(parts: GithubParts, filePath: string): Prom
 type GithubEntry = { type: "file" | "dir"; path: string };
 
 async function listGithubDirectory(parts: GithubParts, dirPath: string): Promise<GithubEntry[]> {
-  const { Octokit } = await import("@octokit/rest");
-  const token = process.env.A5C_AGENT_GITHUB_TOKEN || process.env.GITHUB_TOKEN;
-  const octokit = new Octokit({ auth: token });
+  const octokit = await getOctokitClient({ suppressLogging: true });
 
   const out: GithubEntry[] = [];
   async function walk(p: string): Promise<void> {
@@ -526,5 +530,32 @@ async function runShell(command: string): Promise<number> {
     child.on("error", () => resolve(1));
   });
 }
+
+type OctokitClientOptions = {
+  suppressLogging?: boolean;
+};
+
+let cachedOctokit: any;
+let cachedOctokitSilent: any;
+
+async function getOctokitClient(opts: OctokitClientOptions = {}): Promise<any> {
+  const suppress = opts.suppressLogging === true;
+  if (suppress && cachedOctokitSilent) return cachedOctokitSilent;
+  if (!suppress && cachedOctokit) return cachedOctokit;
+
+  const { Octokit } = await import("@octokit/rest");
+  const token = process.env.A5C_AGENT_GITHUB_TOKEN || process.env.GITHUB_TOKEN;
+
+  const log = suppress
+    ? { debug: noop, info: noop, warn: noop, error: noop }
+    : undefined;
+
+  const octokit = new Octokit({ auth: token, log });
+  if (suppress) cachedOctokitSilent = octokit;
+  else cachedOctokit = octokit;
+  return octokit;
+}
+
+function noop(): void {}
 
 
