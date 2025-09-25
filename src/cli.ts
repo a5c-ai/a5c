@@ -13,6 +13,7 @@ import { handleRun } from "./commands/run.js";
 import { handleParse } from "./commands/parse.js";
 import { handleInit, handleInstall, handleUpgrade } from "./commands/install.js";
 import { handleRunCommand } from "./commands/runCommand.js";
+import { handleWatch } from "./commands/watch.js";
 import { handleSimulate } from "./commands/simulate.js";
 import { redactObject } from "./utils/redact.js";
 import path from "node:path";
@@ -484,6 +485,37 @@ program
       reactorBranch: cmdOpts.reactorBranch || cmdOpts["reactor-branch"],
       emitSink: cmdOpts.emitSink || cmdOpts["emit-sink"],
       emitOut: cmdOpts.emitOut || cmdOpts["emit-out"],
+    });
+    if (code !== 0 && errorMessage) process.stderr.write(errorMessage + "\n");
+    process.exit(code);
+  });
+
+program
+  .command("watch")
+  .description(
+    "Run a command while polling the current branch for updates (git fetch/pull)",
+  )
+  .allowUnknownOption(true)
+  .option("--interval <seconds>", "poll interval in seconds (default 60)")
+  .option(
+    "--branch <name>",
+    "branch to fetch/checkout before starting (defaults to current tracked branch)",
+  )
+  .argument("[command...]", "command to run (provide after '--')")
+  .action(async (commandArgs: string[], cmdOpts: any) => {
+    const argv = Array.isArray(commandArgs) ? commandArgs : [];
+    if (!argv.length) {
+      process.stderr.write(
+        "watch: missing command; pass it after '--', e.g. a5c watch --interval 60 -- npm run dev\n",
+      );
+      process.exit(2);
+      return;
+    }
+    const interval = Number(cmdOpts.interval || cmdOpts["interval"] || 60);
+    const { code, errorMessage } = await handleWatch({
+      intervalSeconds: interval,
+      branch: cmdOpts.branch || cmdOpts["branch"],
+      command: argv,
     });
     if (code !== 0 && errorMessage) process.stderr.write(errorMessage + "\n");
     process.exit(code);
