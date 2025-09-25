@@ -1,7 +1,7 @@
 kind: a5c.ai/package
-name: tdd
+name: a11y
 icon: url://https://a5c.ai/assets/a5c-logo.png
-description: TDD package
+description: A11y package
 homepage: https://a5c.ai
 categories:
-  - name: TDD
+  - name: A11y

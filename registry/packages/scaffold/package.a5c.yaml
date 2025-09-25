@@ -1,9 +1,7 @@
 kind: a5c.ai/package
-name: core
+name: scaffold
 icon: url://https://a5c.ai/assets/a5c-logo.png
-description: Core package
-dependencies:
-  - github://a5c-ai/a5c/branch/main/registry/packages/a5c-package-system
+description: Scaffold package
 homepage: https://a5c.ai
 categories:
-  - name: Core
+  - name: Scaffold
