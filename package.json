@@ -1,6 +1,6 @@
 {
   "name": "@a5c-ai/a5c",
-  "version": "1.23.6",
+  "version": "1.23.7",
   "description": "a5c SDK and CLI for normalizing and enriching repo/CI events for agentic workflows",
   "type": "module",
   "private": false,

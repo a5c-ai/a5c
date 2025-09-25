@@ -1,8 +1,8 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { spawn } from "node:child_process";
 import crypto from "node:crypto";
+import { pathToFileURL } from "node:url";
 import { handleReactor } from "../reactor.js";
 import { handleEmit } from "../emit.js";
 
@@ -99,49 +99,27 @@ async function executeMiniCommand(
   opts: RunMiniCommandOptions,
 ): Promise<{ event: any }> {
   const args = [...opts.args];
-  const env = {
-    ...process.env,
-    A5C_RUN_COMMAND_NAME: opts.commandName,
-  };
-
   const sanitizedName = sanitizeCommandName(opts.commandName);
-  const scriptArgs = [sanitizedName, ...args];
+  const previousEnv = process.env.A5C_RUN_COMMAND_NAME;
+  process.env.A5C_RUN_COMMAND_NAME = opts.commandName;
 
-  const stdout = await spawnAndCapture(process.execPath, [scriptPath, ...scriptArgs], {
-    env,
-    cwd: process.cwd(),
+  const program = await loadCommandProgram(scriptPath);
+  if (typeof program.exitOverride === "function") {
+    program.exitOverride((err: any) => {
+      throw err;
+    });
+  }
+
+  const output = await captureStdout(async () => {
+    const argv = ["node", scriptPath, sanitizedName, ...args];
+    await program.parseAsync(argv, { from: "user" as any });
   });
 
-  const event = parseJsonOutput(stdout, opts.commandName);
+  if (previousEnv === undefined) delete process.env.A5C_RUN_COMMAND_NAME;
+  else process.env.A5C_RUN_COMMAND_NAME = previousEnv;
+
+  const event = parseJsonOutput(output, opts.commandName);
   return { event };
-}
-
-async function spawnAndCapture(
-  command: string,
-  args: string[],
-  options: { env: NodeJS.ProcessEnv; cwd: string },
-): Promise<string> {
-  return await new Promise<string>((resolve, reject) => {
-    const child = spawn(command, args, {
-      cwd: options.cwd,
-      env: options.env,
-      stdio: ["inherit", "pipe", "inherit"],
-    });
-
-    let stdout = "";
-    child.stdout.on("data", (chunk) => {
-      stdout += chunk.toString();
-    });
-
-    child.on("error", (err) => reject(err));
-    child.on("close", (code) => {
-      if (code && code !== 0) {
-        reject(new Error(`command exited with code ${code}`));
-      } else {
-        resolve(stdout);
-      }
-    });
-  });
 }
 
 function parseJsonOutput(output: string, commandName: string): any {
@@ -219,5 +197,38 @@ function isPathInside(child: string, parent: string): boolean {
 
 function sanitizeCommandName(name: string): string {
   return name.startsWith("@") ? name.slice(1) : name;
+}
+
+async function loadCommandProgram(scriptPath: string): Promise<any> {
+  const url = pathToFileURL(scriptPath);
+  url.searchParams.set("t", Date.now().toString());
+  const mod = await import(url.href);
+  const program = (mod && (mod.default || mod.program)) || mod;
+  if (!program || typeof program.parseAsync !== "function") {
+    throw new Error(
+      `run-command: default export of '${scriptPath}' is not a commander program`,
+    );
+  }
+  return program;
+}
+
+async function captureStdout(fn: () => Promise<void>): Promise<string> {
+  const originalWrite = process.stdout.write.bind(process.stdout);
+  let buffer = "";
+  (process.stdout.write as unknown) = ((chunk: any, encoding?: any, cb?: any) => {
+    const str =
+      typeof chunk === "string"
+        ? chunk
+        : Buffer.from(chunk, encoding as BufferEncoding | undefined).toString();
+    buffer += str;
+    if (typeof cb === "function") cb();
+    return true;
+  }) as typeof process.stdout.write;
+  try {
+    await fn();
+  } finally {
+    (process.stdout.write as unknown) = originalWrite;
+  }
+  return buffer;
 }
 
