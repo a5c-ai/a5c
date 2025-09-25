@@ -101,6 +101,8 @@ class ProgressStage {
 export interface InstallOptions {
   uri: string;
   showProgress?: boolean;
+  serverSideOnly?: boolean;
+  serverSide?: ServerSideInstallOptions;
 }
 
 type GithubParts = {
@@ -138,55 +140,112 @@ type InstallPlan = {
 type InstallContext = {
   progress: InstallProgress;
   docsPrinted: Set<string>;
+  serverSide?: ServerSideInstallOptions;
 };
 
+let currentInstallContext: InstallContext | undefined;
+
+type ServerSideInstallOptions = {
+  targetRepo: string;
+  targetBranch: string;
+  newBranch: string;
+  prTitle?: string;
+  prBody?: string;
+  skipScripts?: boolean;
+  octokitFactory?: () => Promise<any>;
+  gitAuthor?: { name: string; email: string };
+  commitMessage?: string;
+  token?: string;
+  overridePaths?: Record<string, Buffer | string>;
+  commitSummary?: string;
+};
+
+/**
+ * Example (server-side usage):
+ * ```ts
+ * await handleInstall({
+ *   uri: "github://a5c-ai/a5c/branch/main/registry/packages/github-starter",
+ *   serverSideOnly: true,
+ *   serverSide: {
+ *     targetRepo: "my-org/my-repo",
+ *     targetBranch: "main",
+ *     newBranch: "chore/add-a5c-starter",
+ *     token: process.env.GITHUB_TOKEN,
+ *   },
+ * });
+ * ```
+ */
 export async function handleInstall(
   opts: InstallOptions,
-): Promise<{ code: number; errorMessage?: string }> {
+): Promise<{ code: number; errorMessage?: string; installDocs?: string[]; prUrl?: string }> {
   try {
     if (!opts.uri || typeof opts.uri !== "string") {
       return { code: 2, errorMessage: "install: missing required <github-uri>" };
     }
-    const progress = new InstallProgress(opts.showProgress === true);
-    const ctx: InstallContext = { progress, docsPrinted: new Set() };
-    const plan = await buildInstallPlan(opts.uri, ctx);
-
-    const conflictReport = detectConflicts(plan);
-    if (conflictReport.conflicts.length > 0) {
-      printConflictReport(conflictReport);
-      return { code: 3, errorMessage: "install aborted due to conflicts" };
+    const serverSide = opts.serverSideOnly === true ? opts.serverSide || {} : undefined;
+    const progress = new InstallProgress(opts.showProgress === true && !serverSide);
+    const ctx: InstallContext = {
+      progress,
+      docsPrinted: new Set(),
+      serverSide,
+    };
+    if (opts.serverSideOnly && !ctx.serverSide) {
+      return {
+        code: 2,
+        errorMessage: "install: serverSideOnly requires serverSide configuration",
+      };
     }
 
-    // Apply files
-    for (const pf of plan.files) {
-      fs.mkdirSync(path.dirname(pf.targetPath), { recursive: true });
-      fs.writeFileSync(pf.targetPath, pf.content);
+    const previousContext = currentInstallContext;
+    currentInstallContext = ctx;
+    try {
+      const plan = await buildInstallPlan(opts.uri, ctx);
+
+      const conflictReport = detectConflicts(plan);
+      if (conflictReport.conflicts.length > 0) {
+        printConflictReport(conflictReport);
+        return { code: 3, errorMessage: "install aborted due to conflicts" };
+      }
+
+      if (opts.serverSideOnly) {
+        return await performServerSideInstall(plan, ctx);
+      }
+
+      // Apply files
+      for (const pf of plan.files) {
+        fs.mkdirSync(path.dirname(pf.targetPath), { recursive: true });
+        fs.writeFileSync(pf.targetPath, pf.content);
+      }
+
+      // Run install scripts package-by-package (dependencies first)
+      const scriptStage = progress.startStage("Running install scripts", plan.packages.length);
+      for (const p of plan.packages) {
+        scriptStage.setInfo(p.spec.name || p.uri);
+    await runInstallScriptIfExists(p.parts);
+        scriptStage.advance();
+      }
+      progress.finishStage();
+
+      // Update .a5c/packages.yaml
+      await updatePackagesYaml(plan);
+
+      // Print INSTALL.md for each package (dependencies first)
+      const docs: string[] = [];
+      for (const pkg of plan.packages) {
+        const doc = await printDocIfExists(
+          pkg.parts,
+          "INSTALL.md",
+          `Installation instructions (${pkg.spec.name || pkg.uri}):`,
+          ctx,
+        );
+        if (doc) docs.push(doc);
+      }
+
+      progress.finish();
+      return { code: 0, installDocs: docs.length ? docs : undefined };
+    } finally {
+      currentInstallContext = previousContext;
     }
-
-    // Run install scripts package-by-package (dependencies first)
-    const scriptStage = progress.startStage("Running install scripts", plan.packages.length);
-    for (const p of plan.packages) {
-      scriptStage.setInfo(p.spec.name || p.uri);
-      await runInstallScriptIfExists(p.parts);
-      scriptStage.advance();
-    }
-    progress.finishStage();
-
-    // Update .a5c/packages.yaml
-    await updatePackagesYaml(plan);
-
-    // Print INSTALL.md for each package (dependencies first)
-    for (const pkg of plan.packages) {
-      await printDocIfExists(
-        pkg.parts,
-        "INSTALL.md",
-        `Installation instructions (${pkg.spec.name || pkg.uri}):`,
-        ctx,
-      );
-    }
-
-    progress.finish();
-    return { code: 0 };
   } catch (e: any) {
     return { code: 1, errorMessage: String(e?.message || e) };
   }
@@ -195,7 +254,9 @@ export async function handleInstall(
 export async function handleInit(opts: {
   pkg?: string;
   showProgress?: boolean;
-}): Promise<{ code: number; errorMessage?: string }> {
+  serverSideOnly?: boolean;
+  serverSide?: ServerSideInstallOptions;
+}): Promise<{ code: number; errorMessage?: string; installDocs?: string[]; prUrl?: string }> {
   try {
     const a5cDir = path.resolve(".a5c");
     fs.mkdirSync(a5cDir, { recursive: true });
@@ -219,12 +280,14 @@ export async function handleInit(opts: {
       "github://a5c-ai/a5c/branch/main/registry/packages/github-starter";
 
     const showProgress = opts.showProgress !== false;
-    const { code, errorMessage } = await handleInstall({
+    const { code, errorMessage, installDocs, prUrl } = await handleInstall({
       uri: defaultPkg,
       showProgress,
+      serverSideOnly: opts.serverSideOnly,
+      serverSide: opts.serverSide,
     });
-    if (code !== 0) return { code, errorMessage };
-    return { code: 0 };
+    if (code !== 0) return { code, errorMessage, installDocs, prUrl };
+    return { code: 0, installDocs, prUrl };
   } catch (e: any) {
     return { code: 1, errorMessage: String(e?.message || e) };
   }
@@ -422,6 +485,9 @@ async function readPackageSpec(parts: GithubParts): Promise<{
 }
 
 async function runInstallScriptIfExists(parts: GithubParts): Promise<void> {
+  if (currentInstallContext?.serverSide && currentInstallContext.serverSide.skipScripts !== false) {
+    return;
+  }
   const isWin = process.platform === "win32";
   const scriptName = isWin ? "install.cmd" : "install.sh";
   const scriptPath = path.posix.join(parts.basePath, scriptName);
@@ -550,16 +616,235 @@ async function printDocIfExists(
   fileName: string,
   header: string,
   ctx?: InstallContext,
-): Promise<void> {
+): Promise<string | undefined> {
   const maybe = await fetchGithubMaybe(parts, path.posix.join(parts.basePath, fileName));
   const trimmed = maybe?.trim();
   if (trimmed && trimmed.length > 0) {
     const key = `${parts.owner}/${parts.repo}/${parts.ref}/${parts.basePath}/${fileName}`;
     if (ctx?.docsPrinted.has(key)) return;
     ctx?.docsPrinted.add(key);
-    process.stdout.write(header + "\n");
-    process.stdout.write(trimmed + "\n");
+    if (!ctx?.serverSide) {
+      process.stdout.write(header + "\n");
+      process.stdout.write(trimmed + "\n");
+    }
+    return `${header}\n${trimmed}`;
   }
+  return undefined;
+}
+
+async function performServerSideInstall(
+  plan: InstallPlan,
+  ctx: InstallContext,
+): Promise<{ code: number; errorMessage?: string; installDocs?: string[]; prUrl?: string }> {
+  const ss = ctx.serverSide;
+  if (!ss) {
+    return { code: 2, errorMessage: "server-side install missing configuration" };
+  }
+
+  const docs: string[] = [];
+  for (const pkg of plan.packages) {
+    const doc = await printDocIfExists(
+      pkg.parts,
+      "INSTALL.md",
+      `Installation instructions (${pkg.spec.name || pkg.uri}):`,
+      ctx,
+    );
+    if (doc) docs.push(doc);
+  }
+
+  try {
+    const { owner, repo } = parseOwnerRepo(ss.targetRepo);
+    const octokit = await getOctokitForServerSide(ss);
+
+    const baseRefResp = await octokit.git.getRef({ owner, repo, ref: `heads/${ss.targetBranch}` });
+    const baseCommitSha: string = baseRefResp.data.object.sha;
+
+    try {
+      await octokit.git.createRef({
+        owner,
+        repo,
+        ref: `refs/heads/${ss.newBranch}`,
+        sha: baseCommitSha,
+      });
+    } catch (err: any) {
+      if (Number(err?.status) === 422) {
+        throw new Error(`target branch '${ss.newBranch}' already exists`);
+      }
+      throw err;
+    }
+
+    const baseCommitResp = await octokit.git.getCommit({ owner, repo, commit_sha: baseCommitSha });
+    const baseTreeSha: string = baseCommitResp.data.tree.sha;
+
+    const packagesYamlContent = await buildServerSidePackagesYaml(plan, octokit, owner, repo, ss.targetBranch);
+
+    const fileMap = new Map<string, Buffer>();
+    for (const pf of plan.files) {
+      fileMap.set(pf.relPath.replace(/\\/g, "/"), Buffer.from(pf.content));
+    }
+    fileMap.set(".a5c/packages.yaml", Buffer.from(packagesYamlContent, "utf8"));
+
+    if (ss.overridePaths) {
+      for (const [p, content] of Object.entries(ss.overridePaths)) {
+        const buf = Buffer.isBuffer(content) ? content : Buffer.from(String(content));
+        fileMap.set(p.replace(/\\/g, "/"), Buffer.from(buf));
+      }
+    }
+
+    if (fileMap.size === 0) {
+      throw new Error("no files to commit for server-side install");
+    }
+
+    const treeEntries: Array<{ path: string; mode: string; type: string; sha: string }> = [];
+    for (const [filePath, buf] of fileMap.entries()) {
+      const blobResp = await octokit.git.createBlob({
+        owner,
+        repo,
+        content: buf.toString("base64"),
+        encoding: "base64",
+      });
+      treeEntries.push({ path: filePath, mode: "100644", type: "blob", sha: blobResp.data.sha });
+    }
+
+    const treeResp = await octokit.git.createTree({
+      owner,
+      repo,
+      base_tree: baseTreeSha,
+      tree: treeEntries,
+    });
+
+    const commitMessage = ss.commitMessage || buildDefaultCommitMessage(plan);
+    const commitParams: any = {
+      owner,
+      repo,
+      message: commitMessage,
+      tree: treeResp.data.sha,
+      parents: [baseCommitSha],
+    };
+    if (ss.gitAuthor) commitParams.author = ss.gitAuthor;
+
+    const commitResp = await octokit.git.createCommit(commitParams);
+
+    await octokit.git.updateRef({
+      owner,
+      repo,
+      ref: `heads/${ss.newBranch}`,
+      sha: commitResp.data.sha,
+      force: true,
+    });
+
+    const prTitle = ss.prTitle || commitMessage;
+    const prBody = ss.prBody || buildDefaultPullRequestBody(plan, docs);
+
+    const prResp = await octokit.pulls.create({
+      owner,
+      repo,
+      title: prTitle,
+      head: ss.newBranch,
+      base: ss.targetBranch,
+      body: prBody,
+    });
+
+    ctx.progress.finish();
+    return {
+      code: 0,
+      installDocs: docs.length ? docs : undefined,
+      prUrl: prResp?.data?.html_url,
+    };
+  } catch (e: any) {
+    ctx.progress.finish();
+    return {
+      code: 1,
+      errorMessage: String(e?.message || e),
+      installDocs: docs.length ? docs : undefined,
+    };
+  }
+}
+
+function parseOwnerRepo(input: string): { owner: string; repo: string } {
+  const trimmed = String(input || "").trim();
+  const parts = trimmed.split("/").filter(Boolean);
+  if (parts.length !== 2) {
+    throw new Error(`invalid repository identifier '${input}' (expected owner/repo)`);
+  }
+  return { owner: parts[0], repo: parts[1] };
+}
+
+async function getOctokitForServerSide(ss: ServerSideInstallOptions): Promise<any> {
+  if (ss.octokitFactory) {
+    return await ss.octokitFactory();
+  }
+  return await getOctokitClient({ suppressLogging: true, tokenOverride: ss.token });
+}
+
+async function buildServerSidePackagesYaml(
+  plan: InstallPlan,
+  octokit: any,
+  owner: string,
+  repo: string,
+  ref: string,
+): Promise<string> {
+  let doc: any = { packages: [] };
+  try {
+    const resp = await octokit.repos.getContent({ owner, repo, path: ".a5c/packages.yaml", ref });
+    if (!Array.isArray(resp.data)) {
+      const encoding = resp.data.encoding || "base64";
+      const raw = Buffer.from(resp.data.content || "", encoding as BufferEncoding).toString("utf8");
+      if (raw.trim().length) {
+        doc = YAML.parse(raw) || { packages: [] };
+      }
+    }
+  } catch (err: any) {
+    if (Number(err?.status) !== 404) throw err;
+  }
+  if (!Array.isArray(doc.packages)) doc.packages = [];
+
+  const now = new Date().toISOString();
+  for (const p of plan.packages) {
+    const uri = `github://${p.parts.owner}/${p.parts.repo}/${p.parts.ref}/${p.parts.basePath}`;
+    const idx = (doc.packages as any[]).findIndex((x) => x && x.uri === uri);
+    const entry = {
+      uri,
+      name: p.spec.name || "",
+      installedAt: now,
+    };
+    if (idx >= 0) {
+      doc.packages[idx] = { ...(doc.packages[idx] || {}), ...entry };
+    } else {
+      (doc.packages as any[]).push(entry);
+    }
+  }
+  return YAML.stringify(doc);
+}
+
+function buildDefaultCommitMessage(plan: InstallPlan): string {
+  const root = plan.packages[plan.packages.length - 1];
+  const name = root?.spec?.name || root?.uri || "a5c package";
+  return `Install ${name} via a5c`;
+}
+
+function buildDefaultPullRequestBody(plan: InstallPlan, docs: string[]): string {
+  const lines: string[] = [];
+  const root = plan.packages[plan.packages.length - 1];
+  const name = root?.spec?.name || root?.uri || "a5c package";
+  lines.push(`# Install ${name}`);
+  lines.push("");
+  lines.push("This pull request was created automatically by the a5c installer.");
+  lines.push("");
+  lines.push("## Packages");
+  for (const pkg of plan.packages) {
+    lines.push(`- ${pkg.spec.name || pkg.uri}`);
+  }
+  if (docs.length) {
+    lines.push("");
+    lines.push("## Installation Notes");
+    for (const doc of docs) {
+      lines.push("");
+      lines.push("---");
+      lines.push(doc);
+    }
+  }
+  return lines.join("\n");
 }
 
 function parseGithubUri(raw: string): GithubParts {
@@ -629,7 +914,10 @@ async function fetchGithubFileBuffer(
   filePath: string,
   opts: { suppressRequestLogging?: boolean } = {},
 ): Promise<Buffer> {
-  const octokit = await getOctokitClient({ suppressLogging: opts.suppressRequestLogging === true });
+  const octokit = await getOctokitClient({
+    suppressLogging: opts.suppressRequestLogging === true,
+    tokenOverride: currentInstallContext?.serverSide?.token,
+  });
   const { data } = await octokit.repos.getContent({
     owner: parts.owner,
     repo: parts.repo,
@@ -645,7 +933,10 @@ async function fetchGithubFileBuffer(
 type GithubEntry = { type: "file" | "dir"; path: string };
 
 async function listGithubDirectory(parts: GithubParts, dirPath: string): Promise<GithubEntry[]> {
-  const octokit = await getOctokitClient({ suppressLogging: true });
+  const octokit = await getOctokitClient({
+    suppressLogging: true,
+    tokenOverride: currentInstallContext?.serverSide?.token,
+  });
 
   const out: GithubEntry[] = [];
   async function walk(p: string): Promise<void> {
@@ -689,6 +980,7 @@ async function runShell(command: string): Promise<number> {
 
 type OctokitClientOptions = {
   suppressLogging?: boolean;
+  tokenOverride?: string;
 };
 
 let cachedOctokit: any;
@@ -696,19 +988,28 @@ let cachedOctokitSilent: any;
 
 async function getOctokitClient(opts: OctokitClientOptions = {}): Promise<any> {
   const suppress = opts.suppressLogging === true;
-  if (suppress && cachedOctokitSilent) return cachedOctokitSilent;
-  if (!suppress && cachedOctokit) return cachedOctokit;
+  const tokenOverride = opts.tokenOverride;
+  if (!tokenOverride) {
+    if (suppress && cachedOctokitSilent) return cachedOctokitSilent;
+    if (!suppress && cachedOctokit) return cachedOctokit;
+  }
 
   const { Octokit } = await import("@octokit/rest");
-  const token = process.env.A5C_AGENT_GITHUB_TOKEN || process.env.GITHUB_TOKEN;
+  const token = tokenOverride || process.env.A5C_AGENT_GITHUB_TOKEN || process.env.GITHUB_TOKEN;
+
+  if (!token) {
+    throw new Error("GitHub token is required for this operation");
+  }
 
   const log = suppress
     ? { debug: noop, info: noop, warn: noop, error: noop }
     : undefined;
 
   const octokit = new Octokit({ auth: token, log });
-  if (suppress) cachedOctokitSilent = octokit;
-  else cachedOctokit = octokit;
+  if (!tokenOverride) {
+    if (suppress) cachedOctokitSilent = octokit;
+    else cachedOctokit = octokit;
+  }
   return octokit;
 }
 
