@@ -2,6 +2,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import crypto from "node:crypto";
+import module from "node:module";
 import { pathToFileURL } from "node:url";
 import { handleReactor } from "../reactor.js";
 import { handleEmit } from "../emit.js";
@@ -37,6 +38,8 @@ export async function handleRunCommand(
         errorMessage: `run-command: command '${opts.commandName}' not found under '${commandsDir}'`,
       };
     }
+
+    ensureModuleResolution(path.dirname(scriptPath));
 
     const { event } = await executeMiniCommand(scriptPath, opts);
 
@@ -197,6 +200,29 @@ function isPathInside(child: string, parent: string): boolean {
 
 function sanitizeCommandName(name: string): string {
   return name.startsWith("@") ? name.slice(1) : name;
+}
+
+const nodeModule = module as unknown as {
+  globalPaths: string[];
+  Module?: { globalPaths: string[]; _initPaths?: () => void };
+  _initPaths?: () => void;
+};
+
+function ensureModuleResolution(moduleDir: string): void {
+  const resolvePaths = nodeModule.Module?.globalPaths || nodeModule.globalPaths;
+  if (!Array.isArray(resolvePaths)) return;
+  const currentNodePath = process.env.NODE_PATH
+    ? process.env.NODE_PATH.split(path.delimiter)
+    : [];
+  const candidates = new Set<string>([
+    ...resolvePaths,
+    path.resolve("node_modules"),
+    path.resolve(moduleDir, "node_modules"),
+    ...currentNodePath,
+  ]);
+  process.env.NODE_PATH = Array.from(candidates).join(path.delimiter);
+  nodeModule.Module?._initPaths?.();
+  if (typeof nodeModule._initPaths === "function") nodeModule._initPaths();
 }
 
 async function loadCommandProgram(scriptPath: string): Promise<any> {
