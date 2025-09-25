@@ -218,9 +218,10 @@ export async function handleInit(opts: {
       opts.pkg ||
       "github://a5c-ai/a5c/branch/main/registry/packages/github-starter";
 
+    const showProgress = opts.showProgress !== false;
     const { code, errorMessage } = await handleInstall({
       uri: defaultPkg,
-      showProgress: opts.showProgress === true,
+      showProgress,
     });
     if (code !== 0) return { code, errorMessage };
     return { code: 0 };

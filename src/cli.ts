@@ -12,6 +12,7 @@ import { handleEmit } from "./emit.js";
 import { handleRun } from "./commands/run.js";
 import { handleParse } from "./commands/parse.js";
 import { handleInit, handleInstall, handleUpgrade } from "./commands/install.js";
+import { handleRunCommand } from "./commands/runCommand.js";
 import { handleSimulate } from "./commands/simulate.js";
 import { redactObject } from "./utils/redact.js";
 import path from "node:path";
@@ -454,6 +455,35 @@ program
       model: cmdOpts.model,
       mcps: cmdOpts.mcps,
       config: cmdOpts.config,
+    });
+    if (code !== 0 && errorMessage) process.stderr.write(errorMessage + "\n");
+    process.exit(code);
+  });
+
+program
+  .command("run-command")
+  .description("Run a mini CLI command from .a5c/cli_commands")
+  .argument("name", "command name located under .a5c/cli_commands")
+  .allowUnknownOption(true)
+  .option("--dry", "print the emitted event without running reactor/emit")
+  .option("--reactor-file <path>", "optional override for reactor rules path")
+  .option(
+    "--reactor-branch <name>",
+    "branch to use when reactor loads remote documents",
+  )
+  .option("--emit-sink <name>", "sink for emit command (stdout|file|github)")
+  .option("--emit-out <path>", "output path when emit sink is file")
+  .action(async (name: string, cmdOpts: any, command: any) => {
+    const commandArgs = Array.isArray(command?.args) ? command.args : [];
+    const extraArgs = commandArgs.slice(1);
+    const { code, errorMessage } = await handleRunCommand({
+      commandName: name,
+      args: extraArgs,
+      dry: !!cmdOpts.dry,
+      reactorFile: cmdOpts.reactorFile || cmdOpts["reactor-file"],
+      reactorBranch: cmdOpts.reactorBranch || cmdOpts["reactor-branch"],
+      emitSink: cmdOpts.emitSink || cmdOpts["emit-sink"],
+      emitOut: cmdOpts.emitOut || cmdOpts["emit-out"],
     });
     if (code !== 0 && errorMessage) process.stderr.write(errorMessage + "\n");
     process.exit(code);
