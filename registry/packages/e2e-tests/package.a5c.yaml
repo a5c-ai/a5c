@@ -1,7 +1,7 @@
 kind: a5c.ai/package
-name: tdd
+name: e2e-tests
 icon: url://https://a5c.ai/assets/a5c-logo.png
-description: TDD package
+description: E2E Tests package
 homepage: https://a5c.ai
 categories:
-  - name: TDD
+  - name: E2E Tests
