@@ -182,7 +182,7 @@ export async function handleInstall(
     if (!opts.uri || typeof opts.uri !== "string") {
       return { code: 2, errorMessage: "install: missing required <github-uri>" };
     }
-    const serverSide = opts.serverSideOnly === true ? opts.serverSide || {} : undefined;
+    const serverSide = opts.serverSideOnly === true ? (opts.serverSide as ServerSideInstallOptions | undefined) : undefined;
     const progress = new InstallProgress(opts.showProgress === true && !serverSide);
     const ctx: InstallContext = {
       progress,
