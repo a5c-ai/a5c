@@ -37,7 +37,5 @@ program
         console.log(JSON.stringify(outputEvent));
     });
 
-// parse args
-program.parse(process.argv);
 
 export default program;
