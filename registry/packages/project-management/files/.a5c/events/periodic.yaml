@@ -1,0 +1,123 @@
+---
+name: Periodic - Weekly - Monday Morning
+metadata:
+  runner-name: reactor
+on:
+  schedule:
+    filters:
+      # weekly schedule
+      - expression: ${{ event.type == 'schedule' && event.schedule.cron == '0 9 * * 1' }}
+emit:
+  periodic_weekly_monday_morning:
+    type: periodic
+---
+name: Periodic - Daily - 15:00 UTC
+metadata:
+  runner-name: reactor
+on:
+  schedule:
+    filters:
+      - expression: ${{ event.type == 'schedule' && event.schedule.cron == '0 15 * * *' }}
+emit:
+  periodic_daily_1500:
+    type: periodic
+---
+name: Periodic - Daily - 09:00 UTC
+metadata:
+  runner-name: reactor
+on:
+  schedule:
+    filters:
+      - expression: ${{ event.type == 'schedule' && event.schedule.cron == '0 9 * * *' }}
+emit:
+  periodic_daily_0900:
+    type: periodic
+---
+name: Periodic - Twice a Day - 09:00 and 21:00 UTC
+metadata:
+  runner-name: reactor
+on:
+  schedule:
+    filters:
+      - expression: ${{ event.type == 'schedule' && event.schedule.cron == '0 9,21 * * *' }}
+emit:
+  periodic_twice_a_day:
+    type: periodic
+---
+name: Periodic - 4 times a Day - 09:00, 13:00, 17:00, and 21:00 UTC
+metadata:
+  runner-name: reactor
+on:
+  schedule:
+    filters:
+      - expression: ${{ event.type == 'schedule' && event.schedule.cron == '0 9,13,17,21 * * *' }}
+emit:
+  periodic_4_times_a_day:
+    type: periodic
+---
+name: Periodic - Every 2 Hours
+metadata:
+  runner-name: reactor
+on:
+  schedule:
+    filters:
+      - expression: ${{ event.type == 'schedule' && event.schedule.cron == '0 */2 * * *' }}
+emit:
+  periodic_every_2_hours:
+    type: periodic
+---
+name: Periodic - Every 4 Hours
+metadata:
+  runner-name: reactor
+on:
+  schedule:
+    filters:
+      - expression: ${{ event.type == 'schedule' && event.schedule.cron == '0 */4 * * *' }}
+emit:
+  periodic_every_4_hours:
+    type: periodic
+---
+name: Periodic - Every 6 Hours
+metadata:
+  runner-name: reactor
+on:
+  schedule:
+    filters:
+      - expression: ${{ event.type == 'schedule' && event.schedule.cron == '0 */6 * * *' }}
+emit:
+  periodic_every_6_hours:
+    type: periodic
+---
+name: Periodic - Every 8 Hours
+metadata:
+  runner-name: reactor
+on:
+  schedule:
+    filters:
+      - expression: ${{ event.type == 'schedule' && event.schedule.cron == '0 */8 * * *' }}
+emit:
+  periodic_every_8_hours:
+    type: periodic
+---
+name: Periodic - Every 12 Hours
+metadata:
+  runner-name: reactor
+on:
+  schedule:
+    filters:
+      - expression: ${{ event.type == 'schedule' && event.schedule.cron == '0 */12 * * *' }}
+emit:
+  periodic_every_12_hours:
+    type: periodic
+---
+name: Periodic - Every 30 Minutes
+metadata:
+  runner-name: reactor
+on:
+  schedule:
+    filters:
+      - expression: ${{ event.type == 'schedule' && event.schedule.cron == '*/30 * * * *' }}
+emit:
+  periodic_every_30_minutes:
+    type: periodic
+---
