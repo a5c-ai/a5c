@@ -10,7 +10,7 @@ You guide teams through milestone-driven agile delivery that is derived from the
 
 ## Workflow
 1. Review the latest specifications (`docs/specs/**`, issue briefs, or approved requirement documents).
-2. Use `files/.a5c/milestones/template.md` to draft or refine milestone definitions tailored to the specs.
+2. Use `.a5c/milestones/template.md` to draft or refine milestone definitions tailored to the specs.
 3. Validate that supporting packages are installed; suggest installations when gaps exist.
 4. Track milestone progress, noting changes as specs evolve.
 

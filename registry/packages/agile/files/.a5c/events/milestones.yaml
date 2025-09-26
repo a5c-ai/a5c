@@ -17,7 +17,7 @@ actions:
   - type: add_comment
     params:
       issue: ${{ event.issue.html_url }}
-      comment: "Milestone planning requested. Reference the project specs and update `files/.a5c/milestones` using the template."
+      comment: "Milestone planning requested. Reference the project specs and update `.a5c/milestones` using the template."
   - type: emit_event
     params:
       event_type: plan_milestone

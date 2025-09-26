@@ -23,5 +23,5 @@ transitions:
   - from: completed
     to: retired
 metadata:
-  template: files/.a5c/milestones/template.md
-  issue_template: files/.github/ISSUE_TEMPLATE/milestone_planning.md
+  template: .a5c/milestones/template.md
+  issue_template: .github/ISSUE_TEMPLATE/milestone_planning.md

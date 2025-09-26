@@ -28,6 +28,6 @@ List A5C packages used or required (e.g., product-quality, test-coverage, securi
 - Next responsible owner:
 
 ---
-- [ ] Phase gate template filled using `files/.a5c/templates/phase-gate-checklist.md`
+- [ ] Phase gate template filled using `.a5c/templates/phase-gate-checklist.md`
 - [ ] Labels updated (`phase_gate`, `design_signoff`, `requirements_complete` as appropriate)
 - [ ] Stakeholders acknowledged in comments

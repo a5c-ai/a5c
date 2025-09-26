@@ -26,6 +26,6 @@ What deliverables or validations are required to mark the milestone complete?
 Record open questions, dependencies, or risks.
 
 ---
-- [ ] Milestone template updated under `files/.a5c/milestones/`
+- [ ] Milestone template updated under `.a5c/milestones/`
 - [ ] Recommended packages validated as installed or installation tasks opened
 - [ ] Stakeholders across product, engineering, and delivery acknowledged

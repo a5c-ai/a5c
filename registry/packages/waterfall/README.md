@@ -10,4 +10,4 @@ The Waterfall package provides automation, labels, and guidance for teams runnin
 - Phase Gate Reviewer agent instructions
 - Tree view dashboard page for phase progression
 
-Consult `files/.a5c/processes` for checklists and `files/.a5c/handlers` for manual review steps.
+Consult `.a5c/processes` for checklists and `.a5c/handlers` for manual review steps.
