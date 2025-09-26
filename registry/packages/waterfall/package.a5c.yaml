@@ -1,9 +1,9 @@
 kind: a5c.ai/package
-name: mobile
+name: waterfall
 icon: url://https://a5c.ai/assets/a5c-logo.png
-description: Mobile package
+description: Waterfall package
 homepage: https://a5c.ai
 dependencies:
   - github://a5c-ai/a5c/branch/main/registry/packages/frontend-development/
 categories:
-  - name: Mobile
+  - name: Waterfall

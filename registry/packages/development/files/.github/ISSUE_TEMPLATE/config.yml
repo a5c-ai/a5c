@@ -1,5 +1,0 @@
-blank_issues_enabled: true
-contact_links:
-  - name: 📄 CI checks and required statuses
-    url: https://github.com/a5c-ai/a5c/blob/a5c/main/docs/ci/ci-checks.md
-    about: Learn which checks run and how to fix them

@@ -1,0 +1,127 @@
+---
+name: Milestone Planning Requested
+metadata:
+  runner-name: reactor
+on:
+  issue:
+    filters:
+      - expression: ${{ event.type == 'labeled' && event.label.name == 'milestone_planning' }}
+    skip:
+      - expression: ${{ event.issue.closed == true }}
+actions:
+  - type: label_issue
+    params:
+      issue: ${{ event.issue.html_url }}
+      add_labels: [milestone_planning]
+      remove_labels: [milestone_review]
+  - type: add_comment
+    params:
+      issue: ${{ event.issue.html_url }}
+      comment: "Milestone planning requested. Reference the project specs and update `files/.a5c/milestones` using the template."
+  - type: emit_event
+    params:
+      event_type: plan_milestone
+      payload:
+        original_event: ${{ event }}
+        issue: ${{ event.issue }}
+---
+name: Milestone Planning Command
+metadata:
+  runner-name: agents
+on:
+  plan_milestone:
+actions:
+  - type: agent_run
+    params: {}
+  - type: add_comment
+    params:
+      issue: ${{ event.payload.issue.html_url }}
+      comment: "Milestone plan drafted or updated based on the current specifications."
+  - type: create_entity
+    params:
+      name: ${{ event.payload.issue.title }}
+      type: spec-driven-milestone
+      state: proposed
+---
+name: Milestone Review Requested
+metadata:
+  runner-name: reactor
+on:
+  issue:
+    filters:
+      - expression: ${{ event.type == 'labeled' && event.label.name == 'milestone_review' }}
+    skip:
+      - expression: ${{ event.issue.closed == true }}
+actions:
+  - type: label_issue
+    params:
+      issue: ${{ event.issue.html_url }}
+      add_labels: [milestone_review]
+      remove_labels: [milestone_planning]
+  - type: add_comment
+    params:
+      issue: ${{ event.issue.html_url }}
+      comment: "Milestone review requested. Validate the plan against the referenced specs."
+  - type: emit_event
+    params:
+      event_type: review_milestone
+      payload:
+        original_event: ${{ event }}
+        issue: ${{ event.issue }}
+---
+name: Milestone Review Command
+metadata:
+  runner-name: agents
+on:
+  review_milestone:
+actions:
+  - type: agent_run
+    params: {}
+  - type: add_comment
+    params:
+      issue: ${{ event.payload.issue.html_url }}
+      comment: "Milestone review completed. Update labels based on follow-up actions."
+  - type: update_entity
+    params:
+      name: ${{ event.payload.issue.title }}
+      type: spec-driven-milestone
+      state: approved
+---
+name: Milestone Status Updated
+metadata:
+  runner-name: reactor
+on:
+  issue:
+    filters:
+      - expression: ${{ event.type == 'labeled' && event.label.name == 'milestone_in_progress' }}
+  pull_request:
+    filters:
+      - expression: ${{ event.type == 'closed' && event.pull_request.merged == true && event.pull_request.title | contains('milestone') }}
+actions:
+  - type: update_entity
+    params:
+      name: ${{ event.issue.title if event.issue else event.pull_request.title }}
+      type: spec-driven-milestone
+      state: ${{ 'in_progress' if event.issue else 'completed' }}
+  - type: add_comment
+    params:
+      issue: ${{ event.issue.html_url if event.issue else event.pull_request.html_url }}
+      comment: "Milestone state updated to ${{ 'in_progress' if event.issue else 'completed' }}."
+---
+name: Milestone Retired
+metadata:
+  runner-name: reactor
+on:
+  issue:
+    filters:
+      - expression: ${{ event.type == 'labeled' && event.label.name == 'milestone_retired' }}
+actions:
+  - type: update_entity
+    params:
+      name: ${{ event.issue.title }}
+      type: spec-driven-milestone
+      state: retired
+  - type: add_comment
+    params:
+      issue: ${{ event.issue.html_url }}
+      comment: "Milestone marked as retired. Archive related docs if needed."

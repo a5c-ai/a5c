@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Product strategy alignment
+    url: https://example.com/product
+    about: Align backlog priorities with strategy.
+  - name: Tooling & automation support
+    url: https://example.com/support
+    about: Request help for A5C automation or pipelines.
