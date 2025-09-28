@@ -1,0 +1,8 @@
+kind: a5c.ai/package
+name: gitlab
+icon: url://https://a5c.ai/assets/a5c-logo.png
+description: GitLab package
+homepage: https://a5c.ai
+categories:
+  - name: GitLab
+

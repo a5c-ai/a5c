@@ -1,0 +1,7 @@
+kind: a5c.ai/package
+name: process-mining
+icon: url://https://a5c.ai/assets/a5c-logo.png
+description: Process Mining package
+homepage: https://a5c.ai
+categories:
+  - name: Process Mining

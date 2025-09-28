@@ -1,0 +1,32 @@
+.a5c_base:
+  stage: reactor
+  image: node:20
+  variables:
+    A5C_CLI_PROFILE: "${A5C_CLI_PROFILE:-azure_codex_gpt5}"
+    A5C_CLOUD_SETUP: "${A5C_CLOUD_SETUP:-false}"
+    A5C_MCPS_PATH: "${A5C_MCPS_PATH:-.a5c/mcps.json}"
+    A5C_EVENT_PATH: "${A5C_EVENT_PATH:-.a5c/events}"
+    A5C_TEMPLATE_URI: "${A5C_TEMPLATE_URI:-.a5c/templates/default.md}"
+  before_script:
+    - export GITLAB_TOKEN="${GITLAB_TOKEN:-${A5C_AGENT_GITLAB_TOKEN:-}}"
+    - |
+      if [[ -n "$GITLAB_TOKEN" ]]; then
+        glab auth login --stdin <<<"$GITLAB_TOKEN" || true
+      fi
+    - npm install --global @a5c/cli@latest
+  script:
+    - |
+      if [[ ! -d ".a5c" ]]; then
+        echo "No .a5c directory found; skipping"
+        exit 0
+      fi
+      npx -y @a5c/cli generate_context --in "$A5C_EVENT_PATH" --template "$A5C_TEMPLATE_URI" --out /tmp/prompt.md
+      npx -y @a5c/cli run --in /tmp/prompt.md --out /tmp/last_message.txt --profile "$A5C_CLI_PROFILE" --mcps "$A5C_MCPS_PATH" |
+        tee /tmp/full_output.txt | npx -y @a5c/cli parse --type codex --out /tmp/parsed-codex.jsonl --pretty
+  artifacts:
+    when: always
+    paths:
+      - /tmp/full_output.txt
+      - /tmp/parsed-codex.jsonl
+      - /tmp/last_message.txt
+

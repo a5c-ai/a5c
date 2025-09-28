@@ -1,0 +1,36 @@
+---
+name: Repo2Specs Follow-up Trigger
+metadata:
+  runner-name: reactor
+on:
+  issue:
+    filters:
+      - expression: ${{ event.type == 'labeled' && event.label.name == 'repo2specs_followup' }}
+    skip:
+      - expression: ${{ event.issue.closed == true }}
+emit:
+  repo2specs_followup_event:
+    type: repo2specs_followup
+    payload:
+      original_event: ${{ event }}
+actions:
+  - type: label_issue
+    params:
+      issue: ${{ event.issue.html_url }}
+      add_labels: [repo2specs_followup_in_progress]
+      remove_labels: [repo2specs_followup]
+---
+name: Repo2Specs Follow-up Execution
+metadata:
+  runner-name: agents
+on:
+  repo2specs_followup_event:
+actions:
+  - type: agent_run
+    params: {}
+  - type: label_issue
+    params:
+      issue: ${{ event.payload.original_event.issue.html_url }}
+      add_labels: [repo2specs_followup_completed]
+      remove_labels: [repo2specs_followup_in_progress]
+
