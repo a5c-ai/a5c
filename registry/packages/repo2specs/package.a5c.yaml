@@ -1,0 +1,10 @@
+kind: a5c.ai/package
+name: repo2specs
+icon: url://https://a5c.ai/assets/a5c-logo.png
+description: Repo2Specs package - for generating detailed specifications from existing repositories
+homepage: https://a5c.ai
+categories:
+  - name: Repo2Specs
+dependencies:
+  - github://a5c-ai/a5c/branch/main/registry/packages/core
+  - github://a5c-ai/a5c/branch/main/registry/packages/development

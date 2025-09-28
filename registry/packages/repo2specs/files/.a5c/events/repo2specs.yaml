@@ -1,0 +1,36 @@
+---
+name: Repo2Specs Intake Trigger
+metadata:
+  runner-name: reactor
+on:
+  issue:
+    filters:
+      - expression: ${{ event.type == 'labeled' && event.label.name == 'repo2specs' }}
+    skip:
+      - expression: ${{ event.issue.closed == true }}
+emit:
+  repo2specs_intake:
+    type: repo2specs_intake
+    payload:
+      original_event: ${{ event }}
+actions:
+  - type: label_issue
+    params:
+      issue: ${{ event.issue.html_url }}
+      add_labels: [repo2specs_in_progress]
+      remove_labels: [repo2specs]
+---
+name: Repo2Specs Intake Execution
+metadata:
+  runner-name: agents
+on:
+  repo2specs_intake:
+actions:
+  - type: agent_run
+    params: {}
+  - type: label_issue
+    params:
+      issue: ${{ event.payload.original_event.issue.html_url }}
+      add_labels: [repo2specs_analysis_ready]
+      remove_labels: [repo2specs_in_progress]
+

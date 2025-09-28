@@ -1,0 +1,57 @@
+---
+name: Enforce Phase Gate Progression (Issues)
+metadata:
+  runner-name: reactor
+on:
+  issue:
+    filters:
+      - expression: ${{ event.type == 'labeled' && event.label.name == 'phase_gate' }}
+    skip:
+      - expression: ${{ event.issue.closed == true }}
+actions:
+  - type: add_comment
+    params:
+      issue: ${{ event.issue.html_url }}
+      comment: "Phase gate review triggered. Please run the phase gate review command to verify artifacts."
+  - type: emit_event
+    params:
+      event_type: phase_gate_review
+      payload:
+        entity_url: ${{ event.issue.html_url }}
+        entity_type: issue
+        label_event: ${{ event }}
+---
+name: Enforce Phase Gate Progression (Pull Requests)
+metadata:
+  runner-name: reactor
+on:
+  pull_request:
+    filters:
+      - expression: ${{ event.type == 'labeled' && event.label.name == 'phase_gate' }}
+    skip:
+      - expression: ${{ event.pull_request.merged == true }}
+actions:
+  - type: add_comment
+    params:
+      issue: ${{ event.pull_request.html_url }}
+      comment: "Phase gate review triggered. Please run the phase gate review command to verify artifacts."
+  - type: emit_event
+    params:
+      event_type: phase_gate_review
+      payload:
+        entity_url: ${{ event.pull_request.html_url }}
+        entity_type: pull_request
+        label_event: ${{ event }}
+---
+name: Phase Gate Review Command
+metadata:
+  runner-name: agents
+on:
+  phase_gate_review:
+actions:
+  - type: agent_run
+    params: {}
+  - type: add_comment
+    params:
+      issue: ${{ event.payload.entity_url }}
+      comment: "Phase gate review completed. Update labels based on the outcome."

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Specification updates
+    url: https://example.com/waterfall-specs
+    about: Request changes to Waterfall phase specifications.
+  - name: Automation support
+    url: https://example.com/support
+    about: Get help with Waterfall automation.

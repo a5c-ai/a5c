@@ -1,0 +1,10 @@
+triggers:
+  repo2specs:
+    enabled: true
+  repo2specs_analysis:
+    enabled: true
+  repo2specs_followup:
+    enabled: true
+  repo2specs_refresh:
+    enabled: true
+

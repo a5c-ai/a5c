@@ -1,0 +1,40 @@
+trigger:
+  branches:
+    include:
+      - main
+      - master
+
+pr:
+  branches:
+    include:
+      - '*'
+
+stages:
+  - stage: Reactor
+    displayName: Reactor Jobs
+    jobs:
+      - template: .azure/templates/a5c-base.yml
+        parameters:
+          jobName: Reactor_Main
+          displayName: Reactor (main branches)
+          condition: eq(variables['Build.SourceBranch'], 'refs/heads/main')
+      - template: .azure/templates/a5c-base.yml
+        parameters:
+          jobName: Reactor_Master
+          displayName: Reactor (master branch)
+          condition: eq(variables['Build.SourceBranch'], 'refs/heads/master')
+      - template: .azure/templates/a5c-base.yml
+        parameters:
+          jobName: Reactor_Feature
+          displayName: Reactor (feature branches)
+          condition: and(ne(variables['Build.SourceBranch'], 'refs/heads/main'), ne(variables['Build.SourceBranch'], 'refs/heads/master'), ne(variables['Build.Reason'], 'PullRequest'))
+      - template: .azure/templates/a5c-base.yml
+        parameters:
+          jobName: Reactor_PR
+          displayName: Reactor (pull requests)
+          condition: eq(variables['Build.Reason'], 'PullRequest')
+      - template: .azure/templates/a5c-base.yml
+        parameters:
+          jobName: Reactor_Scheduled
+          displayName: Reactor (scheduled)
+          condition: eq(variables['Build.Reason'], 'Schedule')

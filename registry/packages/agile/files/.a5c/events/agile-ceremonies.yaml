@@ -1,0 +1,119 @@
+---
+name: Backlog Refinement Trigger
+metadata:
+  runner-name: reactor
+on:
+  schedule:
+    filters:
+      - expression: ${{ event.type == 'schedule' && event.schedule.cron == '0 16 * * 2' }}
+actions:
+  - type: emit_event
+    params:
+      event_type: backlog_refinement
+      payload:
+        schedule: ${{ event.schedule }}
+---
+name: Backlog Refinement Command
+metadata:
+  runner-name: agents
+on:
+  backlog_refinement:
+actions:
+  - type: agent_run
+    params: {}
+  - type: add_comment
+    params:
+      issue: ${{ env.A5C_BACKLOG_REFINE_NOTE || '' }}
+      comment: "Backlog refinement completed. Updated definitions of ready and applied labels."
+---
+name: Sprint Planning Trigger
+metadata:
+  runner-name: reactor
+on:
+  schedule:
+    filters:
+      - expression: ${{ event.type == 'schedule' && event.schedule.cron == '0 16 * * 3' }}
+actions:
+  - type: emit_event
+    params:
+      event_type: sprint_planning
+      payload:
+        schedule: ${{ event.schedule }}
+---
+name: Sprint Planning Command
+metadata:
+  runner-name: agents
+on:
+  sprint_planning:
+actions:
+  - type: agent_run
+    params: {}
+---
+name: Daily Standup Trigger
+metadata:
+  runner-name: reactor
+on:
+  schedule:
+    filters:
+      - expression: ${{ event.type == 'schedule' && event.schedule.cron == '0 15 * * 1-5' }}
+actions:
+  - type: emit_event
+    params:
+      event_type: daily_standup
+      payload:
+        schedule: ${{ event.schedule }}
+---
+name: Daily Standup Command
+metadata:
+  runner-name: agents
+on:
+  daily_standup:
+actions:
+  - type: agent_run
+    params: {}
+---
+name: Sprint Review Trigger
+metadata:
+  runner-name: reactor
+on:
+  schedule:
+    filters:
+      - expression: ${{ event.type == 'schedule' && event.schedule.cron == '0 17 * * 4' }}
+actions:
+  - type: emit_event
+    params:
+      event_type: sprint_review
+      payload:
+        schedule: ${{ event.schedule }}
+---
+name: Sprint Review Command
+metadata:
+  runner-name: agents
+on:
+  sprint_review:
+actions:
+  - type: agent_run
+    params: {}
+---
+name: Sprint Retrospective Trigger
+metadata:
+  runner-name: reactor
+on:
+  schedule:
+    filters:
+      - expression: ${{ event.type == 'schedule' && event.schedule.cron == '0 18 * * 4' }}
+actions:
+  - type: emit_event
+    params:
+      event_type: sprint_retrospective
+      payload:
+        schedule: ${{ event.schedule }}
+---
+name: Sprint Retrospective Command
+metadata:
+  runner-name: agents
+on:
+  sprint_retrospective:
+actions:
+  - type: agent_run
+    params: {}

@@ -1,0 +1,28 @@
+---
+name: Schedule Waterfall Retrospective
+metadata:
+  runner-name: reactor
+on:
+  release:
+    filters:
+      - expression: ${{ event.type == 'released' }}
+actions:
+  - type: emit_event
+    params:
+      event_type: waterfall_retro
+      payload:
+        release: ${{ event.release }}
+---
+name: Waterfall Retrospective Command
+metadata:
+  runner-name: agents
+on:
+  waterfall_retro:
+actions:
+  - type: agent_run
+    params: {}
+  - type: create_issue
+    params:
+      title: "Post-release retrospective for ${{ event.payload.release.tag_name }}"
+      body: "A retrospective has been prepared for release ${{ event.payload.release.tag_name }}. Review notes and assign follow-ups."
+      labels: "phase_gate"

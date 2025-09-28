@@ -1,0 +1,73 @@
+name: Basic Quality Checks
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install dependencies
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          elif [ -f yarn.lock ]; then
+            corepack enable
+            yarn install --frozen-lockfile
+          elif [ -f pnpm-lock.yaml ]; then
+            corepack enable
+            pnpm install --frozen-lockfile
+          else
+            npm install
+          fi
+      - name: Run lint
+        run: |
+          if npm run | grep -q " lint"; then
+            npm run lint
+          elif package_json_scripts=$(node -e "try{console.log(Object.keys(require('./package.json').scripts||{}).join(','))}catch{console.log('')}"); then
+            if printf "%s" "$package_json_scripts" | grep -q "eslint"; then
+              npx eslint .
+            else
+              echo "No lint script defined"
+            fi
+          else
+            echo "No package.json; skipping lint"
+          fi
+
+  test:
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install dependencies
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          elif [ -f yarn.lock ]; then
+            corepack enable
+            yarn install --frozen-lockfile
+          elif [ -f pnpm-lock.yaml ]; then
+            corepack enable
+            pnpm install --frozen-lockfile
+          else
+            npm install
+          fi
+      - name: Run tests
+        run: |
+          if npm run | grep -q " test"; then
+            npm test
+          else
+            echo "No test script defined"
+          fi
+
+

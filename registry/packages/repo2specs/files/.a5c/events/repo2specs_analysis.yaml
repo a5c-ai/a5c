@@ -1,0 +1,36 @@
+---
+name: Repo2Specs Deep Analysis Trigger
+metadata:
+  runner-name: reactor
+on:
+  issue:
+    filters:
+      - expression: ${{ event.type == 'labeled' && event.label.name == 'repo2specs_analysis_ready' }}
+    skip:
+      - expression: ${{ event.issue.closed == true }}
+emit:
+  repo2specs_deep_analysis_event:
+    type: repo2specs_deep_analysis
+    payload:
+      original_event: ${{ event }}
+actions:
+  - type: label_issue
+    params:
+      issue: ${{ event.issue.html_url }}
+      add_labels: [repo2specs_analysis_in_progress]
+      remove_labels: [repo2specs_analysis_ready]
+---
+name: Repo2Specs Deep Analysis Execution
+metadata:
+  runner-name: agents
+on:
+  repo2specs_deep_analysis_event:
+actions:
+  - type: agent_run
+    params: {}
+  - type: label_issue
+    params:
+      issue: ${{ event.payload.original_event.issue.html_url }}
+      add_labels: [repo2specs_analysis_completed]
+      remove_labels: [repo2specs_analysis_in_progress]
+

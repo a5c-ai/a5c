@@ -1,0 +1,71 @@
+stages:
+  - reactor
+
+.reactor_template:
+  stage: reactor
+  extends: .a5c_base
+  variables:
+    RUNNER_NAME: "reactor"
+
+reactor_merge_requests:
+  extends: .reactor_template
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+
+reactor_pipeline:
+  extends: .reactor_template
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push"'
+
+reactor_schedule:
+  extends: .reactor_template
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "schedule"'
+
+reactor_trigger:
+  extends: .reactor_template
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "pipeline"'
+
+reactor_webhook:
+  extends: .reactor_template
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "web"'
+stages:
+  - lint
+  - test
+
+lint:
+  stage: lint
+  image: node:20
+  script:
+    - npm ci || npm install
+    - |
+      if npm run | grep -q " lint"; then
+        npm run lint
+      elif [ -f package.json ]; then
+        npx --yes eslint . || echo "No eslint config found"
+      else
+        echo "No lint step configured"
+      fi
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH
+
+test:
+  stage: test
+  image: node:20
+  needs:
+    - lint
+  script:
+    - npm ci || npm install
+    - |
+      if npm run | grep -q " test"; then
+        npm test
+      else
+        echo "No test script configured"
+      fi
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH
+
