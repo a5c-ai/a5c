@@ -61,7 +61,8 @@ runs:
         BRANCH=$(echo ${{ github.ref }} | sed 's/refs\///')
         # remove the "heads/" prefix from the branch
         BRANCH=$(echo $BRANCH | sed 's/heads\///')
-        BRANCH=a5c/main
+        # BRANCH=a5c/main
+        # BRANCH=main
         # encode the branch
         ENCODED_BRANCH=$(echo $BRANCH | sed 's/\//%2F/g')
         # construct the full github uri
