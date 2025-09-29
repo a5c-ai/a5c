@@ -1,0 +1,27 @@
+name: "📥 Repo2Specs Intake"
+description: "Kick off the initial Repo2Specs intake"
+title: "📥 Repo2Specs Intake: <short title>"
+labels:
+  - repo2specs
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Provide the repository info to analyze. Submitting will apply the `repo2specs` label which triggers the intake flow.
+  - type: input
+    id: repository
+    attributes:
+      label: Repository URL
+      description: "The GitHub repository to analyze (e.g., https://github.com/org/repo)."
+      placeholder: "https://github.com/org/repo"
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope / Goals
+      description: "What are the goals or constraints for this engagement?"
+      placeholder: "Key goals, constraints, timelines..."
+    validations:
+      required: false
+

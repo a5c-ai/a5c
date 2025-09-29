@@ -1,0 +1,19 @@
+name: "🔬 Repo2Specs Deep Analysis"
+description: "Request the deep analysis phase"
+title: "🔬 Repo2Specs Analysis: <short title>"
+labels:
+  - repo2specs_analysis_ready
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this when intake is complete and you’re ready for deep analysis. Applying `repo2specs_analysis_ready` triggers the analysis flow.
+  - type: textarea
+    id: focus
+    attributes:
+      label: Areas of Focus
+      description: "Optional. Call out areas needing deeper attention."
+      placeholder: "Architecture, testing, CI/CD, security, DX, ..."
+    validations:
+      required: false
+

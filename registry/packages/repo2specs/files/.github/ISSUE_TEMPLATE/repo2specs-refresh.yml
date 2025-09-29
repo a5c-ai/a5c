@@ -1,0 +1,19 @@
+name: "🔁 Repo2Specs Refresh"
+description: "Request a refresh pass to update findings/recommendations"
+title: "🔁 Repo2Specs Refresh: <short title>"
+labels:
+  - repo2specs_refresh
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this when you want to re-run the process after changes. Applying `repo2specs_refresh` triggers the refresh flow.
+  - type: textarea
+    id: changes
+    attributes:
+      label: What changed since last run?
+      description: "Mention notable updates (features, fixes, configs)."
+      placeholder: "Summarize changes since the last analysis"
+    validations:
+      required: false
+
