@@ -36,6 +36,7 @@ permissions:
   checks: write
   repository-projects: write
   pull-requests: write
+  issues: write
 jobs:
   reactor:
     uses: ./.github/workflows/a5c-base.yml

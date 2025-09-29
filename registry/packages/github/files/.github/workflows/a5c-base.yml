@@ -16,7 +16,16 @@ on:
         required: false
         default: .a5c/events/
         type: string
-
+permissions:
+  contents: write
+  packages: read
+  id-token: write
+  actions: write
+  statuses: write
+  checks: write
+  repository-projects: write
+  pull-requests: write
+  issues: write
 jobs:
   run-reactor:
     runs-on: ${{ inputs.runs_on }}
@@ -94,7 +103,7 @@ jobs:
         if: steps.filter-successful-workflow-run.outputs.skip != 'true'
         uses: a5c-ai/a5c@a5c/main
         with:
-          github_token: ${{ steps.a5c-token.outputs.a5c_token || secrets.A5C_AGENT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+          github_token: ${{ steps.a5c-token.outputs.a5c_token || github.token }}
           runner-name: ${{ env.RUNNER_NAME }}
           events: ${{ inputs.events_path }}
       - name: Upload artifacts
