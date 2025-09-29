@@ -572,7 +572,8 @@ function readInput(inPath?: string): any {
 }
 
 function resolveRulesPath(fileOpt?: string): string {
-  const p = fileOpt || ".a5c/events/";
+  const raw = fileOpt ?? ".a5c/events/";
+  const p = typeof raw === "string" ? raw.trim() : String(raw || "");
   // Preserve URI forms like github:// and file:// — don't path.resolve them
   if (/^[a-zA-Z]+:\/\//.test(p)) return p;
   return path.resolve(p);
