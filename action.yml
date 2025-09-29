@@ -57,17 +57,21 @@ runs:
           --out /tmp/out.enrich.json \
           --use-github
         INPUT_EVENTS=${{ inputs.events }}
+        INPUT_EVENTS=${INPUT_EVENTS//$'\r'/}
         # remove the "refs/" prefix from the branch
         BRANCH=$(echo ${{ github.ref }} | sed 's/refs\///')
         # remove the "heads/" prefix from the branch
         BRANCH=$(echo $BRANCH | sed 's/heads\///')
+        BRANCH=${BRANCH//$'\r'/}
         # BRANCH=a5c/main
         # BRANCH=main
         # encode the branch
         ENCODED_BRANCH=$(echo $BRANCH | sed 's/\//%2F/g')
+        ENCODED_BRANCH=${ENCODED_BRANCH//$'\r'/}
         # construct the full github uri
         REPOSITORY_PATH=${{ github.event.repository.full_name }}
         INPUT_EVENTS_GITHUB_URI="github://$REPOSITORY_PATH/branch/$ENCODED_BRANCH/$INPUT_EVENTS"
+        INPUT_EVENTS_GITHUB_URI=${INPUT_EVENTS_GITHUB_URI//$'\r'/}
         $A5C_CMD reactor \
           --in /tmp/out.enrich.json \
           --file $INPUT_EVENTS_GITHUB_URI \
