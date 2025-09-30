@@ -50,7 +50,14 @@ export async function handleReactor(opts: ReactorOptions): Promise<{
     const ne = normalizeNE(inputObj);
     const rulesPath = resolveRulesPath(opts.file);
     const branch = opts.branch || process.env.A5C_EVENT_CONFIG_BRANCH || "main";
-    logDebug(`resolved rulesPath=${rulesPath}, branch=${branch}`);
+    const rulesPathCodes = Array.from(String(rulesPath || "")).map((ch) =>
+      ch.charCodeAt(0),
+    );
+    logDebug(
+      `resolved rulesPath='${rulesPath}' branch=${branch} charCodes=${JSON.stringify(
+        rulesPathCodes.slice(0, 200),
+      )}`,
+    );
     const repo = inferRepoFromNE(ne);
     if (repo) logDebug(`inferred repo=${repo.owner}/${repo.repo}`);
 
@@ -421,6 +428,11 @@ function parseGithubUri(
 ): { owner: string; repo: string; ref: string; path: string } | null {
   try {
     if (!/^github:\/\//i.test(uri)) return null;
+    logDebug(
+      `parseGithubUri: raw='${uri}' charCodes=${JSON.stringify(
+        Array.from(String(uri || "")).map((ch) => ch.charCodeAt(0)).slice(0, 200),
+      )}`,
+    );
     const [, rest] = /^(github):\/\/(.+)$/i.exec(uri) || [];
     if (!rest) return null;
     const parts = rest.split("/");
