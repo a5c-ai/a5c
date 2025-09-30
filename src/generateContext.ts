@@ -124,7 +124,7 @@ async function renderString(
       try {
         const included = await renderTemplate(finalUri, merged, currentUri);
         return included;
-      } catch {
+      } catch {        
         // Graceful on missing file(s)
         return "";
       }
@@ -158,13 +158,13 @@ async function renderString(
         finalUri,
         base: currentUri,
       });
-      try {
+      // try {
         const included = await renderTemplate(finalUri, merged, currentUri);
         return included;
-      } catch {
+      // } catch {
         // Graceful on missing file(s)
-        return "";
-      }
+        // return "";
+      // }
     },
   );
 
@@ -369,7 +369,12 @@ async function fetchResource(
             )}/${m}`;
             dbg("github:typed:renderEach", { fileUri });
             parts.push(await renderTemplate(fileUri, ctx, fileUri));
-          } catch {}
+          } catch (e) {
+            const fileUri = `github://${owner}/${repo}/branch/${encodeURIComponent(
+              ref,
+            )}/${m}`;
+            dbg("github:typed:renderEach:error", { fileUri, e });
+          }
         }
         return parts.join("");
       }
@@ -489,9 +494,9 @@ async function fetchResource(
       dbg("file:glob", { dir, listed: all.length, pattern: resolved, matches: matches.length });
       const parts: string[] = [];
       for (const m of matches) {
-        try {
+        // try {
           parts.push(fs.readFileSync(m, "utf8"));
-        } catch {}
+        // } catch {}
       }
       return parts.join("");
     }
@@ -527,13 +532,13 @@ async function fetchResource(
         dbg("github:direct:matches", { count: matches.length });
         const parts: string[] = [];
         for (const m of matches) {
-          try {
+          // try {
             const fileUri = `github://${owner}/${repo}/branch/${encodeURIComponent(
               ref,
             )}/${m}`;
             dbg("github:direct:renderEach", { fileUri });
             parts.push(await renderTemplate(fileUri, ctx, fileUri));
-          } catch {}
+          // } catch {}
         }
         return parts.join("");
       }
@@ -590,9 +595,9 @@ async function fetchResource(
     dbg("file:glob:absolute", { dir, listed: all.length, pattern: absolute, matches: matches.length });
     const parts: string[] = [];
     for (const m of matches) {
-      try {
+      // try {
         parts.push(fs.readFileSync(m, "utf8"));
-      } catch {}
+      // } catch {}
     }
     return parts.join("");
   }
