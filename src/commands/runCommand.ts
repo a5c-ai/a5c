@@ -42,15 +42,17 @@ export async function handleRunCommand(
     ensureModuleResolution(path.dirname(scriptPath));
 
     const { event } = await executeMiniCommand(scriptPath, opts);
-
+    const events = {
+      events: [event],
+    }
     if (opts.dry) {
-      process.stdout.write(JSON.stringify(event, null, 2) + "\n");
+      process.stdout.write(JSON.stringify(events, null, 2) + "\n");
       return { code: 0 };
     }
-
+    
     const tempInputs: TempFile[] = [];
     try {
-      const eventTemp = writeTempJson(event, "event");
+      const eventTemp = writeTempJson(events, "event");
       tempInputs.push(eventTemp);
 
       const { code: reactorCode, output, errorMessage } = await handleReactor({
