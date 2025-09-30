@@ -589,13 +589,8 @@ function resolveRulesPath(fileOpt?: string): string {
   if (!p) return ".a5c/events/";
   // Preserve URI forms like github:// and file:// — don't path.resolve them
   if (/^[a-zA-Z]+:\/\//.test(p)) return p;
-  // Resolve to absolute path when it exists locally; otherwise prefer the original relative path
-  try {
-    const resolved = path.resolve(p);
-    if (fs.existsSync(resolved)) return resolved;
-  } catch {}
-  if (!path.isAbsolute(p)) return p.replace(/^\.\//, "");
-  return p;
+  if (path.isAbsolute(p)) return p;
+  return p.replace(/^\.\/+/, "");
 }
 
 function loadYamlDocuments(filePath: string): any[] {
