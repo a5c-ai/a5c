@@ -27,6 +27,7 @@ jobs:
       packages: write
       pages: write
       statuses: write
+      repository-projects: write
     secrets: inherit
     with:
       runner_name: agents

@@ -563,12 +563,31 @@ function normalizeRepoPathStr(p: string): string {
   return s.replace(/^\/+/, "").replace(/\/+$/, "");
 }
 
+function inferRefFromGithubEvent(event: any): string | undefined {
+  const type = event?.type;
+  if (type === "pull_request") {
+    return event?.payload?.pull_request?.head?.ref;
+  }
+  if (type === "workflow_job") {
+    return event?.payload?.workflow_job?.head_branch;
+  }
+  if (type === "workflow_run") {
+    return event?.payload?.workflow_run?.head_branch;
+  }
+  if (type === "check_run") {
+    return event?.payload?.check_run?.head_branch;
+  }
+  if (type === "check_suite") {
+    return event?.payload?.check_suite?.head_branch;
+  }
+  return event?.payload?.ref;
+}
 function inferRefFromNE(
   ne: ReturnType<typeof normalizeNE>,
 ): string | undefined {
+  // by type of github event  
   try {
-    const pr = (ne as any)?.payload?.pull_request;
-    const ref = pr?.head?.ref || (ne as any)?.payload?.ref;
+    const ref = inferRefFromGithubEvent(ne as any);
     if (typeof ref === "string" && ref.length)
       return ref.replace(/^refs\/heads\//, "");
     return undefined;
