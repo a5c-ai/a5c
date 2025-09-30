@@ -191,13 +191,11 @@ async function executeOneAction(
   if (!type) return;
   // Built-in fast path for labeling
   if (type === "label_issue" || type === "label_pr") {
-    const issueUrl = action?.params?.issue || action?.params?.entity;
-    const add = Array.isArray(action?.params?.add_labels)
-      ? action.params.add_labels
-      : [];
-    const remove = Array.isArray(action?.params?.remove_labels)
-      ? action.params.remove_labels
-      : [];
+    const params = action?.params || {};
+    const issueUrl =
+      params.issue || params.issue_url || params.pr || params.pr_url || params.entity;
+    const add = Array.isArray(params.add_labels) ? params.add_labels : [];
+    const remove = Array.isArray(params.remove_labels) ? params.remove_labels : [];
     if (issueUrl) {
       await applyLabels([
         { entity: String(issueUrl), add_labels: add, remove_labels: remove },
