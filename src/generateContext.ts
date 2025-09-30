@@ -468,13 +468,18 @@ async function fetchResource(
       throw lastErr || new Error("Failed to fetch GitHub file: unknown error");
     }
   }
-  if (scheme === "file") {
-    const resolved =
-      base && base.startsWith("file://")
-        ? path.resolve(path.dirname(new URL(base).pathname), p)
-        : path.resolve(p);
-    dbg("file:resolve", { p, resolved });
-    if (hasGlob(resolved)) {
+    if (scheme === "file") {
+      // Resolve relative includes against base file (either file:// URI or local path)
+      let resolved: string;
+      if (base && base.startsWith("file://")) {
+        resolved = path.resolve(path.dirname(new URL(base).pathname), p);
+      } else if (base && !/^[a-zA-Z]+:\/\//.test(base)) {
+        resolved = path.resolve(path.dirname(base), p);
+      } else {
+        resolved = path.resolve(p);
+      }
+      dbg("file:resolve", { p, resolved });
+      if (hasGlob(resolved)) {
       const dir =
         fs.existsSync(resolved) && fs.statSync(resolved).isDirectory()
           ? resolved
