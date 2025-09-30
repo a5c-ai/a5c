@@ -421,6 +421,11 @@ function parseGithubUri(
 ): { owner: string; repo: string; ref: string; path: string } | null {
   try {
     if (!/^github:\/\//i.test(uri)) return null;
+    logDebug(
+      `parseGithubUri: raw='${uri}' charCodes=${JSON.stringify(
+        Array.from(String(uri || "")).map((ch) => ch.charCodeAt(0)).slice(0, 200),
+      )}`,
+    );
     const [, rest] = /^(github):\/\/(.+)$/i.exec(uri) || [];
     if (!rest) return null;
     const parts = rest.split("/");
