@@ -50,7 +50,14 @@ export async function handleReactor(opts: ReactorOptions): Promise<{
     const ne = normalizeNE(inputObj);
     const rulesPath = resolveRulesPath(opts.file);
     const branch = opts.branch || process.env.A5C_EVENT_CONFIG_BRANCH || "main";
-    logDebug(`resolved rulesPath=${rulesPath}, branch=${branch}`);
+    const rulesPathCodes = Array.from(String(rulesPath || "")).map((ch) =>
+      ch.charCodeAt(0),
+    );
+    logDebug(
+      `resolved rulesPath='${rulesPath}' branch=${branch} charCodes=${JSON.stringify(
+        rulesPathCodes.slice(0, 200),
+      )}`,
+    );
     const repo = inferRepoFromNE(ne);
     if (repo) logDebug(`inferred repo=${repo.owner}/${repo.repo}`);
 

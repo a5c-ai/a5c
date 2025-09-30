@@ -63,18 +63,11 @@ runs:
         # remove the "heads/" prefix from the branch
         BRANCH=$(echo -n $BRANCH | sed 's/heads\///')
         BRANCH=$(printf '%s' "$BRANCH" | tr -d '\r\n')
-        # BRANCH=a5c/main
-        # BRANCH=main
-        # encode the branch
-        ENCODED_BRANCH=$(echo -n $BRANCH | sed 's/\//%2F/g')
-        ENCODED_BRANCH=$(printf '%s' "$ENCODED_BRANCH" | tr -d '\r\n')
-        # construct the full github uri
-        REPOSITORY_PATH=$(echo -n ${{ github.event.repository.full_name }})
-        REPOSITORY_PATH=$(printf '%s' "$REPOSITORY_PATH" | tr -d '\r\n')
-        INPUT_EVENTS_GITHUB_URI=$(printf "github://%s/branch/%s/%s" "$REPOSITORY_PATH" "$ENCODED_BRANCH" "$INPUT_EVENTS" | tr -d '\r\n')
+        export A5C_EVENT_CONFIG_BRANCH="$BRANCH"
+        echo "A5C_EVENT_CONFIG_BRANCH=$BRANCH" >> "$GITHUB_ENV"
         $A5C_CMD reactor \
           --in /tmp/out.enrich.json \
-          --file "$INPUT_EVENTS_GITHUB_URI" \
+          --file "$INPUT_EVENTS" \
           --out /tmp/out.reactor.json \
           --metadata-match runner-name=${{ inputs.runner-name }}
         # emit/run the events using the CLI
