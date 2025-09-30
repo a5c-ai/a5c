@@ -27,7 +27,7 @@ export async function handleGenerateContext(
       opts.token ||
       process.env.A5C_AGENT_GITHUB_TOKEN ||
       process.env.GITHUB_TOKEN;
-    const rootUri = opts.template || "./README.md";
+    const rootUri = opts.template || ".a5c/main.md";
     const originalEvent = input.original_event || {};
     const new_input = { ...input, ...originalEvent };
     const eventForTpl = sanitizeEventForTemplate(new_input);

@@ -1420,12 +1420,13 @@ async function materializeAgentRun(
     const vars = (neCtx as any)?.enriched?.derived?.vars || {};
     const envProc = process.env;
     const full_repo = (neCtx as any)?.payload?.repository?.full_name;
+    const ref = inferRefFromNE(neCtx) || process.env.A5C_EVENT_CONFIG_BRANCH || "a5c/main";
     const template =
       baseEnv.A5C_TEMPLATE_URI ||
       envProc.A5C_TEMPLATE_URI ||
       // vars.A5C_TEMPLATE_URI ||
       eventArg?.client_payload?.template ||
-      `github://${full_repo}/branch/a5c%2Fmain/.a5c/main.md`;
+      `github://${full_repo}/branch/${encodeURIComponent(ref)}/.a5c/main.md`;
     const mcps =
       baseEnv.A5C_MCPS_PATH ||
       // vars.A5C_MCPS_PATH ||
