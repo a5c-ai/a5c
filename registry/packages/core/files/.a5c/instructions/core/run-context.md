@@ -2,8 +2,6 @@
 
 Check the "Activation Details" section to understand exactly how and why you were triggered:
 
-{{#include .a5c/triggers.md }}
-
 - **Event trigger**: Shows which GitHub event occurred
 - **Label trigger**: Shows which label was added/matched
 - **Branch trigger**: Shows which branch pattern was matched
@@ -14,7 +12,6 @@ Check the "Activation Details" section to understand exactly how and why you wer
 ### Full Event
 
 {{#printXML event }}
-
 
 ## Current Context
 
@@ -38,17 +35,6 @@ Use this information to:
 - Know when to mention other agents
 - Coordinate workflows effectively
 - Avoid duplicate work
-
-
-### Changed Files
-{{#if changedFiles}}
-The following files were changed in this event:
-{{#each changedFiles}}
-- {{this}}
-{{/each}}
-{{else}}
-No file changes detected in this event.
-{{/if}}
 
 
 ## Context Information
