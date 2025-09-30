@@ -9,12 +9,14 @@ const program = {
     try {
       const [, , ...rest] = argv;
       if (!rest.length) throw new Error("repo2specs: missing subcommand");
+      rest.shift();
       const sub = rest.shift();
       if (!COMMANDS[sub]) throw new Error(`repo2specs: unknown subcommand '${sub}'`);
       const parsed = parseArgs(rest);
       const event = buildEvent(sub, parsed);
       process.stdout.write(JSON.stringify(event) + "\n");
     } catch (err) {
+      console.error(err);
       if (this._exitHandler) {
         this._exitHandler(err instanceof Error ? err : new Error(String(err)));
         return;
@@ -78,6 +80,7 @@ function buildEvent(command, args) {
   const meta = COMMANDS[command];
   return {
     type: meta.event,
+    provider: "cli",
     payload: {
       original_event: {
         type: "cli_repo2specs",
