@@ -919,7 +919,7 @@ function inferActionScriptUri(
     // Convention: .a5c/scripts/actions/<type>.sh in the same repo by default
     const repo = (neCtx as any)?.payload?.repository?.full_name;
     if (!repo) return null;
-    const ref = inferRefFromNE(neCtx) || "a5c/main";
+    const ref = inferRefFromNE(neCtx) || process.env.A5C_EVENT_CONFIG_BRANCH || "a5c/main";
     const path = `.a5c/scripts/actions/${type}.sh`;
     return `github://${repo}/branch/${encodeURIComponent(ref)}/${path}`;
   } catch {
