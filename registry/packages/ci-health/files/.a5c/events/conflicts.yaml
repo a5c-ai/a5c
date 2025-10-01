@@ -1,0 +1,36 @@
+name: Detect Conflicts
+metadata:
+  runner-name: reactor
+on:
+  pull_request:
+    filters:
+      - expression: ${{ event.type == 'synchronize' && event.enriched.github.pr.mergeable_state == 'dirty' }}    
+      - expression: ${{ event.enriched.slash_command.command == 'fix-conflicts' || event.enriched.slash_command.command == 'resolve-conflicts' }}
+emit:
+  conflicts:
+    type: conflicts
+    payload:
+      original_event: ${{ event }}
+actions:
+  - type: add_comment
+    params:
+      issue: ${{ event.pull_request.html_url }}
+      comment: "Conflicts detected in PR #${{ event.pull_request.number }}"
+  - type: label_issue
+    params:
+      issue: ${{ event.pull_request.html_url }}
+      add_labels: [conflict]
+---
+name: Resolve Conflicts (agent)
+metadata:
+  runner-name: agents
+on:
+  conflicts:
+    filters:
+      - expression: ${{ event.type == 'conflicts' }}
+actions:
+  - type: agent_run
+    params:
+      pull_request: ${{ event.pull_request }}
+      conflicts: ${{ event.conflicts }}
+---
