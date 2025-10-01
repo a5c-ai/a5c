@@ -1,3 +1,19 @@
+name: Implement Issues by comment slash command
+metadata:
+  runner-name: reactor
+on:
+  issue_comment:
+    filters:      
+      - expression: ${{ event.enriched.slash_command.command == 'implement-issue' }}
+    skip:
+      # is already closed
+      - expression: ${{ event.issue.closed == true }}
+emit:
+  implement_issue:
+    type: issue_implement
+    payload:
+      original_event: ${{ event }}
+      issue: ${{ event.issue }}
 ---
 name: Implement Issues by implement_issue label
 metadata:
