@@ -952,6 +952,7 @@ function resolveTemplateString(
     try {
       const compiled = preprocessExpression(expr);
       const eventArg = buildExpressionEvent((ctx as any)?.payload);
+      eventArg.enriched = ctx.enriched;
       const vars = (ctx as any)?.enriched?.derived?.vars || {};
       const secrets = (ctx as any)?.enriched?.derived?.secrets || {};
       const fn = new Function(
