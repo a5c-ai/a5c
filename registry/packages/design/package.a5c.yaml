@@ -3,5 +3,7 @@ name: design
 icon: url://https://a5c.ai/assets/a5c-logo.png
 description: Design package
 homepage: https://a5c.ai
+dependencies:
+  - github://a5c-ai/a5c/branch/main/registry/packages/design-language/
 categories:
   - name: Design

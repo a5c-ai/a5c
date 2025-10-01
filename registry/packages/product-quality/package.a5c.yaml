@@ -3,5 +3,11 @@ name: product-quality
 icon: url://https://a5c.ai/assets/a5c-logo.png
 description: Product Quality package
 homepage: https://a5c.ai
+dependencies:
+  - github://a5c-ai/a5c/branch/main/registry/packages/e2e-tests/
+  - github://a5c-ai/a5c/branch/main/registry/packages/ci-health/
+  - github://a5c-ai/a5c/branch/main/registry/packages/security/
+  - github://a5c-ai/a5c/branch/main/registry/packages/observability/
+  - github://a5c-ai/a5c/branch/main/registry/packages/code-quality/
 categories:
   - name: Product Quality

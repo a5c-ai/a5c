@@ -1,6 +1,6 @@
-import type { NormalizedEvent, Mention } from "./types.js";
+import type { NormalizedEvent, Mention, SlashCommand } from "./types.js";
 import { readJSONFile, loadConfig } from "./config.js";
-import { extractMentions, dedupeMentions } from "./extractor.js";
+import { extractMentions, dedupeMentions, extractSlashCommands } from "./extractor.js";
 import { isBinaryPatch } from "./codeComments.js";
 import { scanMentionsInCodeComments } from "./utils/commentScanner.js";
 import { evaluateRulesDetailed, loadRules } from "./rules.js";
@@ -227,6 +227,22 @@ export async function handleEnrich(opts: {
       mentions.push(...extractMentions(String(commentBody), "issue_comment"));
   } catch {}
 
+  // Extract slash commands from PR/issue bodies and comments
+  const slashCommands: SlashCommand[] = [];
+  try {
+    const pr = (baseEvent as any)?.pull_request;
+    if (pr?.body)
+      slashCommands.push(...extractSlashCommands(String(pr.body), "pr_body"));
+    const issue = (baseEvent as any)?.issue;
+    if (issue?.body)
+      slashCommands.push(...extractSlashCommands(String(issue.body), "issue_body"));
+    const commentBody = (baseEvent as any)?.comment?.body;
+    if (commentBody)
+      slashCommands.push(
+        ...extractSlashCommands(String(commentBody), "issue_comment"),
+      );
+  } catch {}
+
   // Code comment mention scanning in changed files
   try {
     if (scanChangedFilesFlag) {
@@ -379,6 +395,7 @@ export async function handleEnrich(opts: {
         flags: opts.flags || {},
       },
       ...(normalizedMentions.length ? { mentions: normalizedMentions } : {}),
+      ...(slashCommands.length ? { slash_commands: slashCommands } : {}),
     },
   };
 

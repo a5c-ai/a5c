@@ -1,0 +1,55 @@
+---
+name: Validate PRs by validation label
+metadata:
+  runner-name: reactor
+on:
+  pull_request:
+    filters:
+      # validation label was added
+      - expression: ${{ event.type == 'labeled' && event.label.name == 'validation' }}      
+      - expression: ${{ event.enriched.slash_command.command == 'validate' }}      
+    skip:
+      # is a draft PR or already merged
+      - expression: ${{ event.pull_request.draft == true || event.pull_request.merged == true }}
+      # if validation in progress or already requested
+      - expression: ${{ event.pull_request.labels | map(attribute='name') | contains('validation_in_progress') || event.pull_request.labels | map(attribute='name') | contains('validation_requested') }}
+emit:
+  validation_request:
+    type: pr_ready
+    payload:
+      pr_ref: ${{ event.pull_request.head.ref }}
+      base_ref: ${{ event.pull_request.base.ref }}
+      pull_request: ${{ event.pull_request }}
+actions:
+  - type: label_issue
+    params:
+      issue: ${{ event.pull_request.html_url }}
+      add_labels: [validation_requested]
+      remove_labels: [validated]
+---
+name: Validation Agent Run
+metadata:
+  runner-name: agents
+on:
+  validation_request:
+actions:
+  - type: label_issue
+    params:
+      issue: ${{ event.pull_request.html_url }}
+      add_labels: [validation_in_progress]
+      remove_labels: [validation_requested]
+  - type: status_checks
+    params:
+      name: "Validation/${{ event.type }}"
+      description: "Validation of PR ({{ event.pull_request.title })"
+      pull_request_url: ${{ event.pull_request.html_url }}
+  - type: agent_run
+    params: {}
+    env:
+      - name: SOME_ENV
+        value: some_value
+  - type: label_issue
+    params:
+      issue: ${{ event.pull_request.html_url }}
+      add_labels: [validated]
+      remove_labels: [validation_in_progress]

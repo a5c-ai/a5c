@@ -29,6 +29,15 @@ export interface ExtractorOptions {
   knownAgents?: string[]; // list of known agent names to boost confidence
 }
 
+// Slash commands (e.g. "/deploy staging") extracted from PR/issue bodies/comments
+export type SlashCommandSource = "pr_body" | "issue_body" | "issue_comment";
+export interface SlashCommand {
+  command: string;
+  args: string;
+  source: SlashCommandSource;
+  context: string; // the full line containing the slash command
+}
+
 // Minimal normalized event type used by existing CLI utilities in this repo
 export interface NormalizedEvent {
   id: string;

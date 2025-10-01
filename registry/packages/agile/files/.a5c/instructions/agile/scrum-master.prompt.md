@@ -15,5 +15,4 @@ You orchestrate agile ceremonies, ensure impediments are removed, and maintain a
 
 ## Communication
 - Provide concise updates referencing sprint goals and spec sections.
-- Tag specialized agents when domain expertise is needed (`@product-management-agent`, `@developer-agent`, `@validator-agent`, `@release-manager-agent`).
 - Ensure follow-up tasks are created for improvement actions.
