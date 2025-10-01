@@ -230,17 +230,24 @@ export async function handleEnrich(opts: {
   // Extract slash commands from PR/issue bodies and comments
   const slashCommands: SlashCommand[] = [];
   try {
-    const pr = (baseEvent as any)?.pull_request;
-    if (pr?.body)
-      slashCommands.push(...extractSlashCommands(String(pr.body), "pr_body"));
-    const issue = (baseEvent as any)?.issue;
-    if (issue?.body)
-      slashCommands.push(...extractSlashCommands(String(issue.body), "issue_body"));
-    const commentBody = (baseEvent as any)?.comment?.body;
-    if (commentBody)
-      slashCommands.push(
-        ...extractSlashCommands(String(commentBody), "issue_comment"),
-      );
+    // Only scan the event's triggering entity (PR, issue, or comment)
+    switch (neShell.type) {
+      case "pull_request": {
+        const pr = (baseEvent as any)?.pull_request;
+        if (pr?.body) slashCommands.push(...extractSlashCommands(String(pr.body), "pr_body"));
+        break;
+      }
+      case "issue": {
+        const issue = (baseEvent as any)?.issue;
+        if (issue?.body) slashCommands.push(...extractSlashCommands(String(issue.body), "issue_body"));
+        break;
+      }
+      case "issue_comment": {
+        const commentBody = (baseEvent as any)?.comment?.body;
+        if (commentBody) slashCommands.push(...extractSlashCommands(String(commentBody), "issue_comment"));
+        break;
+      }
+    }
   } catch {}
 
   // Code comment mention scanning in changed files
