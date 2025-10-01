@@ -16,7 +16,6 @@ emit:
   validation_request:
     type: pr_ready
     payload:
-      original_event: ${{ event }}
       pr_ref: ${{ event.pull_request.head.ref }}
       base_ref: ${{ event.pull_request.base.ref }}
       pull_request: ${{ event.pull_request }}
