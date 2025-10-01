@@ -1,0 +1,14 @@
+---
+name: Periodic - Weekly - Monday Morning
+metadata:
+  runner-name: reactor
+on:
+  periodic_weekly_monday_morning:
+actions:
+  - type: emit_event
+    params:
+      event_type: e2e_tests_on_production
+      payload:
+        type: periodic
+---
+

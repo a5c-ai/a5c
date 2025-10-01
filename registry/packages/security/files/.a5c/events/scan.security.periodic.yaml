@@ -1,0 +1,14 @@
+---
+name: Periodic Security Scan - Weekly - Monday Morning
+metadata:
+  runner-name: reactor
+on:
+  periodic_weekly_monday_morning:
+actions:
+  - type: emit_event
+    params:
+      event_type: security_scan
+      payload:
+        type: periodic
+---
+

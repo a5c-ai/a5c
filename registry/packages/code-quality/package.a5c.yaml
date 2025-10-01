@@ -3,5 +3,7 @@ name: code-quality
 icon: url://https://a5c.ai/assets/a5c-logo.png
 description: Code quality package
 homepage: https://a5c.ai
+dependencies:
+  - github://a5c-ai/a5c/branch/main/registry/packages/unit-tests/
 categories:
   - name: Code Quality

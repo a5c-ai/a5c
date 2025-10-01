@@ -3,5 +3,7 @@ name: deployment
 icon: url://https://a5c.ai/assets/a5c-logo.png
 description: Deployment package
 homepage: https://a5c.ai
+dependencies:
+  - github://a5c-ai/a5c/branch/main/registry/packages/sre/
 categories:
   - name: Deployment

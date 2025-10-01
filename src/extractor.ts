@@ -1,5 +1,5 @@
 import { MENTION_RE, inferKind, normalizeTarget } from "./regex.js";
-import type { ExtractorOptions, Mention, MentionSource } from "./types.js";
+import type { ExtractorOptions, Mention, MentionSource, SlashCommand, SlashCommandSource } from "./types.js";
 
 const DEFAULT_ENABLED: Record<MentionSource, boolean> = {
   commit_message: true,
@@ -69,4 +69,26 @@ export function dedupeMentions(items: Mention[]): Mention[] {
     }
   }
   return out;
+}
+
+// Basic slash-command extractor: lines beginning with '/cmd args...'
+export function extractSlashCommands(
+  text: string,
+  source: SlashCommandSource,
+): SlashCommand[] {
+  const commands: SlashCommand[] = [];
+  const lines = text.split(/\r?\n/);
+  for (const lineRaw of lines) {
+    const line = lineRaw.trim();
+    const m = /^\/?([a-zA-Z][\w-]*)(?:\s+(.*))?$/.exec(line);
+    if (m) {
+      commands.push({
+        command: m[1],
+        args: m[2] || "",
+        source,
+        context: line,
+      });
+    }
+  }
+  return commands;
 }
