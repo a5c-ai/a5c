@@ -4,7 +4,7 @@ metadata:
 on:
   issue_comment:
     filters:      
-      - expression: ${{ event.enriched.slash_command.command == 'implement-issue' }}
+      - expression: ${{ event.enriched.slash_commands | map(command) | contains('implement-issue') }}
     skip:
       # is already closed
       - expression: ${{ event.issue.closed == true }}
@@ -15,15 +15,15 @@ emit:
       original_event: ${{ event }}
       issue: ${{ event.issue }}
 ---
-name: Implement Issues by implement_issue label
+name: Implement Issues by label or slash command
 metadata:
   runner-name: reactor
 on:
   issue:
     filters:
-      # implement_issue label was added
+      # implement_issue label or slash command was used
       - expression: ${{ event.type == 'labeled' && event.label.name == 'implement_issue' }}
-      - expression: ${{ event.enriched.slash_command.command == 'implement-issue' }}
+      - expression: ${{ event.enriched.slash_commands | map(attribute=command) | contains('implement-issue') }}
     skip:
       # is already closed
       - expression: ${{ event.issue.closed == true }}
