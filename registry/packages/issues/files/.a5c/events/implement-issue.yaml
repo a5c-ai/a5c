@@ -1,0 +1,47 @@
+---
+name: Implement Issues by implement_issue label
+metadata:
+  runner-name: reactor
+on:
+  issue:
+    filters:
+      # implement_issue label was added
+      - expression: ${{ event.type == 'labeled' && event.label.name == 'implement_issue' }}
+      - expression: ${{ event.enriched.slash_command.command == 'implement-issue' }}
+    skip:
+      # is already closed
+      - expression: ${{ event.issue.closed == true }}
+emit:
+  implement_issue:
+    type: issue_implement
+    payload:
+      original_event: ${{ event }}
+      issue: ${{ event.issue }}
+actions:
+  - type: label_issue
+    params:
+      issue: ${{ event.issue.html_url }}
+      add_labels: [implement_issue_requested]
+      remove_labels: [implemented]
+---
+name: Implement Issue Agent Run
+metadata:
+  runner-name: agents
+on:
+  implement_issue:
+actions:
+  - type: label_issue
+    params:
+      issue: ${{ event.issue.html_url }}
+      add_labels: [implement_issue_in_progress]
+      remove_labels: [implement_issue_requested]
+  - type: agent_run
+    params: {}
+    env:
+      - name: SOME_ENV
+        value: some_value
+  - type: label_issue
+    params:
+      issue: ${{ event.issue.html_url }}
+      add_labels: [implemented]
+      remove_labels: [implement_issue_in_progress]
