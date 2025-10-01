@@ -1,15 +1,15 @@
 name: a5c-reactor-issues
 on:
-  # issue_comment:
-  #   types:
-  #     - created
-  #     - edited
-  #     - deleted
+  issue_comment:
+    types:
+      - created
+      # - edited
+      # - deleted
   issues:
     types:
       - labeled
+      - opened
     #  - closed
-    #  - opened
     #  - milestoned
     #  - demilestoned
     #  - reopened
