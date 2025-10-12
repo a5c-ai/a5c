@@ -1,0 +1,15 @@
+name: "Integrate Design System"
+description: Integrate a design system
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Provide the design system info to integrate (from https://github.com/alexpate/awesome-design-systems ). Submitting will apply the `integrate-design-system` label which triggers the integration flow.
+  - type: input
+    id: design-system
+    attributes:      
+      label: Design System
+      placeholder: Enter the design system uri (e.g. github://a5c-ai/a5c/branch/main/registry/packages/design-system/)
+    validations:
+      required: true
+labels: [integrate-design-system]

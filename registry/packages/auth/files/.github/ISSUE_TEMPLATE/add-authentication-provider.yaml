@@ -1,0 +1,11 @@
+name: "Add Authentication"
+description: Add a authentication provider
+body:
+  - type: input
+    id: auth-provider
+    attributes:      
+      label: Auth Provider
+      placeholder: Enter the auth provider uri (e.g. google, github, etc.)
+    validations:
+      required: true
+labels: [add-authentication-provider]

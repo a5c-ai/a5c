@@ -540,9 +540,12 @@ program
 program
   .command("install")
   .description(
-    "Install an a5c seed package from a GitHub URI (with dependencies)",
+    "Install an a5c seed package from a GitHub URI or registry package name",
   )
-  .argument("uri", "github://owner/repo/ref/path to package or its package.a5c.yaml")
+  .argument(
+    "uri",
+    "github://owner/repo/ref/path to package or registry package name (e.g. frontend-development)",
+  )
   .action(async (uri: string) => {
     const { code, errorMessage } = await handleInstall({ uri });
     if (code !== 0 && errorMessage) process.stderr.write(errorMessage + "\n");
