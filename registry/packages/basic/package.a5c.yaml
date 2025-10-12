@@ -4,6 +4,8 @@ icon: url://https://a5c.ai/assets/a5c-logo.png
 description: Basic package
 dependencies:
   - github://a5c-ai/a5c/branch/main/registry/packages/core
+  - github://a5c-ai/a5c/branch/main/registry/packages/core-instructions
+  - 
   - github://a5c-ai/a5c/branch/main/registry/packages/a5c-package-system
 homepage: https://a5c.ai
 categories:

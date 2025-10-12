@@ -4,6 +4,32 @@ import path from "node:path";
 import { spawn } from "node:child_process";
 import YAML from "yaml";
 
+const DEFAULT_REGISTRY_PACKAGE_BASE = "github://a5c-ai/a5c/branch/main/registry/packages";
+const URI_SCHEME_REGEX = /^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//;
+
+export function resolveInstallUri(input: string): string {
+  const trimmed = String(input ?? "").trim();
+  if (!trimmed) throw new Error("install: empty package identifier");
+  if (URI_SCHEME_REGEX.test(trimmed)) {
+    return trimmed.replace(/\/+$/, "");
+  }
+
+  const sanitized = trimmed.replace(/\\/g, "/");
+  let segments = sanitized.split("/").filter(Boolean);
+
+  if (segments.length >= 2 && segments[0].toLowerCase() === "registry" && segments[1].toLowerCase() === "packages") {
+    segments = segments.slice(2);
+  } else if (segments.length >= 1 && segments[0].toLowerCase() === "packages") {
+    segments = segments.slice(1);
+  }
+
+  if (!segments.length || segments.some((seg) => seg === "." || seg === "..")) {
+    throw new Error(`invalid package identifier '${input}'`);
+  }
+
+  return `${DEFAULT_REGISTRY_PACKAGE_BASE}/${segments.join("/")}`.replace(/\/+$/, "");
+}
+
 class InstallProgress {
   private currentStage?: ProgressStage;
 
@@ -182,6 +208,12 @@ export async function handleInstall(
     if (!opts.uri || typeof opts.uri !== "string") {
       return { code: 2, errorMessage: "install: missing required <github-uri>" };
     }
+    let resolvedUri: string;
+    try {
+      resolvedUri = resolveInstallUri(opts.uri);
+    } catch (err: any) {
+      return { code: 2, errorMessage: String(err?.message || err) };
+    }
     const serverSide = opts.serverSideOnly === true ? (opts.serverSide as ServerSideInstallOptions | undefined) : undefined;
     const progress = new InstallProgress(opts.showProgress === true && !serverSide);
     const ctx: InstallContext = {
@@ -199,7 +231,7 @@ export async function handleInstall(
     const previousContext = currentInstallContext;
     currentInstallContext = ctx;
     try {
-      const plan = await buildInstallPlan(opts.uri, ctx);
+      const plan = await buildInstallPlan(resolvedUri, ctx);
 
       const conflictReport = detectConflicts(plan);
       if (conflictReport.conflicts.length > 0) {
@@ -275,9 +307,12 @@ export async function handleInit(opts: {
       fs.writeFileSync(configYaml, "", "utf8");
     }
 
-    const defaultPkg =
-      opts.pkg ||
-      "github://a5c-ai/a5c/branch/main/registry/packages/github-starter";
+    let defaultPkg = opts.pkg || "github://a5c-ai/a5c/branch/main/registry/packages/github-starter";
+    try {
+      defaultPkg = resolveInstallUri(defaultPkg);
+    } catch (err: any) {
+      return { code: 2, errorMessage: String(err?.message || err) };
+    }
 
     const showProgress = opts.showProgress !== false;
     const { code, errorMessage, installDocs, prUrl } = await handleInstall({

@@ -1,0 +1,11 @@
+name: "A5C Package Install"
+description: Install a package
+body:
+  - type: input
+    id: package
+    attributes:      
+      label: Package
+      placeholder: Enter the package uri (e.g. github://a5c-ai/a5c/branch/main/registry/packages/development/)
+    validations:
+      required: true
+labels: [a5c-package-install]
