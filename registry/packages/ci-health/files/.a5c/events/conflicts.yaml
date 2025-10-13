@@ -2,7 +2,7 @@ name: Detect conflicts via slash command
 metadata:
   runner-name: reactor
 on:
-  pull_request:
+  issue_comment:
     filters:
       - expression: ${{ event.type == 'synchronize' && event.enriched.github.pr.mergeable_state == 'dirty' }}
       - expression: ${{ (event.enriched.slash_commands | default([]) | map(attribute='command')) | intersect(['pr-fix-conflicts','pr-resolve-conflicts']) | length > 0 }}
