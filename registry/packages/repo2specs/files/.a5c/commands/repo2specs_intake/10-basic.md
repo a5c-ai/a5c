@@ -1,6 +1,4 @@
-## Command: repo2specs_intake
-
-You are orchestrating the intake phase for Repo2Specs. Produce planning artifacts only; do **not** run repository-changing commands.
+Trigger `/repo2specs-intake` to orchestrate the intake phase for Repo2Specs. Produce planning artifacts only; do **not** run repository-changing commands.
 
 ### Steps
 1. Summarize repository purpose, key technologies, and stakeholders.
@@ -11,6 +9,6 @@ You are orchestrating the intake phase for Repo2Specs. Produce planning artifact
 
 ### Outputs
 - `docs/repo2specs/reports/intake.md`
-- Issue comment acknowledging intake completion and next steps.
+- Issue comment acknowledging intake completion, moving the issue to `repo2specs_analysis_queued`.
 - Update `docs/repo2specs/system/overview.md` if missing.
 

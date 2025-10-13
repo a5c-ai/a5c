@@ -1,15 +1,16 @@
 ---
-name: Repo2Specs Intake Trigger
+name: Repo2specs intake via slash command
 metadata:
   runner-name: reactor
 on:
   issue:
     filters:
-      - expression: ${{ event.type == 'labeled' && event.label.name == 'repo2specs' }}
+      - expression: ${{ event.type == 'labeled' && event.label.name == 'repo2specs_intake' }}
+      - expression: ${{ event.enriched.slash_commands | default([]) | map(attribute='command') | contains('repo2specs-intake') }}
     skip:
       - expression: ${{ event.issue.closed == true }}
 emit:
-  repo2specs_intake:
+  repo2specs_intake_requested:
     type: repo2specs_intake
     payload:
       original_event: ${{ event }}
@@ -17,20 +18,20 @@ actions:
   - type: label_issue
     params:
       issue: ${{ event.issue.html_url }}
-      add_labels: [repo2specs_in_progress]
-      remove_labels: [repo2specs]
+      add_labels: [repo2specs_intake_in_progress]
+      remove_labels: [repo2specs_intake]
 ---
-name: Repo2Specs Intake Execution
+name: Repo2specs intake execution
 metadata:
   runner-name: agents
 on:
-  repo2specs_intake:
+  repo2specs_intake_requested:
 actions:
   - type: agent_run
     params: {}
   - type: label_issue
     params:
       issue: ${{ event.payload.original_event.issue.html_url }}
-      add_labels: [repo2specs_analysis_ready]
-      remove_labels: [repo2specs_in_progress]
+      add_labels: [repo2specs_analysis_queued]
+      remove_labels: [repo2specs_intake_in_progress]
 

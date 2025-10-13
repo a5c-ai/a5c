@@ -1,15 +1,16 @@
 ---
-name: Repo2Specs Follow-up Trigger
+name: Repo2specs follow-up via slash command
 metadata:
   runner-name: reactor
 on:
   issue:
     filters:
       - expression: ${{ event.type == 'labeled' && event.label.name == 'repo2specs_followup' }}
+      - expression: ${{ event.enriched.slash_commands | default([]) | map(attribute='command') | contains('repo2specs-followup') }}
     skip:
       - expression: ${{ event.issue.closed == true }}
 emit:
-  repo2specs_followup_event:
+  repo2specs_followup_requested:
     type: repo2specs_followup
     payload:
       original_event: ${{ event }}
@@ -20,11 +21,11 @@ actions:
       add_labels: [repo2specs_followup_in_progress]
       remove_labels: [repo2specs_followup]
 ---
-name: Repo2Specs Follow-up Execution
+name: Repo2specs follow-up execution
 metadata:
   runner-name: agents
 on:
-  repo2specs_followup_event:
+  repo2specs_followup_requested:
 actions:
   - type: agent_run
     params: {}

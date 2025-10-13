@@ -1,11 +1,11 @@
-name: Detect Conflicts
+name: Detect conflicts via slash command
 metadata:
   runner-name: reactor
 on:
   pull_request:
     filters:
-      - expression: ${{ event.type == 'synchronize' && event.enriched.github.pr.mergeable_state == 'dirty' }}    
-      - expression: ${{ event.enriched.slash_command.command == 'fix-conflicts' || event.enriched.slash_command.command == 'resolve-conflicts' }}
+      - expression: ${{ event.type == 'synchronize' && event.enriched.github.pr.mergeable_state == 'dirty' }}
+      - expression: ${{ (event.enriched.slash_commands | default([]) | map(attribute='command')) | intersect(['pr-fix-conflicts','pr-resolve-conflicts']) | length > 0 }}
 emit:
   conflicts:
     type: conflicts
@@ -19,7 +19,7 @@ actions:
   - type: label_issue
     params:
       issue: ${{ event.pull_request.html_url }}
-      add_labels: [conflict]
+      add_labels: [pr_conflict_detected]
 ---
 name: Resolve Conflicts (agent)
 metadata:

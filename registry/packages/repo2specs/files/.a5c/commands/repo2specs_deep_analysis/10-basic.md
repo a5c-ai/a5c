@@ -1,6 +1,4 @@
-## Command: repo2specs_deep_analysis
-
-Goal: Produce full specifications and cross-discipline documentation from the existing repository.
+Invoke `/repo2specs-analyze` to produce full specifications and cross-discipline documentation from the existing repository.
 
 ### Analysis Tracks
 - **System Components**: Identify services, modules, libraries, frameworks, language versions, dependencies, data stores.
@@ -20,5 +18,5 @@ Goal: Produce full specifications and cross-discipline documentation from the ex
 
 ### Outputs
 - Updated documentation across system, product, devops, quality, design directories.
-- Summary comment with links to generated files.
+- Summary comment with links to generated files and confirm that `repo2specs_analysis_completed` is applied.
 

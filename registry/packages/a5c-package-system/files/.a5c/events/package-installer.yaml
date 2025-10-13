@@ -1,20 +1,21 @@
 ---
-name: Install a5c Packages
+name: Install a5c packages via slash command
 metadata:
   runner-name: reactor
 on:
   issue:
     filters:
-      # a5c package label was added
-      - expression: ${{ event.type == 'labeled' && event.label.name == 'a5c-package' }}
+      # a5c package label was added or slash command invoked
+      - expression: ${{ event.type == 'labeled' && event.label.name == 'package_install' }}
+      - expression: ${{ event.enriched.slash_commands | default([]) | map(attribute='command') | contains('install-packages') }}
     skip:
       # is a issue or already closed
       - expression: ${{ event.issue.closed == true }}
       # if a5c package installer in progress or already requested
-      - expression: ${{ event.labels | map(attribute='name') | contains('a5c_package_installer_in_progress') || event.labels | map(attribute='name') | contains('a5c_package_installer_requested') }}
+      - expression: ${{ event.issue.labels | map(attribute='name') | contains('package_install_in_progress') || event.issue.labels | map(attribute='name') | contains('package_install_queued') }}
 emit:
-  a5c_package_installer_request:
-    type: issue_ready_for_a5c_package_installer
+  package_install_requested:
+    type: package_installation
     payload:
       original_event: ${{ event }}
       issue: ${{ event.issue }}
@@ -22,13 +23,13 @@ actions:
   - type: label_issue
     params:
       issue: ${{ event.issue.html_url }}
-      add_labels: [a5c_package_installer_requested]
+      add_labels: [package_install_queued]
 ---
-name: Install a5c Packages Agent Run
+name: Install a5c packages agent run
 metadata:
   runner-name: agents
 on:
-  a5c_package_installer_request:
+  package_install_requested:
 # pre_set_labels:
 #   - entity: ${{ event.issue.html_url }}
 #     add_labels: [a5c_package_installer_in_progress]
@@ -47,8 +48,8 @@ actions:
   - type: label_issue 
     params:
       issue: ${{ event.issue.html_url }}
-      add_labels: [a5c_package_installer_installed]
-      remove_labels: [a5c_package_installer_in_progress]
+      add_labels: [package_install_completed]
+      remove_labels: [package_install_in_progress]
   - type: add_comment # available actions: close_issue, close_pr, merge_pr, add_comment, edit_comment, delete_comment
     env: 
       - name: SOME_ENV
@@ -74,5 +75,5 @@ actions:
   - type: label_issue
     params:
       issue: ${{ event.issue.html_url }}
-      add_labels: [a5c_package_installer_installed]
-      remove_labels: [a5c_package_installer_in_progress]
+      add_labels: [package_install_completed]
+      remove_labels: [package_install_in_progress]

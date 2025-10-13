@@ -1,6 +1,8 @@
-Triage the issue (understand it, don't do anything) and add the proper labels to the issue {{event.payload.client_payload.payload.issue.number}}:
+Run `/issue-triage` to review the issue {{event.issue.number}} without implementing changes:
 
-the recommended labels to choose from are:
-{{#each event.payload.client_payload.payload.among}}
+- capture missing context and request clarifications in a comment
+- ensure labels reflect the issue type using:
+{{#each event.payload.among}}
 - {{this}}
 {{/each}}
+- leave the automation-applied `issue_triage_in_progress` in place until analysis is complete, then set `issue_triage_completed`

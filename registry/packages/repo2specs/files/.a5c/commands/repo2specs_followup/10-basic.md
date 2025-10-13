@@ -1,6 +1,4 @@
-## Command: repo2specs_followup
-
-Goal: Review outstanding recommendations, update status, and plan next actions.
+Use `/repo2specs-followup` to review outstanding recommendations, update status, and plan next actions.
 
 ### Steps
 1. Review `docs/repo2specs/recommendations/backlog.md` and note completed vs pending items.
@@ -11,5 +9,5 @@ Goal: Review outstanding recommendations, update status, and plan next actions.
 
 ### Outputs
 - Updated backlog file with status annotations and references.
-- Comment summarizing follow-up results and next checkpoints.
+- Comment summarizing follow-up results, tagging stakeholders as needed, and confirm `repo2specs_followup_completed`.
 
