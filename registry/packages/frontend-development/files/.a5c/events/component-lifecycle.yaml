@@ -92,7 +92,7 @@ on:
   issue:
     filters:
       - expression: ${{ event.type == 'labeled' && event.label.name == 'component_implementation' }}
-      - expression: ${{ event.enriched.slash_commands | map(command) | contains('component-implement') }}
+      - expression: ${{ event.enriched.slash_commands | map(command) | contains('component-create') }}
     skip:
       - expression: ${{ event.issue.closed == true }}
       - expression: ${{ event.issue.labels | map(attribute='name') | contains('component_implementation_in_progress') || event.issue.labels | map(attribute='name') | contains('component_implementation_queued') }}

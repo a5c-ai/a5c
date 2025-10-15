@@ -26,7 +26,7 @@ on:
     filters:
       # triage label added or slash command invoked
       - expression: ${{ event.type == 'labeled' && event.label.name == 'issue_triage' }}
-      - expression: ${{ event.enriched.slash_commands | map(command) | contains('issue-triage') }}
+      - expression: ${{ event.enriched.slash_commands | map(command) | contains('triage') }}
     skip:
       # is a issue or already closed
       - expression: ${{ event.issue.closed == true }}

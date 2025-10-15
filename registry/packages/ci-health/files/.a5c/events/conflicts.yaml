@@ -5,7 +5,7 @@ on:
   issue_comment:
     filters:
       - expression: ${{ event.type == 'synchronize' && event.enriched.github.pr.mergeable_state == 'dirty' }}
-      - expression: ${{ (event.enriched.slash_commands | map(command)) | intersect(['pr-fix-conflicts','pr-resolve-conflicts']) | length > 0 }}
+      - expression: ${{ (event.enriched.slash_commands | map(command)) | intersect(['fix-conflicts','resolve-conflicts']) | length > 0 }}
 emit:
   conflicts:
     type: conflicts

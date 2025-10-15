@@ -24,7 +24,7 @@ on:
     filters:
       # e2e test run requested via label or slash command
       - expression: ${{ event.type == 'labeled' && event.label.name == 'e2e_test_run' }}
-      - expression: ${{ event.enriched.slash_commands | map(command) | contains('issue-run-e2e') }}
+      - expression: ${{ event.enriched.slash_commands | map(command) | contains('run-e2e') }}
     skip:
       # is a issue or already closed
       - expression: ${{ event.issue.closed == true }}
