@@ -7,7 +7,7 @@ on:
     filters:
       # implementation label was added or slash command invoked
       - expression: ${{ event.type == 'labeled' && event.label.name == 'pr_implementation' }}
-      - expression: ${{ event.enriched.slash_commands | default([]) | map(attribute='command') | contains('pr-implement') }}
+      - expression: ${{ event.enriched.slash_commands | map(command) | contains('pr-implement') }}
     skip:
       # is already merged
       - expression: ${{ event.pull_request.merged == true }}

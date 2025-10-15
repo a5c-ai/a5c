@@ -1,0 +1,172 @@
+---
+name: Define UX component via slash command
+metadata:
+  runner-name: reactor
+on:
+  issue:
+    filters:
+      - expression: ${{ event.type == 'labeled' && event.label.name == 'component_define' }}
+      - expression: ${{ event.enriched.slash_commands | map(command) | contains('component-define') }}
+    skip:
+      - expression: ${{ event.issue.closed == true }}
+      - expression: ${{ event.issue.labels | map(attribute='name') | contains('component_define_in_progress') || event.issue.labels | map(attribute='name') | contains('component_define_queued') }}
+emit:
+  component_define_requested:
+    type: component_define
+    payload:
+      original_event: ${{ event }}
+      issue: ${{ event.issue }}
+actions:
+  - type: label_issue
+    params:
+      issue: ${{ event.issue.html_url }}
+      add_labels: [component_define_queued]
+      remove_labels: [component_define_completed]
+---
+name: Component definition agent run
+metadata:
+  runner-name: agents
+on:
+  component_define_requested:
+actions:
+  - type: label_issue
+    params:
+      issue: ${{ event.issue.html_url }}
+      add_labels: [component_define_in_progress]
+      remove_labels: [component_define_queued]
+  - type: agent_run
+    params: {}
+  - type: label_issue
+    params:
+      issue: ${{ event.issue.html_url }}
+      add_labels: [component_define_completed]
+      remove_labels: [component_define_in_progress]
+---
+name: Design UX component via slash command
+metadata:
+  runner-name: reactor
+on:
+  issue:
+    filters:
+      - expression: ${{ event.type == 'labeled' && event.label.name == 'component_design' }}
+      - expression: ${{ event.enriched.slash_commands | map(command) | contains('component-design') }}
+    skip:
+      - expression: ${{ event.issue.closed == true }}
+      - expression: ${{ event.issue.labels | map(attribute='name') | contains('component_design_in_progress') || event.issue.labels | map(attribute='name') | contains('component_design_queued') }}
+emit:
+  component_design_requested:
+    type: component_design
+    payload:
+      original_event: ${{ event }}
+      issue: ${{ event.issue }}
+actions:
+  - type: label_issue
+    params:
+      issue: ${{ event.issue.html_url }}
+      add_labels: [component_design_queued]
+      remove_labels: [component_design_completed]
+---
+name: Component design agent run
+metadata:
+  runner-name: agents
+on:
+  component_design_requested:
+actions:
+  - type: label_issue
+    params:
+      issue: ${{ event.issue.html_url }}
+      add_labels: [component_design_in_progress]
+      remove_labels: [component_design_queued]
+  - type: agent_run
+    params: {}
+  - type: label_issue
+    params:
+      issue: ${{ event.issue.html_url }}
+      add_labels: [component_design_completed]
+      remove_labels: [component_design_in_progress]
+---
+name: Implement UX component via slash command
+metadata:
+  runner-name: reactor
+on:
+  issue:
+    filters:
+      - expression: ${{ event.type == 'labeled' && event.label.name == 'component_implementation' }}
+      - expression: ${{ event.enriched.slash_commands | map(command) | contains('component-implement') }}
+    skip:
+      - expression: ${{ event.issue.closed == true }}
+      - expression: ${{ event.issue.labels | map(attribute='name') | contains('component_implementation_in_progress') || event.issue.labels | map(attribute='name') | contains('component_implementation_queued') }}
+emit:
+  component_implementation_requested:
+    type: component_implementation
+    payload:
+      original_event: ${{ event }}
+      issue: ${{ event.issue }}
+actions:
+  - type: label_issue
+    params:
+      issue: ${{ event.issue.html_url }}
+      add_labels: [component_implementation_queued]
+      remove_labels: [component_implementation_completed]
+---
+name: Component implementation agent run
+metadata:
+  runner-name: agents
+on:
+  component_implementation_requested:
+actions:
+  - type: label_issue
+    params:
+      issue: ${{ event.issue.html_url }}
+      add_labels: [component_implementation_in_progress]
+      remove_labels: [component_implementation_queued]
+  - type: agent_run
+    params: {}
+  - type: label_issue
+    params:
+      issue: ${{ event.issue.html_url }}
+      add_labels: [component_implementation_completed]
+      remove_labels: [component_implementation_in_progress]
+---
+name: Integrate UX component via slash command
+metadata:
+  runner-name: reactor
+on:
+  issue:
+    filters:
+      - expression: ${{ event.type == 'labeled' && event.label.name == 'component_integration' }}
+      - expression: ${{ event.enriched.slash_commands | map(command) | contains('component-integrate') }}
+    skip:
+      - expression: ${{ event.issue.closed == true }}
+      - expression: ${{ event.issue.labels | map(attribute='name') | contains('component_integration_in_progress') || event.issue.labels | map(attribute='name') | contains('component_integration_queued') }}
+emit:
+  component_integration_requested:
+    type: component_integration
+    payload:
+      original_event: ${{ event }}
+      issue: ${{ event.issue }}
+actions:
+  - type: label_issue
+    params:
+      issue: ${{ event.issue.html_url }}
+      add_labels: [component_integration_queued]
+      remove_labels: [component_integration_completed]
+---
+name: Component integration agent run
+metadata:
+  runner-name: agents
+on:
+  component_integration_requested:
+actions:
+  - type: label_issue
+    params:
+      issue: ${{ event.issue.html_url }}
+      add_labels: [component_integration_in_progress]
+      remove_labels: [component_integration_queued]
+  - type: agent_run
+    params: {}
+  - type: label_issue
+    params:
+      issue: ${{ event.issue.html_url }}
+      add_labels: [component_integration_completed]
+      remove_labels: [component_integration_in_progress]

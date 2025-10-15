@@ -1,0 +1,43 @@
+---
+name: Repository seeding via slash command
+metadata:
+  runner-name: reactor
+on:
+  issue:
+    filters:
+      - expression: ${{ event.type == 'labeled' && event.label.name == 'repository_seed' }}
+      - expression: ${{ event.enriched.slash_commands | map(command) | contains('seed-repo') }}
+    skip:
+      - expression: ${{ event.issue.closed == true }}
+      - expression: ${{ event.issue.labels | map(attribute='name') | contains('repository_seed_in_progress') || event.issue.labels | map(attribute='name') | contains('repository_seed_queued') }}
+emit:
+  repository_seed_requested:
+    type: repository_seed
+    payload:
+      original_event: ${{ event }}
+      issue: ${{ event.issue }}
+actions:
+  - type: label_issue
+    params:
+      issue: ${{ event.issue.html_url }}
+      add_labels: [repository_seed_queued]
+      remove_labels: [repository_seed_completed]
+---
+name: Repository seeding agent run
+metadata:
+  runner-name: agents
+on:
+  repository_seed_requested:
+actions:
+  - type: label_issue
+    params:
+      issue: ${{ event.issue.html_url }}
+      add_labels: [repository_seed_in_progress]
+      remove_labels: [repository_seed_queued]
+  - type: agent_run
+    params: {}
+  - type: label_issue
+    params:
+      issue: ${{ event.issue.html_url }}
+      add_labels: [repository_seed_completed]
+      remove_labels: [repository_seed_in_progress]

@@ -4,7 +4,7 @@ metadata:
 on:
   issue_comment:
     filters:
-      - expression: ${{ event.enriched.slash_commands | default([]) | map(attribute='command') | contains('issue-implement') }}
+      - expression: ${{ event.enriched.slash_commands | map(command) | contains('issue-implement') }}
     skip:
       # is already closed
       - expression: ${{ event.issue.closed == true }}
@@ -12,7 +12,6 @@ emit:
   issue_implementation_requested:
     type: issue_implementation
     payload:
-      original_event: ${{ event }}
       issue: ${{ event.issue }}
 ---
 name: Issue implementation via label or slash command
@@ -23,7 +22,7 @@ on:
     filters:
       # issue implementation label or slash command was used
       - expression: ${{ event.type == 'labeled' && event.label.name == 'issue_implementation' }}
-      - expression: ${{ event.enriched.slash_commands | default([]) | map(attribute='command') | contains('issue-implement') }}
+      - expression: ${{ event.enriched.slash_commands | map(command) | contains('issue-implement') }}
     skip:
       # is already closed
       - expression: ${{ event.issue.closed == true }}

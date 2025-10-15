@@ -7,7 +7,7 @@ on:
     filters:
       # validation label added or slash command used
       - expression: ${{ event.type == 'labeled' && event.label.name == 'pr_validation' }}
-      - expression: ${{ event.enriched.slash_commands | default([]) | map(attribute='command') | contains('pr-validate') }}
+      - expression: ${{ event.enriched.slash_commands | map(command) | contains('pr-validate') }}
     skip:
       # is a draft PR or already merged
       - expression: ${{ event.pull_request.draft == true || event.pull_request.merged == true }}
