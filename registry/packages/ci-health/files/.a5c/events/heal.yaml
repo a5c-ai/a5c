@@ -1,0 +1,35 @@
+name: Detect heal via slash command
+metadata:
+  runner-name: reactor
+on:
+  issue_comment:
+    filters:
+      - expression: ${{ (event.enriched.slash_commands | map(command)) | contains('heal') }}
+emit:
+  heal:
+    type: heal
+    payload:
+      original_event: ${{ event }}
+actions:
+  - type: add_comment
+    params:
+      issue: ${{ event.pull_request.html_url }}
+      comment: "Heal requested for PR #${{ event.pull_request.number }}"
+  - type: label_issue
+    params:
+      issue: ${{ event.pull_request.html_url }}
+      add_labels: [pr_heal_requested]
+---
+name: Resolve Heal (agent)
+metadata:
+  runner-name: agents
+on:
+  heal:
+    filters:
+      - expression: ${{ event.type == 'heal' }}
+actions:
+  - type: agent_run
+    params:
+      pull_request: ${{ event.pull_request }}
+      heal: ${{ event.heal }}
+---
