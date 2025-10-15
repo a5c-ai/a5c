@@ -1,6 +1,4 @@
-## Command: repo2specs_refresh
-
-Goal: Re-run targeted sections of Repo2Specs to keep documentation current.
+Use `/repo2specs-refresh` to re-run targeted sections of Repo2Specs and keep documentation current.
 
 ### Steps
 1. Determine refresh scope from event payload (labels, command options, timeframe).
@@ -11,5 +9,5 @@ Goal: Re-run targeted sections of Repo2Specs to keep documentation current.
 
 ### Outputs
 - Diffs or updated docs with refresh timestamp.
-- Comment summarizing refreshed items and any remaining TODOs.
+- Comment summarizing refreshed items, remaining TODOs, and confirm `repo2specs_refresh_completed`.
 

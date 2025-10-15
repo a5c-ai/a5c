@@ -1,15 +1,16 @@
 ---
-name: Repo2Specs Deep Analysis Trigger
+name: Repo2specs deep analysis via slash command
 metadata:
   runner-name: reactor
 on:
   issue:
     filters:
-      - expression: ${{ event.type == 'labeled' && event.label.name == 'repo2specs_analysis_ready' }}
+      - expression: ${{ event.type == 'labeled' && event.label.name == 'repo2specs_analysis' }}
+      - expression: ${{ event.enriched.slash_commands | default([]) | map(attribute='command') | contains('repo2specs-analyze') }}
     skip:
       - expression: ${{ event.issue.closed == true }}
 emit:
-  repo2specs_deep_analysis_event:
+  repo2specs_deep_analysis_requested:
     type: repo2specs_deep_analysis
     payload:
       original_event: ${{ event }}
@@ -18,13 +19,13 @@ actions:
     params:
       issue: ${{ event.issue.html_url }}
       add_labels: [repo2specs_analysis_in_progress]
-      remove_labels: [repo2specs_analysis_ready]
+      remove_labels: [repo2specs_analysis]
 ---
-name: Repo2Specs Deep Analysis Execution
+name: Repo2specs deep analysis execution
 metadata:
   runner-name: agents
 on:
-  repo2specs_deep_analysis_event:
+  repo2specs_deep_analysis_requested:
 actions:
   - type: agent_run
     params: {}

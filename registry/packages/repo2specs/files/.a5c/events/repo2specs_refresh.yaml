@@ -1,15 +1,16 @@
 ---
-name: Repo2Specs Refresh Trigger
+name: Repo2specs refresh via slash command
 metadata:
   runner-name: reactor
 on:
   issue:
     filters:
       - expression: ${{ event.type == 'labeled' && event.label.name == 'repo2specs_refresh' }}
+      - expression: ${{ event.enriched.slash_commands | default([]) | map(attribute='command') | contains('repo2specs-refresh') }}
     skip:
       - expression: ${{ event.issue.closed == true }}
 emit:
-  repo2specs_refresh_event:
+  repo2specs_refresh_requested:
     type: repo2specs_refresh
     payload:
       original_event: ${{ event }}
@@ -20,11 +21,11 @@ actions:
       add_labels: [repo2specs_refresh_in_progress]
       remove_labels: [repo2specs_refresh]
 ---
-name: Repo2Specs Refresh Execution
+name: Repo2specs refresh execution
 metadata:
   runner-name: agents
 on:
-  repo2specs_refresh_event:
+  repo2specs_refresh_requested:
 actions:
   - type: agent_run
     params: {}

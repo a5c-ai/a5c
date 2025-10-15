@@ -1,5 +1,5 @@
 ---
-name: Auto Triage New Issues
+name: Auto tag e2e test run issues
 metadata:
   runner-name: reactor
 on:
@@ -16,22 +16,23 @@ actions:
       issue: ${{ event.issue.html_url }}
       comment: "E2E test run requested for issue #${{ event.issue.number }}"
 ---
-name: Triage New Issues
+name: E2E test run via slash command
 metadata:
   runner-name: reactor
 on:
   issue:
     filters:
-      # label triage was added
-      - expression: ${{ event.type == 'labeled' && event.label.name == 'e2e-test-run-requested' }}
+      # e2e test run requested via label or slash command
+      - expression: ${{ event.type == 'labeled' && event.label.name == 'e2e_test_run' }}
+      - expression: ${{ event.enriched.slash_commands | default([]) | map(attribute='command') | contains('issue-run-e2e') }}
     skip:
       # is a issue or already closed
       - expression: ${{ event.issue.closed == true }}
       # if e2e test run in progress or already requested
-      - expression: ${{ event.labels | contains('e2e-test-run_in_progress') || event.labels | contains('e2e-test-run-requested') }}
+      - expression: ${{ event.issue.labels | map(attribute='name') | contains('e2e_test_run_in_progress') || event.issue.labels | map(attribute='name') | contains('e2e_test_run_queued') }}
 emit:
-  e2e_test_run:
-    type: issue_ready_for_e2e_test_run
+  e2e_test_run_requested:
+    type: e2e_test_run
     payload:
       original_event: ${{ event }}
       issue: ${{ event.issue }}
@@ -56,20 +57,19 @@ actions:
   - type: label_issue
     params:
       issue: ${{ event.issue.html_url }}
-      add_labels: [e2e-test-run-requested]
-      remove_labels: [e2e-test-run-requested]
+      add_labels: [e2e_test_run_queued]
 ---
-name: E2E Test Run Agent Run
+name: E2E test run agent
 metadata:
   runner-name: agents
 on:
-  e2e_test_run:
+  e2e_test_run_requested:
 actions:
   - type: label_issue
     params:
       issue: ${{ event.issue.html_url }}
-      add_labels: [e2e-test-run-in_progress]
-      remove_labels: [e2e-test-run-requested]
+      add_labels: [e2e_test_run_in_progress]
+      remove_labels: [e2e_test_run_queued]
   - type: agent_run
     env:
       - name: SOME_ENV
@@ -78,5 +78,5 @@ actions:
   - type: label_issue
     params:
       issue: ${{ event.issue.html_url }}
-      add_labels: [e2e-test-run-completed]
-      remove_labels: [e2e-test-run_in_progress]
+      add_labels: [e2e_test_run_completed]
+      remove_labels: [e2e_test_run_in_progress]
