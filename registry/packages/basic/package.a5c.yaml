@@ -5,7 +5,13 @@ description: Basic package
 dependencies:
   - github://a5c-ai/a5c/branch/main/registry/packages/core
   - github://a5c-ai/a5c/branch/main/registry/packages/core-instructions
-  - 
+  - github://a5c-ai/a5c/branch/main/registry/packages/issues
+  - github://a5c-ai/a5c/branch/main/registry/packages/prs
+  - github://a5c-ai/a5c/branch/main/registry/packages/status-checks
+  - github://a5c-ai/a5c/branch/main/registry/packages/ci-health
+  - github://a5c-ai/a5c/branch/main/registry/packages/scaffold
+  - github://a5c-ai/a5c/branch/main/registry/packages/seeding
+  - github://a5c-ai/a5c/branch/main/registry/packages/agent-observability
   - github://a5c-ai/a5c/branch/main/registry/packages/a5c-package-system
 homepage: https://a5c.ai
 categories:
