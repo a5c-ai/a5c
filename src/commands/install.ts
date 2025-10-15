@@ -301,19 +301,17 @@ export async function handleInit(opts: {
       };
     }
     const initDoc = { packages: [] as any[] };
-    fs.writeFileSync(packagesYaml, YAML.stringify(initDoc), "utf8");
-    const configYaml = path.join(a5cDir, "config.yaml");
-    if (!fs.existsSync(configYaml)) {
-      fs.writeFileSync(configYaml, "", "utf8");
-    }
-
     let defaultPkg = opts.pkg || "github://a5c-ai/a5c/branch/main/registry/packages/github-starter";
     try {
       defaultPkg = resolveInstallUri(defaultPkg);
     } catch (err: any) {
       return { code: 2, errorMessage: String(err?.message || err) };
     }
-
+    fs.writeFileSync(packagesYaml, YAML.stringify(initDoc), "utf8");
+    const configYaml = path.join(a5cDir, "config.yaml");
+    if (!fs.existsSync(configYaml)) {
+      fs.writeFileSync(configYaml, "", "utf8");
+    }
     const showProgress = opts.showProgress !== false;
     const { code, errorMessage, installDocs, prUrl } = await handleInstall({
       uri: defaultPkg,

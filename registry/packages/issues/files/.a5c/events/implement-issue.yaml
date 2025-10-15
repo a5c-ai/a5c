@@ -12,7 +12,6 @@ emit:
   issue_implementation_requested:
     type: issue_implementation
     payload:
-      original_event: ${{ event }}
       issue: ${{ event.issue }}
 ---
 name: Issue implementation via label or slash command
