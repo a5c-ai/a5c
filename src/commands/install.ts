@@ -1017,31 +1017,49 @@ type OctokitClientOptions = {
 };
 
 let cachedOctokit: any;
+let cachedOctokitToken: string | null | undefined;
 let cachedOctokitSilent: any;
+let cachedOctokitSilentToken: string | null | undefined;
+let loggedTokenWarning = false;
 
 async function getOctokitClient(opts: OctokitClientOptions = {}): Promise<any> {
   const suppress = opts.suppressLogging === true;
   const tokenOverride = opts.tokenOverride;
-  if (!tokenOverride) {
-    if (suppress && cachedOctokitSilent) return cachedOctokitSilent;
-    if (!suppress && cachedOctokit) return cachedOctokit;
-  }
 
   const { Octokit } = await import("@octokit/rest");
   const token = tokenOverride || process.env.A5C_AGENT_GITHUB_TOKEN || process.env.GITHUB_TOKEN;
+  const effectiveToken = token ?? null;
 
-  if (!token) {
-    throw new Error("GitHub token is required for this operation");
+  if (!tokenOverride) {
+    if (suppress && cachedOctokitSilent && cachedOctokitSilentToken === effectiveToken) {
+      return cachedOctokitSilent;
+    }
+    if (!suppress && cachedOctokit && cachedOctokitToken === effectiveToken) {
+      return cachedOctokit;
+    }
   }
 
   const log = suppress
     ? { debug: noop, info: noop, warn: noop, error: noop }
     : undefined;
 
-  const octokit = new Octokit({ auth: token, log });
+  const options: Record<string, any> = { log };
+  if (token) {
+    options.auth = token;
+  } else if (!suppress && !loggedTokenWarning) {
+    console.warn("install: proceeding without GITHUB_TOKEN; public GitHub API rate limits apply");
+    loggedTokenWarning = true;
+  }
+
+  const octokit = new Octokit(options);
   if (!tokenOverride) {
-    if (suppress) cachedOctokitSilent = octokit;
-    else cachedOctokit = octokit;
+    if (suppress) {
+      cachedOctokitSilent = octokit;
+      cachedOctokitSilentToken = effectiveToken;
+    } else {
+      cachedOctokit = octokit;
+      cachedOctokitToken = effectiveToken;
+    }
   }
   return octokit;
 }
