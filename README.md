@@ -1,215 +1,67 @@
-[![99% built by agents](https://img.shields.io/badge/99%25-built%20by%20agents-blue.svg)](https://a5c.ai) [![codecov](https://codecov.io/gh/a5c-ai/a5c/branch/a5c/main/graph/badge.svg)](https://app.codecov.io/gh/a5c-ai/a5c/tree/a5c/main)
+## A5C
 
-# @a5c-ai/a5c — a5c SDK & CLI
+Minimal agentic CI toolkit for GitHub. After installation, A5C adds slash-command agents you can trigger from issues and pull requests. Command definitions live under `.a5c/events`.
 
-Turn raw GitHub Actions/webhook payloads into a consistent Normalized Event (NE) that agents and automations can trust. Enrich with repo context, extract @mentions, generate prompt context, apply rules, and emit composed events. Use it as a CLI in CI or as a programmatic SDK.
+## Prerequisites
 
-- Commands: `a5c normalize`, `a5c enrich`, `a5c mentions`, `a5c generate_context`, `a5c reactor`, `a5c emit`, `a5c validate`, `a5c run` (see docs for full flags)
-- Output: JSON to stdout or file
-- Provider: GitHub first; adapter surface enables more providers
-- Safe by default: offline enrichment unless explicitly enabled
-
-See: `docs/cli/reference.md`, `docs/specs/ne.schema.json`, `docs/user/sdk-quickstart.md`.
-
-## What It Is
-
-Purpose: a minimal, predictable events layer for agentic workflows.
-
-Scope:
-
-- Normalize provider payloads to the NE schema
-- Enrich with repository metadata (offline by default; optional GitHub API)
-- Extract `@mentions` from PRs, issues, commits, and code diffs
-- Generate task/prompt context from templates (`generate_context`)
-- Apply rule-based reactors to produce composed events
-- Validate against the NE JSON Schema
-
-Supported GitHub types: `workflow_run`, `pull_request`, `push`, `issue`, `issue_comment`, `check_run`, `release`, `deployment`/`deployment_status`, `job` (`workflow_job`), `step` (when granular), `alert` (e.g., code/secret scanning).
-
-Ownership semantics (routing): enrichment computes `owners_union` — the sorted, de‑duplicated union of CODEOWNERS matches across changed files. Unlike GitHub’s last‑rule‑wins, union semantics support broader, safer routing. Details: `docs/routing/ownership-and-routing.md`.
-
-Branch model: `a5c/main` is development/staging; `main` is production.
+- Node.js 20+ (`node -v`)
+- GitHub CLI (`gh`) authenticated: `gh auth status`  
+  On macOS: `brew install gh`
 
 ## Install
 
-Prerequisites: Node.js 20.x (see `.nvmrc`).
+### 1) Add repo Variable and Secret
 
-```bash
-npm install @a5c-ai/a5c
-# CLI-only
-npm install -g @a5c-ai/a5c
+Add the following in your GitHub repository settings (Settings → Secrets and variables → Actions):
+
+```
+# Repository variable
+A5C_CLI_PROFILE=openai_codex_gpt5
+
+# Repository secret
+OPENAI_API_KEY=...
 ```
 
-## Quick Start (CLI)
+### 2) Initialize via CLI
 
-```bash
-# Normalize a payload file
-npx @a5c-ai/a5c normalize \
-  --in samples/workflow_run.completed.json \
-  --out out.json
+```
+# a) Login to GitHub
+gh auth login
 
-# Peek a few fields
-jq '.type, .repo.full_name, .provenance.workflow?.name' out.json
+export GITHUB_TOKEN=`gh auth token`
 
-# Validate against the NE schema (quiet on success)
-a5c validate --in out.json --schema docs/specs/ne.schema.json --quiet
+# b) Initialize A5C in the repo
+npx -y @a5c-ai/a5c init
 ```
 
-### Smoke Test
+This will scaffold agent workflows and events. Slash commands will be available in GitHub comments. Command specs can be found after install in `.a5c/events`.
 
-Run a fast, offline end-to-end check that chains normalize → enrich → validate using bundled samples. Produces `out.ne.json` and `out.enriched.json` in the repo root.
+## Usage (slash commands)
 
-```bash
-npm run smoke
-# expected: exit code 0, quiet validation
-ls -1 out.ne.json out.enriched.json
+Comment on issues or PRs with a leading slash. Core commands:
+
+```
+/implement
+/validate
+/triage
+/run-e2e
+/heal
 ```
 
-Enrich offline vs online:
+- **/implement**: Kick off the implementation agent for the current issue/PR. It plans and proposes commits/PR changes according to the templates under `.a5c/events`.
+- **/validate**: Run validation checks (lint/tests/consistency) to verify the current changes or plan.
+- **/triage**: Analyze and route an issue/PR — applies labels, assigns owners, and suggests next steps.
+- **/run-e2e**: Trigger end-to-end tests for the branch/PR using the repo’s configured workflows.
+- **/heal**: Attempt to build, run, and test failing areas; proposes fixes and re-runs checks until healthy.
 
-```bash
-# Offline (default; no network calls)
-a5c enrich --in samples/pull_request.synchronize.json --out enriched.offline.json
+Notes:
+- A5C works via slash commands in GitHub comments.
+- After initialization, explore `.a5c/events` to see and tweak available commands.
 
-# Online (requires token)
-export GITHUB_TOKEN=ghp_xxx
-a5c enrich --in samples/pull_request.synchronize.json --use-github --out enriched.online.json
-```
+## GitHub Actions permissions
 
-Mentions scanning (examples):
+Ensure the repo allows workflows to write back results:
+- Settings → Actions → General → Workflow permissions: set to “Read and write permissions”.
+- Optionally enable “Allow GitHub Actions to create and approve pull requests.”
 
-```bash
-# Disable code-comment scanning over changed files
-a5c enrich --in ... --flag 'mentions.scan.changed_files=false'
 
-# Restrict languages
-a5c enrich --in ... --flag 'mentions.languages=ts,js'
-```
-
-Canonical flags and defaults live in `docs/cli/reference.md#events-enrich` and `#mentions-scanning`.
-
-### Reactor Quick Start
-
-Run the reactor locally against a bundled sample PR event using the default rules path `.a5c/events/` (loads all `*.yaml|*.yml` recursively). A single-file rules path like `.a5c/events/reactor.yaml` is also supported via `--file`:
-
-```bash
-npm run reactor:sample | jq '.events | length'
-# expected: 1
-
-# Or view the produced events
-npm run reactor:sample | jq
-```
-
-- Default rules path is the directory `.a5c/events/` (recursive YAML load). You can also point to a single file such as `.a5c/events/reactor.yaml` using `--file`.
-- Full CLI reference: `docs/cli/reference.md#events-reactor`.
-
-## Quick Start (SDK)
-
-See `docs/user/sdk-quickstart.md` for a minimal example using `mapToNE`, `enrichGithub`, and helpers.
-
-## GitHub Actions Example
-
-End‑to‑end recipe (normalize → enrich → reactor → emit): `docs/ci/actions-e2e-example.md`.
-
-```yaml
-- name: Normalize current run
-  run: |
-    npx @a5c-ai/a5c normalize \
-      --source actions \
-      --in "$GITHUB_EVENT_PATH" \
-      --out event.json
-
-- name: Enrich (offline by default)
-  run: |
-    a5c enrich --in event.json --out event.enriched.json
-```
-
-## CLI Overview
-
-- `a5c normalize` — Map provider payload to NE. Filters/selectors available.
-- `a5c enrich` — Add metadata, mentions, ownership, correlations; optional `--use-github`.
-- `a5c mentions` — Extract `@mentions` from files/stdin.
-- `a5c generate_context` — Render templates from file/github URIs with the event as data.
-- `a5c reactor` — Apply rules to NE and emit composed events.
-- `a5c emit` — Emit composed events to sinks (stdout by default) and optionally run side-effects (labels, scripts, status checks). See `docs/cli/reference.md#events-emit`.
-- `a5c validate` — Validate NE (and enriched documents) against JSON Schema.
-- `a5c run` — Profile-based AI provider runner (experimental). See reference: `docs/cli/reference.md#events-run`.
-- `a5c parse` — Parse streaming provider logs to JSON events (experimental). See reference: `docs/cli/reference.md#events-parse`.
-
-Full command/flag reference: `docs/cli/reference.md`.
-
-## Logging
-
-- Global flags on every command:
-  - `--log-level <info|debug|warn|error>` → sets env `A5C_LOG_LEVEL` (default: `info`)
-  - `--log-format <pretty|json>` → sets env `A5C_LOG_FORMAT` (default: `pretty`)
-- In CI, prefer `--log-format=json` for structured logs.
-- See global flags in `docs/cli/reference.md#global-flags` and additional notes in `docs/observability.md`.
-
-## Troubleshooting
-
-- Offline vs online: enrichment is offline by default. Pass `--use-github` to enable API calls. Without a token, the CLI exits with code `3` and prints an error; no JSON is emitted by the CLI path. Details: `docs/cli/reference.md#a5c-enrich`.
-- Tokens and precedence: set `A5C_AGENT_GITHUB_TOKEN` or `GITHUB_TOKEN` (the former takes precedence). Some commands like `generate_context` also use tokens for `github://` templates.
-- Exit codes: `0` success; `1` generic error; `2` input/validation error (missing `--in`, invalid JSON, filter mismatch); `3` provider/network error (e.g., `--use-github` without a token).
-- CI convenience: export `A5C_EVENTS_AUTO_USE_GITHUB=true` to auto‑enable `--use-github` when a token exists (default remains offline). See `docs/cli/reference.md#a5c-enrich`.
-- Rate limits: for `github://` templates and online enrichment, prefer `A5C_AGENT_GITHUB_TOKEN` and use `--log-format=json` to surface errors clearly in CI. Retries/backoff are limited; reduce calls or cache inputs when possible.
-
-## NE Schema
-
-Core fields produced by `normalize` include `id`, `provider`, `type`, `occurred_at`, `repo`, `ref`, `actor`, `payload`, `labels`, `provenance`. Enrichment adds `enriched` and optional `composed[]` (from rules).
-
-- JSON Schema (canonical): `docs/specs/ne.schema.json`
-- Overview: `docs/cli/ne-schema.md`
-
-Ref note: `ref.type` is `branch | tag | unknown`. PRs use branch semantics; `ref.base`/`ref.head` carry branch names. There is no `pr` enum value.
-
-## CI Checks
-
-Guidance and required checks: `docs/ci/ci-checks.md`.
-
-- PRs: quick checks (`Lint`, `Typecheck`, `Tests`, commit hygiene)
-- Protected branches (`a5c/main`, `main`): build + full tests with coverage
-
-Validate locally: `npm run -s validate:examples`.
-
-## Configuration
-
-Environment variables:
-
-- `A5C_AGENT_GITHUB_TOKEN` / `GITHUB_TOKEN` — enable online GitHub enrichment
-- `DEBUG=true` — enable verbose logs in select paths
-- Logging toggles and observability: `docs/observability.md`
-
-CLI defaults favor reproducibility in CI: explicit `--in`, write artifacts with `--out`.
-
-## Troubleshooting Tips
-
-- `enrich --use-github` exits 3 with "token required": set `A5C_AGENT_GITHUB_TOKEN` or `GITHUB_TOKEN`.
-- `normalize --source actions` fails with missing `GITHUB_EVENT_PATH`: pass `--in FILE` or run inside GitHub Actions.
-- `emit --sink file` without `--out`: specify an output path.
-- `validate` reports schema errors: inspect `.errors[]` for `instancePath` and `message`.
-- Slow or noisy logs: pass `--log-format=json` and control verbosity via `--log-level`.
-- `generate_context` with `github://...` URIs requires a token.
-
-## Development
-
-- Build: `npm run build`
-- Dev CLI: `npm run dev`
-- Lint/Typecheck/Format: `npm run lint` / `npm run typecheck` / `npm run format`
-- Commit conventions: Conventional Commits; local hooks via Husky + commitlint (see `CONTRIBUTING.md` and `docs/dev/precommit-hooks.md`)
-- Node policy: Node 20 LTS (see `.nvmrc`, `package.json#engines`)
-
-Project structure:
-
-- `src/cli.ts` — CLI entry (mentions, normalize, enrich, generate_context, reactor, emit, validate)
-- `src/providers/github/*` — GitHub mapping/enrichment
-- `docs/*` — CLI reference, specs, CI examples, routing semantics
-
-## Links
-
-- How‑to guide: `docs/user/how-to.md`
-- CLI reference: `docs/cli/reference.md`
-- SDK quickstart: `docs/user/sdk-quickstart.md`
-- NE schema: `docs/specs/ne.schema.json`
-- Actions e2e example: `docs/ci/actions-e2e-example.md`
-- Ownership semantics: `docs/routing/ownership-and-routing.md`
