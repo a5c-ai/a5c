@@ -7,7 +7,7 @@ on:
     filters:
       # a5c package label was added or slash command invoked
       - expression: ${{ event.type == 'labeled' && event.label.name == 'package_install' }}
-      - expression: ${{ event.enriched.slash_commands | default([]) | map(attribute='command') | contains('install-packages') }}
+      - expression: ${{ event.enriched.slash_commands | map(command) | contains('install-packages') }}
     skip:
       # is a issue or already closed
       - expression: ${{ event.issue.closed == true }}

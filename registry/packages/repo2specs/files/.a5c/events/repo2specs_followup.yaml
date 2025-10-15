@@ -6,7 +6,7 @@ on:
   issue:
     filters:
       - expression: ${{ event.type == 'labeled' && event.label.name == 'repo2specs_followup' }}
-      - expression: ${{ event.enriched.slash_commands | default([]) | map(attribute='command') | contains('repo2specs-followup') }}
+      - expression: ${{ event.enriched.slash_commands | map(command) | contains('repo2specs-followup') }}
     skip:
       - expression: ${{ event.issue.closed == true }}
 emit:
